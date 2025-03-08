@@ -18,7 +18,6 @@ const app = Vue.createApp({
       userInput: '',
       isTyping: false,
       currentMessage: '',
-      eventSource: null
     };
   },
   mounted() {
@@ -48,9 +47,31 @@ const app = Vue.createApp({
 
     // 格式化消息，使用marked渲染markdown
     formatMessage(content) {
-      return marked.parse(content);
-    },
+      // 使用正则表达式查找<think>...</think>标签内的内容
+      const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
+      const thinkTagRegexOpenOnly = /<think>[\s\S]*$/;
+      
+      // 情况2: 同时存在<think>和</think>
+      let formattedContent = content.replace(thinkTagRegexWithClose, match => {
+        // 获取<think>...</think>之间的内容
+        const thinkContent = match.replace(/<\/?think>/g, '').trim();
+        // 将内容转换为引用格式
+        return thinkContent.split('\n').map(line => `> ${line}`).join('\n');
+      });
 
+      // 情况1: 只有<think>，没有</think>，将<think>之后的所有内容变为引用
+      if (!thinkTagRegexWithClose.test(formattedContent)) {
+        formattedContent = formattedContent.replace(thinkTagRegexOpenOnly, match => {
+          // 移除<think>标签
+          const openThinkContent = match.replace('<think>', '').trim();
+          // 将内容转换为引用格式
+          return openThinkContent.split('\n').map(line => `> ${line}`).join('\n');
+        });
+      }
+
+      // 使用marked解析Markdown内容
+      return marked.parse(formattedContent);
+    },
     // 滚动到最新消息
     scrollToBottom() {
       this.$nextTick(() => {

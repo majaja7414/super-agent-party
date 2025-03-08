@@ -115,10 +115,10 @@ body {
 /* 消息内容基础样式 */
 .message-content {
   max-width: 80%;
-  padding: 8px;
+  padding: 12px;
   border-radius: 12px;
   font-size: 14px;
-  line-height: 1.4;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -138,7 +138,7 @@ body {
 /* Markdown 样式 */
 .message-content p {
   margin: 4px 0;
-  line-height: 1.4;
+  line-height: 1.6;
 }
 
 .message-content code {
@@ -154,7 +154,7 @@ body {
   background-color: var(--el-bg-color);
   border: 1px solid var(--el-border-color-light);
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: 12px 16px;
   margin: 12px 0;
   overflow-x: auto;
 }
@@ -165,7 +165,7 @@ body {
   border-radius: 0;
   color: var(--el-text-color-regular);
   font-size: 13px;
-  line-height: 1.4;
+  line-height: 1.6;
   display: block;
 }
 
@@ -191,19 +191,29 @@ body {
 }
 
 .message-content blockquote {
-  border-left: 4px solid var(--el-border-color);
-  margin: 12px 0;
-  padding: 8px 16px;
-  color: var(--el-text-color-regular);
-  background-color: var(--el-bg-color);
+  border-left: 4px solid #63a2ea; /* 使用蓝色边框突出显示 */
+  margin: 20px 0;
+  padding: 16px 24px;
+  color: #5a6d82; /* 设置一种较浅的颜色来区分正文 */
+  background-color: #f9f9fb; /* 轻微的背景色变化 */
   font-style: italic;
+  position: relative;
+  line-height: 1.7; /* 提高行高，增加可读性 */
+}
+
+
+/* 改善嵌套引用的样式 */
+.message-content blockquote blockquote {
+  border-left-color: #9b59b6; /* 嵌套时使用不同的颜色 */
+  padding-left: 20px;
+  margin-top: 10px;
 }
 
 .message-content ul,
 .message-content ol {
   margin: 8px 0;
   padding-left: 24px;
-  line-height: 1.4;
+  line-height: 1.6;
 }
 
 .message-content li {
@@ -240,40 +250,6 @@ body {
 .message-content h5 { font-size: 1em; }
 .message-content h6 { font-size: 0.9em; }
 
-/* 用户消息中的Markdown样式调整 */
-.user .message-content code,
-.user .message-content pre,
-.user .message-content pre code,
-.user .message-content blockquote,
-.user .message-content th,
-.user .message-content td {
-  color: rgba(255, 255, 255, 0.9);
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.user .message-content pre,
-.user .message-content table,
-.user .message-content th,
-.user .message-content td,
-.user .message-content blockquote {
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.user .message-content blockquote {
-  border-left-color: rgba(255, 255, 255, 0.4);
-}
-
-.user .message-content h1,
-.user .message-content h2,
-.user .message-content h3,
-.user .message-content h4,
-.user .message-content h5,
-.user .message-content h6 {
-  color: white;
-  margin: 0.5em 0; /* 减少外边距 */
-  line-height: 1.4; /* 调整行高 */
-  padding: 0; /* 确保没有内边距 */
-}
 
 /* 输入框容器样式 */
 .input-container {
