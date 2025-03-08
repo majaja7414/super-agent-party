@@ -56,13 +56,23 @@ async def websocket_endpoint(websocket: WebSocket):
 
 class ChatRequest(BaseModel):
     messages: list
+    model: str = None
+    temperature: float = 0.7
+    stream: bool = False
+    max_tokens: int = 4096
 
-async def generate_stream_response(client: AsyncOpenAI, messages: list, model: str):
+async def generate_stream_response(client: AsyncOpenAI, request: ChatRequest, settings: dict):
     try:
+        model = request.model or settings.get("modelName")
+        messages = request.messages
+        temperature = request.temperature
+        max_tokens = request.max_tokens
         stream = await client.chat.completions.create(
             model=model,
             messages=messages,
-            stream=True
+            stream=True,
+            temperature=temperature,
+            max_tokens=max_tokens
         )
         
         async for chunk in stream:
@@ -74,6 +84,22 @@ async def generate_stream_response(client: AsyncOpenAI, messages: list, model: s
         
     except Exception as e:
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+async def generate_complete_response(client: AsyncOpenAI, request: ChatRequest, settings: dict):
+    model = request.model or settings.get("modelName")
+    messages = request.messages
+    temperature = request.temperature
+    max_tokens = request.max_tokens
+    
+    response = await client.chat.completions.create(
+        model=model,
+        messages=messages,
+        stream=False,
+        temperature=temperature,
+        max_tokens=max_tokens
+    )
+    
+    return {"content": response.choices[0].message.content}
 
 @app.post("/chat/completions")
 async def chat_endpoint(request: ChatRequest):
@@ -90,12 +116,14 @@ async def chat_endpoint(request: ChatRequest):
         base_url=settings.get("baseURL") if settings.get("baseURL") else "https://api.openai.com/v1"
     )
     
-    model = settings.get("modelName") or "gpt-3.5-turbo"
-    
-    return StreamingResponse(
-        generate_stream_response(client, request.messages, model),
-        media_type="text/event-stream"
-    )
+    if request.stream:
+        return StreamingResponse(
+            generate_stream_response(client, request, settings),
+            media_type="text/event-stream"
+        )
+    else:
+        response = await generate_complete_response(client, request, settings)
+        return JSONResponse(content=response)
 
 if __name__ == "__main__":
     import uvicorn

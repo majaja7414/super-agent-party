@@ -1,5 +1,5 @@
 {
-  "modelName": "deepseek-r1:14b",
+  "modelName": "qwen2.5:14b",
   "baseURL": "http://127.0.0.1:11434/v1/",
   "apiKey": "ollama"
 }

@@ -165,7 +165,8 @@ const app = Vue.createApp({
             'Accept': 'text/event-stream'
           },
           body: JSON.stringify({
-            messages: messages
+            messages: messages,
+            stream: true
           })
         });
         
