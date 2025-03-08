@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Electron App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="top-bar">
+    <button id="minimize-btn" class="top-bar-btn">_</button>
+    <button id="maximize-btn" class="top-bar-btn">□</button>
+    <button id="close-btn" class="top-bar-btn">×</button>
+  </div>
+
+  <!-- Main container for sidebar and content -->
+  <div class="main-container">
+<!-- Sidebar -->
+<div class="sidebar">
+  <button id="toggle-sidebar-btn" class="sidebar-btn" title="收起/展开侧边栏">☰</button>
+  <button id="home-btn" class="sidebar-btn" title="主页">🏠 <span>主页</span></button>
+  <button id="settings-btn" class="sidebar-btn" title="设置">⚙️ <span>设置</span></button>
+</div>
+
+    <!-- Content -->
+    <div class="content">
+      <div id="home" class="page active">
+        <h1>欢迎来到主页</h1>
+      </div>
+      <div id="settings" class="page">
+        <h1>设置页面</h1>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

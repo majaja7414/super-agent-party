@@ -2,15 +2,16 @@
   "name": "super-api-party",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "electron": "^35.0.0"
   },
   "devDependencies": {
     "electron": "^35.0.0"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
