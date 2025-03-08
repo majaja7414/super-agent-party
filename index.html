@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="styles.css">
   <!-- 引入Element Plus样式 -->
   <link rel="stylesheet" href="node_modules/element-plus/dist/index.css">
-  <link href="bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
   <div id="app">
@@ -79,6 +78,8 @@
           />
           <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
         </div>
+        </div>
+        
         <div v-show="activeMenu === 'settings'" class="page">
           <el-form :model="settings" class="settings-form">
             <el-form-item>
