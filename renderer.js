@@ -13,16 +13,15 @@ const app = Vue.createApp({
         apiKey: ''
       },
       ws: null,
-      chatWs: null,
       messages: [],
       userInput: '',
       isTyping: false,
-      currentMessage: ''
+      currentMessage: '',
+      eventSource: null
     };
   },
   mounted() {
     this.initWebSocket();
-    this.initChatWebSocket();
     
     // 监听窗口状态变化
     ipcRenderer.on('window-state-changed', (_, isMaximized) => {
@@ -96,41 +95,6 @@ const app = Vue.createApp({
       };
     },
 
-    // 初始化聊天WebSocket
-    initChatWebSocket() {
-      this.chatWs = new WebSocket('ws://localhost:8000/chat');
-      
-      this.chatWs.onopen = () => {
-        console.log('Chat WebSocket connection established');
-      };
-
-      this.chatWs.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        
-        if (data.type === 'assistant_chunk') {
-          if (!this.isTyping) {
-            this.isTyping = true;
-            this.messages.push({
-              role: 'assistant',
-              content: ''
-            });
-          }
-          const lastMessage = this.messages[this.messages.length - 1];
-          lastMessage.content += data.content;
-          this.scrollToBottom();
-        } else if (data.type === 'assistant_complete') {
-          this.isTyping = false;
-        } else if (data.type === 'error') {
-          ElMessage.error(data.message);
-          this.isTyping = false;
-        }
-      };
-
-      this.chatWs.onclose = () => {
-        console.log('Chat WebSocket connection closed');
-      };
-    },
-
     // 发送消息
     async sendMessage() {
       if (!this.userInput.trim() || this.isTyping) return;
@@ -152,12 +116,71 @@ const app = Vue.createApp({
       this.userInput = '';
       
       try {
-        this.chatWs.send(JSON.stringify({
-          type: 'chat_message',
-          messages: messages
-        }));
+        // 关闭之前的EventSource连接
+        if (this.eventSource) {
+          this.eventSource.close();
+        }
+        
+        // 发送消息并获取流式响应
+        const response = await fetch('http://localhost:3456/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messages: messages,
+            model: this.settings.modelName || 'gpt-3.5-turbo'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('请求失败');
+        }
+        
+        // 创建新的EventSource来接收流式响应
+        this.isTyping = true;
+        this.messages.push({
+          role: 'assistant',
+          content: ''
+        });
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+          
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') {
+                this.isTyping = false;
+                break;
+              }
+              
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.content) {
+                  const lastMessage = this.messages[this.messages.length - 1];
+                  lastMessage.content += parsed.content;
+                  this.scrollToBottom();
+                } else if (parsed.error) {
+                  ElMessage.error(parsed.error);
+                  this.isTyping = false;
+                }
+              } catch (e) {
+                console.error('解析响应失败:', e);
+              }
+            }
+          }
+        }
       } catch (error) {
         ElMessage.error('发送消息失败');
+        this.isTyping = false;
         // 恢复输入内容
         this.userInput = userInput;
       }

@@ -50,59 +50,46 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket连接关闭: {e}")
 
-async def get_openai_response(client: AsyncOpenAI, messages: list, websocket: WebSocket):
-    try:
-        stream = await client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            stream=True
-        )
-        
-        collected_chunks = []
-        async for chunk in stream:
-            if chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
-                collected_chunks.append(content)
-                # 实时发送每个文本片段
-                await websocket.send_json({
-                    "type": "assistant_chunk",
-                    "content": content
-                })
-        
-        # 发送完成标记
-        await websocket.send_json({
-            "type": "assistant_complete",
-            "content": "".join(collected_chunks)
-        })
-        
-    except Exception as e:
-        await websocket.send_json({
-            "type": "error",
-            "message": str(e)
-        })
+from fastapi import HTTPException
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse
 
-@app.websocket("/chat")
-async def chat_endpoint(websocket: WebSocket):
-    await websocket.accept()
+class ChatRequest(BaseModel):
+    messages: list
+
+async def get_openai_response(client: AsyncOpenAI, messages: list, model="gpt-4o-mini"):
+    try:
+        response = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=False
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat/completions")
+async def chat_endpoint(request: ChatRequest):
     settings = load_settings()
     
     if not settings.get("apiKey"):
-        await websocket.send_json({
-            "type": "error",
-            "message": "API key not configured"
-        })
-        return
+        return JSONResponse(
+            status_code=400,
+            content={"error": "API key not configured"}
+        )
         
     client = AsyncOpenAI(
         api_key=settings.get("apiKey"),
         base_url=settings.get("baseURL") if settings.get("baseURL") else "https://api.openai.com/v1"
     )
-    
+    model = settings.get("modelName") or "gpt-4o-mini"
     try:
-        while True:
-            data = await websocket.receive_json()
-            if data.get("type") == "chat_message":
-                messages = data.get("messages", [])
-                await get_openai_response(client, messages, websocket)
+        response = await get_openai_response(client, request.messages,model=model)
+        return {"response": response}
     except Exception as e:
-        print(f"Chat WebSocket连接关闭: {e}")
+        print(f"处理请求时发生错误: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=3456)
