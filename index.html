@@ -64,18 +64,17 @@
             </div>
           </div>
           
-          <!-- 输入框区域 -->
-          <div class="input-container">
-            <el-input
-              v-model="userInput"
-              type="textarea"
-              :rows="3"
-              placeholder="输入消息..."
-              resize="none"
-              @keydown.enter.prevent="sendMessage"
-            />
-            <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
-          </div>
+        <!-- 输入框区域 -->
+        <div class="input-container">
+          <el-input
+            v-model="userInput"
+            type="textarea"
+            :rows="3"
+            placeholder="输入消息..."
+            resize="none"
+            @keydown="handleKeydown"
+          />
+          <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
         </div>
         <div v-show="activeMenu === 'settings'" class="page">
           <el-form :model="settings" class="settings-form">

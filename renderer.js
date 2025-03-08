@@ -1,4 +1,5 @@
 const { ipcRenderer } = require('electron');
+const marked = require('marked');
 
 // 创建Vue应用
 const app = Vue.createApp({
@@ -45,9 +46,9 @@ const app = Vue.createApp({
       this.activeMenu = key;
     },
 
-    // 格式化消息，将换行符转换为<br>标签
+    // 格式化消息，使用marked渲染markdown
     formatMessage(content) {
-      return content.replace(/\n/g, '<br>');
+      return marked.parse(content);
     },
 
     // 滚动到最新消息
@@ -95,14 +96,29 @@ const app = Vue.createApp({
       };
     },
 
+    handleKeydown(event) {
+      if (event.key === 'Enter') {
+        if (event.shiftKey) {
+          // 如果同时按下了Shift键，则不阻止默认行为，允许换行
+          return;
+        } else {
+          // 阻止默认行为，防止表单提交或新行插入
+          event.preventDefault();
+          this.sendMessage();
+        }
+      }
+    },
+
     // 发送消息
     async sendMessage() {
       if (!this.userInput.trim() || this.isTyping) return;
       
+      const userInput = this.userInput.replace(/\s*$/, '');
+
       // 添加用户消息
       this.messages.push({
         role: 'user',
-        content: this.userInput
+        content: userInput
       });
       
       // 准备发送的消息历史
@@ -112,7 +128,6 @@ const app = Vue.createApp({
       }));
       
       // 清空输入框
-      const userInput = this.userInput;
       this.userInput = '';
       
       try {
