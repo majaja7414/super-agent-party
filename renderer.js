@@ -12,11 +12,17 @@ const app = Vue.createApp({
         baseURL: '',
         apiKey: ''
       },
-      ws: null
+      ws: null,
+      chatWs: null,
+      messages: [],
+      userInput: '',
+      isTyping: false,
+      currentMessage: ''
     };
   },
   mounted() {
     this.initWebSocket();
+    this.initChatWebSocket();
     
     // 监听窗口状态变化
     ipcRenderer.on('window-state-changed', (_, isMaximized) => {
@@ -38,6 +44,21 @@ const app = Vue.createApp({
     // 菜单处理
     handleSelect(key) {
       this.activeMenu = key;
+    },
+
+    // 格式化消息，将换行符转换为<br>标签
+    formatMessage(content) {
+      return content.replace(/\n/g, '<br>');
+    },
+
+    // 滚动到最新消息
+    scrollToBottom() {
+      this.$nextTick(() => {
+        const container = this.$refs.messagesContainer;
+        if (container) {
+          container.scrollTop = container.scrollHeight;
+        }
+      });
     },
 
     // WebSocket相关
@@ -73,6 +94,75 @@ const app = Vue.createApp({
       this.ws.onclose = () => {
         console.log('WebSocket connection closed');
       };
+    },
+
+    // 初始化聊天WebSocket
+    initChatWebSocket() {
+      this.chatWs = new WebSocket('ws://localhost:8000/chat');
+      
+      this.chatWs.onopen = () => {
+        console.log('Chat WebSocket connection established');
+      };
+
+      this.chatWs.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'assistant_chunk') {
+          if (!this.isTyping) {
+            this.isTyping = true;
+            this.messages.push({
+              role: 'assistant',
+              content: ''
+            });
+          }
+          const lastMessage = this.messages[this.messages.length - 1];
+          lastMessage.content += data.content;
+          this.scrollToBottom();
+        } else if (data.type === 'assistant_complete') {
+          this.isTyping = false;
+        } else if (data.type === 'error') {
+          ElMessage.error(data.message);
+          this.isTyping = false;
+        }
+      };
+
+      this.chatWs.onclose = () => {
+        console.log('Chat WebSocket connection closed');
+      };
+    },
+
+    // 发送消息
+    async sendMessage() {
+      if (!this.userInput.trim() || this.isTyping) return;
+      
+      // 添加用户消息
+      this.messages.push({
+        role: 'user',
+        content: this.userInput
+      });
+      
+      // 准备发送的消息历史
+      const messages = this.messages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+      
+      // 清空输入框
+      const userInput = this.userInput;
+      this.userInput = '';
+      
+      try {
+        this.chatWs.send(JSON.stringify({
+          type: 'chat_message',
+          messages: messages
+        }));
+      } catch (error) {
+        ElMessage.error('发送消息失败');
+        // 恢复输入内容
+        this.userInput = userInput;
+      }
+      
+      this.scrollToBottom();
     },
 
     // 自动保存设置

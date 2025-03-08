@@ -47,8 +47,35 @@
 
       <!-- 内容区 -->
       <el-main class="content">
-        <div v-show="activeMenu === 'home'" class="page">
-          <h1>欢迎来到主页</h1>
+        <div v-show="activeMenu === 'home'" class="page chat-container">
+          <!-- 聊天消息列表 -->
+          <div class="messages-container" ref="messagesContainer">
+            <div v-for="(message, index) in messages" :key="index" class="message" :class="message.role">
+              <div class="message-content" v-html="formatMessage(message.content)"></div>
+            </div>
+            <div v-if="isTyping" class="message assistant">
+              <div class="message-content typing">
+                <div class="typing-indicator">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 输入框区域 -->
+          <div class="input-container">
+            <el-input
+              v-model="userInput"
+              type="textarea"
+              :rows="3"
+              placeholder="输入消息..."
+              resize="none"
+              @keydown.enter.prevent="sendMessage"
+            />
+            <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
+          </div>
         </div>
         <div v-show="activeMenu === 'settings'" class="page">
           <el-form :model="settings" class="settings-form">
