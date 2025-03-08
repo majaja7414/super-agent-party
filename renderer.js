@@ -15,6 +15,7 @@ document.getElementById('close-btn').addEventListener('click', () => {
 
 // Sidebar toggle functionality
 const sidebar = document.querySelector('.sidebar');
+sidebar.classList.add('collapsed');
 document.getElementById('home-btn').addEventListener('click', () => {
   switchPage('home');
 });
@@ -24,9 +25,6 @@ document.getElementById('settings-btn').addEventListener('click', () => {
 });
 
 // Add event listener for toggle-sidebar-btn
-document.getElementById('toggle-sidebar-btn').addEventListener('click', () => {
-  sidebar.classList.toggle('collapsed');
-});
 
 // Ensure the sidebar is always full height
 sidebar.style.height = '100%';

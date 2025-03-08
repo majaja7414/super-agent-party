@@ -71,48 +71,11 @@ body {
   transition: all 0.3s;
 }
 
-.sidebar.collapsed button span {
-  display: none;
-}
 
 .sidebar button:hover {
   background-color: #34495e;
 }
 
-.sidebar #toggle-sidebar-btn {
-  background: none;
-  border: none;
-  color: white;
-  padding: 10px;
-  text-align: left;
-  cursor: pointer;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  height: 40px; /* Ensure consistent height */
-  transition: all 0.3s;
-}
-
-.sidebar.collapsed #toggle-sidebar-btn {
-  justify-content: center;
-  font-size: 16px; /* Ensure consistent font size */
-  text-align: center;
-  height: 40px; /* Ensure consistent height */
-  transition: all 0.3s;
-}
-
-.sidebar #toggle-sidebar-btn:hover {
-  background-color: #34495e;
-}
-
-.sidebar button span {
-  transition: opacity 0.3s;
-  opacity: 1;
-}
-
-.sidebar.collapsed button span {
-  opacity: 0;
-}
 
 .content {
   flex: 1;
