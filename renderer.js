@@ -1,53 +1,97 @@
 const { ipcRenderer } = require('electron');
 
-// Top bar button functionality
-document.getElementById('minimize-btn').addEventListener('click', () => {
-  ipcRenderer.send('window-minimize');
+// 创建Vue应用
+const app = Vue.createApp({
+  data() {
+    return {
+      isCollapse: true,
+      activeMenu: 'home',
+      isMaximized: false,
+      settings: {
+        modelName: '',
+        baseURL: '',
+        apiKey: ''
+      },
+      ws: null
+    };
+  },
+  mounted() {
+    this.initWebSocket();
+    
+    // 监听窗口状态变化
+    ipcRenderer.on('window-state-changed', (_, isMaximized) => {
+      this.isMaximized = isMaximized;
+    });
+  },
+  methods: {
+    // 窗口控制
+    minimizeWindow() {
+      ipcRenderer.send('window-minimize');
+    },
+    maximizeWindow() {
+      ipcRenderer.send('window-maximize');
+    },
+    closeWindow() {
+      ipcRenderer.send('window-close');
+    },
+
+    // 菜单处理
+    handleSelect(key) {
+      this.activeMenu = key;
+    },
+
+    // WebSocket相关
+    initWebSocket() {
+      this.ws = new WebSocket('ws://localhost:8000/ws');
+      
+      this.ws.onopen = () => {
+        console.log('WebSocket connection established');
+      };
+
+      this.ws.onmessage = (event) => {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (e) {
+          console.log('Message from server:', event.data);
+          return;
+        }
+
+        if (data.type === 'settings') {
+          this.settings = {
+            modelName: data.data.modelName || '',
+            baseURL: data.data.baseURL || '',
+            apiKey: data.data.apiKey || ''
+          };
+        } else if (data.type === 'settings_saved') {
+          if (!data.success) {
+            ElMessage.error('设置保存失败');
+          }
+        }
+      };
+
+      this.ws.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+    },
+
+    // 自动保存设置
+    autoSaveSettings() {
+      this.ws.send(JSON.stringify({
+        type: 'save_settings',
+        data: this.settings
+      }));
+    }
+  }
 });
 
-document.getElementById('maximize-btn').addEventListener('click', () => {
-  ipcRenderer.send('window-maximize');
-});
+// 使用Element Plus
+app.use(ElementPlus);
 
-document.getElementById('close-btn').addEventListener('click', () => {
-  ipcRenderer.send('window-close');
-});
-
-// Sidebar toggle functionality
-const sidebar = document.querySelector('.sidebar');
-sidebar.classList.add('collapsed');
-document.getElementById('home-btn').addEventListener('click', () => {
-  switchPage('home');
-});
-
-document.getElementById('settings-btn').addEventListener('click', () => {
-  switchPage('settings');
-});
-
-// Add event listener for toggle-sidebar-btn
-
-// Ensure the sidebar is always full height
-sidebar.style.height = '100%';
-
-// Page switching logic
-function switchPage(pageId) {
-  document.querySelectorAll('.page').forEach(page => {
-    page.classList.remove('active');
-  });
-  document.getElementById(pageId).classList.add('active');
+// 注册图标组件
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component);
 }
 
-// WebSocket connection to the backend
-const ws = new WebSocket('ws://localhost:8000/ws');
-
-ws.onopen = () => {
-  console.log('WebSocket connection established');
-};
-
-ws.onmessage = (event) => {
-  console.log('Message from server:', event.data);
-};
-
-ws.onclose = () => {
-  console.log('WebSocket connection closed');
-};
+// 挂载应用
+app.mount('#app');

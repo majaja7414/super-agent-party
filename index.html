@@ -1,38 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Electron App</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- 引入Element Plus样式 -->
+  <link rel="stylesheet" href="node_modules/element-plus/dist/index.css">
 </head>
 <body>
-  <!-- Top bar -->
-  <div class="top-bar">
-    <button id="minimize-btn" class="top-bar-btn">_</button>
-    <button id="maximize-btn" class="top-bar-btn">□</button>
-    <button id="close-btn" class="top-bar-btn">×</button>
+  <div id="app">
+    <!-- 顶部栏 -->
+    <el-header class="top-bar" height="30px">
+      <div class="window-controls">
+        <el-button @click="minimizeWindow" class="top-bar-btn" text>
+          <el-icon><Minus /></el-icon>
+        </el-button>
+          <el-button @click="maximizeWindow" class="top-bar-btn" text>
+          <el-icon><Expand /></el-icon>
+        </el-button>
+        <el-button @click="closeWindow" class="top-bar-btn" text>
+          <el-icon><Close /></el-icon>
+        </el-button>
+      </div>
+    </el-header>
+
+    <!-- 主容器 -->
+    <el-container class="main-container">
+      <!-- 侧边栏 -->
+      <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
+        <el-menu
+          :collapse="isCollapse"
+          :default-active="activeMenu"
+          class="el-menu-vertical"
+          @select="handleSelect">
+          <el-menu-item index="home">
+            <el-icon><House /></el-icon>
+            <template #title>主页</template>
+          </el-menu-item>
+          <el-menu-item index="settings">
+            <el-icon><Setting /></el-icon>
+            <template #title>设置</template>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+
+      <!-- 内容区 -->
+      <el-main class="content">
+        <div v-show="activeMenu === 'home'" class="page">
+          <h1>欢迎来到主页</h1>
+        </div>
+        <div v-show="activeMenu === 'settings'" class="page">
+          <el-form :model="settings" class="settings-form">
+            <el-form-item>
+              <el-input 
+                v-model="settings.modelName" 
+                placeholder="模型名称"
+                @input="autoSaveSettings" 
+                class="full-width-input"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-input 
+                v-model="settings.baseURL" 
+                placeholder="基础URL"
+                @input="autoSaveSettings"
+                class="full-width-input"
+              />
+            </el-form-item>
+            <el-form-item>
+              <el-input 
+                v-model="settings.apiKey" 
+                placeholder="API密钥" 
+                show-password
+                @input="autoSaveSettings"
+                class="full-width-input"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
+      </el-main>
+    </el-container>
   </div>
 
-  <!-- Main container for sidebar and content -->
-  <div class="main-container">
-<!-- Sidebar -->
-<div class="sidebar">
-  <button id="home-btn" class="sidebar-btn" title="主页">🏠</button>
-  <button id="settings-btn" class="sidebar-btn" title="设置">⚙️</button>
-</div>
-
-    <!-- Content -->
-    <div class="content">
-      <div id="home" class="page active">
-        <h1>欢迎来到主页</h1>
-      </div>
-      <div id="settings" class="page">
-        <h1>设置页面</h1>
-      </div>
-    </div>
-  </div>
-
+  <!-- 引入Vue和Element Plus -->
+  <script src="node_modules/vue/dist/vue.global.js"></script>
+  <script src="node_modules/element-plus/dist/index.full.js"></script>
+  <script src="node_modules/@element-plus/icons-vue/dist/index.iife.min.js"></script>
   <script src="renderer.js"></script>
 </body>
 </html>

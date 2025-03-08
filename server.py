@@ -1,7 +1,21 @@
+import json
+import os
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+SETTINGS_FILE = 'settings.json'
+
+def load_settings():
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {"modelName": "", "baseURL": "", "apiKey": ""}
+
+def save_settings(settings):
+    with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(settings, f, ensure_ascii=False, indent=2)
 
 # Allow CORS for WebSocket connections
 app.add_middleware(
@@ -15,11 +29,21 @@ app.add_middleware(
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    await websocket.send_text("连接成功！")
+    # 连接成功后立即发送当前设置
+    current_settings = load_settings()
+    await websocket.send_json({"type": "settings", "data": current_settings})
+    
     try:
         while True:
-            data = await websocket.receive_text()
-            print(f"收到消息: {data}")
-            await websocket.send_text(f"你发送了: {data}")
+            data = await websocket.receive_json()
+            if data.get("type") == "save_settings":
+                save_settings(data.get("data", {}))
+                await websocket.send_json({"type": "settings_saved", "success": True})
+            elif data.get("type") == "get_settings":
+                settings = load_settings()
+                await websocket.send_json({"type": "settings", "data": settings})
+            else:
+                print(f"收到消息: {data}")
+                await websocket.send_text(f"你发送了: {str(data)}")
     except Exception as e:
         print(f"WebSocket连接关闭: {e}")

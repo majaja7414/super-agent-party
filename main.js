@@ -9,9 +9,9 @@ app.on('ready', () => {
     height: 600,
     frame: false,
     webPreferences: {
-      preload: path.join(__dirname, 'renderer.js'),
       nodeIntegration: true,
       contextIsolation: false,
+      webSecurity: false
     },
   });
 
@@ -28,6 +28,17 @@ app.on('ready', () => {
     } else {
       mainWindow.maximize();
     }
+    mainWindow.webContents.send('window-state-changed', mainWindow.isMaximized());
+  });
+
+  // 监听窗口最大化事件
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state-changed', true);
+  });
+
+  // 监听窗口还原事件
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state-changed', false);
   });
 
   ipcMain.on('window-close', () => {
