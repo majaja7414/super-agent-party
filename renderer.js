@@ -62,7 +62,7 @@ const app = Vue.createApp({
 
     // WebSocket相关
     initWebSocket() {
-      this.ws = new WebSocket('ws://localhost:8000/ws');
+      this.ws = new WebSocket('ws://localhost:3456/ws');
       
       this.ws.onopen = () => {
         console.log('WebSocket connection established');
@@ -125,11 +125,11 @@ const app = Vue.createApp({
         const response = await fetch('http://localhost:3456/chat/completions', {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'text/event-stream'
           },
           body: JSON.stringify({
-            messages: messages,
-            model: this.settings.modelName || 'gpt-3.5-turbo'
+            messages: messages
           })
         });
         
@@ -137,7 +137,7 @@ const app = Vue.createApp({
           throw new Error('请求失败');
         }
         
-        // 创建新的EventSource来接收流式响应
+        // 创建新的消息
         this.isTyping = true;
         this.messages.push({
           role: 'assistant',
@@ -156,7 +156,7 @@ const app = Vue.createApp({
           
           for (const line of lines) {
             if (line.startsWith('data: ')) {
-              const data = line.slice(6);
+              const data = line.slice(6).trim();
               if (data === '[DONE]') {
                 this.isTyping = false;
                 break;

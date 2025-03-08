@@ -1,5 +1,5 @@
 {
-  "modelName": "deepseek-v3-241226",
-  "baseURL": "https://ark.cn-beijing.volces.com/api/v3/",
-  "apiKey": "75de78fe-9a74-46b5-98ab-64b3c79199b6"
+  "modelName": "deepseek-r1:14b",
+  "baseURL": "http://127.0.0.1:11434/v1/",
+  "apiKey": "ollama"
 }

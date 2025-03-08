@@ -4,6 +4,10 @@ from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI
 import asyncio
+from fastapi import HTTPException
+from pydantic import BaseModel
+from fastapi.responses import JSONResponse, StreamingResponse
+import json
 
 app = FastAPI()
 SETTINGS_FILE = 'settings.json'
@@ -50,23 +54,26 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket连接关闭: {e}")
 
-from fastapi import HTTPException
-from pydantic import BaseModel
-from fastapi.responses import JSONResponse
-
 class ChatRequest(BaseModel):
     messages: list
 
-async def get_openai_response(client: AsyncOpenAI, messages: list, model="gpt-4o-mini"):
+async def generate_stream_response(client: AsyncOpenAI, messages: list, model: str):
     try:
-        response = await client.chat.completions.create(
+        stream = await client.chat.completions.create(
             model=model,
             messages=messages,
-            stream=False
+            stream=True
         )
-        return response.choices[0].message.content
+        
+        async for chunk in stream:
+            if chunk.choices[0].delta.content:
+                content = chunk.choices[0].delta.content
+                yield f"data: {json.dumps({'content': content})}\n\n"
+            
+        yield "data: [DONE]\n\n"
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 @app.post("/chat/completions")
 async def chat_endpoint(request: ChatRequest):
@@ -82,13 +89,13 @@ async def chat_endpoint(request: ChatRequest):
         api_key=settings.get("apiKey"),
         base_url=settings.get("baseURL") if settings.get("baseURL") else "https://api.openai.com/v1"
     )
-    model = settings.get("modelName") or "gpt-4o-mini"
-    try:
-        response = await get_openai_response(client, request.messages,model=model)
-        return {"response": response}
-    except Exception as e:
-        print(f"处理请求时发生错误: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    
+    model = settings.get("modelName") or "gpt-3.5-turbo"
+    
+    return StreamingResponse(
+        generate_stream_response(client, request.messages, model),
+        media_type="text/event-stream"
+    )
 
 if __name__ == "__main__":
     import uvicorn
