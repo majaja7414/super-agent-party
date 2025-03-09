@@ -280,20 +280,27 @@ const app = Vue.createApp({
       }
     },
 
-
     // 修改copyEndpoint方法
     copyEndpoint() {
       navigator.clipboard.writeText('http://127.0.0.1:3456/v1')
         .then(() => {
-          ElMessage.success({
-            message: 'API地址已复制',
-            duration: 2000
-          });
+          showNotification('API地址已复制');
         })
         .catch(() => {
-          ElMessage.error('复制失败，请手动复制');
+          showNotification('复制失败，请手动复制', 'error');
         });
     },
+    
+    copyModelId(modelId) {
+      navigator.clipboard.writeText(modelId)
+        .then(() => {
+          showNotification('模型ID已复制');
+        })
+        .catch(() => {
+          showNotification('复制失败，请手动复制', 'error');
+        });
+    },
+
     handleSelect(key) {
       this.activeMenu = key;
       if (key === 'api') {
@@ -302,6 +309,24 @@ const app = Vue.createApp({
     }
   }
 });
+
+function showNotification(message, type = 'success') {
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  document.body.appendChild(notification);
+  
+  // 强制重绘确保动画生效
+  void notification.offsetWidth;
+  
+  notification.classList.add('show');
+  
+  setTimeout(() => {
+    notification.classList.remove('show');
+    notification.classList.add('hide');
+    setTimeout(() => notification.remove(), 400);
+  }, 2000);
+};
 
 // 修改图标注册方式（完整示例）
 app.use(ElementPlus);

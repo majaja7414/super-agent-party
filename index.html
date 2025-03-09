@@ -113,9 +113,15 @@
               </div>
                 <!-- 确保表格列与数据字段匹配 -->
                 <el-table :data="models" class="model-table">
+                  <!-- index.html -->
                   <el-table-column prop="id" label="模型ID">
                     <template #default="{row}">
-                      {{ row.id || 'model' }}
+                      <span 
+                        class="copyable" 
+                        @click="copyModelId(row.id || 'model')"
+                      >
+                        {{ row.id || 'model' }}
+                      </span>
                     </template>
                   </el-table-column>
                   <el-table-column prop="created" label="创建时间" width="180">

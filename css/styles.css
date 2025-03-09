@@ -423,3 +423,41 @@ body {
 .error-models {
   color: var(--el-color-danger);
 }
+
+.copyable {
+  cursor: pointer;
+  color: #409eff;
+  transition: color 0.3s;
+}
+.copyable:hover {
+  color: #79bbff;
+}
+
+.notification {
+  position: fixed;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 9999;
+  font-family: system-ui;
+  font-size: 14px;
+}
+.notification.show {
+  top: 24px;
+  opacity: 1;
+}
+.notification.hide {
+  top: 10px;
+  opacity: 0;
+}
+
+.notification.error {
+  background: #ff5252;
+}
