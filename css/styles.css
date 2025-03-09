@@ -77,8 +77,14 @@ body {
 /* 内容区样式 */
 .content {
   padding: 20px;
-  overflow-y: auto;
+  overflow-y: scroll; /* 强制显示滚动条，以便我们可以隐藏它 */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
   background-color: var(--el-bg-color-page);
+}
+
+.content::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }
 
 /* 聊天容器样式 */

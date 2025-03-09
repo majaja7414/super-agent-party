@@ -17,6 +17,11 @@ def load_settings():
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
+        # 创建config文件夹
+        os.makedirs('config', exist_ok=True)
+        # 创建settings.json文件
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            f.write('{}')
         return {
             "model": "gpt-4o-mini",  # 使用OpenAI官方参数名
             "base_url": "https://api.openai.com/v1",
