@@ -100,8 +100,8 @@
               <div v-show="expandedSections.time" class="tool-content">
                 <el-form-item label="时区设置">
                   <el-select v-model="toolsSettings.time.timezone">
-                    <el-option label="Asia/Shanghai" value="Asia/Shanghai"/>
-                    <el-option label="America/New_York" value="America/New_York"/>
+                    <el-option key="Asia/Shanghai" label="Asia/Shanghai" value="Asia/Shanghai"/></el-option>
+                    <el-option key="America/New_York" label="America/New_York" value="America/New_York"/></el-option>
                   </el-select>
                 </el-form-item>
               </div>
@@ -134,9 +134,9 @@
               <div v-show="expandedSections.network" class="tool-content">
                 <el-form-item label="搜索引擎">
                   <el-select v-model="toolsSettings.network.search_engine">
-                    <el-option label="DuckDuckGo" value="duckduckgo"/>
-                    <el-option label="Google" value="google"/>
-                    <el-option label="Bing" value="bing"/>
+                    <el-option label="DuckDuckGo" value="duckduckgo"/></el-option>
+                    <el-option label="Google" value="google"/></el-option>
+                    <el-option label="Bing" value="bing"/></el-option>
                   </el-select>
                 </el-form-item>
               </div>
