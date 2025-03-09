@@ -461,3 +461,29 @@ body {
 .notification.error {
   background: #ff5252;
 }
+
+/* 工具界面样式 */
+.tool-item {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tool-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tool-content {
+  margin-top: 16px;
+  padding-left: 24px;
+  border-left: 2px solid #409eff;
+}
+
+.tool-item:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}

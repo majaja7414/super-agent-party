@@ -23,14 +23,30 @@ def load_settings():
         # 创建settings.json文件
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             f.write('{}')
-        return {
+        default_settings =  {
             "model": "gpt-4o-mini",  # 使用OpenAI官方参数名
             "base_url": "https://api.openai.com/v1",
             "api_key": "",
             "temperature": 0.7,
             "max_tokens": 4096,
-            "max_rounds": 10
+            "max_rounds": 10,
+            "tools": {
+                "time": {
+                    "enabled": False,
+                    "timezone": "Asia/Shanghai"
+                },
+                "knowledge": {
+                    "enabled": False,
+                    "model": "",
+                    "file_path": ""
+                },
+                "network": {
+                    "enabled": False,
+                    "search_engine": "duckduckgo"
+                }
+            }
         }
+        return default_settings
 
 settings = load_settings()
 client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])

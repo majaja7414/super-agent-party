@@ -38,6 +38,10 @@
             <el-icon><House /></el-icon>
             <template #title>主页</template>
           </el-menu-item>
+          <el-menu-item index="tools">
+            <el-icon><Tools /></el-icon>
+            <template #title>工具</template>
+          </el-menu-item>
           <el-menu-item index="api">
             <el-icon><Connection /></el-icon>
             <template #title>API信息</template>
@@ -82,6 +86,62 @@
           />
           <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
         </div>
+        </div>
+
+        <!-- 工具界面 -->
+        <div v-show="activeMenu === 'tools'" class="page tools-container">
+          <el-form :model="toolsSettings" class="settings-form">
+            <!-- 时间工具 -->
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('time')">
+                <span>当前时间</span>
+                <el-switch v-model="toolsSettings.time.enabled" @click.stop/>
+              </div>
+              <div v-show="expandedSections.time" class="tool-content">
+                <el-form-item label="时区设置">
+                  <el-select v-model="toolsSettings.time.timezone">
+                    <el-option label="Asia/Shanghai" value="Asia/Shanghai"/>
+                    <el-option label="America/New_York" value="America/New_York"/>
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+
+            <!-- 知识库工具 -->
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('knowledge')">
+                <span>知识库管理</span>
+                <el-switch v-model="toolsSettings.knowledge.enabled" @click.stop/>
+              </div>
+              <div v-show="expandedSections.knowledge" class="tool-content">
+                <el-form-item label="检索模型">
+                  <el-input v-model="toolsSettings.knowledge.model"/>
+                </el-form-item>
+                <el-form-item label="文件上传">
+                  <el-upload :auto-upload="false" :on-change="handleFileUpload">
+                    <el-button type="primary">选择文件</el-button>
+                  </el-upload>
+                </el-form-item>
+              </div>
+            </div>
+
+            <!-- 联网工具 -->
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('network')">
+                <span>联网搜索</span>
+                <el-switch v-model="toolsSettings.network.enabled" @click.stop/>
+              </div>
+              <div v-show="expandedSections.network" class="tool-content">
+                <el-form-item label="搜索引擎">
+                  <el-select v-model="toolsSettings.network.search_engine">
+                    <el-option label="DuckDuckGo" value="duckduckgo"/>
+                    <el-option label="Google" value="google"/>
+                    <el-option label="Bing" value="bing"/>
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+          </el-form>
         </div>
 
         <!-- API列表 -->

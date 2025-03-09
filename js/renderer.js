@@ -23,6 +23,26 @@ const app = Vue.createApp({
       models: [],
       modelsLoading: false,
       modelsError: null,
+      toolsSettings: {
+        time: {
+          enabled: false,
+          timezone: 'Asia/Shanghai'
+        },
+        knowledge: {
+          enabled: false,
+          model: '',
+          file_path: ''
+        },
+        network: {
+          enabled: false,
+          search_engine: 'duckduckgo'
+        }
+      },
+      expandedSections: {
+        time: false,
+        knowledge: false,
+        network: false
+      },
     };
   },
   mounted() {
@@ -111,7 +131,12 @@ const app = Vue.createApp({
             api_key: data.data.api_key || '',
             temperature: data.data.temperature || 0.7,
             max_tokens: data.data.max_tokens || 4096,
-            max_rounds: data.data.max_rounds || 10
+            max_rounds: data.data.max_rounds || 10,
+          };
+          this.toolsSettings = data.data.tools || {
+            time: { enabled: false },
+            knowledge: { enabled: false },
+            network: { enabled: false }
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -250,9 +275,13 @@ const app = Vue.createApp({
 
     // 自动保存设置
     autoSaveSettings() {
+      const payload = {
+        ...this.settings,
+        tools: this.toolsSettings
+      }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
-        data: this.settings
+        data: payload
       }));
     },
 
@@ -290,7 +319,7 @@ const app = Vue.createApp({
           showNotification('复制失败，请手动复制', 'error');
         });
     },
-    
+
     copyModelId(modelId) {
       navigator.clipboard.writeText(modelId)
         .then(() => {
@@ -306,6 +335,16 @@ const app = Vue.createApp({
       if (key === 'api') {
         this.fetchModels();
       }
+    },
+
+    toggleSection(section) {
+      this.expandedSections[section] = !this.expandedSections[section]
+      this.autoSaveSettings()
+    },
+    
+    // 新增点击头部的处理
+    handleHeaderClick(section) {
+      this.toggleSection(section)
     }
   }
 });
