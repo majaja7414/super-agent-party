@@ -370,12 +370,8 @@ function showNotification(message, type = 'success') {
 app.use(ElementPlus);
 
 // 正确注册所有图标（一次性循环注册）
-const Icons = Object.entries(ElementPlusIconsVue).filter(
-  ([key]) => !key.endsWith('Outline') // 排除轮廓图标（按需选择）
-);
-
-for (const [key, component] of Icons) {
-  app.component(key, component);
+for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+  app.component(key, component)
 }
 
 

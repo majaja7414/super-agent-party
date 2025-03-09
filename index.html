@@ -35,20 +35,20 @@
           class="el-menu-vertical"
           @select="handleSelect">
           <el-menu-item index="home">
-            <el-icon><House /></el-icon>
-            <template #title>主页</template>
+            <el-icon><chat-dot-square /></el-icon>
+            <template #title>对话</template>
+          </el-menu-item>
+          <el-menu-item index="settings">
+            <el-icon><document /></el-icon>
+            <template #title>主模型</template>
           </el-menu-item>
           <el-menu-item index="tools">
-            <el-icon><Tools /></el-icon>
+            <el-icon><tools /></el-icon>
             <template #title>工具</template>
           </el-menu-item>
           <el-menu-item index="api">
-            <el-icon><Connection /></el-icon>
-            <template #title>API信息</template>
-          </el-menu-item>
-          <el-menu-item index="settings">
-            <el-icon><Setting /></el-icon>
-            <template #title>设置</template>
+            <el-icon><connection /></el-icon>
+            <template #title>API</template>
           </el-menu-item>
         </el-menu>
       </el-aside>
@@ -98,42 +98,6 @@
                 <el-switch v-model="toolsSettings.time.enabled" @click.stop/>
               </div>
             </div>
-
-            <!-- 知识库工具 -->
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('knowledge')">
-                <span>知识库管理</span>
-                <el-switch v-model="toolsSettings.knowledge.enabled" @click.stop/>
-              </div>
-              <div v-show="expandedSections.knowledge" class="tool-content">
-                <el-form-item label="检索模型">
-                  <el-input v-model="toolsSettings.knowledge.model"/>
-                </el-form-item>
-                <el-form-item label="文件上传">
-                  <el-upload :auto-upload="false" :on-change="handleFileUpload">
-                    <el-button type="primary">选择文件</el-button>
-                  </el-upload>
-                </el-form-item>
-              </div>
-            </div>
-
-            <!-- 联网工具 -->
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('network')">
-                <span>联网搜索</span>
-                <el-switch v-model="toolsSettings.network.enabled" @click.stop/>
-              </div>
-              <div v-show="expandedSections.network" class="tool-content">
-                <el-form-item label="搜索引擎">
-                  <el-select v-model="toolsSettings.network.search_engine">
-                    <el-option label="DuckDuckGo" value="duckduckgo"/></el-option>
-                    <el-option label="Google" value="google"/></el-option>
-                    <el-option label="Bing" value="bing"/></el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-            </div>
-          </el-form>
         </div>
 
         <!-- API列表 -->
