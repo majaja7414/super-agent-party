@@ -82,7 +82,7 @@
         
         <div v-show="activeMenu === 'settings'" class="page">
           <el-form :model="settings" class="settings-form">
-            <el-form-item label="模型名称">
+            <el-form-item label="模型名称" class="form-item-align">
               <el-input 
                 v-model="settings.modelName" 
                 placeholder="模型名称"
@@ -90,7 +90,7 @@
                 class="full-width-input"
               />
             </el-form-item>
-            <el-form-item label="基础URL">
+            <el-form-item label="基础URL" class="form-item-align">
               <el-input 
                 v-model="settings.baseURL" 
                 placeholder="基础URL"
@@ -98,7 +98,7 @@
                 class="full-width-input"
               />
             </el-form-item>
-            <el-form-item label="API密钥">
+            <el-form-item label="API密钥" class="form-item-align">
               <el-input 
                 v-model="settings.apiKey" 
                 placeholder="API密钥" 
@@ -107,7 +107,7 @@
                 class="full-width-input"
               />
             </el-form-item>
-            <el-form-item label="温度">
+            <el-form-item label="温度" class="form-item-align">
               <el-slider
                 v-model="settings.temperature"
                 :min="0"
@@ -116,7 +116,7 @@
                 @input="autoSaveSettings"
               />
             </el-form-item>
-            <el-form-item label="最大输出长度">
+            <el-form-item label="最大输出" class="form-item-align">
               <el-slider
                 v-model="settings.maxLength"
                 :min="0"

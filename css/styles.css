@@ -350,3 +350,31 @@ body {
     height: 44px;
   }
 }
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-item-align {
+  display: flex;
+  align-items: center; /* 垂直居中 */
+  justify-content: space-between; /* 左右两端对齐 */
+}
+
+.el-form-item__label, .el-form-item__content {
+  flex: 1; /* 让标签和内容都占据相等的空间 */
+  text-align: center; /* 标签文字左对齐 */
+}
+
+/* 确保输入控件宽度合适 */
+.full-width-input {
+  width: 100%;
+}
+
+/* 可选：为了让所有标签的横向中心点对齐，可以给标签设定固定的宽度 */
+.el-form-item__label {
+  width: 70px; /* 根据实际情况调整 */
+  display: inline-block;
+  text-align: center;
+}
