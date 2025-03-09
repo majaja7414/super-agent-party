@@ -9,11 +9,11 @@ const app = Vue.createApp({
       activeMenu: 'home',
       isMaximized: false,
       settings: {
-        modelName: '',
-        baseURL: '',
-        apiKey: '',
+        model: '',
+        base_url: '',
+        api_key: '',
         temperature: 0.7,  // 默认温度值
-        maxLength: 4096    // 默认最大输出长度
+        max_tokens: 4096    // 默认最大输出长度
       },
       ws: null,
       messages: [],
@@ -103,11 +103,11 @@ const app = Vue.createApp({
 
         if (data.type === 'settings') {
           this.settings = {
-            modelName: data.data.modelName || '',
-            baseURL: data.data.baseURL || '',
-            apiKey: data.data.apiKey || '',
+            model: data.data.model || '',
+            base_url: data.data.base_url || '',
+            api_key: data.data.api_key || '',
             temperature: data.data.temperature || 0.7,
-            maxLength: data.data.maxLength || 4000
+            max_tokens: data.data.max_tokens || 4096
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -138,47 +138,41 @@ const app = Vue.createApp({
     async sendMessage() {
       if (!this.userInput.trim() || this.isTyping) return;
       
-      const userInput = this.userInput.replace(/\s*$/, '');
-
+      const userInput = this.userInput.trim();
       // 添加用户消息
       this.messages.push({
         role: 'user',
         content: userInput
       });
       
-      // 准备发送的消息历史
-      const messages = this.messages.map(msg => ({
+      // 准备发送的消息历史（保留最近10条消息）
+      const messages = this.messages.slice(-10).map(msg => ({
         role: msg.role,
         content: msg.content
       }));
       
-      // 清空输入框
       this.userInput = '';
       
       try {
-        // 关闭之前的EventSource连接
-        if (this.eventSource) {
-          this.eventSource.close();
-        }
-        
-        // 发送消息并获取流式响应
-        const response = await fetch('http://localhost:3456/chat/completions', {
+        // 请求参数需要与后端接口一致
+        const response = await fetch('http://127.0.0.1:3456/v1/chat/completions', {  // 修改端点路径
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'text/event-stream'
+            // 添加API密钥验证（如果配置了api_key）
+            // 'Authorization': `Bearer ${YOUR_API_KEY}`  
           },
           body: JSON.stringify({
             messages: messages,
-            stream: true
+            stream: true,
           })
         });
         
         if (!response.ok) {
-          throw new Error('请求失败');
+          const errorData = await response.json();
+          throw new Error(errorData.error?.message || '请求失败');
         }
         
-        // 创建新的消息
         this.isTyping = true;
         this.messages.push({
           role: 'assistant',
@@ -187,45 +181,54 @@ const app = Vue.createApp({
         
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
+        let buffer = '';
         
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
           
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              const data = line.slice(6).trim();
-              if (data === '[DONE]') {
+          // 处理可能包含多个事件的情况
+          while (buffer.includes('\n\n')) {
+            const eventEndIndex = buffer.indexOf('\n\n');
+            const eventData = buffer.slice(0, eventEndIndex);
+            buffer = buffer.slice(eventEndIndex + 2);
+            
+            if (eventData.startsWith('data: ')) {
+              const jsonStr = eventData.slice(6).trim();
+              if (jsonStr === '[DONE]') {
                 this.isTyping = false;
                 break;
               }
               
               try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
+                const parsed = JSON.parse(jsonStr);
+                if (parsed.choices?.[0]?.delta?.content) {
                   const lastMessage = this.messages[this.messages.length - 1];
-                  lastMessage.content += parsed.content;
+                  lastMessage.content += parsed.choices[0].delta.content;
                   this.scrollToBottom();
-                } else if (parsed.error) {
-                  ElMessage.error(parsed.error);
+                }
+                // 处理错误响应
+                if (parsed.error) {  
+                  ElMessage.error(parsed.error.message);
                   this.isTyping = false;
+                  break;
                 }
               } catch (e) {
-                console.error('解析响应失败:', e);
+                console.error('解析错误:', e);
               }
             }
           }
         }
       } catch (error) {
-        ElMessage.error('发送消息失败');
+        ElMessage.error(`错误: ${error.message}`);
         this.isTyping = false;
-        // 恢复输入内容
-        this.userInput = userInput;
+        // 恢复用户输入
+        this.userInput = userInput;  
       }
       
+      this.isTyping = false;
       this.scrollToBottom();
     },
 

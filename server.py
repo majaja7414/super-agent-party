@@ -1,13 +1,13 @@
 import json
 import os
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket, Request
 from fastapi.middleware.cors import CORSMiddleware
-from openai import AsyncOpenAI
-import asyncio
-from fastapi import HTTPException
+from openai import AsyncOpenAI, APIStatusError
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse, StreamingResponse
-import json
+import uuid
+import time
+from typing import List, Dict
 
 app = FastAPI()
 SETTINGS_FILE = 'settings.json'
@@ -18,18 +18,20 @@ def load_settings():
             return json.load(f)
     except FileNotFoundError:
         return {
-            "modelName": "",
-            "baseURL": "",
-            "apiKey": "",
+            "model": "gpt-4o-mini",  # 使用OpenAI官方参数名
+            "base_url": "https://api.openai.com/v1",
+            "api_key": "",
             "temperature": 0.7,
-            "maxLength": 4096
+            "max_tokens": 4096
         }
+
+settings = load_settings()
+client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
 
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
 
-# Allow CORS for WebSocket connections
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,10 +40,103 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class ChatRequest(BaseModel):
+    messages: List[Dict]
+    model: str = None
+    temperature: float = 0.7
+    stream: bool = False
+    max_tokens: int = None
+    top_p: float = 1
+    frequency_penalty: float = 0
+    presence_penalty: float = 0
+
+async def generate_stream_response(client, request: ChatRequest, settings: dict):
+    try:
+        response = await client.chat.completions.create(
+            model=request.model or settings['model'],
+            messages=request.messages,
+            temperature=request.temperature,
+            stream=True,
+            max_tokens=request.max_tokens or settings['max_tokens'],
+            top_p=request.top_p,
+            frequency_penalty=request.frequency_penalty,
+            presence_penalty=request.presence_penalty,
+        )
+
+        async def stream_generator():
+            async for chunk in response:
+                yield f"data: {chunk.model_dump_json()}\n\n"
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(
+            stream_generator(),
+            media_type="text/event-stream",
+            headers={
+                "Content-Type": "text/event-stream",
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+            }
+        )
+    except APIStatusError as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
+        )
+
+async def generate_complete_response(client, request: ChatRequest, settings: dict):
+    try:
+        response = await client.chat.completions.create(
+            model=request.model or settings['model'],
+            messages=request.messages,
+            temperature=request.temperature,
+            stream=False,
+            max_tokens=request.max_tokens or settings['max_tokens'],
+            top_p=request.top_p,
+            frequency_penalty=request.frequency_penalty,
+            presence_penalty=request.presence_penalty,
+        )
+        return JSONResponse(content=response.model_dump())
+    except APIStatusError as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
+        )
+
+@app.post("/v1/chat/completions")
+async def chat_endpoint(request: ChatRequest):
+    global client, settings
+
+    cur_settings = load_settings()
+    
+    if not cur_settings.get("api_key"):
+        raise HTTPException(status_code=400, detail={
+            "error": {
+                "message": "API key not configured",
+                "type": "invalid_request_error",
+                "code": "api_key_missing"
+            }
+        })
+
+    if cur_settings != settings:
+        settings = cur_settings
+        client = AsyncOpenAI(
+            api_key=settings['api_key'],
+            base_url=settings['base_url'] or "https://api.openai.com/v1",
+        )
+
+    try:
+        if request.stream:
+            return await generate_stream_response(client, request, settings)
+        return await generate_complete_response(client, request, settings)
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"message": str(e), "type": "server_error", "code": 500}}
+        )
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    # 连接成功后立即发送当前设置
     current_settings = load_settings()
     await websocket.send_json({"type": "settings", "data": current_settings})
     
@@ -54,84 +149,8 @@ async def websocket_endpoint(websocket: WebSocket):
             elif data.get("type") == "get_settings":
                 settings = load_settings()
                 await websocket.send_json({"type": "settings", "data": settings})
-            else:
-                print(f"收到消息: {data}")
-                await websocket.send_text(f"你发送了: {str(data)}")
     except Exception as e:
-        print(f"WebSocket连接关闭: {e}")
-
-class ChatRequest(BaseModel):
-    messages: list
-    model: str = None
-    temperature: float = 0.7
-    stream: bool = False
-    max_tokens: int = 4096
-
-async def generate_stream_response(client: AsyncOpenAI, request: ChatRequest, settings: dict):
-    try:
-        model = request.model or settings.get("modelName")
-        messages = request.messages
-        # 使用请求中的参数或从设置中获取默认值
-        temperature = request.temperature or settings.get("temperature", 0.7)
-        max_tokens = request.max_tokens or settings.get("maxLength", 4096)
-        stream = await client.chat.completions.create(
-            model=model,
-            messages=messages,
-            stream=True,
-            temperature=temperature,
-            max_tokens=max_tokens
-        )
-        
-        async for chunk in stream:
-            if chunk.choices[0].delta.content:
-                content = chunk.choices[0].delta.content
-                yield f"data: {json.dumps({'content': content})}\n\n"
-            
-        yield "data: [DONE]\n\n"
-        
-    except Exception as e:
-        yield f"data: {json.dumps({'error': str(e)})}\n\n"
-
-async def generate_complete_response(client: AsyncOpenAI, request: ChatRequest, settings: dict):
-    model = request.model or settings.get("modelName")
-    messages = request.messages
-    # 使用请求中的参数或从设置中获取默认值
-    temperature = request.temperature or settings.get("temperature", 0.7)
-    max_tokens = request.max_tokens or settings.get("maxLength", 4000)
-    
-    response = await client.chat.completions.create(
-        model=model,
-        messages=messages,
-        stream=False,
-        temperature=temperature,
-        max_tokens=max_tokens
-    )
-    
-    return {"content": response.choices[0].message.content}
-
-@app.post("/chat/completions")
-async def chat_endpoint(request: ChatRequest):
-    settings = load_settings()
-    
-    if not settings.get("apiKey"):
-        return JSONResponse(
-            status_code=400,
-            content={"error": "API key not configured"}
-        )
-        
-    client = AsyncOpenAI(
-        api_key=settings.get("apiKey"),
-        base_url=settings.get("baseURL") if settings.get("baseURL") else "https://api.openai.com/v1"
-    )
-    
-    if request.stream:
-        return StreamingResponse(
-            generate_stream_response(client, request, settings),
-            media_type="text/event-stream"
-        )
-    else:
-        response = await generate_complete_response(client, request, settings)
-        return JSONResponse(content=response)
+        print(f"WebSocket error: {e}")
 
 if __name__ == "__main__":
     import uvicorn

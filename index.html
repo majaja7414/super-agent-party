@@ -84,7 +84,7 @@
           <el-form :model="settings" class="settings-form">
             <el-form-item label="模型名称" class="form-item-align">
               <el-input 
-                v-model="settings.modelName" 
+                v-model="settings.model" 
                 placeholder="模型名称"
                 @input="autoSaveSettings" 
                 class="full-width-input"
@@ -92,7 +92,7 @@
             </el-form-item>
             <el-form-item label="基础URL" class="form-item-align">
               <el-input 
-                v-model="settings.baseURL" 
+                v-model="settings.base_url" 
                 placeholder="基础URL"
                 @input="autoSaveSettings"
                 class="full-width-input"
@@ -100,7 +100,7 @@
             </el-form-item>
             <el-form-item label="API密钥" class="form-item-align">
               <el-input 
-                v-model="settings.apiKey" 
+                v-model="settings.api_key" 
                 placeholder="API密钥" 
                 show-password
                 @input="autoSaveSettings"
@@ -118,7 +118,7 @@
             </el-form-item>
             <el-form-item label="最大输出" class="form-item-align">
               <el-slider
-                v-model="settings.maxLength"
+                v-model="settings.max_tokens"
                 :min="0"
                 :max="128000"
                 :step="1024"

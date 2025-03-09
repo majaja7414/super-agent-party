@@ -1,7 +1,7 @@
 {
-  "modelName": "qwen2.5:14b",
-  "baseURL": "http://127.0.0.1:11434/v1/",
-  "apiKey": "ollama",
+  "model": "qwen2.5:14b",
+  "base_url": "http://127.0.0.1:11434/v1/",
+  "api_key": "ollama",
   "temperature": 0.7,
-  "maxLength": 4096
+  "max_tokens": 4096
 }
