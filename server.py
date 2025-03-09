@@ -33,7 +33,6 @@ def load_settings():
             "tools": {
                 "time": {
                     "enabled": False,
-                    "timezone": "Asia/Shanghai"
                 },
                 "knowledge": {
                     "enabled": False,
@@ -75,6 +74,17 @@ class ChatRequest(BaseModel):
 
 async def generate_stream_response(client, request: ChatRequest, settings: dict):
     try:
+        if settings['tools']['time']:
+            print("time")
+            if request.messages[0]:
+                if request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += f"当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                else:
+                    request.messages.insert(0, {
+                        "role": "system",
+                        "content": f"\n\n当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                    })
+
         response = await client.chat.completions.create(
             model=request.model or settings['model'],
             messages=request.messages,
@@ -108,6 +118,17 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
 
 async def generate_complete_response(client, request: ChatRequest, settings: dict):
     try:
+        if settings['tools']['time']:
+            print("time")
+            if request.messages[0]:
+                if request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += f"当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                else:
+                    request.messages.insert(0, {
+                        "role": "system",
+                        "content": f"\n\n当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                    })
+
         response = await client.chat.completions.create(
             model=request.model or settings['model'],
             messages=request.messages,

@@ -26,7 +26,6 @@ const app = Vue.createApp({
       toolsSettings: {
         time: {
           enabled: false,
-          timezone: 'Asia/Shanghai'
         },
         knowledge: {
           enabled: false,
@@ -43,32 +42,6 @@ const app = Vue.createApp({
         knowledge: false,
         network: false
       },
-      timezones: [
-        { key: "Etc/GMT+12", label: "UTC-12:00" }, // 国际日期变更线西侧
-        { key: "Pacific/Midway", label: "UTC-11:00 Pacific/Midway" },
-        { key: "America/Adak", label: "UTC-10:00 America/Adak" },
-        { key: "America/Anchorage", label: "UTC-09:00 America/Anchorage" },
-        { key: "America/Los_Angeles", label: "UTC-08:00 America/Los_Angeles" },
-        { key: "America/Denver", label: "UTC-07:00 America/Denver" },
-        { key: "America/Chicago", label: "UTC-06:00 America/Chicago" },
-        { key: "America/New_York", label: "UTC-05:00 America/New_York" },
-        { key: "America/Caracas", label: "UTC-04:00 America/Caracas" },
-        { key: "America/Buenos_Aires", label: "UTC-03:00 America/Buenos_Aires" },
-        { key: "Atlantic/South_Georgia", label: "UTC-02:00 Atlantic/South_Georgia" },
-        { key: "Atlantic/Azores", label: "UTC-01:00 Atlantic/Azores" },
-        { key: "Europe/London", label: "UTC+00:00 Europe/London" },
-        { key: "Europe/Paris", label: "UTC+01:00 Europe/Paris" },
-        { key: "Europe/Athens", label: "UTC+02:00 Europe/Athens" },
-        { key: "Europe/Moscow", label: "UTC+03:00 Europe/Moscow" },
-        { key: "Asia/Dubai", label: "UTC+04:00 Asia/Dubai" },
-        { key: "Asia/Kolkata", label: "UTC+05:30 Asia/Kolkata" },
-        { key: "Asia/Dhaka", label: "UTC+06:00 Asia/Dhaka" },
-        { key: "Asia/Jakarta", label: "UTC+07:00 Asia/Jakarta" },
-        { key: "Asia/Shanghai", label: "UTC+08:00 Asia/Shanghai" },
-        { key: "Japan", label: "UTC+09:00 Japan" },
-        { key: "Australia/Brisbane", label: "UTC+10:00 Australia/Brisbane" },
-        { key: "Pacific/Nauru", label: "UTC+12:00 Pacific/Nauru" }
-      ],
     };
   },
   mounted() {
