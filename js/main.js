@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-
 // 禁用安全警告（包括 PNG iCCP 配置文件警告）
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 

@@ -38,6 +38,10 @@
             <el-icon><House /></el-icon>
             <template #title>主页</template>
           </el-menu-item>
+          <el-menu-item index="api">
+            <el-icon><Connection /></el-icon>
+            <template #title>API信息</template>
+          </el-menu-item>
           <el-menu-item index="settings">
             <el-icon><Setting /></el-icon>
             <template #title>设置</template>
@@ -79,7 +83,53 @@
           <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
         </div>
         </div>
+
+        <!-- API列表 -->
+        <div v-show="activeMenu === 'api'" class="page api-container">
+          <div class="api-info">
+            <h3>API 端点</h3>
+            <el-input 
+              :value="'http://127.0.0.1:3456/v1'" 
+              readonly 
+              class="api-endpoint"
+            >
+              <template #append>
+                <el-button 
+                  @click="copyEndpoint"
+                  :icon="'document-copy'"
+                />
+              </template>
+            </el-input>
+            
+            <h3>可用模型</h3>
+            <div class="model-list">
+              <div v-if="modelsLoading" class="loading-models">
+                <el-icon class="is-loading"><Loading /></el-icon>
+                正在加载模型...
+              </div>
+              <div v-else-if="modelsError" class="error-models">
+                <el-icon><Warning /></el-icon>
+                模型加载失败: {{ modelsError }}
+              </div>
+                <!-- 确保表格列与数据字段匹配 -->
+                <el-table :data="models" class="model-table">
+                  <el-table-column prop="id" label="模型ID">
+                    <template #default="{row}">
+                      {{ row.id || 'model' }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="created" label="创建时间" width="180">
+                    <template #default="{row}">
+                      {{ row.created || '未知' }}
+                    </template>
+                  </el-table-column>
+                </el-table>
+            </div>
+          </div>
+        </div>
         
+
+        <!-- 设置列表 -->
         <div v-show="activeMenu === 'settings'" class="page settings-container">
           <el-form :model="settings" class="settings-form">
             <el-form-item label="模型名称" class="form-item-align">

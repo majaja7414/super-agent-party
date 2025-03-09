@@ -1,6 +1,5 @@
 const { ipcRenderer } = require('electron');
 const marked = require('marked');
-
 // 创建Vue应用
 const app = Vue.createApp({
   data() {
@@ -21,6 +20,9 @@ const app = Vue.createApp({
       userInput: '',
       isTyping: false,
       currentMessage: '',
+      models: [],
+      modelsLoading: false,
+      modelsError: null,
     };
   },
   mounted() {
@@ -252,17 +254,67 @@ const app = Vue.createApp({
         type: 'save_settings',
         data: this.settings
       }));
+    },
+
+    // 修改后的fetchModels方法
+    async fetchModels() {
+      this.modelsLoading = true;
+      try {
+        const response = await fetch('http://127.0.0.1:3456/v1/models');
+        const result = await response.json();
+        
+        // 双重解构获取数据
+        const { data } = result;
+        
+        this.models = data.map(item => ({
+          id: item.id,
+          created: new Date(item.created * 1000).toLocaleDateString(),
+        }));
+        
+      } catch (error) {
+        console.error('获取模型数据失败:', error);
+        this.modelsError = error.message;
+        this.models = []; // 确保清空数据
+      } finally {
+        this.modelsLoading = false;
+      }
+    },
+
+
+    // 修改copyEndpoint方法
+    copyEndpoint() {
+      navigator.clipboard.writeText('http://127.0.0.1:3456/v1')
+        .then(() => {
+          ElMessage.success({
+            message: 'API地址已复制',
+            duration: 2000
+          });
+        })
+        .catch(() => {
+          ElMessage.error('复制失败，请手动复制');
+        });
+    },
+    handleSelect(key) {
+      this.activeMenu = key;
+      if (key === 'api') {
+        this.fetchModels();
+      }
     }
   }
 });
 
-// 使用Element Plus
+// 修改图标注册方式（完整示例）
 app.use(ElementPlus);
 
-// 注册图标组件
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+// 正确注册所有图标（一次性循环注册）
+const Icons = Object.entries(ElementPlusIconsVue).filter(
+  ([key]) => !key.endsWith('Outline') // 排除轮廓图标（按需选择）
+);
+
+for (const [key, component] of Icons) {
   app.component(key, component);
 }
+
 
 // 挂载应用
 app.mount('#app');

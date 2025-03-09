@@ -389,3 +389,37 @@ body {
   display: inline-block;
   text-align: center;
 }
+
+
+.api-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.api-endpoint {
+  margin-bottom: 30px;
+}
+
+/* 添加表格样式 */
+.model-table {
+  margin-top: 20px;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  
+  .el-table__header th {
+    background-color: var(--el-fill-color-light);
+  }
+}
+
+.loading-models, .error-models {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+  color: var(--el-color-warning);
+}
+
+.error-models {
+  color: var(--el-color-danger);
+}
