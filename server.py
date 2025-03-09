@@ -17,7 +17,13 @@ def load_settings():
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        return {"modelName": "", "baseURL": "", "apiKey": ""}
+        return {
+            "modelName": "",
+            "baseURL": "",
+            "apiKey": "",
+            "temperature": 0.7,
+            "maxLength": 4096
+        }
 
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
@@ -65,8 +71,9 @@ async def generate_stream_response(client: AsyncOpenAI, request: ChatRequest, se
     try:
         model = request.model or settings.get("modelName")
         messages = request.messages
-        temperature = request.temperature
-        max_tokens = request.max_tokens
+        # 使用请求中的参数或从设置中获取默认值
+        temperature = request.temperature or settings.get("temperature", 0.7)
+        max_tokens = request.max_tokens or settings.get("maxLength", 4096)
         stream = await client.chat.completions.create(
             model=model,
             messages=messages,
@@ -88,8 +95,9 @@ async def generate_stream_response(client: AsyncOpenAI, request: ChatRequest, se
 async def generate_complete_response(client: AsyncOpenAI, request: ChatRequest, settings: dict):
     model = request.model or settings.get("modelName")
     messages = request.messages
-    temperature = request.temperature
-    max_tokens = request.max_tokens
+    # 使用请求中的参数或从设置中获取默认值
+    temperature = request.temperature or settings.get("temperature", 0.7)
+    max_tokens = request.max_tokens or settings.get("maxLength", 4000)
     
     response = await client.chat.completions.create(
         model=model,

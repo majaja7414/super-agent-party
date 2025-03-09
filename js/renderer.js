@@ -11,7 +11,9 @@ const app = Vue.createApp({
       settings: {
         modelName: '',
         baseURL: '',
-        apiKey: ''
+        apiKey: '',
+        temperature: 0.7,  // 默认温度值
+        maxLength: 4096    // 默认最大输出长度
       },
       ws: null,
       messages: [],
@@ -103,7 +105,9 @@ const app = Vue.createApp({
           this.settings = {
             modelName: data.data.modelName || '',
             baseURL: data.data.baseURL || '',
-            apiKey: data.data.apiKey || ''
+            apiKey: data.data.apiKey || '',
+            temperature: data.data.temperature || 0.7,
+            maxLength: data.data.maxLength || 4000
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
