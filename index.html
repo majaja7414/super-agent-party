@@ -100,8 +100,11 @@
               <div v-show="expandedSections.time" class="tool-content">
                 <el-form-item label="时区设置">
                   <el-select v-model="toolsSettings.time.timezone">
-                    <el-option key="Asia/Shanghai" label="Asia/Shanghai" value="Asia/Shanghai"/></el-option>
-                    <el-option key="America/New_York" label="America/New_York" value="America/New_York"/></el-option>
+                    <el-option
+                      v-for="timezone in timezones"
+                      :key="timezone.key"
+                      :label="timezone.label"
+                      :value="timezone.key"/></el-option>
                   </el-select>
                 </el-form-item>
               </div>
