@@ -173,5 +173,4 @@ cython_debug/
 node_modules/
 super/
 
-
-settings.json
+config/

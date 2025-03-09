@@ -10,7 +10,7 @@ import time
 from typing import List, Dict
 
 app = FastAPI()
-SETTINGS_FILE = 'settings.json'
+SETTINGS_FILE = 'config/settings.json'
 
 def load_settings():
     try:
