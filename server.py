@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException, WebSocket, Request
 from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI, APIStatusError
 from pydantic import BaseModel
+from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
@@ -106,6 +107,66 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
+        )
+
+# 在现有路由后添加以下代码
+@app.get("/v1/models")
+async def get_models():
+    global client, settings
+    
+    try:
+        # 重新加载最新设置
+        current_settings = load_settings()
+        
+        # 验证API密钥
+        if not current_settings.get("api_key"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": {
+                        "message": "API key not configured",
+                        "type": "invalid_request_error",
+                        "code": "api_key_missing"
+                    }
+                }
+            )
+        
+        # 动态更新客户端配置
+        if (current_settings['api_key'] != settings['api_key'] 
+            or current_settings['base_url'] != settings['base_url']):
+            client = AsyncOpenAI(
+                api_key=current_settings['api_key'],
+                base_url=current_settings['base_url'] or "https://api.openai.com/v1",
+            )
+            settings = current_settings
+        
+        # 获取模型列表
+        model_list = await client.models.list()
+        
+        # 转换响应格式与官方API一致
+        return JSONResponse(content=model_list.model_dump())
+        
+    except APIStatusError as e:
+        return JSONResponse(
+            status_code=e.status_code,
+            content={
+                "error": {
+                    "message": e.message,
+                    "type": e.type or "api_error",
+                    "code": e.code
+                }
+            }
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "error": {
+                    "message": str(e),
+                    "type": "server_error",
+                    "code": 500
+                }
+            }
         )
 
 @app.post("/v1/chat/completions")
