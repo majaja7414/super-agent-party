@@ -116,12 +116,21 @@
                 @input="autoSaveSettings"
               />
             </el-form-item>
-            <el-form-item label="最大输出" class="form-item-align">
+            <el-form-item label="输出长度" class="form-item-align">
               <el-slider
                 v-model="settings.max_tokens"
                 :min="0"
                 :max="128000"
                 :step="1024"
+                @input="autoSaveSettings"
+              />
+            </el-form-item>
+            <el-form-item label="对话轮数" class="form-item-align">
+              <el-slider
+                v-model="settings.max_rounds"
+                :min="0"
+                :max="1000"
+                :step="2"
                 @input="autoSaveSettings"
               />
             </el-form-item>

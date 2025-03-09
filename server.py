@@ -22,7 +22,8 @@ def load_settings():
             "base_url": "https://api.openai.com/v1",
             "api_key": "",
             "temperature": 0.7,
-            "max_tokens": 4096
+            "max_tokens": 4096,
+            "max_rounds": 10
         }
 
 settings = load_settings()
@@ -117,12 +118,14 @@ async def chat_endpoint(request: ChatRequest):
             }
         })
 
-    if cur_settings != settings:
+    if cur_settings['api_key'] != settings['api_key'] or cur_settings['base_url'] != settings['base_url']:
         settings = cur_settings
         client = AsyncOpenAI(
             api_key=settings['api_key'],
             base_url=settings['base_url'] or "https://api.openai.com/v1",
         )
+    elif cur_settings != settings:
+        settings = cur_settings
 
     try:
         if request.stream:

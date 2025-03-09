@@ -13,7 +13,8 @@ const app = Vue.createApp({
         base_url: '',
         api_key: '',
         temperature: 0.7,  // 默认温度值
-        max_tokens: 4096    // 默认最大输出长度
+        max_tokens: 4096,    // 默认最大输出长度
+        max_rounds: 10,    // 默认最大轮数
       },
       ws: null,
       messages: [],
@@ -107,7 +108,8 @@ const app = Vue.createApp({
             base_url: data.data.base_url || '',
             api_key: data.data.api_key || '',
             temperature: data.data.temperature || 0.7,
-            max_tokens: data.data.max_tokens || 4096
+            max_tokens: data.data.max_tokens || 4096,
+            max_rounds: data.data.max_rounds || 10
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -145,11 +147,23 @@ const app = Vue.createApp({
         content: userInput
       });
       
-      // 准备发送的消息历史（保留最近10条消息）
-      const messages = this.messages.slice(-10).map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      let max_rounds = this.settings.max_rounds || 10;
+      let messages;
+      
+      if (max_rounds === 0) {
+        // 如果 max_rounds 是 0, 映射所有消息
+        messages = this.messages.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      } else {
+        // 准备发送的消息历史（保留最近 max_rounds 条消息）
+        messages = this.messages.slice(-max_rounds).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      }
+
       
       this.userInput = '';
       
