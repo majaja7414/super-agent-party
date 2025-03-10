@@ -33,15 +33,6 @@ def load_settings():
             "tools": {
                 "time": {
                     "enabled": False,
-                },
-                "knowledge": {
-                    "enabled": False,
-                    "model": "",
-                    "file_path": ""
-                },
-                "network": {
-                    "enabled": False,
-                    "search_engine": "duckduckgo"
                 }
             }
         }
@@ -66,6 +57,7 @@ class ChatRequest(BaseModel):
     messages: List[Dict]
     model: str = None
     temperature: float = 0.7
+    tools: dict = None
     stream: bool = False
     max_tokens: int = None
     top_p: float = 1
@@ -78,17 +70,21 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
             print("time")
             if request.messages[0]:
                 if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] += f"当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                    request.messages[0]['content'] += f"实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
                 else:
                     request.messages.insert(0, {
                         "role": "system",
-                        "content": f"\n\n当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                        "content": f"\n\n实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
                     })
-
+        model = request.model or settings['model']
+        if model == 'super-model':
+            model = settings['model']
+        
         response = await client.chat.completions.create(
-            model=request.model or settings['model'],
+            model=model,
             messages=request.messages,
             temperature=request.temperature,
+            tools=request.tools,
             stream=True,
             max_tokens=request.max_tokens or settings['max_tokens'],
             top_p=request.top_p,
@@ -122,17 +118,20 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
             print("time")
             if request.messages[0]:
                 if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] += f"当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                    request.messages[0]['content'] += f"实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
                 else:
                     request.messages.insert(0, {
                         "role": "system",
-                        "content": f"\n\n当前时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
+                        "content": f"\n\n实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
                     })
-
+        model = request.model or settings['model']
+        if model == 'super-model':
+            model = settings['model']
         response = await client.chat.completions.create(
-            model=request.model or settings['model'],
+            model=model,
             messages=request.messages,
             temperature=request.temperature,
+            tools=request.tools,
             stream=False,
             max_tokens=request.max_tokens or settings['max_tokens'],
             top_p=request.top_p,

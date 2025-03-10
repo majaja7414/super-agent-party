@@ -42,6 +42,10 @@
             <el-icon><document /></el-icon>
             <template #title>主模型</template>
           </el-menu-item>
+          <el-menu-item index="reasoner">
+            <el-icon><magic-stick /></el-icon>
+            <template #title>推理模型</template>
+          </el-menu-item>
           <el-menu-item index="tools">
             <el-icon><tools /></el-icon>
             <template #title>工具</template>
@@ -55,6 +59,7 @@
 
       <!-- 内容区 -->
       <el-main class="content">
+        <!-- 聊天界面保持不变 -->
         <div v-show="activeMenu === 'home'" class="page chat-container">
           <!-- 聊天消息列表 -->
           <div class="messages-container" ref="messagesContainer">
@@ -91,18 +96,33 @@
         <!-- 工具界面 -->
         <div v-show="activeMenu === 'tools'" class="page tools-container">
           <el-form :model="toolsSettings" class="settings-form">
-            <!-- 时间工具 -->
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('time')">
                 <span>当前时间</span>
-                <el-switch v-model="toolsSettings.time.enabled" @click.stop/>
+                <el-switch v-model="toolsSettings.time.enabled" @click.stop @change="autoSaveSettings"/>
               </div>
             </div>
+          </el-form>
         </div>
 
         <!-- API列表 -->
         <div v-show="activeMenu === 'api'" class="page api-container">
           <div class="api-info">
+            
+            <h3>模型名称</h3>
+            <el-input 
+              :value="'super-model'" 
+              readonly 
+              class="api-endpoint"
+            >
+              <template #append>
+                <el-button 
+                  @click="copyModel"
+                  :icon="'document-copy'"
+                />
+              </template>
+            </el-input>
+            
             <h3>API 端点</h3>
             <el-input 
               :value="'http://127.0.0.1:3456/v1'" 
@@ -116,96 +136,135 @@
                 />
               </template>
             </el-input>
-            
-            <h3>可用模型</h3>
-            <div class="model-list">
-              <div v-if="modelsLoading" class="loading-models">
-                <el-icon class="is-loading"><Loading /></el-icon>
-                正在加载模型...
-              </div>
-              <div v-else-if="modelsError" class="error-models">
-                <el-icon><Warning /></el-icon>
-                模型加载失败: {{ modelsError }}
-              </div>
-                <!-- 确保表格列与数据字段匹配 -->
-                <el-table :data="models" class="model-table">
-                  <!-- index.html -->
-                  <el-table-column prop="id" label="模型ID">
-                    <template #default="{row}">
-                      <span 
-                        class="copyable" 
-                        @click="copyModelId(row.id || 'model')"
-                      >
-                        {{ row.id || 'model' }}
-                      </span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="created" label="创建时间" width="180">
-                    <template #default="{row}">
-                      {{ row.created || '未知' }}
-                    </template>
-                  </el-table-column>
-                </el-table>
-            </div>
+
           </div>
         </div>
-        
 
-        <!-- 设置列表 -->
-        <div v-show="activeMenu === 'settings'" class="page settings-container">
+        <!-- 主模型界面 -->
+        <!-- 修改后的主模型界面 -->
+        <div v-show="activeMenu === 'settings'" class="page tools-container">
           <el-form :model="settings" class="settings-form">
-            <el-form-item label="模型名称" class="form-item-align">
-              <el-input 
-                v-model="settings.model" 
-                placeholder="模型名称"
-                @input="autoSaveSettings" 
-                class="full-width-input"
-              />
-            </el-form-item>
-            <el-form-item label="基础URL" class="form-item-align">
-              <el-input 
-                v-model="settings.base_url" 
-                placeholder="基础URL"
-                @input="autoSaveSettings"
-                class="full-width-input"
-              />
-            </el-form-item>
-            <el-form-item label="API密钥" class="form-item-align">
-              <el-input 
-                v-model="settings.api_key" 
-                placeholder="API密钥" 
-                show-password
-                @input="autoSaveSettings"
-                class="full-width-input"
-              />
-            </el-form-item>
-            <el-form-item label="温度" class="form-item-align">
-              <el-slider
-                v-model="settings.temperature"
-                :min="0"
-                :max="1"
-                :step="0.1"
-                @input="autoSaveSettings"
-              />
-            </el-form-item>
-            <el-form-item label="输出长度" class="form-item-align">
-              <el-slider
-                v-model="settings.max_tokens"
-                :min="0"
-                :max="128000"
-                :step="1024"
-                @input="autoSaveSettings"
-              />
-            </el-form-item>
-            <el-form-item label="对话轮数" class="form-item-align">
-              <el-slider
-                v-model="settings.max_rounds"
-                :min="0"
-                :max="1000"
-                :step="2"
-                @input="autoSaveSettings"
-              />
-            </el-form-item>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('settingsBase')">
+                <div class="header-left">
+                  <el-icon :class="['arrow', { rotated: !expandedSections.settingsBase }]">
+                    <ArrowRight />
+                  </el-icon>
+                  <span>基础配置</span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.settingsBase">
+                <el-form-item label="模型名称" class="form-item-align">
+                  <el-input 
+                    v-model="settings.model" 
+                    placeholder="模型名称"
+                    @input="autoSaveSettings" 
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="基础URL" class="form-item-align">
+                  <el-input 
+                    v-model="settings.base_url" 
+                    placeholder="基础URL"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="API密钥" class="form-item-align">
+                  <el-input 
+                    v-model="settings.api_key" 
+                    placeholder="API密钥" 
+                    show-password
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('settingsAdvanced')">
+                <div class="header-left">
+                  <el-icon :class="['arrow', { rotated: !expandedSections.settingsAdvanced }]">
+                    <ArrowRight />
+                  </el-icon>
+                  <span>高级设置</span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.settingsAdvanced">
+                <el-form-item label="温度" class="form-item-align">
+                  <el-slider
+                    v-model="settings.temperature"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+                <el-form-item label="输出长度" class="form-item-align">
+                  <el-slider
+                    v-model="settings.max_tokens"
+                    :min="0"
+                    :max="128000"
+                    :step="1024"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+                <el-form-item label="对话轮数" class="form-item-align">
+                  <el-slider
+                    v-model="settings.max_rounds"
+                    :min="0"
+                    :max="1000"
+                    :step="2"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+          </el-form>
+        </div>
+
+        <!-- 推理模型界面 -->
+        <div v-show="activeMenu === 'reasoner'" class="page tools-container">
+          <el-form :model="settings" class="settings-form">
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('reasonerConfig')">
+                <div class="header-left">
+                  <el-icon :class="['arrow', { rotated: !expandedSections.reasonerConfig }]">
+                    <ArrowRight />
+                  </el-icon>
+                  <span>推理配置</span>
+                </div>
+                <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
+              </div>
+              <div class="tool-content" v-show="expandedSections.reasonerConfig">        
+                <el-form-item label="模型名称" class="form-item-align">
+                  <el-input 
+                    v-model="reasonerSettings.model" 
+                    placeholder="模型名称"
+                    @input="autoSaveSettings" 
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="基础URL" class="form-item-align">
+                  <el-input 
+                    v-model="reasonerSettings.base_url" 
+                    placeholder="基础URL"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="API密钥" class="form-item-align">
+                  <el-input 
+                    v-model="reasonerSettings.api_key" 
+                    placeholder="API密钥" 
+                    show-password
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+              </div>
+            </div>
           </el-form>
         </div>
       </el-main>

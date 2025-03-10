@@ -15,6 +15,12 @@ const app = Vue.createApp({
         max_tokens: 4096,    // 默认最大输出长度
         max_rounds: 10,    // 默认最大轮数
       },
+      reasonerSettings: {
+        enabled: false, // 默认不启用
+        model: '',
+        base_url: '',
+        api_key: '',
+      },
       ws: null,
       messages: [],
       userInput: '',
@@ -23,24 +29,17 @@ const app = Vue.createApp({
       models: [],
       modelsLoading: false,
       modelsError: null,
+      isThinkOpen: false,
       toolsSettings: {
         time: {
           enabled: false,
-        },
-        knowledge: {
-          enabled: false,
-          model: '',
-          file_path: ''
-        },
-        network: {
-          enabled: false,
-          search_engine: 'duckduckgo'
         }
       },
       expandedSections: {
-        time: false,
-        knowledge: false,
-        network: false
+        settingsBase: true,
+        settingsAdvanced: true,
+        reasonerConfig: true,
+        time: false  
       },
     };
   },
@@ -134,12 +133,16 @@ const app = Vue.createApp({
           };
           this.toolsSettings = data.data.tools || {
             time: { enabled: false },
-            knowledge: { enabled: false },
-            network: { enabled: false }
+          };
+          this.reasonerSettings = data.data.reasoner || {
+            enabled: false, // 默认不启用
+            model: '',
+            base_url: '',
+            api_key: '',
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
-            ElMessage.error('设置保存失败');
+            showNotification('设置保存失败', 'error');
           }
         }
       };
@@ -244,25 +247,39 @@ const app = Vue.createApp({
               
               try {
                 const parsed = JSON.parse(jsonStr);
-                if (parsed.choices?.[0]?.delta?.content) {
+                
+                // 处理 reasoning_content 逻辑
+                if (parsed.choices?.[0]?.delta?.reasoning_content) {
+                  const lastMessage = this.messages[this.messages.length - 1];
+                  
+                  // 首次接收到 reasoning_content 时添加起始标签
+                  if (!this.isThinkOpen) {
+                    lastMessage.content += '<think>';
+                    this.isThinkOpen = true; // 更新状态
+                  }
+                  
+                  // 追加内容
+                  lastMessage.content += parsed.choices[0].delta.reasoning_content;
+                  this.scrollToBottom();
+                }
+                else if (parsed.choices?.[0]?.delta?.content) {
+                  if (this.isThinkOpen) {
+                    const lastMessage = this.messages[this.messages.length - 1];
+                    lastMessage.content += '</think>';
+                    this.isThinkOpen = false; // 重置状态
+                  }
                   const lastMessage = this.messages[this.messages.length - 1];
                   lastMessage.content += parsed.choices[0].delta.content;
                   this.scrollToBottom();
                 }
-                // 处理错误响应
-                if (parsed.error) {  
-                  ElMessage.error(parsed.error.message);
-                  this.isTyping = false;
-                  break;
-                }
               } catch (e) {
-                console.error('解析错误:', e);
+                console.error(e);
               }
             }
           }
         }
       } catch (error) {
-        ElMessage.error(`错误: ${error.message}`);
+        showNotification(error.message, 'error');
         this.isTyping = false;
         // 恢复用户输入
         this.userInput = userInput;  
@@ -276,7 +293,8 @@ const app = Vue.createApp({
     autoSaveSettings() {
       const payload = {
         ...this.settings,
-        tools: this.toolsSettings
+        tools: this.toolsSettings,
+        reasoner: this.reasonerSettings
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -312,28 +330,21 @@ const app = Vue.createApp({
     copyEndpoint() {
       navigator.clipboard.writeText('http://127.0.0.1:3456/v1')
         .then(() => {
-          showNotification('API地址已复制');
+          showNotification('API端点已复制');
         })
         .catch(() => {
           showNotification('复制失败，请手动复制', 'error');
         });
     },
 
-    copyModelId(modelId) {
-      navigator.clipboard.writeText(modelId)
+    copyModel() {
+      navigator.clipboard.writeText('super-model')
         .then(() => {
           showNotification('模型ID已复制');
         })
         .catch(() => {
           showNotification('复制失败，请手动复制', 'error');
         });
-    },
-
-    handleSelect(key) {
-      this.activeMenu = key;
-      if (key === 'api') {
-        this.fetchModels();
-      }
     },
 
     toggleSection(section) {
