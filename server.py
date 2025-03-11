@@ -37,7 +37,7 @@ def load_settings():
                     "enabled": False,
                 }
             },
-              "reasoner": {
+            "reasoner": {
                 "enabled": False,
                 "model": "deepseek-r1:14b",
                 "base_url": "http://localhost:11434/v1",
@@ -48,7 +48,7 @@ def load_settings():
 
 settings = load_settings()
 client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
-
+reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
@@ -72,11 +72,10 @@ class ChatRequest(BaseModel):
     frequency_penalty: float = 0
     presence_penalty: float = 0
 
-async def generate_stream_response(client, request: ChatRequest, settings: dict):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
-        if settings['tools']['time']:
-            if request.messages[-1]['role'] == 'user':
-                request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        if settings['tools']['time']['enabled']:
+            request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
 
         model = request.model or settings['model']
         if model == 'super-model':
@@ -188,12 +187,21 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client, request: ChatRequest, settings: dict):
+async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict):
+    open_tag = "<think>"
+    close_tag = "</think>"
     try:
-        if settings['tools']['time']:
-            if request.messages[-1]['role'] == 'user':
-                request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
-
+        if settings['tools']['time']['enabled']:
+            request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        if settings['reasoner']['enabled']:
+            reasoner_response = await reasoner_client.chat.completions.create(
+                model=settings['reasoner']['model'],
+                messages=request.messages,
+                stream=False,
+                max_tokens=1,
+            )
+            request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+            print(request.messages[-1]['content'])
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -208,8 +216,6 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
-        open_tag = "<think>"
-        close_tag = "</think>"
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
@@ -222,7 +228,8 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
                 response_dict["choices"][0]['message']['reasoning_content'] = reasoning_content.group(1).strip()
                 # 移除原内容中的标签部分
                 response_dict["choices"][0]['message']['content'] = re.sub(fr'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
-        
+        if settings['reasoner']['enabled']:
+            response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         return JSONResponse(content=response_dict)
     except APIStatusError as e:
         return JSONResponse(
@@ -233,7 +240,7 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
 # 在现有路由后添加以下代码
 @app.get("/v1/models")
 async def get_models():
-    global client, settings
+    global client, settings,reasoner_client
     
     try:
         # 重新加载最新设置
@@ -260,7 +267,13 @@ async def get_models():
                 base_url=current_settings['base_url'] or "https://api.openai.com/v1",
             )
             settings = current_settings
-        
+        if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
+            or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
+            reasoner_client = AsyncOpenAI(
+                api_key=current_settings['reasoner']['api_key'],
+                base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+            )
+            settings = current_settings
         # 获取模型列表
         model_list = await client.models.list()
         
@@ -292,11 +305,11 @@ async def get_models():
 
 @app.post("/v1/chat/completions")
 async def chat_endpoint(request: ChatRequest):
-    global client, settings
+    global client, settings,reasoner_client
 
-    cur_settings = load_settings()
+    current_settings = load_settings()
     
-    if not cur_settings.get("api_key"):
+    if not current_settings.get("api_key"):
         raise HTTPException(status_code=400, detail={
             "error": {
                 "message": "API key not configured",
@@ -305,19 +318,28 @@ async def chat_endpoint(request: ChatRequest):
             }
         })
 
-    if cur_settings['api_key'] != settings['api_key'] or cur_settings['base_url'] != settings['base_url']:
-        settings = cur_settings
+    # 动态更新客户端配置
+    if (current_settings['api_key'] != settings['api_key'] 
+        or current_settings['base_url'] != settings['base_url']):
         client = AsyncOpenAI(
-            api_key=settings['api_key'],
-            base_url=settings['base_url'] or "https://api.openai.com/v1",
+            api_key=current_settings['api_key'],
+            base_url=current_settings['base_url'] or "https://api.openai.com/v1",
         )
-    elif cur_settings != settings:
-        settings = cur_settings
+        settings = current_settings
+    if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
+        or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
+        reasoner_client = AsyncOpenAI(
+            api_key=current_settings['reasoner']['api_key'],
+            base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+        )
+        settings = current_settings
+    elif current_settings != settings:
+        settings = current_settings
 
     try:
         if request.stream:
-            return await generate_stream_response(client, request, settings)
-        return await generate_complete_response(client, request, settings)
+            return await generate_stream_response(client,reasoner_client, request, settings)
+        return await generate_complete_response(client,reasoner_client, request, settings)
     except Exception as e:
         return JSONResponse(
             status_code=500,

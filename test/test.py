@@ -6,14 +6,13 @@ try:
     response = client.chat.completions.create(
         model="qwen2.5:14b",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Who won the world series in 2020?"},
+            {"role": "user", "content": "9.8和9.11哪个大？"},
         ],
         temperature=0.7,
         max_tokens=256,
     )
-
-    print(response.choices[0].message.content)
+    response = response.model_dump_json()
+    print(response)
 
 except Exception as e:
     print(e)
