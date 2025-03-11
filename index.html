@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Super API Party</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- 添加marked的CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.min.js"></script>
   <!-- 引入Element Plus样式 -->
   <link rel="stylesheet" href="node_modules/element-plus/dist/index.css">
+  <link rel="icon" href="data:,">
 </head>
 <body>
   <div id="app">
@@ -98,7 +101,10 @@
           <el-form :model="toolsSettings" class="settings-form">
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('time')">
-                <span>当前时间</span>
+                <span>
+                  <el-icon><timer /></el-icon>
+                  当前时间
+                </span>
                 <el-switch v-model="toolsSettings.time.enabled" @click.stop @change="autoSaveSettings"/>
               </div>
             </div>
@@ -106,39 +112,55 @@
         </div>
 
         <!-- API列表 -->
-        <div v-show="activeMenu === 'api'" class="page api-container">
-          <div class="api-info">
-            
-            <h3>模型名称</h3>
-            <el-input 
-              :value="'super-model'" 
-              readonly 
-              class="api-endpoint"
-            >
-              <template #append>
-                <el-button 
-                  @click="copyModel"
-                  :icon="'document-copy'"
-                />
-              </template>
-            </el-input>
-            
-            <h3>API 端点</h3>
-            <el-input 
-              :value="'http://127.0.0.1:3456/v1'" 
-              readonly 
-              class="api-endpoint"
-            >
-              <template #append>
-                <el-button 
-                  @click="copyEndpoint"
-                  :icon="'document-copy'"
-                />
-              </template>
-            </el-input>
+        <!-- 修改后的API列表界面 -->
+        <div v-show="activeMenu === 'api'" class="page tools-container">
+          <el-form class="settings-form">
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('superapi')">
+                  <span>
+                    <el-icon><key /></el-icon>
+                    API 配置
+                  </span>
+              </div>
+              <div class="tool-content" v-show="expandedSections.superapi">
+                <!-- 模型名称 -->
+                <el-form-item label="模型名称" class="form-item-align">
+                  <el-input 
+                    :value="'super-model'" 
+                    readonly 
+                    class="full-width-input"
+                  >
+                    <template #append>
+                      <el-button 
+                        @click="copyModel"
+                        :icon="'document-copy'"
+                        class="copy-btn"
+                      />
+                    </template>
+                  </el-input>
+                </el-form-item>
 
-          </div>
+                <!-- API端点 -->
+                <el-form-item label="API 端点" class="form-item-align">
+                  <el-input 
+                    :value="'http://127.0.0.1:3456/v1'" 
+                    readonly 
+                    class="full-width-input"
+                  >
+                    <template #append>
+                      <el-button 
+                        @click="copyEndpoint"
+                        :icon="'document-copy'"
+                        class="copy-btn"
+                      />
+                    </template>
+                  </el-input>
+                </el-form-item>
+              </div>
+            </div>
+          </el-form>
         </div>
+
 
         <!-- 主模型界面 -->
         <!-- 修改后的主模型界面 -->
@@ -147,10 +169,10 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('settingsBase')">
                 <div class="header-left">
-                  <el-icon :class="['arrow', { rotated: !expandedSections.settingsBase }]">
-                    <ArrowRight />
-                  </el-icon>
-                  <span>基础配置</span>
+                  <span>
+                    <el-icon><trophy-base /></el-icon>
+                    基础配置
+                  </span>
                 </div>
               </div>
               <div class="tool-content" v-show="expandedSections.settingsBase">
@@ -185,10 +207,10 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('settingsAdvanced')">
                 <div class="header-left">
-                  <el-icon :class="['arrow', { rotated: !expandedSections.settingsAdvanced }]">
-                    <ArrowRight />
-                  </el-icon>
-                  <span>高级设置</span>
+                  <span>
+                    <el-icon><coffee-cup /></el-icon>
+                    高级设置
+                  </span>
                 </div>
               </div>
               <div class="tool-content" v-show="expandedSections.settingsAdvanced">
@@ -230,10 +252,10 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('reasonerConfig')">
                 <div class="header-left">
-                  <el-icon :class="['arrow', { rotated: !expandedSections.reasonerConfig }]">
-                    <ArrowRight />
-                  </el-icon>
-                  <span>推理配置</span>
+                  <span>
+                    <el-icon><reading-lamp /></el-icon>
+                    推理配置
+                  </span>
                 </div>
                 <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
               </div>

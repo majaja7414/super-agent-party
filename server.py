@@ -1,6 +1,7 @@
 import json
 import os
 from fastapi import FastAPI, HTTPException, WebSocket, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI, APIStatusError
 from pydantic import BaseModel
@@ -256,6 +257,11 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_json({"type": "settings", "data": settings})
     except Exception as e:
         print(f"WebSocket error: {e}")
+
+app.mount("/node_modules", StaticFiles(directory="node_modules"), name="node_modules")
+app.mount("/css", StaticFiles(directory="css"), name="css")
+app.mount("/js", StaticFiles(directory="js"), name="js")
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,5 +1,10 @@
-const { ipcRenderer } = require('electron');
-const marked = require('marked');
+// 检查是否在Electron环境中
+const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
+let ipcRenderer;
+if (isElectron) {
+  ipcRenderer = require('electron').ipcRenderer;
+}
+
 // 创建Vue应用
 const app = Vue.createApp({
   data() {
@@ -39,28 +44,31 @@ const app = Vue.createApp({
         settingsBase: true,
         settingsAdvanced: true,
         reasonerConfig: true,
-        time: false  
+        time: false,
+        superapi: true,
       },
     };
   },
   mounted() {
     this.initWebSocket();
     
-    // 监听窗口状态变化
-    ipcRenderer.on('window-state-changed', (_, isMaximized) => {
-      this.isMaximized = isMaximized;
-    });
+    if (isElectron) {
+      // 只在Electron中监听窗口状态
+      ipcRenderer.on('window-state-changed', (_, isMaximized) => {
+        this.isMaximized = isMaximized;
+      });
+    }
   },
   methods: {
     // 窗口控制
     minimizeWindow() {
-      ipcRenderer.send('window-minimize');
+      if (isElectron) ipcRenderer.send('window-minimize');
     },
     maximizeWindow() {
-      ipcRenderer.send('window-maximize');
+      if (isElectron) ipcRenderer.send('window-maximize');
     },
     closeWindow() {
-      ipcRenderer.send('window-close');
+      if (isElectron) ipcRenderer.send('window-close');
     },
 
     // 菜单处理

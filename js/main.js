@@ -20,7 +20,7 @@ app.on('ready', () => {
     },
   });
 
-  mainWindow.loadFile('index.html');
+  mainWindow.loadURL('http://localhost:3456');
 
   // Handle window minimize, maximize, and close
   ipcMain.on('window-minimize', () => {
