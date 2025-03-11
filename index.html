@@ -71,32 +71,27 @@
                    v-html="message.role === 'user' ? message.content : formatMessage(message.content)">
               </div>
             </div>
-            <div v-if="isTyping" class="message assistant">
-              <div class="message-content typing">
-                <div class="typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-            </div>
           </div>
           <div class="button-group">
+            <el-button 
+              @click="sendFiles" 
+              class="icon-btn file-btn" 
+              :icon="'DocumentAdd'" 
+              circle>
+            </el-button>
             <el-button 
               @click="clearMessages" 
               class="icon-btn clear-btn" 
               :icon="'Delete'" 
-              circle 
-            />
+              circle>
             </el-button>
             <el-button 
               @click="sendMessage" 
               class="icon-btn send-btn" 
               :icon="'Promotion'" 
-              circle 
-            />
+              circle>
             </el-button>
-          </div>          
+          </div>                  
         <!-- 输入框区域 -->
         <!-- 修改后的输入框区域 -->
         <div class="input-container">

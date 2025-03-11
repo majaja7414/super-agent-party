@@ -78,30 +78,11 @@ const app = Vue.createApp({
 
     // 格式化消息，使用marked渲染markdown
     formatMessage(content) {
-      // 使用正则表达式查找<think>...</think>标签内的内容
-      const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
-      const thinkTagRegexOpenOnly = /<think>[\s\S]*$/;
-      
-      // 情况2: 同时存在<think>和</think>
-      let formattedContent = content.replace(thinkTagRegexWithClose, match => {
-        // 获取<think>...</think>之间的内容
-        const thinkContent = match.replace(/<\/?think>/g, '').trim();
-        // 将内容转换为引用格式
-        return thinkContent.split('\n').map(line => `> ${line}`).join('\n');
-      });
-
-      // 情况1: 只有<think>，没有</think>，将<think>之后的所有内容变为引用
-      if (!thinkTagRegexWithClose.test(formattedContent)) {
-        formattedContent = formattedContent.replace(thinkTagRegexOpenOnly, match => {
-          // 移除<think>标签
-          const openThinkContent = match.replace('<think>', '').trim();
-          // 将内容转换为引用格式
-          return openThinkContent.split('\n').map(line => `> ${line}`).join('\n');
-        });
+      if (content) {
+        // 使用marked解析Markdown内容
+        return marked.parse(content);
       }
-
-      // 使用marked解析Markdown内容
-      return marked.parse(formattedContent);
+      return '';
     },
     // 滚动到最新消息
     scrollToBottom() {
@@ -259,24 +240,33 @@ const app = Vue.createApp({
                 // 处理 reasoning_content 逻辑
                 if (parsed.choices?.[0]?.delta?.reasoning_content) {
                   const lastMessage = this.messages[this.messages.length - 1];
-                  
-                  // 首次接收到 reasoning_content 时添加起始标签
+                  let newContent = parsed.choices[0].delta.reasoning_content;
+                
+                  // 将新内容中的换行符转换为换行+引用符号
+                  newContent = newContent.replace(/\n/g, '\n> ');
+                
                   if (!this.isThinkOpen) {
-                    lastMessage.content += '<think>';
-                    this.isThinkOpen = true; // 更新状态
+                    // 首次添加 > 前缀
+                    lastMessage.content = '> ' + newContent;
+                    this.isThinkOpen = true;
+                  } else {
+                    // 后续内容直接追加，并处理前导空格
+                    if (lastMessage.content.endsWith('\n')) {
+                      lastMessage.content += '> ' + newContent;
+                    } else {
+                      lastMessage.content += newContent;
+                    }
                   }
                   
-                  // 追加内容
-                  lastMessage.content += parsed.choices[0].delta.reasoning_content;
                   this.scrollToBottom();
                 }
+                // 处理 content 逻辑
                 else if (parsed.choices?.[0]?.delta?.content) {
+                  const lastMessage = this.messages[this.messages.length - 1];
                   if (this.isThinkOpen) {
-                    const lastMessage = this.messages[this.messages.length - 1];
-                    lastMessage.content += '</think>';
+                    lastMessage.content += '\n';
                     this.isThinkOpen = false; // 重置状态
                   }
-                  const lastMessage = this.messages[this.messages.length - 1];
                   lastMessage.content += parsed.choices[0].delta.content;
                   this.scrollToBottom();
                 }
@@ -368,6 +358,9 @@ const app = Vue.createApp({
       this.messages = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
+    },
+    sendFiles() {
+      
     },
   }
 });

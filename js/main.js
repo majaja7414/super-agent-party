@@ -56,3 +56,5 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+app.commandLine.appendSwitch('disable-http-cache');

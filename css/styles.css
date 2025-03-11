@@ -262,11 +262,10 @@ body {
 .message-content h6 { font-size: 0.9em; }
 
 
-/* 输入框容器样式 */
 /* 修改原有样式 */
 .button-group {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start; /* 从 flex-end 改为 flex-start */
 }
 
 /* 打字指示器样式 */
