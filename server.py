@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 from fastapi import FastAPI, HTTPException, WebSocket, Request
@@ -80,27 +81,49 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
-        
-        response = await client.chat.completions.create(
-            model=model,
-            messages=request.messages,
-            temperature=request.temperature,
-            tools=request.tools,
-            stream=True,
-            max_tokens=request.max_tokens or settings['max_tokens'],
-            top_p=request.top_p,
-            frequency_penalty=request.frequency_penalty,
-            presence_penalty=request.presence_penalty,
-        )
 
         async def stream_generator():
+            # 如果启用推理模型
+            if settings['reasoner']['enabled']:
+                # 流式调用推理模型
+                reasoner_stream = await reasoner_client.chat.completions.create(
+                    model=settings['reasoner']['model'],
+                    messages=request.messages,
+                    stream=True,
+                    max_tokens=1 # 根据实际情况调整
+                )
+                full_reasoning = ""
+                # 处理推理模型的流式响应
+                async for chunk in reasoner_stream:
+                    if not chunk.choices:
+                        continue
+
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0].get("delta", {})
+                    full_reasoning += delta.get("reasoning_content", "")
+                    
+                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+
+                # 在推理结束后添加完整推理内容到消息
+                request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
             # 状态跟踪变量
             in_reasoning = False
             reasoning_buffer = []
             content_buffer = []
             open_tag = "<think>"
             close_tag = "</think>"
-            
+
+            response = await client.chat.completions.create(
+                model=model,
+                messages=request.messages,
+                temperature=request.temperature,
+                tools=request.tools,
+                stream=True,
+                max_tokens=request.max_tokens or settings['max_tokens'],
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+            )
             async for chunk in response:
                 if not chunk.choices:
                     continue
