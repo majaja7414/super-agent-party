@@ -74,15 +74,9 @@ class ChatRequest(BaseModel):
 async def generate_stream_response(client, request: ChatRequest, settings: dict):
     try:
         if settings['tools']['time']:
-            print("time")
-            if request.messages[0]:
-                if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] += f"实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
-                else:
-                    request.messages.insert(0, {
-                        "role": "system",
-                        "content": f"\n\n实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
-                    })
+            if request.messages[-1]['role'] == 'user':
+                request.messages[-1]['content'] = f"实时时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n" + request.messages[-1]['content']
+
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -100,8 +94,82 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
         )
 
         async def stream_generator():
+            # 状态跟踪变量
+            in_reasoning = False
+            reasoning_buffer = []
+            content_buffer = []
+            open_tag = "<think>"
+            close_tag = "</think>"
+            
             async for chunk in response:
-                yield f"data: {chunk.model_dump_json()}\n\n"
+                if not chunk.choices:
+                    continue
+                
+                # 创建原始chunk的拷贝
+                chunk_dict = chunk.model_dump()
+                delta = chunk_dict["choices"][0]["delta"]
+                
+                # 初始化必要字段
+                delta.setdefault("content", "")
+                delta.setdefault("reasoning_content", "")
+                
+                # 处理内容
+                current_content = delta["content"]
+                buffer = current_content
+                
+                while buffer:
+                    if not in_reasoning:
+                        # 寻找开始标签
+                        start_pos = buffer.find(open_tag)
+                        if start_pos != -1:
+                            # 处理开始标签前的内容
+                            content_buffer.append(buffer[:start_pos])
+                            buffer = buffer[start_pos+len(open_tag):]
+                            in_reasoning = True
+                        else:
+                            content_buffer.append(buffer)
+                            buffer = ""
+                    else:
+                        # 寻找结束标签
+                        end_pos = buffer.find(close_tag)
+                        if end_pos != -1:
+                            # 处理思考内容
+                            reasoning_buffer.append(buffer[:end_pos])
+                            buffer = buffer[end_pos+len(close_tag):]
+                            in_reasoning = False
+                        else:
+                            reasoning_buffer.append(buffer)
+                            buffer = ""
+                
+                # 构造新的delta内容
+                new_content = "".join(content_buffer)
+                new_reasoning = "".join(reasoning_buffer)
+                
+                # 更新chunk内容
+                delta["content"] = new_content.strip("\x00")  # 保留未完成内容
+                delta["reasoning_content"] = new_reasoning.strip("\x00") or None
+                
+                # 重置缓冲区但保留未完成部分
+                if in_reasoning:
+                    content_buffer = [new_content.split(open_tag)[-1]] 
+                else:
+                    content_buffer = []
+                reasoning_buffer = []
+                
+                yield f"data: {json.dumps(chunk_dict)}\n\n"
+            
+            # 最终flush未完成内容
+            if content_buffer or reasoning_buffer:
+                final_chunk = {
+                    "choices": [{
+                        "delta": {
+                            "content": "".join(content_buffer),
+                            "reasoning_content": "".join(reasoning_buffer)
+                        }
+                    }]
+                }
+                yield f"data: {json.dumps(final_chunk)}\n\n"
+            
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
@@ -122,15 +190,9 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
 async def generate_complete_response(client, request: ChatRequest, settings: dict):
     try:
         if settings['tools']['time']:
-            print("time")
-            if request.messages[0]:
-                if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] += f"实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
-                else:
-                    request.messages.insert(0, {
-                        "role": "system",
-                        "content": f"\n\n实时时间： {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}"
-                    })
+            if request.messages[-1]['role'] == 'user':
+                request.messages[-1]['content'] = f"实时时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n" + request.messages[-1]['content']
+
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -145,7 +207,22 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
-        return JSONResponse(content=response.model_dump_json())
+        open_tag = "<think>"
+        close_tag = "</think>"
+       # 处理响应内容
+        response_dict = response.model_dump()
+        content = response_dict["choices"][0]['message']['content']
+        if open_tag in content and close_tag in content:
+            # 使用正则表达式提取标签内容
+            import re
+            reasoning_content = re.search(f'{open_tag}(.*?)\{close_tag}', content, re.DOTALL)
+            if reasoning_content:
+                # 存储到 reasoning_content 字段
+                response_dict["choices"][0]['message']['reasoning_content'] = reasoning_content.group(1).strip()
+                # 移除原内容中的标签部分
+                response_dict["choices"][0]['message']['content'] = re.sub(f'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
+        
+        return JSONResponse(content=response_dict)
     except APIStatusError as e:
         return JSONResponse(
             status_code=e.status_code,
