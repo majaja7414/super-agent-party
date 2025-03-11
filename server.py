@@ -10,7 +10,8 @@ from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
 from typing import List, Dict
-
+from tzlocal import get_localzone
+local_timezone = get_localzone()
 app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
 
@@ -75,7 +76,7 @@ async def generate_stream_response(client, request: ChatRequest, settings: dict)
     try:
         if settings['tools']['time']:
             if request.messages[-1]['role'] == 'user':
-                request.messages[-1]['content'] = f"实时时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n" + request.messages[-1]['content']
+                request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
 
         model = request.model or settings['model']
         if model == 'super-model':
@@ -191,7 +192,7 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
     try:
         if settings['tools']['time']:
             if request.messages[-1]['role'] == 'user':
-                request.messages[-1]['content'] = f"实时时间：{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n" + request.messages[-1]['content']
+                request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
 
         model = request.model or settings['model']
         if model == 'super-model':
@@ -215,12 +216,12 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
         if open_tag in content and close_tag in content:
             # 使用正则表达式提取标签内容
             import re
-            reasoning_content = re.search(f'{open_tag}(.*?)\{close_tag}', content, re.DOTALL)
+            reasoning_content = re.search(fr'{open_tag}(.*?)\{close_tag}', content, re.DOTALL)
             if reasoning_content:
                 # 存储到 reasoning_content 字段
                 response_dict["choices"][0]['message']['reasoning_content'] = reasoning_content.group(1).strip()
                 # 移除原内容中的标签部分
-                response_dict["choices"][0]['message']['content'] = re.sub(f'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
+                response_dict["choices"][0]['message']['content'] = re.sub(fr'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
         
         return JSONResponse(content=response_dict)
     except APIStatusError as e:
