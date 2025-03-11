@@ -25,8 +25,8 @@ def load_settings():
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             f.write('{}')
         default_settings =  {
-            "model": "gpt-4o-mini",  # 使用OpenAI官方参数名
-            "base_url": "https://api.openai.com/v1",
+            "model": "qwen2.5:14b",  # 使用OpenAI官方参数名
+            "base_url": "http://localhost:11434/v1",
             "api_key": "",
             "temperature": 0.7,
             "max_tokens": 4096,
@@ -35,6 +35,12 @@ def load_settings():
                 "time": {
                     "enabled": False,
                 }
+            },
+              "reasoner": {
+                "enabled": False,
+                "model": "deepseek-r1:14b",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": ""
             }
         }
         return default_settings
