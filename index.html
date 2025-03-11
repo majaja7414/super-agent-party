@@ -81,18 +81,33 @@
               </div>
             </div>
           </div>
-          
+          <div class="button-group">
+            <el-button 
+              @click="clearMessages" 
+              class="icon-btn clear-btn" 
+              :icon="'Delete'" 
+              circle 
+            />
+            </el-button>
+            <el-button 
+              @click="sendMessage" 
+              class="icon-btn send-btn" 
+              :icon="'Promotion'" 
+              circle 
+            />
+            </el-button>
+          </div>          
         <!-- 输入框区域 -->
+        <!-- 修改后的输入框区域 -->
         <div class="input-container">
           <el-input
             v-model="userInput"
             type="textarea"
-            :rows="3"
+            :rows="4"
             placeholder="输入消息..."
             resize="none"
             @keydown="handleKeydown"
           />
-          <el-button type="primary" @click="sendMessage" :loading="isTyping">发送</el-button>
         </div>
         </div>
 

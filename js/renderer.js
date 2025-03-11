@@ -363,7 +363,12 @@ const app = Vue.createApp({
     // 新增点击头部的处理
     handleHeaderClick(section) {
       this.toggleSection(section)
-    }
+    },
+    clearMessages() {
+      this.messages = [];
+      this.isThinkOpen = false; // 重置思考模式状态
+      this.scrollToBottom();    // 触发界面更新
+    },
   }
 });
 
