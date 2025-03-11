@@ -145,7 +145,7 @@ async def generate_complete_response(client, request: ChatRequest, settings: dic
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
-        return JSONResponse(content=response.model_dump())
+        return JSONResponse(content=response.model_dump_json())
     except APIStatusError as e:
         return JSONResponse(
             status_code=e.status_code,
@@ -187,7 +187,7 @@ async def get_models():
         model_list = await client.models.list()
         
         # 转换响应格式与官方API一致
-        return JSONResponse(content=model_list.model_dump())
+        return JSONResponse(content=model_list.model_dump_json())
         
     except APIStatusError as e:
         return JSONResponse(
