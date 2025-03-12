@@ -1,90 +1,60 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
-const { spawn } = require('child_process');
-
+// 禁用安全警告（包括 PNG iCCP 配置文件警告）
 process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
 
 let mainWindow;
-let backendProcess;
-
-function startBackend() {
-  // 使用虚拟环境中的 Python 解释器
-  const pythonPath = path.join(__dirname, '../super/Scripts/python.exe');
-  
-  backendProcess = spawn(pythonPath, [
-    '-m', 'uvicorn',
-    'server:app',
-    '--port', '3456',
-    '--host', '0.0.0.0',
-    '--reload' // 保留开发时的热重载功能
-  ], {
-    stdio: 'pipe',
-    cwd: __dirname,
-    env: {
-      ...process.env,
-      VIRTUAL_ENV: path.join(__dirname, 'super')
-    }
-  });
-
-  // 处理输出
-  backendProcess.stdout.on('data', (data) => {
-    console.log(`[后端] ${data}`);
-    if (data.includes('Application startup complete') && mainWindow) {
-      mainWindow.loadURL('http://localhost:3456');
-    }
-  });
-
-  backendProcess.stderr.on('data', (data) => {
-    console.error(`[后端错误] ${data}`);
-  });
-
-  backendProcess.on('error', (err) => {
-    console.error('后端启动失败:', err);
-    app.quit();
-  });
-}
 
 app.on('ready', () => {
-  startBackend();
+  // 获取主显示器的工作区域（除去任务栏等）
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  mainWindow = new BrowserWindow({
+    width: width,
+    height: height,
+    frame: false,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      webSecurity: false
+    },
+  });
 
-  // 延迟创建窗口确保后端就绪
-  const createWindow = () => {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width, height } = primaryDisplay.workAreaSize;
-    
-    mainWindow = new BrowserWindow({
-      width: width,
-      height: height,
-      frame: false,
-      webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false,
-        webSecurity: false
-      },
-      show: false // 先隐藏窗口
-    });
+  mainWindow.loadURL('http://localhost:3456');
 
-    // 监听后端准备就绪
-    mainWindow.once('ready-to-show', () => {
-      mainWindow.show();
-    });
+  // Handle window minimize, maximize, and close
+  ipcMain.on('window-minimize', () => {
+    mainWindow.minimize();
+  });
 
-    // 其他 IPC 监听代码...
-  };
+  ipcMain.on('window-maximize', () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+    mainWindow.webContents.send('window-state-changed', mainWindow.isMaximized());
+  });
 
-  // 3秒后创建窗口（替代原 timeout）
-  setTimeout(createWindow, 3000);
+  // 监听窗口最大化事件
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state-changed', true);
+  });
+
+  // 监听窗口还原事件
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state-changed', false);
+  });
+
+  ipcMain.on('window-close', () => {
+    mainWindow.close();
+  });
 });
 
-app.on('before-quit', () => {
-  if (backendProcess) {
-    // Windows 系统使用 taskkill 确保终止
-    if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t']);
-    } else {
-      backendProcess.kill('SIGTERM');
-    }
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
 });
 
-// 其他原有代码...
+app.commandLine.appendSwitch('disable-http-cache');
