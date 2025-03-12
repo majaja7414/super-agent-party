@@ -9,6 +9,7 @@ if (isElectron) {
 const app = Vue.createApp({
   data() {
     return {
+      isElectron: isElectron,
       isCollapse: true,
       activeMenu: 'home',
       isMaximized: false,

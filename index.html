@@ -14,19 +14,19 @@
 <body>
   <div id="app">
     <!-- 顶部栏 -->
-    <el-header class="top-bar" height="30px">
+    <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
         <el-button @click="minimizeWindow" class="top-bar-btn" text>
           <el-icon><Minus /></el-icon>
         </el-button>
-          <el-button @click="maximizeWindow" class="top-bar-btn" text>
+        <el-button @click="maximizeWindow" class="top-bar-btn" text>
           <el-icon><Expand /></el-icon>
         </el-button>
         <el-button @click="closeWindow" class="top-bar-btn" text>
           <el-icon><Close /></el-icon>
         </el-button>
       </div>
-    </el-header>
+    </el-header>    
 
     <!-- 主容器 -->
     <el-container class="main-container">
