@@ -50,6 +50,7 @@ const app = Vue.createApp({
     };
   },
   mounted() {
+    this.initWebSocket()
     if (isElectron) {
       // 更新事件监听
       ipcRenderer.on('window-state', (_, state) => {
