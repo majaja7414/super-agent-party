@@ -50,25 +50,23 @@ const app = Vue.createApp({
     };
   },
   mounted() {
-    this.initWebSocket();
-    
     if (isElectron) {
-      // 只在Electron中监听窗口状态
-      ipcRenderer.on('window-state-changed', (_, isMaximized) => {
-        this.isMaximized = isMaximized;
+      // 更新事件监听
+      ipcRenderer.on('window-state', (_, state) => {
+        this.isMaximized = state === 'maximized'
       });
     }
   },
   methods: {
     // 窗口控制
     minimizeWindow() {
-      if (isElectron) ipcRenderer.send('window-minimize');
+      if (isElectron) ipcRenderer.invoke('window-action', 'minimize');
     },
     maximizeWindow() {
-      if (isElectron) ipcRenderer.send('window-maximize');
+      if (isElectron) ipcRenderer.invoke('window-action', 'maximize');
     },
     closeWindow() {
-      if (isElectron) ipcRenderer.send('window-close');
+      if (isElectron) ipcRenderer.invoke('window-action', 'close');
     },
 
     // 菜单处理

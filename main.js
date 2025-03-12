@@ -1,60 +1,144 @@
-const { app, BrowserWindow, ipcMain, screen } = require('electron');
-const path = require('path');
-// 禁用安全警告（包括 PNG iCCP 配置文件警告）
-process.env.ELECTRON_DISABLE_SECURITY_WARNINGS = true;
+// main.js
+const { app, BrowserWindow, ipcMain, screen } = require('electron')
+const path = require('path')
+const { spawn } = require('child_process')
+const fs = require('fs')
 
-let mainWindow;
+let mainWindow
+let backendProcess = null
 
-app.on('ready', () => {
-  // 获取主显示器的工作区域（除去任务栏等）
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
+// 配置日志文件路径
+const logDir = path.join(app.getPath('userData'), 'logs')
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true })
+}
+
+function startBackend() {
+  const backendScript = path.join(__dirname, 'server.py')
+  
+  // 配置跨平台启动参数
+  const spawnOptions = {
+    cwd: __dirname,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+    shell: false
+  }
+
+  // Windows系统特殊配置
+  if (process.platform === 'win32') {
+    spawnOptions.detached = true
+    spawnOptions.creationFlags = 0x08000000  // CREATE_NO_WINDOW
+  }
+
+  // 启动后端进程
+  backendProcess = spawn('python', [
+    '-m',
+    'uvicorn',
+    'server:app',
+    '--port', '3456',
+    '--host', '0.0.0.0'
+  ], spawnOptions)
+
+  // 日志文件处理
+  const logStream = fs.createWriteStream(
+    path.join(logDir, `backend-${Date.now()}.log`),
+    { flags: 'a' }
+  )
+
+  // 处理输出
+  backendProcess.stdout.on('data', (data) => {
+    logStream.write(`[INFO] ${data}`)
+  })
+
+  backendProcess.stderr.on('data', (data) => {
+    logStream.write(`[ERROR] ${data}`)
+  })
+
+  backendProcess.on('error', (err) => {
+    logStream.write(`Process error: ${err.message}`)
+  })
+
+  backendProcess.on('close', (code) => {
+    logStream.end(`\nProcess exited with code ${code}\n`)
+  })
+}
+
+app.whenReady().then(() => {
+  // 启动后端服务
+  startBackend()
+
+  // 创建无边框窗口
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize
   mainWindow = new BrowserWindow({
     width: width,
     height: height,
     frame: false,
+    show: false, // 初始隐藏窗口
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
-      webSecurity: false
-    },
-  });
-
-  mainWindow.loadURL('http://localhost:3456');
-
-  // Handle window minimize, maximize, and close
-  ipcMain.on('window-minimize', () => {
-    mainWindow.minimize();
-  });
-
-  ipcMain.on('window-maximize', () => {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
+      webSecurity: false,
+      devTools: process.env.NODE_ENV === 'development'
     }
-    mainWindow.webContents.send('window-state-changed', mainWindow.isMaximized());
-  });
+  })
 
-  // 监听窗口最大化事件
-  mainWindow.on('maximize', () => {
-    mainWindow.webContents.send('window-state-changed', true);
-  });
+  // 加载页面
+  mainWindow.loadURL('http://localhost:3456')
+    .then(() => {
+      // 页面加载完成后显示窗口
+      mainWindow.show()
+      if (process.env.NODE_ENV === 'development') {
+        mainWindow.webContents.openDevTools()
+      }
+    })
+    .catch(err => {
+      console.error('Failed to load URL:', err)
+      app.quit()
+    })
 
-  // 监听窗口还原事件
-  mainWindow.on('unmaximize', () => {
-    mainWindow.webContents.send('window-state-changed', false);
-  });
+    // 窗口控制事件
+    ipcMain.handle('window-action', (_, action) => {
+      switch (action) {
+        case 'minimize':
+          mainWindow.minimize()
+          break
+        case 'maximize':
+          mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+          break
+        case 'close':
+          mainWindow.close()
+          break
+      }
+    })
 
-  ipcMain.on('window-close', () => {
-    mainWindow.close();
-  });
-});
+    // 窗口状态同步（保持不变）
+    mainWindow.on('maximize', () => {
+      mainWindow.webContents.send('window-state', 'maximized')
+    })
+    mainWindow.on('unmaximize', () => {
+      mainWindow.webContents.send('window-state', 'normal')
+    })
 
+})
+
+// 应用退出处理
+app.on('before-quit', () => {
+  if (backendProcess) {
+    // 跨平台进程终止
+    if (process.platform === 'win32') {
+      spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t'])
+    } else {
+      backendProcess.kill('SIGKILL')
+    }
+  }
+})
+
+// 自动退出处理
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
-    app.quit();
+    app.quit()
   }
-});
+})
 
-app.commandLine.appendSwitch('disable-http-cache');
+// 禁用缓存
+app.commandLine.appendSwitch('disable-http-cache')
