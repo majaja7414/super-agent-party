@@ -1,5 +1,5 @@
 // main.js
-const { app, BrowserWindow, ipcMain, screen, shell } = require('electron')
+const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
@@ -124,12 +124,37 @@ app.whenReady().then(() => {
         .catch(err => console.error(`Error opening ${url}:`, err));
     });
 
-    ipcMain.handle('open-file-dialog', async () => {
-      const { dialog } = require('electron');
-      return dialog.showOpenDialog({
-        properties: ['openFile', 'multiSelections']
-      });
-    });
+    // 文件类型分类配置
+    const FILE_FILTERS = [
+      { 
+        name: '办公文档', 
+        extensions: ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 'numbers', 'key', 'rtf', 'odt'] 
+      },
+      { 
+        name: '编程开发', 
+        extensions: [
+          'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go', 'rs',
+          'swift', 'kt', 'dart', 'rb', 'php', 'html', 'css', 'scss',
+          'less', 'vue', 'svelte', 'jsx', 'tsx', 'json', 'xml', 'yml',
+          'yaml', 'sql', 'sh'
+        ]
+      },
+      {
+        name: '数据配置',
+        extensions: ['csv', 'tsv', 'txt', 'md', 'log', 'conf', 'ini', 'env', 'toml']
+      }
+    ]
+    // 文件对话框处理器
+    ipcMain.handle('open-file-dialog', async (event, options) => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openFile', 'multiSelections'],
+        filters: [
+          ...FILE_FILTERS,
+          { name: '所有文件', extensions: ['*'] }
+        ]
+      })
+      return result
+    })
     ipcMain.handle('check-path-exists', (_, path) => {
       return fs.existsSync(path);
     });

@@ -4,7 +4,38 @@ let ipcRenderer;
 if (isElectron) {
   ipcRenderer = require('electron').ipcRenderer;
 }
-
+const ALLOWED_EXTENSIONS = [
+  // 办公文档
+  'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
+  'numbers', 'key', 'rtf', 'odt',
+  
+  // 编程开发
+  'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go', 'rs',
+  'swift', 'kt', 'dart', 'rb', 'php', 'html', 'css', 'scss', 'less',
+  'vue', 'svelte', 'jsx', 'tsx', 'json', 'xml', 'yml', 'yaml', 
+  'sql', 'sh',
+  
+  // 数据配置
+  'csv', 'tsv', 'txt', 'md', 'log', 'conf', 'ini', 'env', 'toml'
+]
+// MIME类型白名单
+const MIME_WHITELIST = [
+  'text/plain',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument',
+  'application/pdf',
+  'application/json',
+  'text/csv',
+  'text/x-python',
+  'application/xml',
+  'text/x-go',
+  'text/x-rust',
+  'text/x-swift',
+  'text/x-kotlin',
+  'text/x-dart',
+  'text/x-ruby',
+  'text/x-php'
+]
 // 创建Vue应用
 const app = Vue.createApp({
   data() {
@@ -408,29 +439,66 @@ const app = Vue.createApp({
     sendFiles() {
       this.showUploadDialog = true;
     },
-    // 处理文件拖放
-    handleDrop(event) {
-      event.preventDefault();
-      const files = Array.from(event.dataTransfer.files);
-      this.addFiles(files);
-    },
-    // 处理点击上传
+
+    // 文件选择处理方法
     async browseFiles() {
-      if (!isElectron) {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
+      if (!this.isElectron) {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.multiple = true
+        input.accept = ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')
+        
         input.onchange = (e) => {
-          this.addFiles(Array.from(e.target.files));
-        };
-        input.click();
+          const files = Array.from(e.target.files)
+          const validFiles = files.filter(this.isValidFileType)
+          this.handleFiles(validFiles)
+        }
+        input.click()
       } else {
-        const result = await ipcRenderer.invoke('open-file-dialog');
+        const result = await ipcRenderer.invoke('open-file-dialog')
         if (!result.canceled) {
-          this.addFiles(result.filePaths);
+          const validPaths = result.filePaths
+            .filter(path => {
+              const ext = path.split('.').pop()?.toLowerCase() || ''
+              return ALLOWED_EXTENSIONS.includes(ext)
+            })
+          this.handleFiles(validPaths)
         }
       }
     },
+    // 文件验证方法
+    isValidFileType(file) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase()
+      return ALLOWED_EXTENSIONS.includes(ext) || 
+             MIME_WHITELIST.some(mime => file.type.includes(mime))
+    },
+    // 统一处理文件
+    handleFiles(files) {
+      if (files.length > 0) {
+        this.addFiles(files)
+      } else {
+        this.showErrorAlert()
+      }
+    },
+    // 错误提示
+    showErrorAlert() {
+      const categories = [
+        "📄 办公文档：DOC/DOCX/PPT/XLS/PDF等",
+        "👨💻 编程文件：JS/TS/PY/Java/C/Go/Rust等",
+        "📊 数据文件：CSV/TSV/JSON/XML/YAML",
+        "⚙️ 配置文件：CONF/INI/ENV/TOML",
+        "📝 文本文件：TXT/MD/LOG"
+      ]
+      ElMessage.error(`不支持的文件类型，请选择以下类型：\n${categories.join('\n')}`)
+    },
+    // 拖放处理
+    handleDrop(event) {
+      event.preventDefault()
+      const files = Array.from(event.dataTransfer.files)
+        .filter(this.isValidFileType)
+      this.handleFiles(files)
+    },
+
     // 添加文件到列表
     addFiles(files) {
       const newFiles = files.map(file => {
