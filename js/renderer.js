@@ -70,9 +70,24 @@ const app = Vue.createApp({
       if (isElectron) ipcRenderer.invoke('window-action', 'close');
     },
 
-    // 菜单处理
+    // 菜单控制
     handleSelect(key) {
-      this.activeMenu = key;
+      const host = "127.0.0.1";
+      const port = 3456;
+      const url = `http://${host}:${port}`;
+
+      if (key === 'web') {
+        if (isElectron) {
+          // 使用 IPC 向主进程发送消息
+          require('electron').ipcRenderer.send('open-external', url);
+        } else {
+          // 如果是在普通浏览器环境中
+          window.open(url, '_blank');
+        }
+      } else {
+        // 处理其他菜单选项
+        this.activeMenu = key;
+      }
     },
 
     // 格式化消息，使用marked渲染markdown

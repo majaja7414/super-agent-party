@@ -1,9 +1,8 @@
 // main.js
-const { app, BrowserWindow, ipcMain, screen } = require('electron')
+const { app, BrowserWindow, ipcMain, screen, shell } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
-
 let mainWindow
 let backendProcess = null
 
@@ -76,9 +75,9 @@ app.whenReady().then(() => {
     show: false, // 初始隐藏窗口
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: false, 
       webSecurity: false,
-      devTools: process.env.NODE_ENV === 'development'
+      devTools: true, // 开发者工具
     }
   })
 
@@ -119,6 +118,11 @@ app.whenReady().then(() => {
       mainWindow.webContents.send('window-state', 'normal')
     })
 
+    ipcMain.on('open-external', (event, url) => {
+      shell.openExternal(url)
+        .then(() => console.log(`Opened ${url} in the default browser.`))
+        .catch(err => console.error(`Error opening ${url}:`, err));
+    });
 })
 
 // 应用退出处理

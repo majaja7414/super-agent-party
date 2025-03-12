@@ -8,6 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@electron/remote": "^2.1.2",
     "@element-plus/icons-vue": "^2.3.1",
     "electron": "^35.0.0",
     "element-plus": "^2.9.6",
