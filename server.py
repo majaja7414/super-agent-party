@@ -369,6 +369,12 @@ async def chat_endpoint(request: ChatRequest):
             status_code=500,
             content={"error": {"message": str(e), "type": "server_error", "code": 500}}
         )
+    
+
+# 在现有路由之后添加health路由
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
