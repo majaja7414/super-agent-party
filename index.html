@@ -76,6 +76,26 @@
               </div>
             </div>
           </div>
+            <!-- 文件上传对话框 -->
+            <el-dialog 
+              v-model="showUploadDialog" 
+              title="上传文件" 
+              width="30%"
+              :before-close="() => showUploadDialog = false">
+              
+              <div class="upload-container">
+                <!-- 可点击的拖拽区域 -->
+                <div 
+                  class="drop-zone"
+                  @dragover.prevent
+                  @drop.prevent="handleDrop"
+                  @click="browseFiles"
+                >
+                  <el-icon :size="50"><upload /></el-icon>
+                  <p>点击或拖放文件到此区域</p>
+                </div>
+              </div>
+            </el-dialog>
             <div class="button-group">
               <el-button 
                 @click="sendFiles" 

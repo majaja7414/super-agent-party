@@ -475,3 +475,36 @@ body {
 .tool-item:hover {
   box-shadow: 0 2px 12px rgba(0,0,0,0.1);
 }
+
+/* 拖拽/点击区域样式 */
+.drop-zone {
+  border: 2px dashed #409eff;
+  border-radius: 8px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin: 0 auto;
+  width: 80%;
+  background-color: #f5f7fa;
+}
+
+.drop-zone:hover {
+  border-color: #79bbff;
+  background-color: #ecf5ff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 12px 0 rgba(64,158,255,.1);
+}
+
+.drop-zone p {
+  margin-top: 15px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+}

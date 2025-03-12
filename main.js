@@ -123,6 +123,16 @@ app.whenReady().then(() => {
         .then(() => console.log(`Opened ${url} in the default browser.`))
         .catch(err => console.error(`Error opening ${url}:`, err));
     });
+
+    ipcMain.handle('open-file-dialog', async () => {
+      const { dialog } = require('electron');
+      return dialog.showOpenDialog({
+        properties: ['openFile', 'multiSelections']
+      });
+    });
+    ipcMain.handle('check-path-exists', (_, path) => {
+      return fs.existsSync(path);
+    });
 })
 
 // 应用退出处理

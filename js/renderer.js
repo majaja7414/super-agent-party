@@ -47,6 +47,8 @@ const app = Vue.createApp({
         time: false,
         superapi: true,
       },
+      showUploadDialog: false,
+      files: [],
     };
   },
   mounted() {
@@ -374,7 +376,78 @@ const app = Vue.createApp({
       this.scrollToBottom();    // 触发界面更新
     },
     sendFiles() {
+      this.showUploadDialog = true;
+    },
+    // 处理文件拖放
+    handleDrop(event) {
+      event.preventDefault();
+      const files = Array.from(event.dataTransfer.files);
+      this.addFiles(files);
+    },
+    // 处理文件选择
+    async browseFiles() {
+      if (!isElectron) {
+        // 浏览器环境处理
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.onchange = (e) => {
+          this.addFiles(Array.from(e.target.files));
+        };
+        input.click();
+      } else {
+        // Electron环境处理
+        const result = await ipcRenderer.invoke('open-file-dialog');
+        if (!result.canceled) {
+          this.addFiles(result.filePaths);
+        }
+      }
+    },
+    // 添加文件到列表
+    sendFiles() {
+      this.showUploadDialog = true;
+    },
+    // 处理文件拖放
+    handleDrop(event) {
+      event.preventDefault();
+      const files = Array.from(event.dataTransfer.files);
+      this.addFiles(files);
+    },
+    // 处理点击上传
+    async browseFiles() {
+      if (!isElectron) {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.multiple = true;
+        input.onchange = (e) => {
+          this.addFiles(Array.from(e.target.files));
+        };
+        input.click();
+      } else {
+        const result = await ipcRenderer.invoke('open-file-dialog');
+        if (!result.canceled) {
+          this.addFiles(result.filePaths);
+        }
+      }
+    },
+    // 添加文件到列表
+    addFiles(files) {
+      const newFiles = files.map(file => {
+        if (typeof file === 'string') { // Electron路径
+          return {
+            path: file,
+            name: file.split(/[\\/]/).pop()
+          }
+        }
+        return { // 浏览器File对象
+          path: file.path || file.name,
+          name: file.name,
+          file: file
+        }
+      });
       
+      this.files = [...this.files, ...newFiles];
+      this.showUploadDialog = false;
     },
   }
 });
