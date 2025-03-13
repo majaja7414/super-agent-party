@@ -56,7 +56,7 @@ function startBackend() {
 
 // main.js 修改部分
 async function waitForBackend() {
-  const MAX_RETRIES = 10; // 最大重试次数
+  const MAX_RETRIES = 30; // 最大重试次数
   const RETRY_INTERVAL = 1000; // 每次重试间隔 1 秒
   const HEALTH_CHECK_URL = 'http://127.0.0.1:3456/health';
   for (let i = 0; i < MAX_RETRIES; i++) {
