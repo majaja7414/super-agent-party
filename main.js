@@ -59,6 +59,7 @@ async function waitForBackend() {
   const MAX_RETRIES = 30; // 最大重试次数
   const RETRY_INTERVAL = 1000; // 每次重试间隔 1 秒
   const HEALTH_CHECK_URL = 'http://127.0.0.1:3456/health';
+  console.log(`Please wait a moment, the service is starting...`);
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(HEALTH_CHECK_URL);
@@ -70,7 +71,7 @@ async function waitForBackend() {
         }
       }
     } catch (err) {
-      console.log(`attempt ${i + 1}/${MAX_RETRIES}`);
+      //console.log(`${i + 1}/${MAX_RETRIES}`);
     }
     await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
   }
@@ -82,7 +83,7 @@ app.whenReady().then(async () => {
   try {
     startBackend();
     await waitForBackend();
-
+    console.log(`Please wait a moment, the window is being created...`);
     // 创建无边框窗口
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
     mainWindow = new BrowserWindow({
