@@ -480,6 +480,9 @@ const app = Vue.createApp({
         this.showErrorAlert()
       }
     },
+    removeFile(index) {
+      this.files.splice(index, 1);
+    },  
     // 错误提示
     showErrorAlert() {
       const categories = [

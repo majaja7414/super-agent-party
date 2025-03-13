@@ -116,18 +116,28 @@
                 circle>
               </el-button>
             </div>                  
-          <!-- 输入框区域 -->
-          <!-- 修改后的输入框区域 -->
-          <div class="input-container">
-            <el-input
-              v-model="userInput"
-              type="textarea"
-              :rows="4"
-              placeholder="输入消息..."
-              resize="none"
-              @keydown="handleKeydown"
-            />
-          </div>
+              <div class="input-container">
+                <!-- 紧凑型文件列表 -->
+                <div class="compact-file-list" v-if="files.length">
+                  <div v-for="(file, index) in files" :key="index" class="compact-file-item">
+                    <span class="file-name">@{{ file.name }}</span>
+                    <el-button 
+                      @click.stop="removeFile(index)"
+                      class="delete-icon" 
+                      :icon="'delete'" 
+                      circle
+                    />
+                  </div>
+                </div>
+                <el-input
+                  v-model="userInput"
+                  type="textarea"
+                  :rows="4"
+                  placeholder="输入消息..."
+                  resize="none"
+                  @keydown="handleKeydown"
+                />
+              </div>
         </div>
 
         <!-- 工具界面 -->

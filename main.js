@@ -203,4 +203,4 @@ app.on('window-all-closed', () => {
 })
 
 // 禁用缓存
-// app.commandLine.appendSwitch('disable-http-cache')
+app.commandLine.appendSwitch('disable-http-cache')
