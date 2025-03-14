@@ -90,12 +90,18 @@ const app = Vue.createApp({
           enabled: false,
         }
       },
+      webSearchSettings: {
+        enabled: false,
+        engine: 'duckduckgo',
+        max_results: 5,
+      },
       expandedSections: {
         settingsBase: true,
         settingsAdvanced: true,
         reasonerConfig: true,
         time: false,
         superapi: true,
+        webSearchConfig: true,
       },
       showUploadDialog: false,
       files: [],
@@ -425,7 +431,8 @@ const app = Vue.createApp({
       const payload = {
         ...this.settings,
         tools: this.toolsSettings,
-        reasoner: this.reasonerSettings
+        reasoner: this.reasonerSettings,
+        webSearch: this.webSearchSettings 
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',

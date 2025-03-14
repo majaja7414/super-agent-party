@@ -47,6 +47,11 @@ def load_settings():
                 "model": "deepseek-r1:14b",
                 "base_url": "http://localhost:11434/v1",
                 "api_key": ""
+            },
+            "webSearch": {
+                "enabled": False,
+                "engine": "duckduckgo",
+                "max_results": 5
             }
         }
         return default_settings
