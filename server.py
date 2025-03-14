@@ -2,7 +2,8 @@
 import copy
 import json
 import os
-from fastapi import FastAPI, HTTPException, WebSocket, Request
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI, APIStatusError
@@ -16,7 +17,7 @@ from tzlocal import get_localzone
 local_timezone = get_localzone()
 app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
-
+logger = logging.getLogger(__name__)
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -376,6 +377,44 @@ async def chat_endpoint(request: ChatRequest):
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+# 设置文件存储目录
+UPLOAD_DIRECTORY = "./uploaded_files"
+
+if not os.path.exists(UPLOAD_DIRECTORY):
+    os.makedirs(UPLOAD_DIRECTORY)
+
+@app.post("/load_file")
+async def load_file_endpoint(files: List[UploadFile]):
+    logger.info(f"Received {len(files)} files to upload.")
+    file_links = []
+    for file in files:
+        try:
+            logger.info(f"Processing file: {file.filename}")
+            # 生成唯一的文件名
+            file_extension = os.path.splitext(file.filename)[1]
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+            
+            # 将上传的文件保存到服务器
+            with open(destination, "wb") as buffer:
+                buffer.write(await file.read())
+            
+            # 构造文件链接（这里假设你的服务部署在 http://127.0.0.1:3456）
+            file_link = {"path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}", "name": file.filename}
+            file_links.append(file_link)
+        
+        except Exception as e:
+            logger.error(f"Error processing file {file.filename}: {str(e)}")
+            for link in file_links:
+                try:
+                    os.remove(os.path.join(UPLOAD_DIRECTORY, link["path"].split("/")[-1]))
+                except Exception as cleanup_e:
+                    logger.error(f"Failed to clean up file {link['path']}: {str(cleanup_e)}")
+            raise HTTPException(status_code=500, detail=f"Error occurred while processing file {file.filename}: {str(e)}")
+
+    return JSONResponse(content={"success": True, "fileLinks": file_links})
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

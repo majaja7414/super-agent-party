@@ -207,12 +207,51 @@ const app = Vue.createApp({
       if (!this.userInput.trim() || this.isTyping) return;
       
       const userInput = this.userInput.trim();
-      const fileLinks = this.files || [];
+      let fileLinks = this.files || [];
+      if (!this.isElectron) {
+        // 如果不是在Electron环境中，则通过http://127.0.0.1:3456/load_file 接口上传文件，将文件上传到blob对应的链接
+        const formData = new FormData();
+        
+        // 使用 'files' 作为键名，而不是 'file'
+        for (const file of fileLinks) {
+            if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
+                formData.append('files', file.file, file.name); // 添加第三个参数为文件名
+            } else {
+                console.error("Invalid file object:", file);
+                showNotification('文件上传失败: 文件无效', 'error');
+                return;
+            }
+        }
+    
+        try {
+            const response = await fetch('http://127.0.0.1:3456/load_file', {
+                method: 'POST',
+                body: formData
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server responded with an error:', errorText);
+                showNotification(`文件上传失败: ${errorText}`, 'error');
+                return;
+            }
+            const data = await response.json();
+            if (data.success) {
+                fileLinks = data.fileLinks;
+            } else {
+                showNotification('文件上传失败', 'error');
+            }
+        } catch (error) {
+            console.error('Error during file upload:', error);
+            showNotification('文件上传失败', 'error');
+        }
+    }
+      const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
       // 添加用户消息
       this.messages.push({
         role: 'user',
         content: userInput,
-        fileLinks: fileLinks
+        fileLinks: fileLinks,
+        fileLinks_content: fileLinks_content
       });
       this.files = [];
       let max_rounds = this.settings.max_rounds || 10;
@@ -222,19 +261,19 @@ const app = Vue.createApp({
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content + msg.fileLinks_content
         }));
       } else {
         // 准备发送的消息历史（保留最近 max_rounds 条消息）
         messages = this.messages.slice(-max_rounds).map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content + msg.fileLinks_content
         }));
       }
 
       
       this.userInput = '';
-      
+
       try {
         // 请求参数需要与后端接口一致
         const response = await fetch('http://127.0.0.1:3456/v1/chat/completions', {  // 修改端点路径
@@ -247,7 +286,7 @@ const app = Vue.createApp({
           body: JSON.stringify({
             messages: messages,
             stream: true,
-            fileLinks: []
+            fileLinks: fileLinks.map(fileLink => fileLink.path).flat()
           })
         });
         
@@ -485,7 +524,7 @@ const app = Vue.createApp({
           }
         }
         return { // 浏览器File对象
-          path: file.path || file.name,
+          path: URL.createObjectURL(file),// 生成临时URL
           name: file.name,
           file: file
         }
