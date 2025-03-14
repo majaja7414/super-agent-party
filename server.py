@@ -73,6 +73,7 @@ class ChatRequest(BaseModel):
     top_p: float = 1
     frequency_penalty: float = 0
     presence_penalty: float = 0
+    fileLinks: List[str] = None
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:

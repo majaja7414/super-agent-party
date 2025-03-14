@@ -71,8 +71,25 @@
           <!-- 聊天消息列表 -->
           <div class="messages-container" ref="messagesContainer">
             <div v-for="(message, index) in messages" :key="index" class="message" :class="message.role">
-              <div class="message-content" 
-                   v-html="message.role === 'user' ? message.content : formatMessage(message.content)">
+              <div class="message-content">
+                <!-- 用户消息内容 -->
+                <div v-if="message.role === 'user'" class="user-message-content">
+                  <div v-html="message.content"></div>
+                  <!-- 文件链接展示 -->
+                  <div v-if="message.fileLinks?.length" class="file-links">
+                    <a
+                      v-for="(link, linkIndex) in message.fileLinks"
+                      :key="linkIndex"
+                      @click.prevent="openFile(link)"
+                      target="_blank"
+                      class="file-link"
+                    >
+                      @{{ link.name }}
+                    </a>
+                  </div>
+                </div>
+                <!-- AI回复内容 -->
+                <div v-else v-html="formatMessage(message.content)"></div>
               </div>
             </div>
           </div>

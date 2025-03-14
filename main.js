@@ -92,6 +92,7 @@ app.whenReady().then(async () => {
       frame: false,
       show: false, // 初始隐藏窗口
       webPreferences: {
+        preload: path.join(__dirname, 'js/preload.js'),
         nodeIntegration: true,
         contextIsolation: false, 
         webSecurity: false,
