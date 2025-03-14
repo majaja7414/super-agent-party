@@ -413,36 +413,6 @@ const app = Vue.createApp({
     sendFiles() {
       this.showUploadDialog = true;
     },
-    // 处理文件拖放
-    handleDrop(event) {
-      event.preventDefault();
-      const files = Array.from(event.dataTransfer.files);
-      this.addFiles(files);
-    },
-    // 处理文件选择
-    async browseFiles() {
-      if (!isElectron) {
-        // 浏览器环境处理
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.multiple = true;
-        input.onchange = (e) => {
-          this.addFiles(Array.from(e.target.files));
-        };
-        input.click();
-      } else {
-        // Electron环境处理
-        const result = await ipcRenderer.invoke('open-file-dialog');
-        if (!result.canceled) {
-          this.addFiles(result.filePaths);
-        }
-      }
-    },
-    // 添加文件到列表
-    sendFiles() {
-      this.showUploadDialog = true;
-    },
-
     // 文件选择处理方法
     async browseFiles() {
       if (!this.isElectron) {
