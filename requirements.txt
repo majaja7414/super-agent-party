@@ -3,3 +3,9 @@ uvicorn[standard]
 openai
 tzlocal
 python-multipart
+requests
+PyPDF2
+python-docx
+openpyxl
+striprtf
+odfpy

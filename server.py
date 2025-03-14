@@ -14,6 +14,8 @@ import uuid
 import time
 from typing import List, Dict
 from tzlocal import get_localzone
+from py.load_files import get_files_content
+
 local_timezone = get_localzone()
 app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
@@ -78,6 +80,13 @@ class ChatRequest(BaseModel):
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
+        if request.fileLinks:
+            files_content = get_files_content(request.fileLinks)
+            if request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] = +request.messages[0]['content'] +f"\n\n相关文件内容：{files_content}" 
+            else:
+                request.messages.append({'role': 'system', 'content': f"相关文件内容：{files_content}"})
+
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
 

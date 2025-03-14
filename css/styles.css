@@ -220,47 +220,6 @@ body {
   margin-top: 10px;
 }
 
-.message-content ul,
-.message-content ol {
-  margin: 8px 0;
-  padding-left: 24px;
-  line-height: 1.6;
-}
-
-.message-content li {
-  margin: 4px 0;
-}
-
-.message-content img {
-  max-width: 100%;
-  border-radius: 4px;
-  margin: 12px 0;
-}
-
-.message-content hr {
-  border: none;
-  border-top: 1px solid var(--el-border-color-light);
-  margin: 16px 0;
-}
-
-.message-content h1,
-.message-content h2,
-.message-content h3,
-.message-content h4,
-.message-content h5,
-.message-content h6 {
-  margin: 16px 0 8px;
-  line-height: 1.4;
-  color: var(--el-text-color-primary);
-}
-
-.message-content h1 { font-size: 1.6em; }
-.message-content h2 { font-size: 1.4em; }
-.message-content h3 { font-size: 1.2em; }
-.message-content h4 { font-size: 1.1em; }
-.message-content h5 { font-size: 1em; }
-.message-content h6 { font-size: 0.9em; }
-
 
 /* 修改原有样式 */
 .button-group {
