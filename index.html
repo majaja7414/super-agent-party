@@ -80,7 +80,7 @@
                     <a
                       v-for="(link, linkIndex) in message.fileLinks"
                       :key="linkIndex"
-                      :href="link"
+                      :href="link.path"
                       target="_blank"
                       class="file-link"
                     >
