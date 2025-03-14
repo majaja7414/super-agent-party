@@ -1,9 +1,27 @@
 // 检查是否在Electron环境中
 const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
 let ipcRenderer;
+let clipboardInstance = null; // 全局剪贴板实例
 if (isElectron) {
   ipcRenderer = require('electron').ipcRenderer;
 }
+
+// 修改markdown配置
+const md = window.markdownit({
+  html: true,
+  linkify: true,
+  typographer: true,
+  highlight: function (str, lang) {
+    const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+    try {
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button">复制</button></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
+    } catch (__) {
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button">复制</button></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
+    }
+  }
+});
+
+
 const ALLOWED_EXTENSIONS = [
   // 办公文档
   'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
@@ -124,14 +142,37 @@ const app = Vue.createApp({
       }
     },
 
-    // 格式化消息，使用marked渲染markdown
     formatMessage(content) {
       if (content) {
-        // 使用marked解析Markdown内容
-        return marked.parse(content);
+        const rendered = md.render(content);
+        // 在下一次DOM更新后初始化复制按钮
+        this.$nextTick(() => {
+          this.initCopyButtons();
+        });
+        return rendered;
       }
       return '';
     },
+    initCopyButtons() {
+      // 销毁旧实例 (重要!)
+      if (clipboardInstance) {
+        clipboardInstance.destroy() 
+      }
+      // 创建新实例
+      clipboardInstance = new ClipboardJS('.copy-button', {
+        text: (trigger) => {
+          // 建议增加容错处理
+          const target = trigger.parentNode.nextElementSibling
+          return target ? target.textContent : ''
+        }
+      })
+      // 单次绑定事件 (重要!)
+      clipboardInstance.off('success') // 移除旧监听
+      clipboardInstance.on('success', (e) => {
+        showNotification('已复制到剪贴板')
+        e.clearSelection()
+      })
+    },  
     // 滚动到最新消息
     scrollToBottom() {
       this.$nextTick(() => {
@@ -208,7 +249,7 @@ const app = Vue.createApp({
       
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
-      if (!this.isElectron) {
+      if (!this.isElectron && fileLinks.length > 0) {
         // 如果不是在Electron环境中，则通过http://127.0.0.1:3456/load_file 接口上传文件，将文件上传到blob对应的链接
         const formData = new FormData();
         
@@ -224,6 +265,7 @@ const app = Vue.createApp({
         }
     
         try {
+            console.log('Uploading files...');
             const response = await fetch('http://127.0.0.1:3456/load_file', {
                 method: 'POST',
                 body: formData
@@ -275,6 +317,7 @@ const app = Vue.createApp({
       this.userInput = '';
 
       try {
+        console.log('Sending message...');
         // 请求参数需要与后端接口一致
         const response = await fetch('http://127.0.0.1:3456/v1/chat/completions', {  // 修改端点路径
           method: 'POST',

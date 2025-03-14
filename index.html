@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Super API Party</title>
   <link rel="stylesheet" href="css/styles.css">
-  <!-- 添加marked的CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.min.js"></script>
+  <!-- GitHub Markdown CSS for styling -->
+  <link rel="stylesheet" href="lib/css/github-markdown.min.css">
+  <!-- Highlight.js CSS for code highlighting -->
+  <link rel="stylesheet" href="lib/css/github.min.css">
+  <script src="lib/js/clipboard.min.js"></script>
   <!-- 引入Element Plus样式 -->
   <link rel="stylesheet" href="node_modules/element-plus/dist/index.css">
   <link rel="icon" href="data:,">
@@ -89,7 +92,8 @@
                   </div>
                 </div>
                 <!-- AI回复内容 -->
-                <div v-else v-html="formatMessage(message.content)"></div>
+                <div v-else class="markdown-body" v-html="formatMessage(message.content)"></div>
+
               </div>
             </div>
           </div>
@@ -358,6 +362,9 @@
   <script src="node_modules/vue/dist/vue.global.js"></script>
   <script src="node_modules/element-plus/dist/index.full.js"></script>
   <script src="node_modules/@element-plus/icons-vue/dist/index.iife.min.js"></script>
+  <!-- Include markdown-it and highlight.js scripts -->
+  <script src="lib/js/markdown-it.min.js"></script>
+  <script src="lib/js/highlight.min.js"></script>
   <script src="js/renderer.js"></script>
 </body>
 </html>

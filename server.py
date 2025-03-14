@@ -81,11 +81,15 @@ class ChatRequest(BaseModel):
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
         if request.fileLinks:
-            files_content = get_files_content(request.fileLinks)
-            if request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] = +request.messages[0]['content'] +f"\n\n相关文件内容：{files_content}" 
+            # 异步获取文件内容
+            files_content = await get_files_content(request.fileLinks)
+            system_message = f"\n\n相关文件内容：{files_content}"
+            
+            # 修复字符串拼接错误
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += system_message
             else:
-                request.messages.append({'role': 'system', 'content': f"相关文件内容：{files_content}"})
+                request.messages.insert(0, {'role': 'system', 'content': system_message})
 
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
@@ -443,6 +447,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
 
+app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory="node_modules"), name="node_modules")
 app.mount("/css", StaticFiles(directory="css"), name="css")
 app.mount("/js", StaticFiles(directory="js"), name="js")

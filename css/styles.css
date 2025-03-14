@@ -109,14 +109,16 @@ body {
   display: none;
 }
 
+/* 修复消息容器布局 */
 .message {
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
 }
 
+/* 修复用户消息换行问题 */
 .message.user {
-  align-items: flex-end;
+  align-items: flex-end; /* 原设置正确，但需要配合子元素宽度 */
 }
 
 .message.assistant {
@@ -124,8 +126,7 @@ body {
 }
 
 /* 消息内容基础样式 */
-.message-content {
-  max-width: 80%;
+.user-message-content {
   padding: 12px;
   border-radius: 12px;
   font-size: 14px;
@@ -146,80 +147,38 @@ body {
   border-radius: 12px 12px 12px 0;
 }
 
-/* Markdown 样式 */
-.message-content p {
-  margin: 4px 0;
+/* 增强AI消息样式 */
+.assistant-message-content {
+  max-width: 85%;
+  width: fit-content; /* 确保动态宽度 */
+  white-space: pre-line;
+}
+
+.assistant .message-content > :first-child {
+  margin-top: 0;
+}
+
+.assistant .message-content > :last-child {
+  margin-bottom: 0;
+}
+
+/* 添加Markdown正文样式 */
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 16px;
   line-height: 1.6;
-}
-
-.message-content code {
-  background-color: var(--el-bg-color-page);
-  padding: 3px 6px;
-  border-radius: 4px;
-  font-family: "Fira Code", "Cascadia Code", Consolas, monospace;
-  font-size: 13px;
   color: var(--el-text-color-primary);
+  padding: 16px;
 }
 
-.message-content pre {
-  background-color: var(--el-bg-color);
-  border: 1px solid var(--el-border-color-light);
-  border-radius: 6px;
-  padding: 12px 16px;
-  margin: 12px 0;
-  overflow-x: auto;
+.markdown-body p {
+  margin: 0.8em 0;
 }
 
-.message-content pre code {
-  background-color: transparent;
-  padding: 0;
-  border-radius: 0;
-  color: var(--el-text-color-regular);
-  font-size: 13px;
-  line-height: 1.6;
-  display: block;
+.markdown-body pre {
+  margin: 1em 0;
+  overflow: auto;
 }
-
-.message-content table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 12px 0;
-  background-color: var(--el-bg-color);
-  font-size: 14px;
-}
-
-.message-content th,
-.message-content td {
-  border: 1px solid var(--el-border-color-light);
-  padding: 8px 12px;
-  text-align: left;
-}
-
-.message-content th {
-  background-color: var(--el-bg-color);
-  font-weight: 600;
-  color: var(--el-text-color-primary);
-}
-
-.message-content blockquote {
-  border-left: 4px solid #63a2ea; /* 使用蓝色边框突出显示 */
-  margin: 20px 0;
-  padding: 16px 24px;
-  color: #5a6d82; /* 设置一种较浅的颜色来区分正文 */
-  background-color: #f9f9fb; /* 轻微的背景色变化 */
-  font-style: italic;
-  position: relative;
-  line-height: 1.7; /* 提高行高，增加可读性 */
-}
-
-
-/* 改善嵌套引用的样式 */
-.message-content blockquote blockquote {
-  border-left-color: #9b59b6; /* 嵌套时使用不同的颜色 */
-  padding-left: 20px;
-  margin-top: 10px;
-}
-
 
 /* 修改原有样式 */
 .button-group {
@@ -530,6 +489,7 @@ body {
   flex-wrap: wrap;
   gap: 6px;
 }
+/* 单个文件链接 */
 .file-link {
   display: inline-flex;
   align-items: center;
@@ -541,9 +501,75 @@ body {
   text-decoration: none;
   transition: all 0.2s;
   max-width: 240px;
+  white-space: nowrap; /* 禁止链接文字换行 */
+  overflow: hidden;
 }
+
 .file-link:hover {
   background: #e1e9ff;
   color: #337ecc;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
+
+/* Markdown表格样式 */
+.markdown-body table {
+  width: 100% !important; /* 强制继承父级宽度 */
+  min-width: 100%; /* 防止内容不足时收缩 */
+  display: table; /* 恢复表格特性 */
+  box-shadow: none; /* 移除阴影避免视觉干扰 */
+}
+
+
+.markdown-body th, 
+.markdown-body td {
+  padding: 12px 15px;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.markdown-body th {
+  background-color: var(--el-color-primary-light-9);
+  font-weight: 600;
+}
+
+.markdown-body tr:nth-child(even) {
+  background-color: var(--el-fill-color-lighter);
+}
+
+/* 代码块样式 */
+.code-block {
+  position: relative;
+  margin: 1em 0;
+  border-radius: 8px;
+  background: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-light);
+}
+
+.code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--el-color-primary-light-8);
+  border-radius: 8px 8px 0 0;
+}
+
+.code-lang {
+  color: var(--el-color-white);
+  font-size: 0.9em;
+  font-family: var(--el-font-family);
+}
+
+.copy-button {
+  background: none;
+  border: none;
+  color: var(--el-color-white);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.copy-button:hover {
+  background: rgba(255,255,255,0.2);
+}
+
