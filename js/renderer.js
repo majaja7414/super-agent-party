@@ -524,23 +524,6 @@ const app = Vue.createApp({
       this.files = [...this.files, ...newFiles];
       this.showUploadDialog = false;
     },
-    openFile(link) {
-      if (window.api) { // 检查是否在 Electron 环境中
-        window.api.openPath(link.path)
-          .then((success) => {
-            if (success) {
-              console.warn('An error occurred:', success);
-            }
-          })
-          .catch((error) => {
-            console.error('Failed to open file:', error);
-          });
-      } else {
-        console.warn('Opening local paths directly in browsers may not work due to security restrictions.');
-        // 示例：可以提示用户先上传文件，然后使用上传后的 URL
-        window.open(`file://${link.path}`, '_blank'); // 注意：这在大多数情况下不会工作，仅作为示例
-      }
-    }
   }
 });
 
