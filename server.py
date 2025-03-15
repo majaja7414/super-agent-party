@@ -104,6 +104,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         user_prompt = request.messages[-1]['content']
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        if settings['tools']['language']['enabled']:
+            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -425,6 +427,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     try:
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        if settings['tools']['language']['enabled']:
+            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         user_prompt = request.messages[-1]['content']
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':

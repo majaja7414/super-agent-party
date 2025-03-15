@@ -186,7 +186,7 @@
                 <el-switch v-model="toolsSettings.language.enabled" @click.stop @change="autoSaveSettings"/>
               </div>
               <div class="tool-content" v-show="expandedSections.language">
-                <el-form-item label="目标语言" class="form-item-align">
+                <el-form-item label="助手语言" class="form-item-align">
                   <el-select 
                     v-model="toolsSettings.language.language" 
                     @change="autoSaveSettings"
@@ -196,7 +196,7 @@
                     <el-option v-for="option in languageOptions" :key="option.value" :label="option.label" :value="option.value"></el-option>
                   </el-select>
                 </el-form-item>
-                <el-form-item label="语气" class="form-item-align">
+                <el-form-item label="助手语气" class="form-item-align">
                   <el-select 
                     v-model="toolsSettings.language.tone" 
                     @change="autoSaveSettings"
