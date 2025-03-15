@@ -18,21 +18,30 @@ from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
 
 local_timezone = get_localzone()
+logger = logging.getLogger(__name__)
 app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
 # 设置模板文件
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
-logger = logging.getLogger(__name__)
+# 加载settings_template.json文件
+with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
+    default_settings = json.load(f)
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            settings = json.load(f)
+        # 与default_settings比较，如果缺少字段或者二级字段，则添加默认值
+        for key, value in default_settings.items():
+            if key not in settings:
+                settings[key] = value
+            elif isinstance(value, dict):
+                for sub_key, sub_value in value.items():
+                    if sub_key not in settings[key]:
+                        settings[key][sub_key] = sub_value
+        return settings
     except FileNotFoundError:
         # 创建config文件夹
         os.makedirs('config', exist_ok=True)
-        # 加载settings_template.json文件
-        with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
-            default_settings = json.load(f)
         # 创建settings.json文件，并写入默认设置
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(default_settings, f, ensure_ascii=False, indent=2)
@@ -88,8 +97,19 @@ class ChatRequest(BaseModel):
     presence_penalty: float = 0
     fileLinks: List[str] = None
 
+def tools_change_messages(request: ChatRequest, settings: dict):
+    if settings['tools']['time']['enabled']:
+        request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+    if settings['tools']['language']['enabled']:
+        request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
+    if settings['tools']['inference']['enabled']:
+        inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
+        request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
+    return request
+
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
+        request = tools_change_messages(request, settings)
         tools = request.tools or []
         if request.fileLinks:
             # 异步获取文件内容
@@ -102,14 +122,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
         user_prompt = request.messages[-1]['content']
-        if settings['tools']['time']['enabled']:
-            request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
-        if settings['tools']['language']['enabled']:
-            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
-
         async def stream_generator():
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -425,10 +440,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     close_tag = "</think>"
     tools = request.tools or []
     try:
-        if settings['tools']['time']['enabled']:
-            request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
-        if settings['tools']['language']['enabled']:
-            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
+        request = tools_change_messages(request, settings)
         user_prompt = request.messages[-1]['content']
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':

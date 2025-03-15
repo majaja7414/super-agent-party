@@ -13,6 +13,9 @@
         "enabled": false,
         "language": "zh-CN",
         "tone": "正常"
+      },
+      "inference": {
+        "enabled": false
       }
     },
     "reasoner": {

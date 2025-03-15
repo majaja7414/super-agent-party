@@ -104,6 +104,9 @@ const app = Vue.createApp({
           language: 'zh-CN',
           tone: 'normal',
         },
+        inference: {
+          enabled: false, // 默认不启用
+        }
       },
       webSearchSettings: {
         enabled: false,
@@ -121,6 +124,7 @@ const app = Vue.createApp({
         reasonerConfig: true,
         time: false,
         language: true,
+        inference: false,
         superapi: true,
         webSearchConfig: true,
         duckduckgoConfig: true,
@@ -256,8 +260,29 @@ main();`,
     },
 
     formatMessage(content) {
-      if (content) {
-        const rendered = md.render(content);
+      // 使用正则表达式查找<think>...</think>标签内的内容
+      const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
+      const thinkTagRegexOpenOnly = /<think>[\s\S]*$/;
+      
+      // 情况2: 同时存在<think>和</think>
+      let formattedContent = content.replace(thinkTagRegexWithClose, match => {
+        // 移除开闭标签并清理首尾空白
+        const thinkContent = match.replace(/<\/?think>/g, '').trim();
+        return thinkContent.split('\n').map(line => `> ${line}`).join('\n');
+      });
+      
+
+      // 情况1: 只有<think>，没有</think>，将<think>之后的所有内容变为引用
+      if (!thinkTagRegexWithClose.test(formattedContent)) {
+        formattedContent = formattedContent.replace(thinkTagRegexOpenOnly, match => {
+          // 移除<think>标签
+          const openThinkContent = match.replace('<think>', '').trim();
+          // 将内容转换为引用格式
+          return openThinkContent.split('\n').map(line => `> ${line}`).join('\n');
+        });
+      }
+      if (formattedContent) {
+        const rendered = md.render(formattedContent);
         // 在下一次DOM更新后初始化复制按钮
         this.$nextTick(() => {
           this.initCopyButtons();
@@ -326,30 +351,9 @@ main();`,
             max_tokens: data.data.max_tokens || 4096,
             max_rounds: data.data.max_rounds || 10,
           };
-          this.toolsSettings = data.data.tools || {
-            time: { enabled: false },
-            language: {
-              enabled: false, // 默认不启用
-              language: 'zh-CN',
-              tone: 'normal',
-            },
-          };
-          this.reasonerSettings = data.data.reasoner || {
-            enabled: false, // 默认不启用
-            model: '',
-            base_url: '',
-            api_key: '',
-          };
-          this.webSearchSettings = data.data.webSearch || {
-            enabled: false, // 默认不启用
-            engine: 'duckduckgo',
-            when: 'before_thinking', // 默认在思考前搜索
-            duckduckgo_max_results: 10,
-            searxng_url: 'http://127.0.0.1:8080',
-            searxng_max_results: 10,
-            tavily_max_results: 10, // 默认值
-            tavily_api_key: '',
-          };
+          this.toolsSettings = data.data.tools || {};
+          this.reasonerSettings = data.data.reasoner || {};
+          this.webSearchSettings = data.data.webSearch || {};
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
@@ -522,10 +526,10 @@ main();`,
                   this.scrollToBottom();
                 }
                 // 处理 content 逻辑
-                else if (parsed.choices?.[0]?.delta?.content) {
+                if (parsed.choices?.[0]?.delta?.content) {
                   const lastMessage = this.messages[this.messages.length - 1];
                   if (this.isThinkOpen) {
-                    lastMessage.content += '\n';
+                    lastMessage.content += '\n\n';
                     this.isThinkOpen = false; // 重置状态
                   }
                   lastMessage.content += parsed.choices[0].delta.content;
