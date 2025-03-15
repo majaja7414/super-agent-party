@@ -57,8 +57,12 @@ def load_settings():
         return default_settings
 
 settings = load_settings()
-client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
-reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
+if settings:
+    client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
+    reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
+else:
+    client = AsyncOpenAI()
+    reasoner_client = AsyncOpenAI()
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
