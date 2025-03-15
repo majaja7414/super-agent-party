@@ -4,34 +4,13 @@ from urllib.parse import urlparse
 import aiohttp
 from io import BytesIO
 import asyncio
+from PyPDF2 import PdfReader
+from docx import Document
+from openpyxl import load_workbook
+from striprtf.striprtf import rtf_to_text
+from odf import text
+from pptx import Presentation  # 新增PPTX库
 
-# 办公文档处理库检测
-try:
-    from PyPDF2 import PdfReader
-except ImportError:
-    PdfReader = None
-
-try:
-    from docx import Document
-except ImportError:
-    Document = None
-
-try:
-    from openpyxl import load_workbook
-except ImportError:
-    load_workbook = None
-
-try:
-    from striprtf.striprtf import rtf_to_text
-except ImportError:
-    rtf_to_text = None
-
-try:
-    from odf import text
-    from odf.opendocument import load
-    from odf.teletype import extractText
-except ImportError:
-    text, load, extractText = None, None, None
 
 # 文件类型配置
 FILE_FILTERS = [
@@ -106,6 +85,8 @@ async def handle_office_document(content, ext):
         'xls': handle_excel,
         'rtf': handle_rtf,
         'odt': handle_odt,
+        'pptx': handle_pptx,  # 新增PPTX处理
+        'ppt': handle_ppt,    # PPT处理占位
     }.get(ext)
     
     if handler:
@@ -114,7 +95,6 @@ async def handle_office_document(content, ext):
 
 async def handle_odt(content):
     """异步处理ODT文件"""
-    
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_odt, content)
 
@@ -140,11 +120,8 @@ def _process_odt(content):
     except Exception as e:
         raise RuntimeError(f"ODT文件解析失败: {str(e)}")
 
-
 async def handle_pdf(content):
     """异步处理PDF文件"""
-    if not PdfReader:
-        raise ImportError("请先安装 PyPDF2 库：pip install PyPDF2")
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_pdf, content)
 
@@ -159,8 +136,6 @@ def _process_pdf(content):
 
 async def handle_docx(content):
     """异步处理DOCX文件"""
-    if not Document:
-        raise ImportError("请先安装 python-docx 库：pip install python-docx")
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_docx, content)
 
@@ -171,8 +146,6 @@ def _process_docx(content):
 
 async def handle_excel(content):
     """异步处理Excel文件"""
-    if not load_workbook:
-        raise ImportError("请先安装 openpyxl 库：pip install openpyxl")
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_excel, content)
 
@@ -187,14 +160,40 @@ def _process_excel(content):
 
 async def handle_rtf(content):
     """异步处理RTF文件"""
-    if not rtf_to_text:
-        raise ImportError("请先安装 striprtf 库：pip install striprtf")
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_rtf, content)
 
 def _process_rtf(content):
     """同步处理RTF内容"""
     return rtf_to_text(content.decode('utf-8', errors='replace'))
+
+async def handle_pptx(content):
+    """异步处理PPTX文件"""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _process_pptx, content)
+
+def _process_pptx(content):
+    """同步处理PPTX内容"""
+    try:
+        prs = Presentation(BytesIO(content))
+        text = []
+        for slide in prs.slides:
+            for shape in slide.shapes:
+                # 提取形状文本
+                if hasattr(shape, "text"):
+                    text.append(shape.text.strip())
+                # 提取表格内容
+                if shape.has_table:
+                    for row in shape.table.rows:
+                        row_data = [cell.text_frame.text.strip() for cell in row.cells]
+                        text.append("\t".join(row_data))
+        return '\n'.join(filter(None, text))
+    except Exception as e:
+        raise RuntimeError(f"PPTX文件解析失败: {str(e)}")
+
+async def handle_ppt(content):
+    """处理PPT文件（需要Windows系统支持）"""
+    raise NotImplementedError("PPT格式需要Windows系统并安装Microsoft PowerPoint")
 
 async def get_file_content(input_str):
     """异步获取文件内容"""

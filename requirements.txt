@@ -10,3 +10,5 @@ openpyxl
 striprtf
 odfpy
 aiohttp
+duckduckgo_search
+python-pptx
