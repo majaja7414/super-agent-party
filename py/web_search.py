@@ -4,6 +4,7 @@ import os
 from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
 import requests
+from tavily import TavilyClient
 
 SETTINGS_FILE = 'config/settings.json'
 def load_settings():
@@ -16,36 +17,13 @@ def load_settings():
         # 创建settings.json文件
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             f.write('{}')
-        default_settings =  {
-            "model": "qwen2.5:14b",  # 使用OpenAI官方参数名
-            "base_url": "http://localhost:11434/v1",
-            "api_key": "",
-            "temperature": 0.7,
-            "max_tokens": 4096,
-            "max_rounds": 10,
-            "tools": {
-                "time": {
-                    "enabled": False,
-                }
-            },
-            "reasoner": {
-                "enabled": False,
-                "model": "deepseek-r1:14b",
-                "base_url": "http://localhost:11434/v1",
-                "api_key": ""
-            },
-            "webSearch": {
-                "enabled": False,
-                "engine": "duckduckgo",
-                "when": "before_thinking",
-                "duckduckgo_max_results": 5,
-            }
-        }
+        default_settings =  {}
         return default_settings
 
-settings = load_settings()
-async def DDGsearch_async(query, max_results=10):
+async def DDGsearch_async(query):
     def sync_search():
+        settings = load_settings()
+        max_results = settings['webSearch']['duckduckgo_max_results'] or 10
         try:
             with DDGS() as ddg:
                 results = ddg.text(query, max_results=max_results)
@@ -80,8 +58,10 @@ duckduckgo_tool = {
     },
 }
 
-async def searxng_async(query, max_results=10):
+async def searxng_async(query):
     def sync_search(query):
+        settings = load_settings()
+        max_results = settings['webSearch']['searxng_max_results'] or 10
         api_url = settings['webSearch']['searxng_url'] or "http://127.0.0.1:8080"
         headers = {"User-Agent": "Mozilla/5.0"}
         params = {"q": query, "categories": "general","count": max_results}
@@ -129,6 +109,48 @@ searxng_tool = {
                     "type": "string",
                     "description": "搜索关键词，支持自然语言和多关键词组合查询",
                 },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+
+async def Tavily_search_async(query):
+    def sync_search():
+        settings = load_settings()
+        max_results = settings['webSearch']['tavily_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('tavily_api_key', "")
+            client = TavilyClient(api_key)
+            response = client.search(
+                query=query,
+                max_results=max_results
+            )
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Tavily search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+tavily_tool = {
+    "type": "function",
+    "function": {
+        "name": "Tavily_search_async",
+        "description": "通过Tavily专业搜索API获取高质量的网络信息，特别适合获取实时数据和专业分析。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
             },
             "required": ["query"],
         },

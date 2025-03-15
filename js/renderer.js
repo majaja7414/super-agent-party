@@ -104,9 +104,11 @@ const app = Vue.createApp({
         enabled: false,
         engine: 'duckduckgo',
         when: 'before_thinking',
-        duckduckgo_max_results: 5, // 默认值
+        duckduckgo_max_results: 10, // 默认值
         searxng_url: 'http://127.0.0.1:8080',
-        searxng_max_results: 5, // 默认值
+        searxng_max_results: 10, // 默认值
+        tavily_max_results: 10, // 默认值
+        tavily_api_key: '',
       },
       expandedSections: {
         settingsBase: true,
@@ -117,6 +119,7 @@ const app = Vue.createApp({
         webSearchConfig: true,
         duckduckgoConfig: true,
         searxngConfig: true,
+        tavilyConfig: true,
       },
       showUploadDialog: false,
       files: [],
@@ -295,6 +298,8 @@ main();`,
             duckduckgo_max_results: 10,
             searxng_url: 'http://127.0.0.1:8080',
             searxng_max_results: 10,
+            tavily_max_results: 10, // 默认值
+            tavily_api_key: '',
           };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {

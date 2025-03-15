@@ -15,7 +15,7 @@ import time
 from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
-from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool
+from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
 
 local_timezone = get_localzone()
 app = FastAPI()
@@ -31,33 +31,7 @@ def load_settings():
         # 创建settings.json文件
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             f.write('{}')
-        default_settings =  {
-            "model": "qwen2.5:14b",  # 使用OpenAI官方参数名
-            "base_url": "http://localhost:11434/v1",
-            "api_key": "",
-            "temperature": 0.7,
-            "max_tokens": 4096,
-            "max_rounds": 10,
-            "tools": {
-                "time": {
-                    "enabled": False,
-                }
-            },
-            "reasoner": {
-                "enabled": False,
-                "model": "deepseek-r1:14b",
-                "base_url": "http://127.0.0.1:11434/v1",
-                "api_key": ""
-            },
-            "webSearch": {
-                "enabled": False,
-                "engine": "duckduckgo",
-                "when": "before_thinking",
-                "duckduckgo_max_results": 10,
-                "searxng_url": "http://127.0.0.1:8080",
-                "searxng_max_results": 10
-            }
-        }
+        default_settings =  {}
         return default_settings
 
 settings = load_settings()
@@ -82,6 +56,7 @@ app.add_middleware(
 _TOOL_HOOKS = {
     "DDGsearch_async": DDGsearch_async,
     "searxng_async": searxng_async,
+    "Tavily_search_async": Tavily_search_async
 }
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
@@ -148,9 +123,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
                     if settings['webSearch']['engine'] == 'duckduckgo':
-                        results = await DDGsearch_async(user_prompt, settings['webSearch']['duckduckgo_max_results'])
+                        results = await DDGsearch_async(user_prompt)
                     elif settings['webSearch']['engine'] == 'searxng':
-                        results = await searxng_async(user_prompt, settings['webSearch']['searxng_max_results'])
+                        results = await searxng_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'tavily':
+                        results = await Tavily_search_async(user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
                 if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
@@ -158,6 +135,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(duckduckgo_tool)
                     elif settings['webSearch']['engine'] == 'searxng':
                         tools.append(searxng_tool)
+                    elif settings['webSearch']['engine'] == 'tavily':
+                        tools.append(tavily_tool)
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = request.messages.copy()
@@ -270,7 +249,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
             while tool_calls:
                 response_content = tool_calls[0].function
-                if response_content.name in  ["searxng_async", "DDGsearch_async"]:
+                if response_content.name in  ["DDGsearch_async","searxng_async", "Tavily_search_async"]:
                     chunk_dict = {
                         "id": "webSearch",
                         "choices": [
@@ -446,17 +425,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
-                    results = await DDGsearch_async(user_prompt, settings['webSearch']['duckduckgo_max_results'])
+                    results = await DDGsearch_async(user_prompt)
                 elif settings['webSearch']['engine'] == 'searxng':
-                    results = await searxng_async(user_prompt, settings['webSearch']['searxng_max_results'])
+                    results = await searxng_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'tavily':
+                    results = await Tavily_search_async(user_prompt)
                 if results:
                     request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
-                print(request.messages[-1]['content'])
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
                     tools.append(duckduckgo_tool)
                 elif settings['webSearch']['engine'] == 'searxng':
                     tools.append(searxng_tool)
+                elif settings['webSearch']['engine'] == 'tavily':
+                    tools.append(tavily_tool)
         if settings['reasoner']['enabled']:
             reasoner_response = await reasoner_client.chat.completions.create(
                 model=settings['reasoner']['model'],

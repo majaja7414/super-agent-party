@@ -123,15 +123,15 @@
             </el-dialog>
             <div class="button-group">
               <el-button 
-                @click="sendFiles" 
-                class="icon-btn file-btn" 
-                :icon="'DocumentAdd'" 
-                circle>
-              </el-button>
-              <el-button 
                 @click="clearMessages" 
                 class="icon-btn clear-btn" 
                 :icon="'Delete'" 
+                circle>
+              </el-button>
+              <el-button 
+                @click="sendFiles" 
+                class="icon-btn file-btn" 
+                :icon="'DocumentAdd'" 
                 circle>
               </el-button>
               <el-button 
@@ -202,7 +202,7 @@
                   >
                     <el-option label="DuckDuckGo" value="duckduckgo" ></el-option>
                     <el-option label="SearXNG" value="searxng" ></el-option>
-                    <el-option label="Tavity" value="tavity" ></el-option>
+                    <el-option label="tavily" value="tavily" ></el-option>
                   </el-select>
                 </el-form-item>
                 <el-form-item label="联网时机" class="form-item-align">
@@ -262,6 +262,36 @@
                   <el-input 
                     v-model="webSearchSettings.searxng_url" 
                     placeholder="SearXNG URL"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('tavilyConfig')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><search /></el-icon>
+                    tavily
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.tavilyConfig">
+                <el-form-item label="结果数量" class="form-item-align">
+                  <el-slider
+                    v-model="webSearchSettings.tavily_max_results"
+                    :min="1"
+                    :max="50"
+                    :step="1"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+                <el-form-item label="API Key" class="form-item-align">
+                  <el-input 
+                    v-model="webSearchSettings.tavily_api_key" 
+                    placeholder="tavily API 密钥"
+                    show-password
                     @input="autoSaveSettings"
                     class="full-width-input"
                   />
