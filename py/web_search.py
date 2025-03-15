@@ -16,3 +16,21 @@ async def DDGsearch_async(query, max_results=10):
     except Exception as e:
         print(f"Event loop error: {e}")
         return []
+    
+duckduckgo_tool = {
+    "type": "function",
+    "function": {
+        "name": "search_duckduckgo",
+        "description": f"通过关键词获得DuckDuckGo搜索上的信息。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "keywords": {
+                    "type": "string",
+                    "description": "需要搜索的关键词，可以是多个词语，多个词语之间用空格隔开。",
+                },
+            },
+            "required": ["keywords"],
+        },
+    },
+}

@@ -15,7 +15,7 @@ import time
 from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
-from py.web_search import DDGsearch_async
+from py.web_search import DDGsearch_async,duckduckgo_tool
 
 local_timezone = get_localzone()
 app = FastAPI()
@@ -257,6 +257,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict):
     open_tag = "<think>"
     close_tag = "</think>"
+    tools = request.tools or []
     try:
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
@@ -266,6 +267,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 if settings['webSearch']['engine'] == 'duckduckgo':
                     results = await DDGsearch_async(user_prompt, settings['webSearch']['max_results'])
                 request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
+            if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                if settings['webSearch']['engine'] == 'duckduckgo':
+                    tools.append(duckduckgo_tool)
         if settings['reasoner']['enabled']:
             reasoner_response = await reasoner_client.chat.completions.create(
                 model=settings['reasoner']['model'],
@@ -282,7 +286,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             model=model,
             messages=request.messages,
             temperature=request.temperature,
-            tools=request.tools,
+            tools=tools,
             stream=False,
             max_tokens=request.max_tokens or settings['max_tokens'],
             top_p=request.top_p,
