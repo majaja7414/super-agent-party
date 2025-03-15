@@ -98,7 +98,12 @@ const app = Vue.createApp({
       toolsSettings: {
         time: {
           enabled: false,
-        }
+        },
+        language: {
+          enabled: false, // 默认不启用
+          language: 'zh-CN',
+          tone: 'normal',
+        },
       },
       webSearchSettings: {
         enabled: false,
@@ -115,12 +120,51 @@ const app = Vue.createApp({
         settingsAdvanced: true,
         reasonerConfig: true,
         time: false,
+        language: true,
         superapi: true,
         webSearchConfig: true,
         duckduckgoConfig: true,
         searxngConfig: true,
         tavilyConfig: true,
       },
+      languageOptions:[
+        { value: 'zh-CN', label: '中文' }, 
+        { value: 'en-US', label: 'English' },
+        { value: 'ja-JP', label: '日本語' },
+        { value: 'ko-KR', label: '한국어' },
+        { value: 'fr-FR', label: 'Français' },
+        { value: 'es-ES', label: 'Español' },
+        { value: 'de-DE', label: 'Deutsch' },
+        { value: 'it-IT', label: 'Italiano' },
+        { value: 'ru-RU', label: 'Русский' },
+        { value: 'pt-BR', label: 'Português' },
+        { value: 'ar-AR', label: 'العربية' },
+        { value: 'hi-IN', label: 'हिन्दी' },
+        { value: 'tr-TR', label: 'Türkçe' },
+        { value: 'vi-VN', label: 'Tiếng Việt' },
+        { value: 'th-TH', label: 'ไทย' },
+        { value: 'id-ID', label: 'Bahasa Indonesia' },
+        { value: 'ms-MY', label: 'Bahasa Melayu' },
+        { value: 'nl-NL', label: 'Nederlands' },
+        { value: 'pl-PL', label: 'Polski' },
+        { value: 'cs-CZ', label: 'Čeština' }
+      ],// 语言选项
+      toneOptions:[
+        {value: 'normal', label: '正常'},
+        {value: 'formal', label: '正式'},
+        {value: 'friendly', label: '友好'},
+        {value: 'humorous', label: '幽默'},
+        {value: 'professional', label: '专业'},
+        {value: 'casual', label: '休闲'},
+        {value: 'polite', label: '阴阳怪气'},
+        {value: 'sarcastic', label: '讽刺'},
+        {value: 'flirty', label: '挑逗'},
+        {value: 'cheerful', label: '傲娇'},
+        {value: 'angry', label: '愤怒'},
+        {value: 'sad', label: '悲伤'},
+        {value: 'excited', label: '兴奋'},
+        {value: 'confident', label: '反驳'},
+      ],
       showUploadDialog: false,
       files: [],
       selectedCodeLang: 'python',
@@ -284,6 +328,11 @@ main();`,
           };
           this.toolsSettings = data.data.tools || {
             time: { enabled: false },
+            language: {
+              enabled: false, // 默认不启用
+              language: 'zh-CN',
+              tone: 'normal',
+            },
           };
           this.reasonerSettings = data.data.reasoner || {
             enabled: false, // 默认不启用

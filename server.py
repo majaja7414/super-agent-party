@@ -20,6 +20,8 @@ from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng
 local_timezone = get_localzone()
 app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
+# 设置模板文件
+SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
 logger = logging.getLogger(__name__)
 def load_settings():
     try:
@@ -28,10 +30,12 @@ def load_settings():
     except FileNotFoundError:
         # 创建config文件夹
         os.makedirs('config', exist_ok=True)
-        # 创建settings.json文件
+        # 加载settings_template.json文件
+        with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
+            default_settings = json.load(f)
+        # 创建settings.json文件，并写入默认设置
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            f.write('{}')
-        default_settings =  {}
+            json.dump(default_settings, f, ensure_ascii=False, indent=2)
         return default_settings
 
 settings = load_settings()
