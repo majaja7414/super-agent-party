@@ -1,1 +1,1 @@
-# super-API-party
+# super-agent-party
