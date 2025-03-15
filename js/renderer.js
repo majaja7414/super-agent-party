@@ -335,7 +335,7 @@ const app = Vue.createApp({
           body: JSON.stringify({
             messages: messages,
             stream: true,
-            fileLinks: fileLinks.map(fileLink => fileLink.path).flat()
+            fileLinks: Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
           })
         });
         
