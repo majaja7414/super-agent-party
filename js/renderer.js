@@ -118,9 +118,42 @@ const app = Vue.createApp({
       files: [],
       selectedCodeLang: 'python',
       codeExamples: {
-        python: 'from openai import OpenAI\n\nclient = OpenAI(...)',
-        javascript: 'const client = new OpenAI(...);',
-        curl: 'curl http://127.0.0.1:3456/v1...'
+        python: `from openai import OpenAI
+client = OpenAI(
+    api_key="super-secret-key",
+    base_url="http://127.0.0.1:3456/v1"
+)
+response = client.chat.completions.create(
+    model="super-model",
+    messages=[
+        {"role": "user", "content": "什么是super agent party？"}
+    ]
+)
+print(response.choices[0].message.content)`,
+      javascript: `import OpenAI from 'openai';
+const client = new OpenAI({
+    apiKey: "super-secret-key",
+    baseURL: "http://127.0.0.1:3456/v1"
+});
+async function main() {
+    const completion = await client.chat.completions.create({
+        model: "super-model",
+        messages: [
+            { role: "user", content: "什么是super agent party？" }
+        ]
+    });
+    console.log(completion.choices[0].message.content);
+}
+main();`,
+      curl: `curl http://127.0.0.1:3456/v1/chat/completions \\
+  -H "Content-Type: application/json" \\
+  -H "Authorization: Bearer super-secret-key" \\
+  -d '{
+    "model": "super-model",
+    "messages": [
+      {"role": "user", "content": "什么是super agent party？"}
+    ]
+  }'`
       },  
     };
   },
@@ -182,24 +215,28 @@ const app = Vue.createApp({
       }
       return '';
     },
-    initCopyButtons() {
-      // 销毁旧实例 (重要!)
-      if (clipboardInstance) {
-        clipboardInstance.destroy() 
+    handleCopy(event) {
+      const button = event.target.closest('.copy-button')
+      if (button) {
+        const codeBlock = button.closest('.code-block')
+        const codeContent = codeBlock?.querySelector('code')?.textContent || ''
+        
+        navigator.clipboard.writeText(codeContent).then(() => {
+          showNotification('已复制到剪贴板')
+        }).catch(() => {
+          showNotification('复制失败', 'error')
+        })
+        
+        event.stopPropagation()
+        event.preventDefault()
       }
-      // 创建新实例
-      clipboardInstance = new ClipboardJS('.copy-button', {
-        text: (trigger) => {
-          // 建议增加容错处理
-          const target = trigger.parentNode.nextElementSibling
-          return target ? target.textContent : ''
-        }
-      })
-      // 单次绑定事件 (重要!)
-      clipboardInstance.off('success') // 移除旧监听
-      clipboardInstance.on('success', (e) => {
-        showNotification('已复制到剪贴板')
-        e.clearSelection()
+    },
+    
+    initCopyButtons() {
+      // 移除旧的ClipboardJS初始化代码
+      document.querySelectorAll('.copy-button').forEach(btn => {
+        btn.removeEventListener('click', this.handleCopy)
+        btn.addEventListener('click', this.handleCopy)
       })
     },  
     // 滚动到最新消息

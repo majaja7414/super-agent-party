@@ -573,3 +573,14 @@ body {
   background: rgba(255,255,255,0.2);
 }
 
+/* 在样式表中添加覆盖规则 */
+.code-block pre {
+  background-color: transparent !important;
+  padding: 0;
+}
+
+.hljs {
+  background: var(--code-bg-color) !important; /* 与主题色一致 */
+  padding: 1em !important;
+  border-radius: 8px;
+}
