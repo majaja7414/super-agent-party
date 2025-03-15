@@ -77,6 +77,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+_TOOL_HOOKS = {
+    "web_search": DDGsearch_async,
+}
+
+async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
+    if "multi_tool_use." in tool_name:
+        tool_name = tool_name.replace("multi_tool_use.", "")
+    if tool_name not in _TOOL_HOOKS:
+        return None
+    tool_call = globals().get(tool_name)
+    try:
+        ret_out = await tool_call(**tool_params)
+        return ret_out
+    except:
+        return f"调用工具{tool_name}失败"
+
+
 class ChatRequest(BaseModel):
     messages: List[Dict]
     model: str = None
@@ -293,6 +310,47 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
+        while response.choices[0].message.tool_calls:
+            assistant_message = response.choices[0].message
+            response_content = assistant_message.tool_calls[0].function
+            results = await dispatch_tool(response_content.name, json.loads(response_content.arguments))
+            if results is None:
+                break
+            request.messages.append(
+                {
+                    "tool_calls": [
+                        {
+                            "id": assistant_message.tool_calls[0].id,
+                            "function": {
+                                "arguments": response_content.arguments,
+                                "name": response_content.name,
+                            },
+                            "type": assistant_message.tool_calls[0].type,
+                        }
+                    ],
+                    "role": "assistant",
+                    "content": str(response_content),
+                }
+            )
+            request.messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": assistant_message.tool_calls[0].id,
+                    "name": response_content.name,
+                    "content": results,
+                }
+            )
+            response = await client.chat.completions.create(
+                model=model,
+                messages=request.messages,
+                temperature=request.temperature,
+                tools=tools,
+                stream=False,
+                max_tokens=request.max_tokens or settings['max_tokens'],
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+            )
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
