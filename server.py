@@ -377,19 +377,11 @@ async def get_models():
         )
 
 @app.post("/v1/chat/completions")
+@app.post("/v1/responses/completions")
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client
 
     current_settings = load_settings()
-    
-    if not current_settings.get("api_key"):
-        raise HTTPException(status_code=400, detail={
-            "error": {
-                "message": "API key not configured",
-                "type": "invalid_request_error",
-                "code": "api_key_missing"
-            }
-        })
 
     # 动态更新客户端配置
     if (current_settings['api_key'] != settings['api_key'] 
