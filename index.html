@@ -45,7 +45,7 @@
             <template #title>对话</template>
           </el-menu-item>
           <el-menu-item index="settings">
-            <el-icon><document /></el-icon>
+            <el-icon><cpu /></el-icon>
             <template #title>主模型</template>
           </el-menu-item>
           <el-menu-item index="reasoner">
@@ -180,7 +180,7 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('inference')">
                 <span>
-                  <el-icon><timer /></el-icon>
+                  <el-icon><reading-lamp /></el-icon>
                   伪推理
                 </span>
                 <el-switch v-model="toolsSettings.inference.enabled" @click.stop @change="autoSaveSettings"/>
@@ -189,7 +189,7 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('language')">
                 <span>
-                  <el-icon><timer /></el-icon>
+                  <el-icon><comment /></el-icon>
                   语言语气
                 </span>
                 <el-switch v-model="toolsSettings.language.enabled" @click.stop @change="autoSaveSettings"/>
@@ -348,7 +348,7 @@
               <div class="tool-header" @click="toggleSection('superapi')">
                   <span>
                     <el-icon><key /></el-icon>
-                    API 配置
+                    使用Super API
                   </span>
               </div>
               <div class="tool-content" v-show="expandedSections.superapi">
