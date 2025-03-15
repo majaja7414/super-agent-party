@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from urllib.parse import urlparse
 import aiohttp
 from io import BytesIO
@@ -9,14 +10,24 @@ from docx import Document
 from openpyxl import load_workbook
 from striprtf.striprtf import rtf_to_text
 from odf import text
-from pptx import Presentation  # 新增PPTX库
+from odf.opendocument import load  # ODF 处理移动到这里避免重复导入
+from pptx import Presentation
 
+# 平台检测
+IS_WINDOWS = sys.platform == 'win32'
+IS_MAC = sys.platform == 'darwin'
 
-# 文件类型配置
+# 动态文件类型配置
+BASE_OFFICE_EXTS = ['doc', 'docx', 'pptx', 'xls', 'xlsx', 'pdf', 'rtf', 'odt']
+PLATFORM_SPECIFIC_EXTS = {
+    'win32': ['ppt'],
+    'darwin': ['pages', 'numbers', 'key']
+}
+
 FILE_FILTERS = [
     { 
         'name': '办公文档', 
-        'extensions': ['doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 'numbers', 'key', 'rtf', 'odt'] 
+        'extensions': BASE_OFFICE_EXTS + PLATFORM_SPECIFIC_EXTS.get(sys.platform, [])
     },
     { 
         'name': '编程开发', 
@@ -67,8 +78,8 @@ async def get_content(input_str):
         return await handle_local_file(input_str)
 
 def decode_text(content_bytes):
-    """通用文本解码"""
-    encodings = ['utf-8', 'gbk', 'iso-8859-1', 'latin-1']
+    """通用文本解码（增加BOM处理）"""
+    encodings = ['utf-8-sig', 'utf-16', 'gbk', 'iso-8859-1', 'latin-1']
     for enc in encodings:
         try:
             return content_bytes.decode(enc)
@@ -77,7 +88,7 @@ def decode_text(content_bytes):
     return content_bytes.decode('utf-8', errors='replace')
 
 async def handle_office_document(content, ext):
-    """异步处理办公文档"""
+    """异步处理办公文档（带平台检测）"""
     handler = {
         'pdf': handle_pdf,
         'docx': handle_docx,
@@ -85,12 +96,22 @@ async def handle_office_document(content, ext):
         'xls': handle_excel,
         'rtf': handle_rtf,
         'odt': handle_odt,
-        'pptx': handle_pptx,  # 新增PPTX处理
-        'ppt': handle_ppt,    # PPT处理占位
-    }.get(ext)
+        'pptx': handle_pptx,
+    }
     
-    if handler:
-        return await handler(content)
+    # Windows平台扩展
+    if IS_WINDOWS:
+        handler['ppt'] = handle_ppt
+    
+    handler_func = handler.get(ext)
+    
+    if handler_func:
+        return await handler_func(content)
+    
+    # Mac平台iWork格式处理
+    if IS_MAC and ext in ['pages', 'numbers', 'key']:
+        raise NotImplementedError(f"iWork格式暂不支持自动解析，请手动导出为通用格式")
+    
     raise NotImplementedError(f"暂不支持处理 {ext.upper()} 格式文件")
 
 async def handle_odt(content):
@@ -100,16 +121,13 @@ async def handle_odt(content):
 
 def _process_odt(content):
     """同步处理ODT内容"""
-    from odf.opendocument import load
     from odf.teletype import extractText
     
     try:
         doc = load(BytesIO(content))
         text_content = []
-        # 提取所有段落文本
         for para in doc.getElementsByType(text.P):
             text_content.append(extractText(para))
-        # 提取表格内容
         for table in doc.getElementsByType(text.Table):
             for row in table.getElementsByType(text.TableRow):
                 row_data = []
@@ -121,17 +139,21 @@ def _process_odt(content):
         raise RuntimeError(f"ODT文件解析失败: {str(e)}")
 
 async def handle_pdf(content):
-    """异步处理PDF文件"""
+    """异步处理PDF文件（增加容错处理）"""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_pdf, content)
 
 def _process_pdf(content):
     """同步处理PDF内容"""
     text = []
-    with BytesIO(content) as pdf_file:
-        reader = PdfReader(pdf_file)
-        for page in reader.pages:
-            text.append(page.extract_text())
+    try:
+        with BytesIO(content) as pdf_file:
+            reader = PdfReader(pdf_file)
+            for page in reader.pages:
+                page_text = page.extract_text() or ""  # 处理无文本页面
+                text.append(page_text)
+    except Exception as e:
+        raise RuntimeError(f"PDF解析失败: {str(e)}")
     return '\n'.join(text)
 
 async def handle_docx(content):
@@ -140,23 +162,32 @@ async def handle_docx(content):
     return await loop.run_in_executor(None, _process_docx, content)
 
 def _process_docx(content):
-    """同步处理DOCX内容"""
+    """同步处理DOCX内容（增加表格处理）"""
     doc = Document(BytesIO(content))
-    return '\n'.join(p.text for p in doc.paragraphs)
+    text = []
+    for para in doc.paragraphs:
+        text.append(para.text)
+    for table in doc.tables:
+        for row in table.rows:
+            text.append('\t'.join(cell.text for cell in row.cells))
+    return '\n'.join(text)
 
 async def handle_excel(content):
-    """异步处理Excel文件"""
+    """异步处理Excel文件（优化大文件处理）"""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_excel, content)
 
 def _process_excel(content):
     """同步处理Excel内容"""
-    wb = load_workbook(filename=BytesIO(content), read_only=True, data_only=True)
-    text = []
-    for sheet in wb:
-        for row in sheet.iter_rows(values_only=True):
-            text.append('\t'.join(map(str, row)))
-    return '\n'.join(text)
+    try:
+        wb = load_workbook(filename=BytesIO(content), read_only=True, data_only=True)
+        text = []
+        for sheet in wb:
+            for row in sheet.iter_rows(values_only=True):
+                text.append('\t'.join(str(cell) if cell is not None else '' for cell in row))
+        return '\n'.join(text)
+    except Exception as e:
+        raise RuntimeError(f"Excel解析失败: {str(e)}")
 
 async def handle_rtf(content):
     """异步处理RTF文件"""
@@ -165,10 +196,13 @@ async def handle_rtf(content):
 
 def _process_rtf(content):
     """同步处理RTF内容"""
-    return rtf_to_text(content.decode('utf-8', errors='replace'))
+    try:
+        return rtf_to_text(content.decode('utf-8', errors='replace'))
+    except Exception as e:
+        raise RuntimeError(f"RTF解析失败: {str(e)}")
 
 async def handle_pptx(content):
-    """异步处理PPTX文件"""
+    """异步处理PPTX文件（优化内容提取）"""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, _process_pptx, content)
 
@@ -179,31 +213,75 @@ def _process_pptx(content):
         text = []
         for slide in prs.slides:
             for shape in slide.shapes:
-                # 提取形状文本
                 if hasattr(shape, "text"):
                     text.append(shape.text.strip())
-                # 提取表格内容
                 if shape.has_table:
                     for row in shape.table.rows:
                         row_data = [cell.text_frame.text.strip() for cell in row.cells]
                         text.append("\t".join(row_data))
         return '\n'.join(filter(None, text))
     except Exception as e:
-        raise RuntimeError(f"PPTX文件解析失败: {str(e)}")
+        raise RuntimeError(f"PPTX解析失败: {str(e)}")
 
 async def handle_ppt(content):
-    """处理PPT文件（需要Windows系统支持）"""
-    raise NotImplementedError("PPT格式需要Windows系统并安装Microsoft PowerPoint")
+    """处理PPT文件（Windows平台专用）"""
+    if not IS_WINDOWS:
+        raise NotImplementedError("PPT格式仅支持在Windows系统处理")
+    
+    try:
+        import win32com.client
+    except ImportError:
+        raise RuntimeError("请安装pywin32依赖: pip install pywin32")
+    
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, _process_ppt, content)
+
+def _process_ppt(content):
+    """同步处理PPT内容（Windows COM API）"""
+    import win32com.client
+    import tempfile
+    import pythoncom
+
+    pythoncom.CoInitialize()
+    try:
+        with tempfile.NamedTemporaryFile(suffix='.ppt', delete=False) as tmp_file:
+            tmp_file.write(content)
+            tmp_path = tmp_file.name
+        
+        powerpoint = win32com.client.Dispatch("PowerPoint.Application")
+        pres = powerpoint.Presentations.Open(tmp_path)
+        text = []
+        for slide in pres.Slides:
+            for shape in slide.Shapes:
+                if shape.HasTextFrame:
+                    text.append(shape.TextFrame.TextRange.Text.strip())
+        pres.Close()
+        powerpoint.Quit()
+        return '\n'.join(filter(None, text))
+    except Exception as e:
+        raise RuntimeError(f"PPT解析失败: {str(e)}")
+    finally:
+        pythoncom.CoUninitialize()
+        os.unlink(tmp_path)
 
 async def get_file_content(input_str):
-    """异步获取文件内容"""
-    content, ext = await get_content(input_str)
-    if ext in office_extensions:
-        return await handle_office_document(content, ext)
-    return decode_text(content)
+    """异步获取文件内容（增加编码异常处理）"""
+    try:
+        content, ext = await get_content(input_str)
+        if ext in office_extensions:
+            return await handle_office_document(content, ext)
+        return decode_text(content)
+    except Exception as e:
+        return f"文件解析错误: {str(e)}"
 
 async def get_files_content(files_path_list):
-    """异步获取所有文件内容并拼接"""
+    """异步获取所有文件内容并拼接（增加错误隔离）"""
     tasks = [get_file_content(fp) for fp in files_path_list]
-    contents = await asyncio.gather(*tasks)
-    return "\n\n".join([f"文件 {fp} 内容：\n{content}" for fp, content in zip(files_path_list, contents)])
+    contents = await asyncio.gather(*tasks, return_exceptions=True)
+    results = []
+    for fp, content in zip(files_path_list, contents):
+        if isinstance(content, Exception):
+            results.append(f"文件 {fp} 解析失败: {str(content)}")
+        else:
+            results.append(f"文件 {fp} 内容：\n{content}")
+    return "\n\n".join(results)
