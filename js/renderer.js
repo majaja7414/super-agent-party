@@ -94,6 +94,7 @@ const app = Vue.createApp({
         enabled: false,
         engine: 'duckduckgo',
         max_results: 5,
+        when: 'before_thinking',
       },
       expandedSections: {
         settingsBase: true,
@@ -224,6 +225,12 @@ const app = Vue.createApp({
             base_url: '',
             api_key: '',
           };
+          this.webSearchSettings = data.data.webSearch || {
+            enabled: false, // 默认不启用
+            engine: 'duckduckgo',
+            max_results: 5,
+            when: 'before_thinking', // 默认在思考前搜索
+          }
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');

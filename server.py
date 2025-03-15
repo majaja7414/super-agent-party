@@ -15,6 +15,7 @@ import time
 from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
+from py.web_search import DDGsearch_async
 
 local_timezone = get_localzone()
 app = FastAPI()
@@ -51,7 +52,8 @@ def load_settings():
             "webSearch": {
                 "enabled": False,
                 "engine": "duckduckgo",
-                "max_results": 5
+                "max_results": 5,
+                "when": "before_thinking"
             }
         }
         return default_settings
@@ -99,15 +101,33 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[0]['content'] += system_message
             else:
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
-
+        user_prompt = request.messages[-1]['content']
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
-
+        if settings['webSearch']['enabled']:
+            if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
+                if settings['webSearch']['engine'] == 'duckduckgo':
+                    results = await DDGsearch_async(user_prompt, settings['webSearch']['max_results'])
+                request.messages[-1]['content'] += f"\n\n联网搜索结果：{json.dumps(results, indent=2, ensure_ascii=False)}"
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
 
         async def stream_generator():
+            if settings['webSearch']['enabled']:
+                chunk_dict = {
+                    "id": "webSearch",
+                    "choices": [
+                        {
+                            "finish_reason": None,
+                            "index": 0,
+                            "delta": {
+                                "reasoning_content": "正在联网搜索中，请稍候...\n"
+                            }
+                        }
+                    ]
+                }
+                yield f"data: {json.dumps(chunk_dict)}\n\n"
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 # 流式调用推理模型
@@ -241,6 +261,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     try:
         if settings['tools']['time']['enabled']:
             request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        user_prompt = request.messages[-1]['content']
+        if settings['webSearch']['enabled']:
+            if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
+                if settings['webSearch']['engine'] == 'duckduckgo':
+                    results = await DDGsearch_async(user_prompt, settings['webSearch']['max_results'])
+                request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
         if settings['reasoner']['enabled']:
             reasoner_response = await reasoner_client.chat.completions.create(
                 model=settings['reasoner']['model'],
