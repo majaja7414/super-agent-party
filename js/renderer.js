@@ -116,15 +116,27 @@ const app = Vue.createApp({
       },
       showUploadDialog: false,
       files: [],
+      selectedCodeLang: 'python',
+      codeExamples: {
+        python: 'from openai import OpenAI\n\nclient = OpenAI(...)',
+        javascript: 'const client = new OpenAI(...);',
+        curl: 'curl http://127.0.0.1:3456/v1...'
+      },  
     };
   },
   mounted() {
-    this.initWebSocket()
+    this.initWebSocket();
+    this.highlightCode();
     if (isElectron) {
       // 更新事件监听
       ipcRenderer.on('window-state', (_, state) => {
         this.isMaximized = state === 'maximized'
       });
+    }
+  },
+  watch: {
+    selectedCodeLang() {
+      this.highlightCode();
     }
   },
   methods: {
@@ -599,6 +611,14 @@ const app = Vue.createApp({
       
       this.files = [...this.files, ...newFiles];
       this.showUploadDialog = false;
+    },
+    highlightCode() {
+      this.$nextTick(() => {
+        document.querySelectorAll('pre code').forEach(block => {
+          hljs.highlightElement(block);
+        });
+        this.initCopyButtons();
+      });
     },
   }
 });

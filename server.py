@@ -78,7 +78,7 @@ app.add_middleware(
 )
 
 _TOOL_HOOKS = {
-    "web_search": DDGsearch_async,
+    "DDGsearch_async": DDGsearch_async,
 }
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
@@ -143,7 +143,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                     if settings['webSearch']['engine'] == 'duckduckgo':
                         results = await DDGsearch_async(user_prompt, settings['webSearch']['max_results'])
-                    request.messages[-1]['content'] += f"\n\n联网搜索结果：{json.dumps(results, indent=2, ensure_ascii=False)}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
+                    request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 # 流式调用推理模型
@@ -310,10 +310,13 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
+        print(request.messages)
         while response.choices[0].message.tool_calls:
             assistant_message = response.choices[0].message
             response_content = assistant_message.tool_calls[0].function
+            print(response_content.name)
             results = await dispatch_tool(response_content.name, json.loads(response_content.arguments))
+            print(results)
             if results is None:
                 break
             request.messages.append(
@@ -337,9 +340,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "role": "tool",
                     "tool_call_id": assistant_message.tool_calls[0].id,
                     "name": response_content.name,
-                    "content": results,
+                    "content": str(results),
                 }
             )
+            print(request.messages)
             response = await client.chat.completions.create(
                 model=model,
                 messages=request.messages,
@@ -351,6 +355,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
             )
+            print(response)
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
