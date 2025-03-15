@@ -451,16 +451,12 @@ main();`,
                   newContent = newContent.replace(/\n/g, '\n> ');
                 
                   if (!this.isThinkOpen) {
-                    // 首次添加 > 前缀
-                    lastMessage.content = '> ' + newContent;
+                    // 新增思考块时换行并添加 "> " 前缀
+                    lastMessage.content += '\n> ' + newContent;
                     this.isThinkOpen = true;
                   } else {
-                    // 后续内容直接追加，并处理前导空格
-                    if (lastMessage.content.endsWith('\n')) {
-                      lastMessage.content += '> ' + newContent;
-                    } else {
-                      lastMessage.content += newContent;
-                    }
+                    // 追加内容时直接拼接
+                    lastMessage.content += newContent;
                   }
                   
                   this.scrollToBottom();

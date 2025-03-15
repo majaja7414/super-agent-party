@@ -108,6 +108,7 @@ class ChatRequest(BaseModel):
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
+        tools = request.tools or []
         if request.fileLinks:
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
@@ -127,25 +128,32 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
         async def stream_generator():
             if settings['webSearch']['enabled']:
-                chunk_dict = {
-                    "id": "webSearch",
-                    "choices": [
-                        {
-                            "finish_reason": None,
-                            "index": 0,
-                            "delta": {
-                                "reasoning_content": "正在联网搜索中，请稍候...\n\n"
-                            }
-                        }
-                    ]
-                }
-                yield f"data: {json.dumps(chunk_dict)}\n\n"
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
+                    chunk_dict = {
+                        "id": "webSearch",
+                        "choices": [
+                            {
+                                "finish_reason": None,
+                                "index": 0,
+                                "delta": {
+                                    "role":"assistant",
+                                    "content": "",
+                                    "reasoning_content": "思考前联网搜索中，请稍候...\n\n"
+                                }
+                            }
+                        ]
+                    }
+                    yield f"data: {json.dumps(chunk_dict)}\n\n"
                     if settings['webSearch']['engine'] == 'duckduckgo':
                         results = await DDGsearch_async(user_prompt, settings['webSearch']['max_results'])
                     request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
+                if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                    if settings['webSearch']['engine'] == 'duckduckgo':
+                        tools.append(duckduckgo_tool)
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
+                reasoner_messages = request.messages.copy()
+                reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 # 流式调用推理模型
                 reasoner_stream = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
@@ -178,70 +186,218 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 model=model,
                 messages=request.messages,
                 temperature=request.temperature,
-                tools=request.tools,
+                tools=tools,
                 stream=True,
                 max_tokens=request.max_tokens or settings['max_tokens'],
                 top_p=request.top_p,
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
             )
+            tool_calls = []
             async for chunk in response:
                 if not chunk.choices:
                     continue
-                
-                # 创建原始chunk的拷贝
-                chunk_dict = chunk.model_dump()
-                delta = chunk_dict["choices"][0]["delta"]
-                
-                # 初始化必要字段
-                delta.setdefault("content", "")
-                delta.setdefault("reasoning_content", "")
-                
-                # 处理内容
-                current_content = delta["content"]
-                buffer = current_content
-                
-                while buffer:
-                    if not in_reasoning:
-                        # 寻找开始标签
-                        start_pos = buffer.find(open_tag)
-                        if start_pos != -1:
-                            # 处理开始标签前的内容
-                            content_buffer.append(buffer[:start_pos])
-                            buffer = buffer[start_pos+len(open_tag):]
-                            in_reasoning = True
-                        else:
-                            content_buffer.append(buffer)
-                            buffer = ""
-                    else:
-                        # 寻找结束标签
-                        end_pos = buffer.find(close_tag)
-                        if end_pos != -1:
-                            # 处理思考内容
-                            reasoning_buffer.append(buffer[:end_pos])
-                            buffer = buffer[end_pos+len(close_tag):]
-                            in_reasoning = False
-                        else:
-                            reasoning_buffer.append(buffer)
-                            buffer = ""
-                
-                # 构造新的delta内容
-                new_content = "".join(content_buffer)
-                new_reasoning = "".join(reasoning_buffer)
-                
-                # 更新chunk内容
-                delta["content"] = new_content.strip("\x00")  # 保留未完成内容
-                delta["reasoning_content"] = new_reasoning.strip("\x00") or None
-                
-                # 重置缓冲区但保留未完成部分
-                if in_reasoning:
-                    content_buffer = [new_content.split(open_tag)[-1]] 
+                choice = chunk.choices[0]
+                if choice.delta.tool_calls:  # function_calling
+                    for idx, tool_call in enumerate(choice.delta.tool_calls):
+                        tool = choice.delta.tool_calls[idx]
+                        if len(tool_calls) <= idx:
+                            tool_calls.append(tool)
+                            continue
+                        if tool.function.arguments:
+                            # function参数为流式响应，需要拼接
+                            tool_calls[idx].function.arguments += tool.function.arguments
                 else:
-                    content_buffer = []
-                reasoning_buffer = []
-                
-                yield f"data: {json.dumps(chunk_dict)}\n\n"
-            
+                    # 创建原始chunk的拷贝
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0]["delta"]
+                    
+                    # 初始化必要字段
+                    delta.setdefault("content", "")
+                    delta.setdefault("reasoning_content", "")
+                    
+                    # 处理内容
+                    current_content = delta["content"]
+                    buffer = current_content
+                    
+                    while buffer:
+                        if not in_reasoning:
+                            # 寻找开始标签
+                            start_pos = buffer.find(open_tag)
+                            if start_pos != -1:
+                                # 处理开始标签前的内容
+                                content_buffer.append(buffer[:start_pos])
+                                buffer = buffer[start_pos+len(open_tag):]
+                                in_reasoning = True
+                            else:
+                                content_buffer.append(buffer)
+                                buffer = ""
+                        else:
+                            # 寻找结束标签
+                            end_pos = buffer.find(close_tag)
+                            if end_pos != -1:
+                                # 处理思考内容
+                                reasoning_buffer.append(buffer[:end_pos])
+                                buffer = buffer[end_pos+len(close_tag):]
+                                in_reasoning = False
+                            else:
+                                reasoning_buffer.append(buffer)
+                                buffer = ""
+                    
+                    # 构造新的delta内容
+                    new_content = "".join(content_buffer)
+                    new_reasoning = "".join(reasoning_buffer)
+                    
+                    # 更新chunk内容
+                    delta["content"] = new_content.strip("\x00")  # 保留未完成内容
+                    delta["reasoning_content"] = new_reasoning.strip("\x00") or None
+                    
+                    # 重置缓冲区但保留未完成部分
+                    if in_reasoning:
+                        content_buffer = [new_content.split(open_tag)[-1]] 
+                    else:
+                        content_buffer = []
+                    reasoning_buffer = []
+                    
+                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+            while tool_calls:
+                response_content = tool_calls[0].function
+                if response_content.name == "DDGsearch_async":
+                    chunk_dict = {
+                        "id": "webSearch",
+                        "choices": [
+                            {
+                                "finish_reason": None,
+                                "index": 0,
+                                "delta": {
+                                    "role":"assistant",
+                                    "content": "",
+                                    "reasoning_content": "\n\n思考后联网搜索中，请稍候...\n\n"
+                                }
+                            }
+                        ]
+                    }
+                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+                results = await dispatch_tool(response_content.name, json.loads(response_content.arguments))
+                if results is None:
+                    chunk = {
+                        "id": "extra_tools",
+                        "choices": [
+                            {
+                                "index": 0,
+                                "delta": {
+                                    "role":"assistant",
+                                    "content": "",
+                                    "tool_calls":tool_calls,
+                                }
+                            }
+                        ]
+                    }
+                    yield f"data: {json.dumps(chunk)}\n\n"
+                    break
+                request.messages.append(
+                    {
+                        "tool_calls": [
+                            {
+                                "id": tool_calls[0].id,
+                                "function": {
+                                    "arguments": response_content.arguments,
+                                    "name": response_content.name,
+                                },
+                                "type": tool_calls[0].type,
+                            }
+                        ],
+                        "role": "assistant",
+                        "content": str(response_content),
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_calls[0].id,
+                        "name": response_content.name,
+                        "content": str(results),
+                    }
+                )
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=request.temperature,
+                    tools=tools,
+                    stream=True,
+                    max_tokens=request.max_tokens or settings['max_tokens'],
+                    top_p=request.top_p,
+                    frequency_penalty=request.frequency_penalty,
+                    presence_penalty=request.presence_penalty,
+                )
+                tool_calls = []
+                async for chunk in response:
+                    if not chunk.choices:
+                        continue
+                    if chunk.choices:
+                        choice = chunk.choices[0]
+                        if choice.delta.tool_calls:  # function_calling
+                            for idx, tool_call in enumerate(choice.delta.tool_calls):
+                                tool = choice.delta.tool_calls[idx]
+                                if len(tool_calls) <= idx:
+                                    tool_calls.append(tool)
+                                    continue
+                                if tool.function.arguments:
+                                    # function参数为流式响应，需要拼接
+                                    tool_calls[idx].function.arguments += tool.function.arguments
+                        else:
+                            # 创建原始chunk的拷贝
+                            chunk_dict = chunk.model_dump()
+                            delta = chunk_dict["choices"][0]["delta"]
+                            
+                            # 初始化必要字段
+                            delta.setdefault("content", "")
+                            delta.setdefault("reasoning_content", "")
+                            
+                            # 处理内容
+                            current_content = delta["content"]
+                            buffer = current_content
+                            
+                            while buffer:
+                                if not in_reasoning:
+                                    # 寻找开始标签
+                                    start_pos = buffer.find(open_tag)
+                                    if start_pos != -1:
+                                        # 处理开始标签前的内容
+                                        content_buffer.append(buffer[:start_pos])
+                                        buffer = buffer[start_pos+len(open_tag):]
+                                        in_reasoning = True
+                                    else:
+                                        content_buffer.append(buffer)
+                                        buffer = ""
+                                else:
+                                    # 寻找结束标签
+                                    end_pos = buffer.find(close_tag)
+                                    if end_pos != -1:
+                                        # 处理思考内容
+                                        reasoning_buffer.append(buffer[:end_pos])
+                                        buffer = buffer[end_pos+len(close_tag):]
+                                        in_reasoning = False
+                                    else:
+                                        reasoning_buffer.append(buffer)
+                                        buffer = ""
+                            
+                            # 构造新的delta内容
+                            new_content = "".join(content_buffer)
+                            new_reasoning = "".join(reasoning_buffer)
+                            
+                            # 更新chunk内容
+                            delta["content"] = new_content.strip("\x00")  # 保留未完成内容
+                            delta["reasoning_content"] = new_reasoning.strip("\x00") or None
+                            
+                            # 重置缓冲区但保留未完成部分
+                            if in_reasoning:
+                                content_buffer = [new_content.split(open_tag)[-1]] 
+                            else:
+                                content_buffer = []
+                            reasoning_buffer = []
+                            
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
             # 最终flush未完成内容
             if content_buffer or reasoning_buffer:
                 final_chunk = {
@@ -444,7 +600,6 @@ async def get_models():
         )
 
 @app.post("/v1/chat/completions")
-@app.post("/v1/responses/completions")
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client
 
