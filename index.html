@@ -216,13 +216,54 @@
                     <el-option label="两者都" value="both" ></el-option>
                   </el-select>
                 </el-form-item>
-                <el-form-item label="最大结果" class="form-item-align">
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('duckduckgoConfig')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><search /></el-icon>
+                    DuckDuckGo
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.duckduckgoConfig">
+                <el-form-item label="结果数量" class="form-item-align">
                   <el-slider
-                    v-model="webSearchSettings.max_results"
+                    v-model="webSearchSettings.duckduckgo_max_results"
                     :min="1"
-                    :max="10"
+                    :max="50"
                     :step="1"
                     @input="autoSaveSettings"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('searxngConfig')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><search /></el-icon>
+                    SearXNG
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.searxngConfig">
+                <el-form-item label="结果数量" class="form-item-align">
+                  <el-slider
+                    v-model="webSearchSettings.searxng_max_results"
+                    :min="1"
+                    :max="50"
+                    :step="1"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+                <el-form-item label="基础URL" class="form-item-align">
+                  <el-input 
+                    v-model="webSearchSettings.searxng_url" 
+                    placeholder="SearXNG URL"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
                   />
                 </el-form-item>
               </div>

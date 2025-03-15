@@ -12,4 +12,5 @@ odfpy
 aiohttp
 duckduckgo_search
 python-pptx
+langchain_community
 pywin32; sys_platform == 'win32'

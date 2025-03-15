@@ -1,7 +1,49 @@
 import asyncio
 import json
+import os
+from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
+import requests
 
+SETTINGS_FILE = 'config/settings.json'
+def load_settings():
+    try:
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # 创建config文件夹
+        os.makedirs('config', exist_ok=True)
+        # 创建settings.json文件
+        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+            f.write('{}')
+        default_settings =  {
+            "model": "qwen2.5:14b",  # 使用OpenAI官方参数名
+            "base_url": "http://localhost:11434/v1",
+            "api_key": "",
+            "temperature": 0.7,
+            "max_tokens": 4096,
+            "max_rounds": 10,
+            "tools": {
+                "time": {
+                    "enabled": False,
+                }
+            },
+            "reasoner": {
+                "enabled": False,
+                "model": "deepseek-r1:14b",
+                "base_url": "http://localhost:11434/v1",
+                "api_key": ""
+            },
+            "webSearch": {
+                "enabled": False,
+                "engine": "duckduckgo",
+                "when": "before_thinking",
+                "duckduckgo_max_results": 5,
+            }
+        }
+        return default_settings
+
+settings = load_settings()
 async def DDGsearch_async(query, max_results=10):
     def sync_search():
         try:
@@ -31,6 +73,61 @@ duckduckgo_tool = {
                 "query": {
                     "type": "string",
                     "description": "需要搜索的关键词，可以是多个词语，多个词语之间用空格隔开。",
+                },
+            },
+            "required": ["query"],
+        },
+    },
+}
+
+async def searxng_async(query, max_results=10):
+    def sync_search(query):
+        api_url = settings['webSearch']['searxng_url'] or "http://127.0.0.1:8080"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        params = {"q": query, "categories": "general","count": max_results}
+
+        try:
+            response = requests.get(api_url + "/search", headers=headers, params=params)
+            html_content = response.text
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+            results = []
+
+            for result in soup.find_all('article', class_='result'):
+                title = result.find('h3').get_text() if result.find('h3') else 'No title'
+                link = result.find('a', class_='url_wrapper')['href'] if result.find('a', class_='url_wrapper') else 'No link'
+                snippet = result.find('p', class_='content').get_text() if result.find('p', class_='content') else 'No snippet'
+                
+                results.append({
+                    'title': title,
+                    'link': link,
+                    'snippet': snippet
+                })
+
+            return json.dumps(results, indent=2, ensure_ascii=False)
+            
+        except Exception as e:
+            print(f"Search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search, query)
+    except Exception as e:
+        print(f"Async error: {e}")
+        return ""
+
+searxng_tool = {
+    "type": "function",
+    "function": {
+        "name": "searxng_async",
+        "description": "通过SearXNG开源元搜索引擎获取网络信息。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "搜索关键词，支持自然语言和多关键词组合查询",
                 },
             },
             "required": ["query"],

@@ -103,8 +103,10 @@ const app = Vue.createApp({
       webSearchSettings: {
         enabled: false,
         engine: 'duckduckgo',
-        max_results: 5,
         when: 'before_thinking',
+        duckduckgo_max_results: 5, // 默认值
+        searxng_url: 'http://127.0.0.1:8080',
+        searxng_max_results: 5, // 默认值
       },
       expandedSections: {
         settingsBase: true,
@@ -113,6 +115,8 @@ const app = Vue.createApp({
         time: false,
         superapi: true,
         webSearchConfig: true,
+        duckduckgoConfig: true,
+        searxngConfig: true,
       },
       showUploadDialog: false,
       files: [],
@@ -287,9 +291,11 @@ main();`,
           this.webSearchSettings = data.data.webSearch || {
             enabled: false, // 默认不启用
             engine: 'duckduckgo',
-            max_results: 5,
             when: 'before_thinking', // 默认在思考前搜索
-          }
+            duckduckgo_max_results: 10,
+            searxng_url: 'http://127.0.0.1:8080',
+            searxng_max_results: 10,
+          };
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
