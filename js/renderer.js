@@ -3,7 +3,17 @@ const isElectron = typeof process !== 'undefined' && process.versions && process
 let ipcRenderer;
 let clipboardInstance = null; // 全局剪贴板实例
 if (isElectron) {
+  const { shell } = require('electron');
   ipcRenderer = require('electron').ipcRenderer;
+  document.addEventListener('click', function(event) {
+    // Check if the clicked element is a link
+    if (event.target.tagName === 'A') {
+        event.preventDefault(); // 阻止默认行为
+
+        const url = event.target.href;
+        shell.openExternal(url); // 使用默认浏览器打开链接
+    }
+});
 }
 
 // 修改markdown配置
