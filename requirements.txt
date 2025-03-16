@@ -15,3 +15,5 @@ python-pptx
 tavily-python
 pywin32; sys_platform == 'win32'
 bs4
+browser-use
+langchain_openai
