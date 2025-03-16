@@ -5,7 +5,8 @@ const { spawn } = require('child_process')
 const fs = require('fs')
 let mainWindow
 let backendProcess = null
-
+const HOST = '127.0.0.1'
+const PORT = 3456
 // 配置日志文件路径
 const logDir = path.join(app.getPath('userData'), 'logs')
 if (!fs.existsSync(logDir)) {
@@ -27,7 +28,7 @@ function startBackend() {
     'uvicorn',
     'server:app',
     '--port', '3456',
-    '--host', '127.0.0.1'
+    '--host', HOST
   ], spawnOptions)
 
   // 日志文件处理
@@ -58,7 +59,7 @@ function startBackend() {
 async function waitForBackend() {
   const MAX_RETRIES = 30; // 最大重试次数
   const RETRY_INTERVAL = 1000; // 每次重试间隔 1 秒
-  const HEALTH_CHECK_URL = 'http://127.0.0.1:3456/health';
+  const HEALTH_CHECK_URL = `http://${HOST}:${PORT}/health`;
   console.log(`Please wait a moment, the service is starting...`);
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
@@ -100,7 +101,7 @@ app.whenReady().then(async () => {
     })
 
     // 加载页面
-    mainWindow.loadURL('http://127.0.0.1:3456')
+    mainWindow.loadURL(`http://${HOST}:${PORT}`)
       .then(() => {
         // 页面加载完成后显示窗口
         mainWindow.show()

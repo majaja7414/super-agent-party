@@ -16,7 +16,8 @@ from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
-
+HOST = "127.0.0.1"
+PORT = 3456
 local_timezone = get_localzone()
 logger = logging.getLogger(__name__)
 app = FastAPI()
@@ -689,7 +690,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     buffer.write(content)
                 
                 file_link = {
-                    "path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}",
+                    "path": f"http://{HOST}:{PORT}/uploaded_files/{unique_filename}",
                     "name": file.filename
                 }
                 file_links.append(file_link)
@@ -717,7 +718,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     dst.write(src.read())
                 
                 file_link = {
-                    "path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}",
+                    "path": f"http://{HOST}:{PORT}/uploaded_files/{unique_filename}",
                     "name": file_name
                 }
                 file_links.append(file_link)
@@ -759,4 +760,4 @@ app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=3456)
+    uvicorn.run(app, host=HOST, port=PORT)

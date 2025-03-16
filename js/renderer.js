@@ -2,6 +2,8 @@
 const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
 let ipcRenderer;
 let clipboardInstance = null; // 全局剪贴板实例
+const HOST = '127.0.0.1'
+const PORT = 3456
 if (isElectron) {
   const { shell } = require('electron');
   ipcRenderer = require('electron').ipcRenderer;
@@ -14,8 +16,8 @@ if (isElectron) {
       const url = new URL(href);
       
       // 特殊处理上传文件链接
-      if (url.hostname === '127.0.0.1' && 
-          url.port === '3456' &&
+      if (url.hostname === HOST && 
+          url.port === PORT &&
           url.pathname.startsWith('/uploaded_files/')) {
         event.preventDefault();
         
@@ -147,7 +149,7 @@ const app = Vue.createApp({
         engine: 'duckduckgo',
         when: 'before_thinking',
         duckduckgo_max_results: 10, // 默认值
-        searxng_url: 'http://127.0.0.1:8080',
+        searxng_url: `http://${HOST}:8080`,
         searxng_max_results: 10, // 默认值
         tavily_max_results: 10, // 默认值
         tavily_api_key: '',
@@ -210,7 +212,7 @@ const app = Vue.createApp({
         python: `from openai import OpenAI
 client = OpenAI(
     api_key="super-secret-key",
-    base_url="http://127.0.0.1:3456/v1"
+    base_url="http://${HOST}:${PORT}/v1"
 )
 response = client.chat.completions.create(
     model="super-model",
@@ -222,7 +224,7 @@ print(response.choices[0].message.content)`,
       javascript: `import OpenAI from 'openai';
 const client = new OpenAI({
     apiKey: "super-secret-key",
-    baseURL: "http://127.0.0.1:3456/v1"
+    baseURL: "http://${HOST}:${PORT}/v1"
 });
 async function main() {
     const completion = await client.chat.completions.create({
@@ -234,7 +236,7 @@ async function main() {
     console.log(completion.choices[0].message.content);
 }
 main();`,
-      curl: `curl http://127.0.0.1:3456/v1/chat/completions \\
+      curl: `curl http://${HOST}:${PORT}/v1/chat/completions \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer super-secret-key" \\
   -d '{
@@ -275,9 +277,7 @@ main();`,
 
     // 菜单控制
     handleSelect(key) {
-      const host = "127.0.0.1";
-      const port = 3456;
-      const url = `http://${host}:${port}`;
+      const url = `http://${HOST}:${PORT}`;
 
       if (key === 'web') {
         if (isElectron) {
@@ -437,7 +437,7 @@ main();`,
       
           try {
               console.log('Uploading files...');
-              const response = await fetch('http://127.0.0.1:3456/load_file', {
+              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
                   method: 'POST',
                   body: formData
               });
@@ -462,7 +462,7 @@ main();`,
           // Electron环境处理逻辑
           try {
             console.log('Uploading Electron files...');
-            const response = await fetch('http://127.0.0.1:3456/load_file', {
+            const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -524,7 +524,7 @@ main();`,
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
-        const response = await fetch('http://127.0.0.1:3456/v1/chat/completions', {  // 修改端点路径
+        const response = await fetch(`http://${HOST}:${PORT}/v1/chat/completions`, {  // 修改端点路径
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -639,7 +639,7 @@ main();`,
     async fetchModels() {
       this.modelsLoading = true;
       try {
-        const response = await fetch('http://127.0.0.1:3456/v1/models');
+        const response = await fetch(`http://${HOST}:${PORT}//v1/models`);
         const result = await response.json();
         
         // 双重解构获取数据
@@ -661,7 +661,7 @@ main();`,
 
     // 修改copyEndpoint方法
     copyEndpoint() {
-      navigator.clipboard.writeText('http://127.0.0.1:3456/v1')
+      navigator.clipboard.writeText(`http://${HOST}:${PORT}/v1`)
         .then(() => {
           showNotification('API端点已复制');
         })
