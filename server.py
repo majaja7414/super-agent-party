@@ -109,7 +109,6 @@ def tools_change_messages(request: ChatRequest, settings: dict):
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
-        request = tools_change_messages(request, settings)
         tools = request.tools or []
         if request.fileLinks:
             # 异步获取文件内容
@@ -122,6 +121,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
         user_prompt = request.messages[-1]['content']
+        request = tools_change_messages(request, settings)
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -440,8 +440,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     close_tag = "</think>"
     tools = request.tools or []
     try:
-        request = tools_change_messages(request, settings)
         user_prompt = request.messages[-1]['content']
+        request = tools_change_messages(request, settings)
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
