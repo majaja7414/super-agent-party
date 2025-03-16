@@ -10,22 +10,45 @@ if (isElectron) {
     if (!link) return;
     const href = link.getAttribute('href');
     
-    // 判断链接类型
     try {
       const url = new URL(href);
-      // 拦截网络协议
+      
+      // 特殊处理上传文件链接
+      if (url.hostname === '127.0.0.1' && 
+          url.port === '3456' &&
+          url.pathname.startsWith('/uploaded_files/')) {
+        event.preventDefault();
+        
+        // 转换网络路径为本地文件路径
+        const filename = url.pathname.split('/uploaded_files/')[1];
+        const filePath = require('path').join(
+          require('electron').app.getAppPath(), 
+          'uploaded_files', 
+          filename
+        );
+        
+        // 用默认程序打开文件
+        shell.openPath(filePath).then(err => {
+          if (err) console.error('打开文件失败:', err);
+        });
+        
+        return;
+      }
+      
+      // 原有网络协议处理
       if (url.protocol === 'http:' || url.protocol === 'https:') {
         event.preventDefault();
-        shell.openExternal(href); // 在系统浏览器中打开
+        shell.openExternal(href);
       }
-      // file:// 和相对路径不拦截
+      
     } catch {
-      // 处理相对路径等无效 URL 情况
+      // 处理相对路径
       event.preventDefault();
-      window.location.href = href; // 使用默认导航行为
+      window.location.href = href;
     }
   });
 }
+
 
 // 修改markdown配置
 const md = window.markdownit({
