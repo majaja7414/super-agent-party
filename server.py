@@ -161,7 +161,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = request.messages.copy()
-                reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                if tools:
+                    reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 # 流式调用推理模型
                 reasoner_stream = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
@@ -460,6 +461,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 elif settings['webSearch']['engine'] == 'tavily':
                     tools.append(tavily_tool)
         if settings['reasoner']['enabled']:
+            reasoner_messages = request.messages.copy()
+            if tools:
+                reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
             reasoner_response = await reasoner_client.chat.completions.create(
                 model=settings['reasoner']['model'],
                 messages=request.messages,

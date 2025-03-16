@@ -5,15 +5,26 @@ let clipboardInstance = null; // 全局剪贴板实例
 if (isElectron) {
   const { shell } = require('electron');
   ipcRenderer = require('electron').ipcRenderer;
-  document.addEventListener('click', function(event) {
-    // Check if the clicked element is a link
-    if (event.target.tagName === 'A') {
-        event.preventDefault(); // 阻止默认行为
-
-        const url = event.target.href;
-        shell.openExternal(url); // 使用默认浏览器打开链接
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    
+    // 判断链接类型
+    try {
+      const url = new URL(href);
+      // 拦截网络协议
+      if (url.protocol === 'http:' || url.protocol === 'https:') {
+        event.preventDefault();
+        shell.openExternal(href); // 在系统浏览器中打开
+      }
+      // file:// 和相对路径不拦截
+    } catch {
+      // 处理相对路径等无效 URL 情况
+      event.preventDefault();
+      window.location.href = href; // 使用默认导航行为
     }
-});
+  });
 }
 
 // 修改markdown配置
