@@ -396,44 +396,79 @@ main();`,
       
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
-      if (!this.isElectron && fileLinks.length > 0) {
-        // 如果不是在Electron环境中，则通过http://127.0.0.1:3456/load_file 接口上传文件，将文件上传到blob对应的链接
-        const formData = new FormData();
-        
-        // 使用 'files' 作为键名，而不是 'file'
-        for (const file of fileLinks) {
-            if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
-                formData.append('files', file.file, file.name); // 添加第三个参数为文件名
-            } else {
-                console.error("Invalid file object:", file);
-                showNotification('文件上传失败: 文件无效', 'error');
-                return;
-            }
+      if (fileLinks.length > 0){
+        if (!this.isElectron) {
+          // 如果不是在Electron环境中，则通过http://127.0.0.1:3456/load_file 接口上传文件，将文件上传到blob对应的链接
+          const formData = new FormData();
+          
+          // 使用 'files' 作为键名，而不是 'file'
+          for (const file of fileLinks) {
+              if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
+                  formData.append('files', file.file, file.name); // 添加第三个参数为文件名
+              } else {
+                  console.error("Invalid file object:", file);
+                  showNotification('文件上传失败: 文件无效', 'error');
+                  return;
+              }
+          }
+      
+          try {
+              console.log('Uploading files...');
+              const response = await fetch('http://127.0.0.1:3456/load_file', {
+                  method: 'POST',
+                  body: formData
+              });
+              if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('Server responded with an error:', errorText);
+                  showNotification(`文件上传失败: ${errorText}`, 'error');
+                  return;
+              }
+              const data = await response.json();
+              if (data.success) {
+                  fileLinks = data.fileLinks;
+              } else {
+                  showNotification('文件上传失败', 'error');
+              }
+          } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification('文件上传失败', 'error');
+          }
         }
-    
-        try {
-            console.log('Uploading files...');
+        else {
+          // Electron环境处理逻辑
+          try {
+            console.log('Uploading Electron files...');
             const response = await fetch('http://127.0.0.1:3456/load_file', {
-                method: 'POST',
-                body: formData
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                files: fileLinks.map(file => ({
+                  path: file.path,
+                  name: file.name
+                }))
+              })
             });
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Server responded with an error:', errorText);
-                showNotification(`文件上传失败: ${errorText}`, 'error');
-                return;
+              const errorText = await response.text();
+              console.error('Server error:', errorText);
+              showNotification(`文件上传失败: ${errorText}`, 'error');
+              return;
             }
             const data = await response.json();
             if (data.success) {
-                fileLinks = data.fileLinks;
+              fileLinks = data.fileLinks;
             } else {
-                showNotification('文件上传失败', 'error');
+              showNotification('文件上传失败', 'error');
             }
-        } catch (error) {
-            console.error('Error during file upload:', error);
+          } catch (error) {
+            console.error('上传错误:', error);
             showNotification('文件上传失败', 'error');
+          }
         }
-    }
+      }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
       // 添加用户消息
       this.messages.push({

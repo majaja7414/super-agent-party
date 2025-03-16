@@ -666,35 +666,71 @@ if not os.path.exists(UPLOAD_DIRECTORY):
     os.makedirs(UPLOAD_DIRECTORY)
 
 @app.post("/load_file")
-async def load_file_endpoint(files: List[UploadFile]):
-    logger.info(f"Received {len(files)} files to upload.")
+async def load_file_endpoint(request: Request, files: List[UploadFile] = File(None)):
+    logger.info(f"Received request with content type: {request.headers.get('Content-Type')}")
     file_links = []
-    for file in files:
-        try:
-            logger.info(f"Processing file: {file.filename}")
-            # 生成唯一的文件名
-            file_extension = os.path.splitext(file.filename)[1]
-            unique_filename = f"{uuid.uuid4()}{file_extension}"
-            destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+    
+    content_type = request.headers.get('Content-Type', '')
+    
+    try:
+        if 'multipart/form-data' in content_type:
+            # 处理浏览器上传的文件
+            if not files:
+                raise HTTPException(status_code=400, detail="No files provided")
             
-            # 将上传的文件保存到服务器
-            with open(destination, "wb") as buffer:
-                buffer.write(await file.read())
-            
-            # 构造文件链接（这里假设你的服务部署在 http://127.0.0.1:3456）
-            file_link = {"path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}", "name": file.filename}
-            file_links.append(file_link)
+            for file in files:
+                file_extension = os.path.splitext(file.filename)[1]
+                unique_filename = f"{uuid.uuid4()}{file_extension}"
+                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                
+                # 保存上传的文件
+                with open(destination, "wb") as buffer:
+                    content = await file.read()
+                    buffer.write(content)
+                
+                file_link = {
+                    "path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}",
+                    "name": file.filename
+                }
+                file_links.append(file_link)
         
-        except Exception as e:
-            logger.error(f"Error processing file {file.filename}: {str(e)}")
-            for link in file_links:
-                try:
-                    os.remove(os.path.join(UPLOAD_DIRECTORY, link["path"].split("/")[-1]))
-                except Exception as cleanup_e:
-                    logger.error(f"Failed to clean up file {link['path']}: {str(cleanup_e)}")
-            raise HTTPException(status_code=500, detail=f"Error occurred while processing file {file.filename}: {str(e)}")
+        elif 'application/json' in content_type:
+            # 处理Electron发送的JSON文件路径
+            data = await request.json()
+            logger.info(f"Processing JSON data: {data}")
+            
+            for file_info in data.get("files", []):
+                file_path = file_info.get("path")
+                file_name = file_info.get("name", os.path.basename(file_path))
+                
+                if not os.path.isfile(file_path):
+                    logger.error(f"File not found: {file_path}")
+                    continue
+                
+                # 生成唯一文件名
+                file_extension = os.path.splitext(file_name)[1]
+                unique_filename = f"{uuid.uuid4()}{file_extension}"
+                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                
+                # 复制文件到上传目录
+                with open(file_path, "rb") as src, open(destination, "wb") as dst:
+                    dst.write(src.read())
+                
+                file_link = {
+                    "path": f"http://127.0.0.1:3456/uploaded_files/{unique_filename}",
+                    "name": file_name
+                }
+                file_links.append(file_link)
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported Content-Type")
+        
+        return JSONResponse(content={"success": True, "fileLinks": file_links})
+    
+    except Exception as e:
+        logger.error(f"Error processing request: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-    return JSONResponse(content={"success": True, "fileLinks": file_links})
 
 
 @app.websocket("/ws")
