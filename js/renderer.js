@@ -51,7 +51,6 @@ if (isElectron) {
   });
 }
 
-// 修改markdown配置
 const md = window.markdownit({
   html: true,
   linkify: true,
@@ -66,6 +65,9 @@ const md = window.markdownit({
   }
 });
 
+// 添加更复杂的临时占位符
+const LATEX_PLACEHOLDER_PREFIX = 'LATEX_PLACEHOLDER_';
+let latexPlaceholderCounter = 0;
 
 const ALLOWED_EXTENSIONS = [
   // 办公文档
@@ -303,6 +305,7 @@ main();`,
       }
     },
 
+    //  使用占位符处理 LaTeX 公式
     formatMessage(content) {
       // 使用正则表达式查找<think>...</think>标签内的内容
       const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
@@ -326,15 +329,35 @@ main();`,
         });
       }
       if (formattedContent) {
-        const rendered = md.render(formattedContent);
-        // 在下一次DOM更新后初始化复制按钮
+        // 使用占位符替换 LaTeX 公式
+        const latexRegex = /(\$.*?\$)|(\\\[.*?\\\])|(\\\(.*?\))/g;
+        let latexPlaceholders = [];
+        formattedContent = formattedContent.replace(latexRegex, (match) => {
+          const placeholder = LATEX_PLACEHOLDER_PREFIX + latexPlaceholderCounter++;
+          latexPlaceholders.push({ placeholder, latex: match });
+          return placeholder;
+        });
+
+        let rendered = md.render(formattedContent);
+
+        // 恢复 LaTeX 公式
+        latexPlaceholders.forEach(({ placeholder, latex }) => {
+          rendered = rendered.replace(placeholder, latex);
+        });
+
         this.$nextTick(() => {
-          this.initCopyButtons();
+          MathJax.typesetPromise()
+            .then(() => {
+              console.log("LaTeX formulas rendered!");
+              this.initCopyButtons(); // 确保复制按钮初始化
+            })
+            .catch(err => console.log("MathJax typesetting error: " + err.message));
         });
         return rendered;
       }
       return '';
     },
+    
     handleCopy(event) {
       const button = event.target.closest('.copy-button')
       if (button) {

@@ -16,6 +16,33 @@
   <!-- Include markdown-it and highlight.js scripts -->
   <script src="js/markdown-it.min.js"></script>
   <script src="js/highlight.min.js"></script>
+  <!--  MathJax 配置  -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [
+          ['$', '$'],       // 常见的行内公式定界符
+          ['\\(', '\\)'],   // 另一种常见的行内公式定界符
+          ['(', ')'],
+        ],
+        displayMath: [
+          ['$$', '$$'],     // 常见的行间公式定界符
+          ['\\[', '\\]'],   // 另一种常见的行间公式定界符
+          ['[', ']'],
+        ],
+      },
+      svg: {
+        fontCache: 'global' // 使用全局字体缓存
+      },
+      startup: {
+        pageReady: () => {
+          // 可选：页面加载完成后执行一些操作
+          console.log("MathJax is ready!");
+        }
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 </head>
 <body>
   <div id="app">
