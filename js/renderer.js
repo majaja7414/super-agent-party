@@ -361,7 +361,7 @@ main();`,
 
     // WebSocket相关
     initWebSocket() {
-      this.ws = new WebSocket('ws://localhost:3456/ws');
+      this.ws = new WebSocket(`ws://${HOST}:${PORT}/ws`);
       
       this.ws.onopen = () => {
         console.log('WebSocket connection established');

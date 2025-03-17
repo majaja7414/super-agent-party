@@ -16,7 +16,7 @@ from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
-HOST = "127.0.0.1"
+HOST = '127.0.0.1'
 PORT = 3456
 local_timezone = get_localzone()
 logger = logging.getLogger(__name__)
