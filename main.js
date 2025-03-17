@@ -93,6 +93,7 @@ app.whenReady().then(async () => {
       height: height,
       frame: false,
       show: false, // 初始隐藏窗口
+      icon: 'source/icon.png',
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: false, 
