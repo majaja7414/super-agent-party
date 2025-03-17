@@ -51,7 +51,6 @@ if (isElectron) {
   });
 }
 
-
 // 修改markdown配置
 const md = window.markdownit({
   html: true,
@@ -640,7 +639,9 @@ main();`,
         ...this.settings,
         tools: this.toolsSettings,
         reasoner: this.reasonerSettings,
-        webSearch: this.webSearchSettings 
+        webSearch: this.webSearchSettings, 
+        knowledge: this.knowledgeSettings,
+        knowledgeFiles: this.knowledgeFiles,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',

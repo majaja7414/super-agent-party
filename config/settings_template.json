@@ -34,7 +34,7 @@
       "tavily_max_results": 10,
       "tavily_api_key": ""
     },
-    "knowledgeSettings": {
+    "knowledge": {
       "enabled": false,
       "model": "mxbai-embed-large:latest",
       "base_url": "http://127.0.0.1:11434/v1/",
