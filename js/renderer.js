@@ -844,6 +844,7 @@ main();`,
             }))
           ]
         }
+        this.autoSaveSettings();
       } catch (error) {
         showNotification('文件上传失败', 'error')
       }
@@ -851,6 +852,7 @@ main();`,
     // 删除知识库文件
     removeKnowledgeFile(index) {
       this.knowledgeFiles.splice(index, 1)
+      this.autoSaveSettings();
     },
     // 生成知识库
     async generateKnowledgeBase() {
