@@ -154,6 +154,16 @@ const app = Vue.createApp({
         tavily_max_results: 10, // 默认值
         tavily_api_key: '',
       },
+      knowledgeSettings: {
+        enabled: true,
+        model: '',
+        base_url: '',
+        api_key: '',
+        chunk_size: 512,
+        overlap_size: 64,
+        score_threshold: 0.7
+      },
+      knowledgeFiles: [],
       expandedSections: {
         settingsBase: true,
         settingsAdvanced: true,
@@ -166,6 +176,7 @@ const app = Vue.createApp({
         duckduckgoConfig: true,
         searxngConfig: true,
         tavilyConfig: true,
+        knowledgeHeader: true,
       },
       languageOptions:[
         { value: 'zh-CN', label: '中文' }, 
@@ -388,6 +399,8 @@ main();`,
           this.toolsSettings = data.data.tools || {};
           this.reasonerSettings = data.data.reasoner || {};
           this.webSearchSettings = data.data.webSearch || {};
+          this.knowledgeSettings = data.data.knowledge || {};
+          this.knowledgeFiles = data.data.knowledgeFiles || [];
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
@@ -785,6 +798,57 @@ main();`,
         });
         this.initCopyButtons();
       });
+    },
+     // 处理知识库文件上传
+    async handleKnowledgeFile(file) {
+      try {
+        const formData = new FormData()
+        formData.append('files', file.raw)
+        
+        const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+          method: 'POST',
+          body: formData
+        })
+        
+        const data = await response.json()
+        if (data.success) {
+          this.knowledgeFiles = [
+            ...this.knowledgeFiles,
+            ...data.fileLinks.map(link => ({
+              ...link,
+              localPath: file.raw.path // 保留本地路径供生成使用
+            }))
+          ]
+        }
+      } catch (error) {
+        showNotification('文件上传失败', 'error')
+      }
+    },
+    // 删除知识库文件
+    removeKnowledgeFile(index) {
+      this.knowledgeFiles.splice(index, 1)
+    },
+    // 生成知识库
+    async generateKnowledgeBase() {
+      try {
+        const response = await fetch(`http://${HOST}:${PORT}/build_knowledge`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            files: this.knowledgeFiles.map(f => f.localPath),
+            config: this.knowledgeSettings
+          })
+        })
+        
+        if (response.ok) {
+          showNotification('知识库生成成功')
+        } else {
+          const error = await response.json()
+          throw new Error(error.message)
+        }
+      } catch (error) {
+        showNotification(`生成失败: ${error.message}`, 'error')
+      }
     },
   }
 });

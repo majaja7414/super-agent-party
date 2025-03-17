@@ -499,6 +499,127 @@
             </div>
           </el-form>
         </div>
+        <!-- 知识库界面 -->
+        <div v-show="activeMenu === 'document'" class="page tools-container">
+          <el-form :model="knowledgeSettings" class="settings-form">
+            <!-- 可折叠表头 -->
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('knowledgeHeader')">
+                <span>
+                  <el-icon><notebook /></el-icon>
+                  知识库配置
+                </span>
+                <el-switch v-model="knowledgeSettings.enabled" @click.stop @change="autoSaveSettings"/>
+              </div>
+              
+              <!-- 配置内容 -->
+              <div class="tool-content" v-show="expandedSections.knowledgeHeader">
+                <!-- 输入框组 -->
+                <el-form-item label="检索模型" class="form-item-align">
+                  <el-input 
+                    v-model="knowledgeSettings.model" 
+                    placeholder="模型名称"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="基础URL" class="form-item-align">
+                  <el-input 
+                    v-model="knowledgeSettings.base_url" 
+                    placeholder="API服务地址"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                
+                <el-form-item label="API密钥" class="form-item-align">
+                  <el-input 
+                    v-model="knowledgeSettings.api_key" 
+                    placeholder="请输入API密钥"
+                    show-password
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+
+                <!-- 滑动条组 -->
+                <el-form-item label="分段大小" class="form-item-align">
+                  <el-slider
+                    v-model="knowledgeSettings.chunk_size"
+                    :min="128"
+                    :max="1024"
+                    :step="128"
+                    :format-tooltip="val => `${val} tokens`"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+
+                <el-form-item label="重叠大小" class="form-item-align">
+                  <el-slider
+                    v-model="knowledgeSettings.overlap_size"
+                    :min="0"
+                    :max="256"
+                    :step="32"
+                    :format-tooltip="val => `${val} tokens`"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+
+                <el-form-item label="匹配度" class="form-item-align">
+                  <el-slider
+                    v-model="knowledgeSettings.score_threshold"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    :format-tooltip="val => val.toFixed(1)"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
+
+                <!-- 文件上传区域 -->
+                <div class="upload-container">
+                  <el-upload
+                    class="drop-zone"
+                    drag
+                    multiple
+                    :auto-upload="false"
+                    :on-change="handleKnowledgeFile"
+                    :show-file-list="false"
+                  >
+                    <el-icon :size="50"><upload /></el-icon>
+                    <p>拖放文件或点击上传</p>
+                  </el-upload>
+                  
+                  <!-- 文件列表 -->
+                  <div class="file-list">
+                    <div v-for="(file, index) in knowledgeFiles" :key="index" class="file-item">
+                      <a :href="file.path" target="_blank" class="file-link">
+                        {{ file.name }}
+                      </a>
+                      <el-button 
+                        @click="removeKnowledgeFile(index)"
+                        :icon="'delete'"
+                        circle
+                        size="small"
+                        class="delete-btn"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 生成按钮 -->
+                <el-button 
+                  type="primary" 
+                  @click="generateKnowledgeBase"
+                  class="generate-btn"
+                >
+                  生成知识库
+                </el-button>
+              </div>
+            </div>
+          </el-form>
+        </div>
 
         <!-- 推理模型界面 -->
         <div v-show="activeMenu === 'reasoner'" class="page tools-container">
