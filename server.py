@@ -452,6 +452,16 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     close_tag = "</think>"
     tools = request.tools or []
     try:
+        if request.fileLinks:
+            # 异步获取文件内容
+            files_content = await get_files_content(request.fileLinks)
+            system_message = f"\n\n相关文件内容：{files_content}"
+            
+            # 修复字符串拼接错误
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += system_message
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': system_message})
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
         if settings['webSearch']['enabled']:

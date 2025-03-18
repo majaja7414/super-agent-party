@@ -6,12 +6,13 @@ import aiohttp
 from io import BytesIO
 import asyncio
 from PyPDF2 import PdfReader
-from docx import Document
-from openpyxl import load_workbook
+# from docx import Document  # 注释掉docx，因为要用markitdown
+# from openpyxl import load_workbook  # 注释掉xlsx，因为要用markitdown
 from striprtf.striprtf import rtf_to_text
 from odf import text
 from odf.opendocument import load  # ODF 处理移动到这里避免重复导入
-from pptx import Presentation
+# from pptx import Presentation  # 注释掉pptx，因为要用markitdown
+from markitdown import MarkItDown
 
 # 平台检测
 IS_WINDOWS = sys.platform == 'win32'
@@ -48,13 +49,9 @@ office_extensions = {ext for group in FILE_FILTERS if group['name'] == '办公�
 
 async def handle_url(url):
     """异步处理URL输入"""
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            response.raise_for_status()
-            content = await response.read()
-            path = urlparse(url).path
-            ext = os.path.splitext(path)[1].lstrip('.').lower()
-            return content, ext
+    path = urlparse(url).path
+    ext = os.path.splitext(path)[1].lstrip('.').lower()
+    return url, ext  # 返回原始 URL 和扩展名
 
 async def handle_local_file(file_path):
     """异步处理本地文件"""
@@ -87,16 +84,16 @@ def decode_text(content_bytes):
             continue
     return content_bytes.decode('utf-8', errors='replace')
 
-async def handle_office_document(content, ext):
+async def handle_office_document(content, ext, filepath_or_url=None):
     """异步处理办公文档（带平台检测）"""
     handler = {
         'pdf': handle_pdf,
-        'docx': handle_docx,
-        'xlsx': handle_excel,
-        'xls': handle_excel,
+        'docx': handle_markitdown,
+        'xlsx': handle_markitdown,
+        'xls': handle_markitdown,
         'rtf': handle_rtf,
         'odt': handle_odt,
-        'pptx': handle_pptx,
+        'pptx': handle_markitdown,
     }
     
     # Windows平台扩展
@@ -106,7 +103,7 @@ async def handle_office_document(content, ext):
     handler_func = handler.get(ext)
     
     if handler_func:
-        return await handler_func(content)
+        return await handler_func(content, ext, filepath_or_url)
     
     # Mac平台iWork格式处理
     if IS_MAC and ext in ['pages', 'numbers', 'key']:
@@ -156,38 +153,25 @@ def _process_pdf(content):
         raise RuntimeError(f"PDF解析失败: {str(e)}")
     return '\n'.join(text)
 
-async def handle_docx(content):
-    """异步处理DOCX文件"""
+async def handle_markitdown(content, ext, filepath_or_url=None):
+    """使用markitdown解析文件."""
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _process_docx, content)
+    return await loop.run_in_executor(None, _process_markitdown, content, ext, filepath_or_url)
 
-def _process_docx(content):
-    """同步处理DOCX内容（增加表格处理）"""
-    doc = Document(BytesIO(content))
-    text = []
-    for para in doc.paragraphs:
-        text.append(para.text)
-    for table in doc.tables:
-        for row in table.rows:
-            text.append('\t'.join(cell.text for cell in row.cells))
-    return '\n'.join(text)
-
-async def handle_excel(content):
-    """异步处理Excel文件（优化大文件处理）"""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _process_excel, content)
-
-def _process_excel(content):
-    """同步处理Excel内容"""
+def _process_markitdown(content, ext, filepath_or_url=None):
+    """同步处理markitdown内容."""
+    md = MarkItDown()
     try:
-        wb = load_workbook(filename=BytesIO(content), read_only=True, data_only=True)
-        text = []
-        for sheet in wb:
-            for row in sheet.iter_rows(values_only=True):
-                text.append('\t'.join(str(cell) if cell is not None else '' for cell in row))
-        return '\n'.join(text)
+        if filepath_or_url: #如果提供了文件路径或url，直接传递给convert函数
+            result = md.convert(filepath_or_url)
+        else: #如果只提供了内容，则创建一个临时文件，并将内容写入
+            with tempfile.NamedTemporaryFile(suffix=f'.{ext}', delete=True) as tmp_file:
+                tmp_file.write(content)
+                tmp_file.flush()
+                result = md.convert(tmp_file.name)
+        return result.text_content
     except Exception as e:
-        raise RuntimeError(f"Excel解析失败: {str(e)}")
+        raise RuntimeError(f"MarkItDown解析失败: {str(e)}")
 
 async def handle_rtf(content):
     """异步处理RTF文件"""
@@ -200,28 +184,6 @@ def _process_rtf(content):
         return rtf_to_text(content.decode('utf-8', errors='replace'))
     except Exception as e:
         raise RuntimeError(f"RTF解析失败: {str(e)}")
-
-async def handle_pptx(content):
-    """异步处理PPTX文件（优化内容提取）"""
-    loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, _process_pptx, content)
-
-def _process_pptx(content):
-    """同步处理PPTX内容"""
-    try:
-        prs = Presentation(BytesIO(content))
-        text = []
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if hasattr(shape, "text"):
-                    text.append(shape.text.strip())
-                if shape.has_table:
-                    for row in shape.table.rows:
-                        row_data = [cell.text_frame.text.strip() for cell in row.cells]
-                        text.append("\t".join(row_data))
-        return '\n'.join(filter(None, text))
-    except Exception as e:
-        raise RuntimeError(f"PPTX解析失败: {str(e)}")
 
 async def handle_ppt(content):
     """处理PPT文件（Windows平台专用）"""
@@ -264,12 +226,13 @@ def _process_ppt(content):
         pythoncom.CoUninitialize()
         os.unlink(tmp_path)
 
+import tempfile
 async def get_file_content(input_str):
     """异步获取文件内容（增加编码异常处理）"""
     try:
         content, ext = await get_content(input_str)
         if ext in office_extensions:
-            return await handle_office_document(content, ext)
+            return await handle_office_document(content, ext, input_str)  # 传递文件路径或url
         return decode_text(content)
     except Exception as e:
         return f"文件解析错误: {str(e)}"

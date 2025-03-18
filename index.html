@@ -264,6 +264,8 @@
                       placeholder="选择模型"
                       v-if="provider.models?.length"
                       class="model-select"
+                      placeholder="模型列表"
+                      @change="autoSaveSettings"
                     >
                       <el-option
                         v-for="model in provider.models"
