@@ -1061,7 +1061,23 @@ main();`,
         this.autoSaveSettings();
       }
     },
-
+    handleMainProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectMainProvider(this.settings.selectedProvider);
+      }
+    },
+    handleReasonerProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectReasonerProvider(this.reasonerSettings.selectedProvider);
+      }
+    },
+    
+    handleKnowledgeProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectKnowledgeProvider(this.knowledgeSettings.selectedProvider);
+      }
+    },
+    
   }
 });
 
