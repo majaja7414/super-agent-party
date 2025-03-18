@@ -476,6 +476,7 @@ main();`,
             temperature: data.data.temperature || 0.7,
             max_tokens: data.data.max_tokens || 4096,
             max_rounds: data.data.max_rounds || 10,
+            selectedProvider: data.data.selectedProvider || '',
           };
           this.toolsSettings = data.data.tools || {};
           this.reasonerSettings = data.data.reasoner || {};
