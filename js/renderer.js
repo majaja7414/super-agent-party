@@ -179,6 +179,53 @@ const app = Vue.createApp({
         tavilyConfig: true,
         knowledgeHeader: true,
       },
+      showAddDialog: false,
+      modelProviders: [],
+      vendorOptions: [
+        { label: 'OpenAI', value: 'OpenAI' },
+        { label: '深度求索', value: 'Deepseek' },
+        { label: '阿里云百炼', value: 'aliyun' },
+        { label: '智谱AI', value: 'ZhipuAI' },
+        { label: '火山引擎', value: 'Volcano' },
+        { label: '月之暗面', value: 'moonshot' },
+        { label: 'minimax', value: 'minimax' },
+        { label: 'Ollama', value: 'Ollama' },
+        { label: 'LM studio', value: 'LMstudio' },
+        { label: 'Gemini', value: 'Gemini' },
+        { label: 'Grok', value: 'Grok' },
+        { label: 'mistral', value: 'mistral' },
+        { label: '零一万物', value: 'lingyi' },
+        { label: '百川', value: 'baichuan' },
+        { label: '百度千帆', value: 'qianfan' },
+        { label: '腾讯混元', value: 'hunyuan' },
+        { label: '硅基流动', value: 'siliconflow' },
+        { label: '阶跃星辰', value: 'stepfun' },
+        { label: 'o3', value: 'o3' },
+        { label: 'aihubmix', value: 'aihubmix' },
+        { label: 'ocoolai', value: 'ocoolai' },
+        { label: 'Github', value: 'Github' },
+        { label: 'dmxapi', value: 'dmxapi' },
+        { label: 'openrouter', value: 'openrouter' },
+        { label: 'together', value: 'together' },
+        { label: 'fireworks', value: 'fireworks' },
+        { label: '360智脑', value: '360' },
+        { label: 'Nvidia', value: 'Nvidia' },
+        { label: 'hyperbolic', value: 'hyperbolic' },
+        { label: 'jina', value: 'jina' },
+        { label: 'gitee', value: 'gitee' },
+        { label: 'PPIO', value: 'ppinfra' },
+        { label: 'perplexity', value: 'perplexity' },
+        { label: '无问芯穹', value: 'infini' },
+        { label: '魔搭', value: 'modelscope' },
+        { label: '腾讯云', value: 'tencent' },
+        { label: '自定义', value: 'custom' }
+      ],
+      newProviderTemp: {
+        vendor: '',
+        url: '',
+        apiKey: '',
+        modelId: ''
+      },
       languageOptions:[
         { value: 'zh-CN', label: '中文' }, 
         { value: 'en-US', label: 'English' },
@@ -273,6 +320,15 @@ main();`,
   watch: {
     selectedCodeLang() {
       this.highlightCode();
+    }
+  },
+  computed: {
+    validProvider() {
+      if (!this.newProviderTemp.vendor) return false
+      if (this.newProviderTemp.vendor === 'custom') {
+        return this.newProviderTemp.url.startsWith('http')
+      }
+      return true
     }
   },
   methods: {
@@ -423,6 +479,7 @@ main();`,
           this.webSearchSettings = data.data.webSearch || {};
           this.knowledgeSettings = data.data.knowledge || {};
           this.knowledgeFiles = data.data.knowledgeFiles || [];
+          this.modelProviders = data.data.modelProviders || [];
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
@@ -665,6 +722,7 @@ main();`,
         webSearch: this.webSearchSettings, 
         knowledge: this.knowledgeSettings,
         knowledgeFiles: this.knowledgeFiles,
+        modelProviders: this.modelProviders,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -874,6 +932,99 @@ main();`,
         }
       } catch (error) {
         showNotification(`生成失败: ${error.message}`, 'error')
+      }
+    },
+    addProvider() {
+      this.modelProviders.push({
+        id: Date.now(),
+        vendor: this.newProviderTemp.vendor,
+        url: this.newProviderTemp.url,
+        apiKey: '',
+        modelId: '',
+        isNew: true
+      });
+      this.newProviderTemp = { vendor: '', url: '', apiKey: '', modelId: '' };
+      this.autoSaveSettings();
+    },
+    async fetchModelsForProvider(provider) {
+      try {
+        const response = await fetch(`${provider.url}/models`, {
+          headers: {
+            'Authorization': `Bearer ${provider.apiKey}`
+          }
+        });
+        const data = await response.json();
+        provider.models = data.data.map(m => m.id);
+      } catch (error) {
+        showNotification('获取模型列表失败', 'error');
+      }
+    },
+    removeProvider(index) {
+      this.modelProviders.splice(index, 1);
+      this.autoSaveSettings();
+    },
+    confirmAddProvider() {
+      if (!this.newProviderTemp.vendor) {
+        showNotification('请选择供应商类型', 'warning')
+        return
+      }
+      
+      const newProvider = {
+        id: Date.now(),
+        vendor: this.newProviderTemp.vendor,
+        url: this.newProviderTemp.url,
+        apiKey: '',
+        modelId: '',
+        models: []
+      }
+      
+      this.modelProviders.push(newProvider)
+      this.showAddDialog = false
+      this.newProviderTemp = { vendor: '', url: '' }
+      this.autoSaveSettings()
+    },
+    handleVendorChange(value) {
+      const defaultUrls = {
+        'OpenAI': 'https://api.openai.com/v1',
+        'Deepseek': 'https://api.deepseek.com/v1',
+        'aliyun': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+        'ZhipuAI': 'https://open.bigmodel.cn/api/paas/v4',
+        'Volcano': 'https://ark.cn-beijing.volces.com/api/v3',
+        'moonshot': 'https://api.moonshot.cn/v1',
+        'minimax': 'https://api.minimax.chat/v1',
+        'Ollama': 'http://127.0.0.1:11434/v1',
+        'LMstudio': 'http://127.0.0.1:1234/v1',
+        'Gemini': 'https://generativelanguage.googleapis.com/v1beta',
+        'Grok': 'https://api.groq.com/openai/v1',
+        'mistral': 'https://api.mistral.ai/v1',
+        'lingyi': 'https://api.lingyiwanwu.com/v1',
+        'baichuan': 'https://api.baichuan-ai.com/v1',
+        'qianfan': 'https://qianfan.baidubce.com/v2',
+        'hunyuan': 'https://api.hunyuan.cloud.tencent.com/v1',
+        'siliconflow': 'https://api.siliconflow.cn/v1',
+        'stepfun': 'https://api.stepfun.com/v1',
+        'o3': 'https://api.o3.fan/v1',
+        'aihubmix': 'https://aihubmix.com/v1',
+        'ocoolai': 'https://api.ocoolai.com/v1',
+        'Github': 'https://models.inference.ai.azure.com',
+        'dmxapi': 'https://www.dmxapi.cn/v1',
+        'openrouter': 'https://openrouter.ai/api/v1',
+        'together': 'https://api.together.xyz/v1',
+        'fireworks': 'https://api.fireworks.ai/inference/v1',
+        '360': 'https://api.360.cn/v1',
+        'Nvidia': 'https://integrate.api.nvidia.com/v1',
+        'hyperbolic': 'https://api.hyperbolic.xyz/v1',
+        'jina': 'https://api.jina.ai/v1',
+        'gitee': 'https://ai.gitee.com/v1',
+        'ppinfra': 'https://api.ppinfra.com/v3/openai/v1',
+        'perplexity': 'https://api.perplexity.ai',
+        'infini': 'https://cloud.infini-ai.com/maas/v1',
+        'modelscope': 'https://api-inference.modelscope.cn/v1',
+        'tencent': 'https://api.lkeap.cloud.tencent.com/v1',
+      }
+      
+      if (value !== 'custom') {
+        this.newProviderTemp.url = defaultUrls[value] || ''
       }
     },
   }

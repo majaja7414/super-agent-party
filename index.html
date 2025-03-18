@@ -78,6 +78,10 @@
             <el-icon><cpu /></el-icon>
             <template #title>主模型</template>
           </el-menu-item>
+          <el-menu-item index="tools">
+            <el-icon><tools /></el-icon>
+            <template #title>工具</template>
+          </el-menu-item>
           <el-menu-item index="reasoner">
             <el-icon><magic-stick /></el-icon>
             <template #title>推理模型</template>
@@ -90,10 +94,10 @@
             <el-icon><document /></el-icon>
             <template #title>知识库</template>
           </el-menu-item>
-          <el-menu-item index="tools">
-            <el-icon><tools /></el-icon>
-            <template #title>工具</template>
-          </el-menu-item>
+          <el-menu-item index="api-box">
+            <el-icon><box /></el-icon>
+              <template #title>钥匙箱</template>
+            </el-menu-item>
           <el-menu-item index="api">
             <el-icon><connection /></el-icon>
             <template #title>API</template>
@@ -198,6 +202,144 @@
                 />
               </div>
         </div>
+        <div v-show="activeMenu === 'api-box'" class="page tools-container">
+          <div class="keybox-container">
+            <!-- 磁贴网格 -->
+            <div class="provider-grid">
+              <!-- 已有供应商磁贴 -->
+              <div class="provider-card" v-for="(provider, index) in modelProviders" :key="provider.id">
+                <div class="card-header">
+                  <el-tag type="info" class="vendor-tag">{{ provider.vendor }}</el-tag>
+                  <div class="card-actions">
+                    <el-button 
+                      @click="fetchModelsForProvider(provider)"
+                      :icon="'Search'"
+                      circle
+                      size="small"
+                    ></el-button>
+                    <el-button 
+                      @click="removeProvider(index)"
+                      type="danger" 
+                      :icon="'Delete'"
+                      circle
+                      size="small"
+                    ></el-button>
+                  </div>
+                </div>
+                
+                <div class="input-group">
+                  <!-- 添加输入框标签 -->
+                  <div class="input-item">
+                    <label>API 地址</label>
+                    <el-input
+                      v-model="provider.url"
+                      placeholder="API地址"
+                      @change="autoSaveSettings"
+                    />
+                  </div>
+                  
+                  <div class="input-item">
+                    <label>API 密钥</label>
+                    <el-input
+                      v-model="provider.apiKey"
+                      placeholder="API密钥"
+                      show-password
+                      @change="autoSaveSettings"
+                    />
+                  </div>
+                  
+                  <div class="input-item">
+                    <label>模型 ID</label>
+                    <el-input
+                      v-model="provider.modelId"
+                      placeholder="模型ID"
+                      @change="autoSaveSettings"
+                    />
+                  </div>
+                  <div class="model-container">
+                    <el-select 
+                      v-model="provider.modelId"
+                      placeholder="选择模型"
+                      v-if="provider.models?.length"
+                      class="model-select"
+                    >
+                      <el-option
+                        v-for="model in provider.models"
+                        :key="model"
+                        :label="model"
+                        :value="model"
+                      />
+                    </el-select>
+                  </div>
+                </div>
+              </div>
+              <!-- 添加新磁贴 -->
+              <div class="provider-card add-tile" @click="showAddDialog = true">
+                <el-icon :size="40" color="#909399"><Plus /></el-icon>
+                <div style="color: #606266; margin-top: 10px;">添加新供应商</div>
+              </div>
+            </div>
+        
+            <!-- 添加供应商对话框 -->
+            <el-dialog
+              v-model="showAddDialog"
+              title="添加新供应商"
+              width="500px"
+              @closed="newProviderTemp = { vendor: '', url: '' }"
+            >
+              <el-form label-position="top">
+                <el-form-item label="供应商类型" required>
+                  <el-select 
+                    v-model="newProviderTemp.vendor" 
+                    placeholder="请选择"
+                    @change="handleVendorChange"
+                  >
+                    <el-option
+                      v-for="item in vendorOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+        
+                <el-form-item 
+                  v-if="newProviderTemp.vendor === 'custom'" 
+                  label="自定义URL"
+                  required
+                >
+                  <el-input
+                    v-model="newProviderTemp.url"
+                    placeholder="https://api.example.com/v1"
+                  />
+                </el-form-item>
+        
+                <div v-if="newProviderTemp.vendor && newProviderTemp.vendor !== 'custom'">
+                  <el-alert 
+                    title="默认配置说明" 
+                    type="info" 
+                    :closable="false"
+                    class="mb-2"
+                  >
+                    已自动填充 {{ newProviderTemp.vendor }} 的默认API地址
+                  </el-alert>
+                </div>
+              </el-form>
+        
+              <template #footer>
+                <el-button @click="showAddDialog = false">取消</el-button>
+                <el-button 
+                  type="primary" 
+                  @click="confirmAddProvider"
+                  :disabled="!validProvider"
+                >
+                  确认添加
+                </el-button>
+              </template>
+            </el-dialog>
+          </div>
+        </div>        
+        
 
         <!-- 工具界面 -->
         <div v-show="activeMenu === 'tools'" class="page tools-container">

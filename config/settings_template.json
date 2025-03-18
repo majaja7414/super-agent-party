@@ -43,5 +43,6 @@
       "overlap_size": 64,
       "score_threshold": 0.7
     },
-    "knowledgeFiles": []
+    "knowledgeFiles": [],
+    "modelProviders":[]
 }

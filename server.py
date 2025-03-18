@@ -629,17 +629,27 @@ async def chat_endpoint(request: ChatRequest):
     # 动态更新客户端配置
     if (current_settings['api_key'] != settings['api_key'] 
         or current_settings['base_url'] != settings['base_url']):
-        client = AsyncOpenAI(
-            api_key=current_settings['api_key'],
-            base_url=current_settings['base_url'] or "https://api.openai.com/v1",
-        )
+        if current_settings['api_key']:
+            client = AsyncOpenAI(
+                api_key=current_settings['api_key'],
+                base_url=current_settings['base_url'] or "https://api.openai.com/v1",
+            )
+        else:
+            client = AsyncOpenAI(
+                base_url=settings['base_url'] or "https://api.openai.com/v1",
+            )
         settings = current_settings
     if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
         or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
-        reasoner_client = AsyncOpenAI(
-            api_key=current_settings['reasoner']['api_key'],
-            base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-        )
+        if current_settings['reasoner']['api_key']:
+            reasoner_client = AsyncOpenAI(
+                api_key=current_settings['reasoner']['api_key'],
+                base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+            )
+        else:
+            reasoner_client = AsyncOpenAI(
+                base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+            )
         settings = current_settings
     elif current_settings != settings:
         settings = current_settings
