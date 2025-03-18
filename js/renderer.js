@@ -185,6 +185,7 @@ const app = Vue.createApp({
       showAddDialog: false,
       modelProviders: [],
       vendorOptions: [
+        { label: '自定义OpenAI', value: 'custom' },
         { label: 'OpenAI', value: 'OpenAI' },
         { label: '深度求索', value: 'Deepseek' },
         { label: '阿里云百炼', value: 'aliyun' },
@@ -220,8 +221,7 @@ const app = Vue.createApp({
         { label: 'perplexity', value: 'perplexity' },
         { label: '无问芯穹', value: 'infini' },
         { label: '魔搭', value: 'modelscope' },
-        { label: '腾讯云', value: 'tencent' },
-        { label: '自定义', value: 'custom' }
+        { label: '腾讯云', value: 'tencent' }
       ],
       newProviderTemp: {
         vendor: '',
