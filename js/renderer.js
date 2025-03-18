@@ -116,12 +116,14 @@ const app = Vue.createApp({
         temperature: 0.7,  // 默认温度值
         max_tokens: 4096,    // 默认最大输出长度
         max_rounds: 10,    // 默认最大轮数
+        selectedProvider: null,
       },
       reasonerSettings: {
         enabled: false, // 默认不启用
         model: '',
         base_url: '',
         api_key: '',
+        selectedProvider: null,
       },
       ws: null,
       messages: [],
@@ -162,7 +164,8 @@ const app = Vue.createApp({
         api_key: '',
         chunk_size: 512,
         overlap_size: 64,
-        score_threshold: 0.7
+        score_threshold: 0.7,
+        selectedProvider: null
       },
       knowledgeFiles: [],
       expandedSections: {
@@ -1027,6 +1030,38 @@ main();`,
         this.newProviderTemp.url = defaultUrls[value] || ''
       }
     },
+    // 主模型供应商选择
+    selectMainProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.settings.model = provider.modelId;
+        this.settings.base_url = provider.url;
+        this.settings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+
+    // 推理模型供应商选择
+    selectReasonerProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.reasonerSettings.model = provider.modelId;
+        this.reasonerSettings.base_url = provider.url;
+        this.reasonerSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+    // 在methods中添加
+    selectKnowledgeProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.knowledgeSettings.model = provider.modelId;
+        this.knowledgeSettings.base_url = provider.url;
+        this.knowledgeSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+
   }
 });
 

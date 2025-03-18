@@ -721,3 +721,29 @@ body {
   color: #475569;
   padding-bottom: 0.375rem !important;
 }
+
+/* 供应商选项样式 */
+.provider-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.vendor-tag {
+  background: #f4f4f5;
+  color: #909399;
+  padding: 0 6px;        /* 去掉上下 padding */
+  border-radius: 3px;    /* 微调圆角更匹配小尺寸 */
+  font-size: 12px;
+  line-height: 16px;     /* 控制垂直居中 */
+  display: inline-block; /* 确保 line-height 生效 */
+}
+
+.model-id {
+  color: #666;
+  font-size: 12px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

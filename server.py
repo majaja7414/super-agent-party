@@ -226,6 +226,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     delta.setdefault("content", "")
                     delta.setdefault("reasoning_content", "")
                     
+                    # 优先处理 reasoning_content
+                    if delta["reasoning_content"]:
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        continue
+
                     # 处理内容
                     current_content = delta["content"]
                     buffer = current_content
@@ -363,6 +368,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             # 初始化必要字段
                             delta.setdefault("content", "")
                             delta.setdefault("reasoning_content", "")
+
+                             # 优先处理 reasoning_content
+                            if delta["reasoning_content"]:
+                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                continue
                             
                             # 处理内容
                             current_content = delta["content"]
@@ -636,6 +646,7 @@ async def chat_endpoint(request: ChatRequest):
             )
         else:
             client = AsyncOpenAI(
+                api_key="ollama",
                 base_url=settings['base_url'] or "https://api.openai.com/v1",
             )
         settings = current_settings
@@ -648,6 +659,7 @@ async def chat_endpoint(request: ChatRequest):
             )
         else:
             reasoner_client = AsyncOpenAI(
+                api_key="ollama",
                 base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
             )
         settings = current_settings
