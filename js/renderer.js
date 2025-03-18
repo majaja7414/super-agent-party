@@ -187,14 +187,14 @@ const app = Vue.createApp({
       vendorOptions: [
         { label: '自定义OpenAI', value: 'custom' },
         { label: 'OpenAI', value: 'OpenAI' },
+        { label: 'Ollama', value: 'Ollama' },
+        { label: 'LM studio', value: 'LMstudio' },
         { label: '深度求索', value: 'Deepseek' },
         { label: '阿里云百炼', value: 'aliyun' },
         { label: '智谱AI', value: 'ZhipuAI' },
         { label: '火山引擎', value: 'Volcano' },
         { label: '月之暗面', value: 'moonshot' },
         { label: 'minimax', value: 'minimax' },
-        { label: 'Ollama', value: 'Ollama' },
-        { label: 'LM studio', value: 'LMstudio' },
         { label: 'Gemini', value: 'Gemini' },
         { label: 'Grok', value: 'Grok' },
         { label: 'mistral', value: 'mistral' },
@@ -977,14 +977,14 @@ main();`,
         id: Date.now(),
         vendor: this.newProviderTemp.vendor,
         url: this.newProviderTemp.url,
-        apiKey: '',
-        modelId: '',
+        apiKey: this.newProviderTemp.apiKey || '',
+        modelId: this.newProviderTemp.modelId || '',
         models: []
       }
       
       this.modelProviders.push(newProvider)
       this.showAddDialog = false
-      this.newProviderTemp = { vendor: '', url: '' }
+      this.newProviderTemp = { vendor: '', url: '', apiKey: '', modelId: '' }
       this.autoSaveSettings()
     },
     handleVendorChange(value) {
@@ -1029,6 +1029,9 @@ main();`,
       
       if (value !== 'custom') {
         this.newProviderTemp.url = defaultUrls[value] || ''
+      }
+      if (value === 'Ollama') {
+        this.newProviderTemp.apiKey = 'ollama'
       }
     },
     // 主模型供应商选择

@@ -646,7 +646,6 @@ async def chat_endpoint(request: ChatRequest):
             )
         else:
             client = AsyncOpenAI(
-                api_key="ollama",
                 base_url=settings['base_url'] or "https://api.openai.com/v1",
             )
         settings = current_settings
@@ -659,7 +658,6 @@ async def chat_endpoint(request: ChatRequest):
             )
         else:
             reasoner_client = AsyncOpenAI(
-                api_key="ollama",
                 base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
             )
         settings = current_settings
