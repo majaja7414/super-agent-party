@@ -340,6 +340,34 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "content": str(results),
                     }
                 )
+                if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                    reasoner_messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+                # 如果启用推理模型
+                if settings['reasoner']['enabled']:
+                    reasoner_messages = request.messages.copy()
+                    if tools:
+                        reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                    # 流式调用推理模型
+                    reasoner_stream = await reasoner_client.chat.completions.create(
+                        model=settings['reasoner']['model'],
+                        messages=request.messages,
+                        stream=True,
+                        max_tokens=1 # 根据实际情况调整
+                    )
+                    full_reasoning = ""
+                    # 处理推理模型的流式响应
+                    async for chunk in reasoner_stream:
+                        if not chunk.choices:
+                            continue
+
+                        chunk_dict = chunk.model_dump()
+                        delta = chunk_dict["choices"][0].get("delta", {})
+                        full_reasoning += delta.get("reasoning_content", "")
+                        
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+
+                    # 在推理结束后添加完整推理内容到消息
+                    request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
                 response = await client.chat.completions.create(
                     model=model,
                     messages=request.messages,
@@ -504,7 +532,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 max_tokens=1,
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-            print(request.messages[-1]['content'])
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
@@ -552,7 +579,19 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "content": str(results),
                 }
             )
-            print(request.messages)
+            if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                reasoner_messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+            if settings['reasoner']['enabled']:
+                reasoner_messages = request.messages.copy()
+                if tools:
+                    reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                reasoner_response = await reasoner_client.chat.completions.create(
+                    model=settings['reasoner']['model'],
+                    messages=request.messages,
+                    stream=False,
+                    max_tokens=1,
+                )
+                request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
             response = await client.chat.completions.create(
                 model=model,
                 messages=request.messages,
