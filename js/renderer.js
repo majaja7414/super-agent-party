@@ -960,7 +960,7 @@ main();`,
         const data = await response.json();
         provider.models = data.data.map(m => m.id);
       } catch (error) {
-        showNotification('获取模型列表失败', 'error');
+        showNotification('该供应商不支持模型列表获取', 'error');
       }
     },
     removeProvider(index) {
