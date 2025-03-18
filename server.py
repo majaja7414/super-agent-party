@@ -112,6 +112,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     try:
         tools = request.tools or []
         if request.fileLinks:
+            # 遍历文件链接列表
+            for file_link in request.fileLinks:
+                # 如果file_link是http://${HOST}:${PORT}开头
+                if file_link.startswith(f"http://${HOST}:{PORT}"):
+                    # 将"http://${HOST}:{PORT}"替换为"uploaded_files"
+                    file_link = file_link.replace(f"http://{HOST}:{PORT}", "uploaded_files")
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
             system_message = f"\n\n相关文件内容：{files_content}"
@@ -453,6 +459,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     tools = request.tools or []
     try:
         if request.fileLinks:
+            # 遍历文件链接列表
+            for file_link in request.fileLinks:
+                # 如果file_link是http://${HOST}:${PORT}开头
+                if file_link.startswith(f"http://${HOST}:{PORT}"):
+                    # 将"http://${HOST}:{PORT}"替换为"uploaded_files"
+                    file_link = file_link.replace(f"http://{HOST}:{PORT}", "uploaded_files")
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
             system_message = f"\n\n相关文件内容：{files_content}"

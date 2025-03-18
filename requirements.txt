@@ -22,4 +22,3 @@ pandas
 matplotlib
 numpy
 scipy
-markitdown[docx, xlsx, xls, pptx]
