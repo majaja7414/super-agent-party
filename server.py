@@ -167,13 +167,13 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     elif settings['webSearch']['engine'] == 'tavily':
                         tools.append(tavily_tool)
             if settings['tools']['deepsearch']['enabled']: 
-                deepsearch_messages = request.messages.copy()
-                deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。"
+                deepsearch_messages = copy.deepcopy(request.messages)
+                deepsearch_messages[-1]['content'] += "\n\n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
+                print(request.messages[-1]['content'])
                 response = await client.chat.completions.create(
                     model=model,
-                    messages=request.messages,
-                    temperature=0.5, 
-                    max_tokens=512
+                    messages=deepsearch_messages,
+                    temperature=0.5
                 )
                 user_prompt = response.choices[0].message.content
                 deepsearch_chunk = {
@@ -184,12 +184,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }]
                 }
                 yield f"data: {json.dumps(deepsearch_chunk)}\n\n"
-                request.messages[-1]['content'] += f"\n\n如果任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
+                request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
+                print(request.messages[-1]['content'])
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
-                reasoner_messages = request.messages.copy()
+                reasoner_messages = copy.deepcopy(request.messages)
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                print(request.messages[-1]['content'])
                 # 流式调用推理模型
                 reasoner_stream = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
@@ -475,7 +477,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
                 # 如果启用推理模型
                 if settings['reasoner']['enabled']:
-                    reasoner_messages = request.messages.copy()
+                    reasoner_messages = copy.deepcopy(request.messages)
                     if tools:
                         reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                     # 流式调用推理模型
@@ -744,18 +746,18 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 elif settings['webSearch']['engine'] == 'tavily':
                     tools.append(tavily_tool)
         if settings['tools']['deepsearch']['enabled']: 
-            deepsearch_messages = request.messages.copy()
-            deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。"
+            deepsearch_messages = copy.deepcopy(request.messages)
+            deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
             response = await client.chat.completions.create(
                 model=model,
-                messages=request.messages,
+                messages=deepsearch_messages,
                 temperature=0.5, 
                 max_tokens=512
             )
             user_prompt = response.choices[0].message.content
-            request.messages[-1]['content'] += f"\n\n如果任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
+            request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
         if settings['reasoner']['enabled']:
-            reasoner_messages = request.messages.copy()
+            reasoner_messages = copy.deepcopy(request.messages)
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
             reasoner_response = await reasoner_client.chat.completions.create(
@@ -895,7 +897,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
                 request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
             if settings['reasoner']['enabled']:
-                reasoner_messages = request.messages.copy()
+                reasoner_messages = copy.deepcopy(request.messages)
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 reasoner_response = await reasoner_client.chat.completions.create(
