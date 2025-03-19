@@ -346,7 +346,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 如果需要用户明确需求，请输出json字符串：
 {{
     "status": "need_more_info",
-    "more_info": "这里填入你想问用户的问题"
+    "unfinished_task": ""
 }}
 """
                 response = await client.chat.completions.create(
@@ -401,7 +401,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "choices": [{
                             "delta": {
                                 "reasoning_content": "\n\n❓需要用户明确需求\n\n",
-                                "content": response_content["more_info"],
                             }
                         }]
                     }
@@ -625,7 +624,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 如果需要用户明确需求，请输出json字符串：
 {{
     "status": "need_more_info",
-    "more_info": "这里填入你想问用户的问题"
+    "unfinished_task": ""
 }}
 """
                     response = await client.chat.completions.create(
@@ -680,7 +679,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             "choices": [{
                                 "delta": {
                                     "reasoning_content": "\n\n❓需要用户明确需求\n\n",
-                                    "content": response_content["more_info"],
                                 }
                             }]
                         }
@@ -795,23 +793,23 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 
 如果完成，请输出json字符串：
 {{
-"status": "done",
-"unfinished_task": ""
+    "status": "done",
+    "unfinished_task": ""
 }}
 
 如果未完成，请输出json字符串：
 {{
-"status": "not_done",
-"unfinished_task": "这里填入未完成的任务"
+    "status": "not_done",
+    "unfinished_task": "这里填入未完成的任务"
 }}
 
 如果需要用户明确需求，请输出json字符串：
 {{
     "status": "need_more_info",
-    "more_info": "这里填入你想问用户的问题"
+    "unfinished_task": ""
 }}
 """
-            response = await client.chat.completions.create(
+            search_response = await client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -822,7 +820,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=0.5,
                 response_format={"type": "json_object"},
             )
-            response_content = response.choices[0].message.content
+            response_content = search_response.choices[0].message.content
             response_content = json.loads(response_content)
             if response_content["status"] == "done":
                 search_not_done = False
@@ -833,7 +831,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages.append(
                     {
                         "role": "assistant",
-                        "content": response.choices[0].message.content,
+                        "content": search_response.choices[0].message.content,
                     }
                 )
                 request.messages.append(
@@ -843,7 +841,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     }
                 )
             elif response_content["status"] == "need_more_info":
-                response.choices[0].message.content = response_content["more_info"]
                 search_not_done = False
         while response.choices[0].message.tool_calls or search_not_done:
             if response.choices[0].message.tool_calls:
@@ -933,23 +930,23 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 
 如果完成，请输出json字符串：
 {{
-"status": "done",
-"unfinished_task": ""
+    "status": "done",
+    "unfinished_task": ""
 }}
 
 如果未完成，请输出json字符串：
 {{
-"status": "not_done",
-"unfinished_task": "这里填入未完成的任务"
+    "status": "not_done",
+    "unfinished_task": "这里填入未完成的任务"
 }}
 
 如果需要用户明确需求，请输出json字符串：
 {{
     "status": "need_more_info",
-    "more_info": "这里填入你想问用户的问题"
+    "unfinished_task": ""
 }}
 """
-                response = await client.chat.completions.create(
+                search_response = await client.chat.completions.create(
                     model=model,
                     messages=[
                         {
@@ -960,18 +957,18 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=0.5,
                     response_format={"type": "json_object"},
                 )
-                response_content = response.choices[0].message.content
+                response_content = search_response.choices[0].message.content
                 response_content = json.loads(response_content)
                 if response_content["status"] == "done":
                     search_not_done = False
-                else:
+                elif response_content["status"] == "not_done":
                     search_not_done = True
                     search_task = response_content["unfinished_task"]
                     task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
                     request.messages.append(
                         {
                             "role": "assistant",
-                            "content": response.choices[0].message.content,
+                            "content": search_response.choices[0].message.content,
                         }
                     )
                     request.messages.append(
@@ -980,6 +977,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                             "content": task_prompt,
                         }
                     )
+                elif response_content["status"] == "need_more_info":
+                    search_not_done = False
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
