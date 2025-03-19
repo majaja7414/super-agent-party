@@ -17,6 +17,9 @@
       },
       "inference": {
         "enabled": false
+      },
+      "deepsearch": {
+        "enabled": false
       }
     },
     "reasoner": {

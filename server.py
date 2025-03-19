@@ -210,6 +210,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 presence_penalty=request.presence_penalty,
             )
             tool_calls = []
+            full_content = ""
+            search_not_done = False
+            search_task = ""
             async for chunk in response:
                 if not chunk.choices:
                     continue
@@ -281,67 +284,156 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     reasoning_buffer = []
                     
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
-            while tool_calls:
-                response_content = tool_calls[0].function
-                if response_content.name in  ["DDGsearch_async","searxng_async", "Tavily_search_async"]:
-                    chunk_dict = {
-                        "id": "webSearch",
-                        "choices": [
-                            {
-                                "finish_reason": None,
-                                "index": 0,
-                                "delta": {
-                                    "role":"assistant",
-                                    "content": "",
-                                    "reasoning_content": "\n\n思考后联网搜索中，请稍候...\n\n"
-                                }
-                            }
-                        ]
-                    }
-                    yield f"data: {json.dumps(chunk_dict)}\n\n"
-                results = await dispatch_tool(response_content.name, json.loads(response_content.arguments))
-                if results is None:
-                    chunk = {
-                        "id": "extra_tools",
-                        "choices": [
-                            {
-                                "index": 0,
-                                "delta": {
-                                    "role":"assistant",
-                                    "content": "",
-                                    "tool_calls":tool_calls,
-                                }
-                            }
-                        ]
-                    }
-                    yield f"data: {json.dumps(chunk)}\n\n"
-                    break
-                request.messages.append(
-                    {
-                        "tool_calls": [
-                            {
-                                "id": tool_calls[0].id,
-                                "function": {
-                                    "arguments": response_content.arguments,
-                                    "name": response_content.name,
-                                },
-                                "type": tool_calls[0].type,
-                            }
-                        ],
-                        "role": "assistant",
-                        "content": str(response_content),
-                    }
+                    full_content += delta.get("content", "")
+            # 最终flush未完成内容
+            if content_buffer or reasoning_buffer:
+                final_chunk = {
+                    "choices": [{
+                        "delta": {
+                            "content": "".join(content_buffer),
+                            "reasoning_content": "".join(reasoning_buffer)
+                        }
+                    }]
+                }
+                yield f"data: {json.dumps(final_chunk)}\n\n"
+                full_content += final_chunk["choices"][0]["delta"].get("content", "")
+            if tool_calls:
+                pass
+            elif settings['tools']['deepsearch']['enabled']: 
+                search_prompt = f"""
+初始任务：
+{user_prompt}
+
+当前结果：
+{full_content}
+
+请判断初始任务是否被完成，如果完成，请输出json字符串：
+{{
+    "status": "done",
+    "unfinished_task": ""
+}}
+
+如果未完成，请输出json字符串：
+{{
+    "status": "not_done",
+    "unfinished_task": "这里填入未完成的任务"
+}}
+"""
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                        "role": "user",
+                        "content": search_prompt,
+                        }
+                    ],
+                    temperature=0.5,
+                    response_format={"type": "json_object"},
                 )
-                request.messages.append(
-                    {
-                        "role": "tool",
-                        "tool_call_id": tool_calls[0].id,
-                        "name": response_content.name,
-                        "content": str(results),
+                response_content = response.choices[0].message.content
+                response_content = json.loads(response_content)
+                if response_content["status"] == "done":
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": "\n\n任务完成\n\n",
+                            }
+                        }]
                     }
-                )
-                if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
-                    reasoner_messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = False
+                else:
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": "\n\n任务未完成\n\n",
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = True
+                    search_task = response_content["unfinished_task"]
+                    task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": full_content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": task_prompt,
+                        }
+                    )
+            while tool_calls or search_not_done:
+                full_content = ""
+                if tool_calls:
+                    response_content = tool_calls[0].function
+                    if response_content.name in  ["DDGsearch_async","searxng_async", "Tavily_search_async"]:
+                        chunk_dict = {
+                            "id": "webSearch",
+                            "choices": [
+                                {
+                                    "finish_reason": None,
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "reasoning_content": "\n\n思考后联网搜索中，请稍候...\n\n"
+                                    }
+                                }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    print(response_content.arguments)
+                    modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
+                    print(modified_data)
+                    # 使用json.loads来解析修改后的字符串为列表
+                    data_list = json.loads(modified_data)
+                    results = await dispatch_tool(response_content.name, data_list[0])
+                    if results is None:
+                        chunk = {
+                            "id": "extra_tools",
+                            "choices": [
+                                {
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "tool_calls":tool_calls,
+                                    }
+                                }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk)}\n\n"
+                        break
+                    request.messages.append(
+                        {
+                            "tool_calls": [
+                                {
+                                    "id": tool_calls[0].id,
+                                    "function": {
+                                        "arguments": json.dumps(data_list[0]),
+                                        "name": response_content.name,
+                                    },
+                                    "type": tool_calls[0].type,
+                                }
+                            ],
+                            "role": "assistant",
+                            "content": str(response_content),
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tool_calls[0].id,
+                            "name": response_content.name,
+                            "content": str(results),
+                        }
+                    )
+                    if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                        request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
                 # 如果启用推理模型
                 if settings['reasoner']['enabled']:
                     reasoner_messages = request.messages.copy()
@@ -452,18 +544,88 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             reasoning_buffer = []
                             
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
-            # 最终flush未完成内容
-            if content_buffer or reasoning_buffer:
-                final_chunk = {
-                    "choices": [{
-                        "delta": {
-                            "content": "".join(content_buffer),
-                            "reasoning_content": "".join(reasoning_buffer)
+                            full_content += delta.get("content", "")
+                # 最终flush未完成内容
+                if content_buffer or reasoning_buffer:
+                    final_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "content": "".join(content_buffer),
+                                "reasoning_content": "".join(reasoning_buffer)
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(final_chunk)}\n\n"
+                    full_content += final_chunk["choices"][0]["delta"].get("content", "")
+                if tool_calls:
+                    pass
+                elif settings['tools']['deepsearch']['enabled']: 
+                    search_prompt = f"""
+初始任务：
+{user_prompt}
+
+当前结果：
+{full_content}
+
+请判断初始任务是否被完成，如果完成，请输出json字符串：
+{{
+    "status": "done",
+    "unfinished_task": ""
+}}
+
+如果未完成，请输出json字符串：
+{{
+    "status": "not_done",
+    "unfinished_task": "这里填入未完成的任务"
+}}
+"""
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=[
+                            {
+                            "role": "user",
+                            "content": search_prompt,
+                            }
+                        ],
+                        temperature=0.5,
+                        response_format={"type": "json_object"},
+                    )
+                    response_content = response.choices[0].message.content
+                    response_content = json.loads(response_content)
+                    if response_content["status"] == "done":
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": "\n\n任务完成\n\n",
+                                }
+                            }]
                         }
-                    }]
-                }
-                yield f"data: {json.dumps(final_chunk)}\n\n"
-            
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = False
+                    else:
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": "\n\n任务未完成\n\n",
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = True
+                        search_task = response_content["unfinished_task"]
+                        task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
+                        request.messages.append(
+                            {
+                                "role": "assistant",
+                                "content": full_content,
+                            }
+                        )
+                        request.messages.append(
+                            {
+                                "role": "user",
+                                "content": task_prompt,
+                            }
+                        )
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
@@ -485,6 +647,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
+    search_not_done = False
+    search_task = ""
     try:
         if request.fileLinks:
             # 遍历文件链接列表
@@ -546,41 +710,110 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             frequency_penalty=request.frequency_penalty,
             presence_penalty=request.presence_penalty,
         )
-        print(request.messages)
-        while response.choices[0].message.tool_calls:
-            assistant_message = response.choices[0].message
-            response_content = assistant_message.tool_calls[0].function
-            print(response_content.name)
-            results = await dispatch_tool(response_content.name, json.loads(response_content.arguments))
-            print(results)
-            if results is None:
-                break
-            request.messages.append(
-                {
-                    "tool_calls": [
-                        {
-                            "id": assistant_message.tool_calls[0].id,
-                            "function": {
-                                "arguments": response_content.arguments,
-                                "name": response_content.name,
-                            },
-                            "type": assistant_message.tool_calls[0].type,
-                        }
-                    ],
-                    "role": "assistant",
-                    "content": str(response_content),
-                }
+        if response.choices[0].message.tool_calls:
+            pass
+        elif settings['tools']['deepsearch']['enabled']: 
+            search_prompt = f"""
+初始任务：
+{user_prompt}
+
+当前结果：
+{response.choices[0].message.content}
+
+请判断初始任务是否被完成，如果完成，请输出json字符串：
+{{
+"status": "done",
+"unfinished_task": ""
+}}
+
+如果未完成，请输出json字符串：
+{{
+"status": "not_done",
+"unfinished_task": "这里填入未完成的任务"
+}}
+"""
+            response = await client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                    "role": "user",
+                    "content": search_prompt,
+                    }
+                ],
+                temperature=0.5,
+                response_format={"type": "json_object"},
             )
-            request.messages.append(
-                {
-                    "role": "tool",
-                    "tool_call_id": assistant_message.tool_calls[0].id,
-                    "name": response_content.name,
-                    "content": str(results),
-                }
-            )
+            response_content = response.choices[0].message.content
+            response_content = json.loads(response_content)
+            if response_content["status"] == "done":
+                search_not_done = False
+            else:
+                search_not_done = True
+                search_task = response_content["unfinished_task"]
+                task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
+                request.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": response.choices[0].message.content,
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "user",
+                        "content": task_prompt,
+                    }
+                )
+        while response.choices[0].message.tool_calls or search_not_done:
+            if response.choices[0].message.tool_calls:
+                assistant_message = response.choices[0].message
+                response_content = assistant_message.tool_calls[0].function
+                print(response_content.name)
+                modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
+                # 使用json.loads来解析修改后的字符串为列表
+                data_list = json.loads(modified_data)
+                # 存储处理结果
+                results = []
+                for data in data_list:
+                    result = await dispatch_tool(response_content.name, data) # 将结果添加到results列表中
+                    if result is not None:
+                        # 将结果添加到results列表中
+                        results.append(json.dumps(result))
+
+                # 将所有结果拼接成一个连续的字符串
+                combined_results = ''.join(results)
+                if combined_results:
+                    results = combined_results
+                else:
+                    results = None
+                print(results)
+                if results is None:
+                    break
+                request.messages.append(
+                    {
+                        "tool_calls": [
+                            {
+                                "id": assistant_message.tool_calls[0].id,
+                                "function": {
+                                    "arguments": response_content.arguments,
+                                    "name": response_content.name,
+                                },
+                                "type": assistant_message.tool_calls[0].type,
+                            }
+                        ],
+                        "role": "assistant",
+                        "content": str(response_content),
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": assistant_message.tool_calls[0].id,
+                        "name": response_content.name,
+                        "content": str(results),
+                    }
+                )
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
-                reasoner_messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+                request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
             if settings['reasoner']['enabled']:
                 reasoner_messages = request.messages.copy()
                 if tools:
@@ -604,6 +837,59 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 presence_penalty=request.presence_penalty,
             )
             print(response)
+            if response.choices[0].message.tool_calls:
+                pass
+            elif settings['tools']['deepsearch']['enabled']: 
+                search_prompt = f"""
+初始任务：
+{user_prompt}
+
+当前结果：
+{response.choices[0].message.content}
+
+请判断初始任务是否被完成，如果完成，请输出json字符串：
+{{
+"status": "done",
+"unfinished_task": ""
+}}
+
+如果未完成，请输出json字符串：
+{{
+"status": "not_done",
+"unfinished_task": "这里填入未完成的任务"
+}}
+"""
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {
+                        "role": "user",
+                        "content": search_prompt,
+                        }
+                    ],
+                    temperature=0.5,
+                    response_format={"type": "json_object"},
+                )
+                response_content = response.choices[0].message.content
+                response_content = json.loads(response_content)
+                if response_content["status"] == "done":
+                    search_not_done = False
+                else:
+                    search_not_done = True
+                    search_task = response_content["unfinished_task"]
+                    task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": response.choices[0].message.content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": task_prompt,
+                        }
+                    )
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']

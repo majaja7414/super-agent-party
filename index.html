@@ -350,7 +350,7 @@
         <div v-show="activeMenu === 'tools'" class="page tools-container">
           <el-form :model="toolsSettings" class="settings-form">
             <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('time')">
+              <div class="tool-header">
                 <span>
                   <el-icon><timer /></el-icon>
                   当前时间
@@ -359,7 +359,16 @@
               </div>
             </div>
             <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('inference')">
+              <div class="tool-header">
+                <span>
+                  <el-icon><Notebook /></el-icon>
+                  深度研究
+                </span>
+                <el-switch v-model="toolsSettings.deepsearch.enabled" @click.stop @change="autoSaveSettings"/>
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header">
                 <span>
                   <el-icon><reading-lamp /></el-icon>
                   伪推理

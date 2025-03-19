@@ -17,6 +17,8 @@ pywin32; sys_platform == 'win32'
 bs4
 browser-use
 langchain_openai
+
+
 sympy
 pandas
 matplotlib

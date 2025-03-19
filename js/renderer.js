@@ -145,6 +145,9 @@ const app = Vue.createApp({
         },
         inference: {
           enabled: false, // 默认不启用
+        },
+        deepsearch: {
+          enabled: false, // 默认不启用
         }
       },
       webSearchSettings: {
@@ -172,9 +175,7 @@ const app = Vue.createApp({
         settingsBase: true,
         settingsAdvanced: true,
         reasonerConfig: true,
-        time: false,
         language: true,
-        inference: false,
         superapi: true,
         webSearchConfig: true,
         duckduckgoConfig: true,
