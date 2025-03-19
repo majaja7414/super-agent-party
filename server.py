@@ -197,7 +197,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     model=settings['reasoner']['model'],
                     messages=request.messages,
                     stream=True,
-                    max_tokens=1 # 根据实际情况调整
+                    max_tokens=1, # 根据实际情况调整
+                    temperature=settings['reasoner']['temperature']
                 )
                 full_reasoning = ""
                 # 处理推理模型的流式响应
@@ -484,7 +485,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         model=settings['reasoner']['model'],
                         messages=request.messages,
                         stream=True,
-                        max_tokens=1 # 根据实际情况调整
+                        max_tokens=1, # 根据实际情况调整
+                        temperature=settings['reasoner']['temperature']
                     )
                     full_reasoning = ""
                     # 处理推理模型的流式响应
@@ -762,7 +764,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 model=settings['reasoner']['model'],
                 messages=request.messages,
                 stream=False,
-                max_tokens=1,
+                max_tokens=1, # 根据实际情况调整
+                temperature=settings['reasoner']['temperature']
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         model = request.model or settings['model']
@@ -901,7 +904,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     model=settings['reasoner']['model'],
                     messages=request.messages,
                     stream=False,
-                    max_tokens=1,
+                    max_tokens=1, # 根据实际情况调整
+                    temperature=settings['reasoner']['temperature']
                 )
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
             response = await client.chat.completions.create(

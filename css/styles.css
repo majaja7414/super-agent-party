@@ -747,3 +747,25 @@ body {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.generate-btn {
+  margin-top: 20px;
+  text-align: center;
+  padding: 20px 0;
+  border-top: 1px solid #ebeef5;
+}
+
+/* 添加这些样式 */
+.alert-content {
+  line-height: 1.8;
+  color: var(--el-color-info); /* 保持与警告组件颜色一致 */
+}
+.font-medium {
+  font-weight: 500;
+}
+.el-link {
+  vertical-align: baseline; /* 保持文字对齐 */
+}
+.el-link:hover {
+  text-decoration: underline !important; /* 悬停时显示下划线 */
+}

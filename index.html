@@ -84,11 +84,11 @@
           </el-menu-item>
           <el-menu-item index="reasoner">
             <el-icon><magic-stick /></el-icon>
-            <template #title>推理模型</template>
+            <template #title>推理</template>
           </el-menu-item>
           <el-menu-item index="websearch">
             <el-icon><search /></el-icon>
-            <template #title>联网搜索</template>
+            <template #title>联网</template>
           </el-menu-item>
           <el-menu-item index="document">
             <el-icon><document /></el-icon>
@@ -607,6 +607,7 @@
         <div v-show="activeMenu === 'settings'" class="page tools-container">
           <el-form :model="settings" class="settings-form">
             <div class="tool-item">
+              <!-- 基础配置（仅供应商） -->
               <div class="tool-header" @click="toggleSection('settingsBase')">
                 <div class="header-left">
                   <span>
@@ -638,6 +639,39 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
+              </div>
+                <el-alert 
+                  type="info" 
+                  :closable="false"
+                  class="mb-2"
+                >
+                  <template #default>
+                    <div class="alert-content">
+                      首次使用，你可以在
+                      <el-link 
+                        type="primary" 
+                        :underline="false" 
+                        class="font-medium"
+                        @click="switchToApiBox"
+                      >
+                        <el-icon class="mr-1"><key /></el-icon>钥匙箱界面
+                      </el-link>
+                      添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。
+                    </div>
+                  </template>
+                </el-alert>
+            </div>
+            <!-- 新增高级配置 -->
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('settingsAdvanced')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><coffee-cup /></el-icon>
+                    高级配置
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.settingsAdvanced">
                 <el-form-item label="模型名称" class="form-item-align">
                   <el-input 
                     v-model="settings.model" 
@@ -663,19 +697,6 @@
                     class="full-width-input"
                   />
                 </el-form-item>
-              </div>
-            </div>
-
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('settingsAdvanced')">
-                <div class="header-left">
-                  <span>
-                    <el-icon><coffee-cup /></el-icon>
-                    高级设置
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.settingsAdvanced">
                 <el-form-item label="温度" class="form-item-align">
                   <el-slider
                     v-model="settings.temperature"
@@ -744,6 +765,67 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
+
+                <!-- 文件上传区域 -->
+                <div class="upload-container">
+                  <el-upload
+                    class="drop-zone"
+                    drag
+                    multiple
+                    :auto-upload="false"
+                    :on-change="handleKnowledgeFile"
+                    :show-file-list="false"
+                  >
+                    <el-icon :size="50"><upload /></el-icon>
+                    <p>拖放文件或点击上传</p>
+                  </el-upload>
+                  
+                  <!-- 文件列表 -->
+                  <div class="file-list">
+                    <div v-for="(file, index) in knowledgeFiles" :key="index" class="file-item">
+                      <a :href="file.path" target="_blank" class="file-link">
+                        {{ file.name }}
+                      </a>
+                      <el-button 
+                        @click="removeKnowledgeFile(index)"
+                        :icon="'delete'"
+                        circle
+                        size="small"
+                        class="delete-btn"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <el-alert 
+              type="info" 
+              :closable="false"
+              class="mb-2"
+            >
+              <template #default>
+                <div class="alert-content">
+                  首次使用，你可以在
+                  <el-link 
+                    type="primary" 
+                    :underline="false" 
+                    class="font-medium"
+                    @click="switchToApiBox"
+                  >
+                    <el-icon class="mr-1"><key /></el-icon>钥匙箱界面
+                  </el-link>
+                  添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。
+                </div>
+              </template>
+            </el-alert>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('knowledgeAdvanced')">
+                <span>
+                  <el-icon><coffee-cup /></el-icon>
+                  高级配置
+                </span>
+              </div>
+              <div class="tool-content" v-show="expandedSections.knowledgeAdvanced">
                 <!-- 输入框组 -->
                 <el-form-item label="检索模型" class="form-item-align">
                   <el-input 
@@ -806,48 +888,16 @@
                     @input="autoSaveSettings"
                   />
                 </el-form-item>
-
-                <!-- 文件上传区域 -->
-                <div class="upload-container">
-                  <el-upload
-                    class="drop-zone"
-                    drag
-                    multiple
-                    :auto-upload="false"
-                    :on-change="handleKnowledgeFile"
-                    :show-file-list="false"
-                  >
-                    <el-icon :size="50"><upload /></el-icon>
-                    <p>拖放文件或点击上传</p>
-                  </el-upload>
-                  
-                  <!-- 文件列表 -->
-                  <div class="file-list">
-                    <div v-for="(file, index) in knowledgeFiles" :key="index" class="file-item">
-                      <a :href="file.path" target="_blank" class="file-link">
-                        {{ file.name }}
-                      </a>
-                      <el-button 
-                        @click="removeKnowledgeFile(index)"
-                        :icon="'delete'"
-                        circle
-                        size="small"
-                        class="delete-btn"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <!-- 生成按钮 -->
-                <el-button 
-                  type="primary" 
-                  @click="generateKnowledgeBase"
-                  class="generate-btn"
-                >
-                  生成知识库
-                </el-button>
               </div>
             </div>
+              <!-- 生成按钮 -->
+              <el-button 
+                type="primary" 
+                @click="generateKnowledgeBase"
+                class="generate-btn"
+              >
+                生成知识库
+              </el-button>
           </el-form>
         </div>
 
@@ -886,7 +936,39 @@
                       </div>
                     </el-option>
                   </el-select>
-                </el-form-item>     
+                </el-form-item> 
+              </div>
+              <el-alert 
+              type="info" 
+              :closable="false"
+              class="mb-2"
+            >
+              <template #default>
+                <div class="alert-content">
+                  首次使用，你可以在
+                  <el-link 
+                    type="primary" 
+                    :underline="false" 
+                    class="font-medium"
+                    @click="switchToApiBox"
+                  >
+                    <el-icon class="mr-1"><key /></el-icon>钥匙箱界面
+                  </el-link>
+                  添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。
+                </div>
+              </template>
+            </el-alert>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('reasonerAdvanced')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><coffee-cup /></el-icon>
+                    高级配置
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.reasonerAdvanced">    
                 <el-form-item label="模型名称" class="form-item-align">
                   <el-input 
                     v-model="reasonerSettings.model" 
@@ -910,6 +992,15 @@
                     show-password
                     @input="autoSaveSettings"
                     class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="温度" class="form-item-align">
+                  <el-slider
+                    v-model="reasonerSettings.temperature"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    @input="autoSaveSettings"
                   />
                 </el-form-item>
               </div>

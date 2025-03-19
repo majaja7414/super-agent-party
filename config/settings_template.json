@@ -27,7 +27,8 @@
       "model": "deepseek-r1-250120",
       "base_url": "",
       "api_key": "",
-      "selectedProvider": null
+      "selectedProvider": null,
+      "temperature": 0.7
     },
     "webSearch": {
       "enabled": false,

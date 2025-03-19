@@ -113,6 +113,7 @@ const app = Vue.createApp({
         base_url: '',
         api_key: '',
         selectedProvider: null,
+        temperature: 0.7,  // 默认温度值
       },
       ws: null,
       messages: [],
@@ -162,7 +163,6 @@ const app = Vue.createApp({
       knowledgeFiles: [],
       expandedSections: {
         settingsBase: true,
-        settingsAdvanced: true,
         reasonerConfig: true,
         language: true,
         superapi: true,
@@ -171,6 +171,9 @@ const app = Vue.createApp({
         searxngConfig: true,
         tavilyConfig: true,
         knowledgeHeader: true,
+        settingsAdvanced: false,
+        reasonerAdvanced: false,
+        knowledgeAdvanced: false,
       },
       abortController: null, // 用于中断请求的控制器
       isSending: false, // 是否正在发送
@@ -314,6 +317,23 @@ main();`,
   watch: {
     selectedCodeLang() {
       this.highlightCode();
+    },
+    modelProviders: {
+      deep: true,
+      handler(newProviders) {
+        const existingIds = new Set(newProviders.map(p => p.id));
+        
+        // 自动清理无效的 selectedProvider
+        [this.settings, this.reasonerSettings, this.knowledgeSettings].forEach(config => {
+          if (config.selectedProvider && !existingIds.has(config.selectedProvider)) {
+            config.selectedProvider = null;
+            // 可选项：同时重置相关字段
+            config.model = '';
+            config.base_url = '';
+            config.api_key = '';
+          }
+        });
+      }
     }
   },
   computed: {
@@ -865,6 +885,11 @@ main();`,
         .filter(this.isValidFileType)
       this.handleFiles(files)
     },
+    switchToApiBox() {
+      // 切换到 API 钥匙箱界面
+      this.activeMenu = 'api-box'
+      
+    },
 
     // 添加文件到列表
     addFiles(files) {
@@ -971,8 +996,42 @@ main();`,
         showNotification('该供应商不支持模型列表获取', 'error');
       }
     },
+    // 找到原有的 removeProvider 方法，替换为以下代码
     removeProvider(index) {
+      // 获取被删除的供应商信息
+      const removedProvider = this.modelProviders[index];
+      
+      // 从供应商列表中移除
       this.modelProviders.splice(index, 1);
+
+      // 清理所有相关配置中的引用
+      const providerId = removedProvider.id;
+      
+      // 主模型配置清理
+      if (this.settings.selectedProvider === providerId) {
+        this.settings.selectedProvider = null;
+        this.settings.model = '';
+        this.settings.base_url = '';
+        this.settings.api_key = '';
+      }
+
+      // 推理模型配置清理
+      if (this.reasonerSettings.selectedProvider === providerId) {
+        this.reasonerSettings.selectedProvider = null;
+        this.reasonerSettings.model = '';
+        this.reasonerSettings.base_url = '';
+        this.reasonerSettings.api_key = '';
+      }
+
+      // 知识库配置清理 
+      if (this.knowledgeSettings.selectedProvider === providerId) {
+        this.knowledgeSettings.selectedProvider = null;
+        this.knowledgeSettings.model = '';
+        this.knowledgeSettings.base_url = '';
+        this.knowledgeSettings.api_key = '';
+      }
+
+      // 触发自动保存
       this.autoSaveSettings();
     },
     confirmAddProvider() {
