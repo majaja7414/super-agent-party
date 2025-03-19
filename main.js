@@ -1,4 +1,5 @@
 // main.js
+const remoteMain = require('@electron/remote/main')
 const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
@@ -86,6 +87,7 @@ app.whenReady().then(async () => {
     startBackend();
     await waitForBackend();
     console.log(`Please wait a moment, the window is being created...`);
+    remoteMain.initialize();
     // 创建无边框窗口
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
     mainWindow = new BrowserWindow({
@@ -95,13 +97,16 @@ app.whenReady().then(async () => {
       show: false, // 初始隐藏窗口
       icon: 'source/icon.png',
       webPreferences: {
-        nodeIntegration: true,
-        contextIsolation: false, 
+        preload: path.join(__dirname,'js/preload.js'),
+        nodeIntegration: false,
+        sandbox: false, 
+        contextIsolation: true, // 保持启用
+        enableRemoteModule: false, // 显式禁用旧版 remote
         webSecurity: false,
         devTools: true, // 开发者工具
       }
     })
-
+    remoteMain.enable(mainWindow.webContents)
     // 加载页面
     mainWindow.loadURL(`http://${HOST}:${PORT}`)
       .then(() => {

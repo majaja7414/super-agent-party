@@ -174,10 +174,10 @@
                 circle>
               </el-button>
               <el-button 
-                @click="sendMessage" 
+                @click="isSending ? stopGenerate() : sendMessage()" 
                 type="primary"
                 class="icon-btn send-btn" 
-                :icon="'Promotion'" 
+                :icon="isSending ? 'SwitchButton' : 'Promotion'" 
                 circle>
               </el-button>
             </div>                  

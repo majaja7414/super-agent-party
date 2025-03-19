@@ -1,13 +1,9 @@
-// 检查是否在Electron环境中
-const isElectron = typeof process !== 'undefined' && process.versions && process.versions.electron;
-let ipcRenderer;
-let clipboardInstance = null; // 全局剪贴板实例
 const HOST = '127.0.0.1'
 const PORT = 3456
+const isElectron = window.electronAPI ? true : false;
+// 事件监听改造
 if (isElectron) {
-  const { shell } = require('electron');
-  ipcRenderer = require('electron').ipcRenderer;
-  document.addEventListener('click', (event) => {
+  document.addEventListener('click', async (event) => {
     const link = event.target.closest('a[href]');
     if (!link) return;
     const href = link.getAttribute('href');
@@ -15,36 +11,29 @@ if (isElectron) {
     try {
       const url = new URL(href);
       
-      // 特殊处理上传文件链接
       if (url.hostname === HOST && 
           url.port === PORT &&
           url.pathname.startsWith('/uploaded_files/')) {
         event.preventDefault();
         
-        // 转换网络路径为本地文件路径
+        // 使用预加载接口处理路径
         const filename = url.pathname.split('/uploaded_files/')[1];
-        const filePath = require('path').join(
-          require('electron').app.getAppPath(), 
+        const filePath = window.electronAPI.pathJoin(
+          window.electronAPI.getAppPath(), 
           'uploaded_files', 
           filename
         );
         
-        // 用默认程序打开文件
-        shell.openPath(filePath).then(err => {
-          if (err) console.error('打开文件失败:', err);
-        });
-        
+        await window.electronAPI.openPath(filePath);
+        return;
+      }
+      if (['http:', 'https:'].includes(url.protocol)) {
+        event.preventDefault();
+        await window.electronAPI.openExternal(href); // 确保调用electronAPI
         return;
       }
       
-      // 原有网络协议处理
-      if (url.protocol === 'http:' || url.protocol === 'https:') {
-        event.preventDefault();
-        shell.openExternal(href);
-      }
-      
     } catch {
-      // 处理相对路径
       event.preventDefault();
       window.location.href = href;
     }
@@ -183,6 +172,8 @@ const app = Vue.createApp({
         tavilyConfig: true,
         knowledgeHeader: true,
       },
+      abortController: null, // 用于中断请求的控制器
+      isSending: false, // 是否正在发送
       showAddDialog: false,
       modelProviders: [],
       vendorOptions: [
@@ -315,8 +306,7 @@ main();`,
     this.initWebSocket();
     this.highlightCode();
     if (isElectron) {
-      // 更新事件监听
-      ipcRenderer.on('window-state', (_, state) => {
+      window.electronAPI.onWindowState((_, state) => {
         this.isMaximized = state === 'maximized'
       });
     }
@@ -338,29 +328,23 @@ main();`,
   methods: {
     // 窗口控制
     minimizeWindow() {
-      if (isElectron) ipcRenderer.invoke('window-action', 'minimize');
+      if (isElectron) window.electronAPI.windowAction('minimize');
     },
     maximizeWindow() {
-      if (isElectron) ipcRenderer.invoke('window-action', 'maximize');
+      if (isElectron) window.electronAPI.windowAction('maximize');
     },
     closeWindow() {
-      if (isElectron) ipcRenderer.invoke('window-action', 'close');
+      if (isElectron) window.electronAPI.windowAction('close');
     },
-
-    // 菜单控制
     handleSelect(key) {
-      const url = `http://${HOST}:${PORT}`;
-
       if (key === 'web') {
+        const url = `http://${HOST}:${PORT}`;
         if (isElectron) {
-          // 使用 IPC 向主进程发送消息
-          require('electron').ipcRenderer.send('open-external', url);
+          window.electronAPI.openExternal(url);
         } else {
-          // 如果是在普通浏览器环境中
           window.open(url, '_blank');
         }
       } else {
-        // 处理其他菜单选项
         this.activeMenu = key;
       }
     },
@@ -617,7 +601,8 @@ main();`,
 
       
       this.userInput = '';
-
+      this.isSending = true;
+      this.abortController = new AbortController(); 
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
@@ -632,7 +617,8 @@ main();`,
             messages: messages,
             stream: true,
             fileLinks: Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
-          })
+          }),
+          signal: this.abortController.signal
         });
         
         if (!response.ok) {
@@ -708,16 +694,37 @@ main();`,
           }
         }
       } catch (error) {
-        showNotification(error.message, 'error');
+        if (error.name === 'AbortError') {
+          showNotification('已停止生成', 'info');
+        } else {
+          showNotification(error.message, 'error');
+        }
+      } finally {
+        this.isThinkOpen = false;
+        this.isSending = false;
         this.isTyping = false;
-        // 恢复用户输入
-        this.userInput = userInput;  
+        this.abortController = null;
       }
-      
-      this.isTyping = false;
-      this.scrollToBottom();
     },
-
+    stopGenerate() {
+      if (this.abortController) {
+        this.abortController.abort();
+        // 保留已生成的内容，仅标记为完成状态
+        if (this.messages.length > 0) {
+          const lastMessage = this.messages[this.messages.length - 1];
+          if (lastMessage.role === 'assistant') {
+            // 可选：添加截断标记
+            if (lastMessage.content && !lastMessage.content.endsWith('(已停止)')) {
+              lastMessage.content += '\n\n(生成已停止)';
+            }
+          }
+        }
+      }
+      this.isThinkOpen = false;
+      this.isSending = false;
+      this.isTyping = false;
+      this.abortController = null;
+    },
     // 自动保存设置
     autoSaveSettings() {
       const payload = {
@@ -812,7 +819,7 @@ main();`,
         }
         input.click()
       } else {
-        const result = await ipcRenderer.invoke('open-file-dialog')
+        const result = await window.electronAPI.openFileDialog();
         if (!result.canceled) {
           const validPaths = result.filePaths
             .filter(path => {

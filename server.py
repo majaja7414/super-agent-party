@@ -1,4 +1,5 @@
 # -- coding: utf-8 --
+import asyncio
 import copy
 import json
 import os
@@ -165,6 +166,25 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(searxng_tool)
                     elif settings['webSearch']['engine'] == 'tavily':
                         tools.append(tavily_tool)
+            if settings['tools']['deepsearch']['enabled']: 
+                deepsearch_messages = request.messages.copy()
+                deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。"
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=0.5, 
+                    max_tokens=512
+                )
+                user_prompt = response.choices[0].message.content
+                deepsearch_chunk = {
+                    "choices": [{
+                        "delta": {
+                            "reasoning_content": f"\n\n💖开始执行任务：{user_prompt}\n\n",
+                        }
+                    }]
+                }
+                yield f"data: {json.dumps(deepsearch_chunk)}\n\n"
+                request.messages[-1]['content'] += f"\n\n如果任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = request.messages.copy()
@@ -307,7 +327,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 当前结果：
 {full_content}
 
-请判断初始任务是否被完成，如果完成，请输出json字符串：
+请判断初始任务是否被完成或需要用户明确需求。
+
+如果完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
@@ -317,6 +339,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
+}}
+
+如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "more_info": "这里填入你想问用户的问题"
 }}
 """
                 response = await client.chat.completions.create(
@@ -336,17 +364,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n任务完成\n\n",
+                                "reasoning_content": "\n\n✅任务完成\n\n",
                             }
                         }]
                     }
                     yield f"data: {json.dumps(search_chunk)}\n\n"
                     search_not_done = False
-                else:
+                elif response_content["status"] == "not_done":
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n任务未完成\n\n",
+                                "reasoning_content": "\n\n❎任务未完成\n\n",
                             }
                         }]
                     }
@@ -366,6 +394,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             "content": task_prompt,
                         }
                     )
+                elif response_content["status"] == "need_more_info":
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": "\n\n❓需要用户明确需求\n\n",
+                                "content": response_content["more_info"],
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = False
             while tool_calls or search_not_done:
                 full_content = ""
                 if tool_calls:
@@ -567,7 +606,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 当前结果：
 {full_content}
 
-请判断初始任务是否被完成，如果完成，请输出json字符串：
+请判断初始任务是否被完成或需要用户明确需求。
+
+如果完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
@@ -577,6 +618,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
+}}
+
+如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "more_info": "这里填入你想问用户的问题"
 }}
 """
                     response = await client.chat.completions.create(
@@ -596,17 +643,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": "\n\n任务完成\n\n",
+                                    "reasoning_content": "\n\n✅任务完成\n\n",
                                 }
                             }]
                         }
                         yield f"data: {json.dumps(search_chunk)}\n\n"
                         search_not_done = False
-                    else:
+                    elif response_content["status"] == "not_done":
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": "\n\n任务未完成\n\n",
+                                    "reasoning_content": "\n\n❎任务未完成\n\n",
                                 }
                             }]
                         }
@@ -626,6 +673,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "content": task_prompt,
                             }
                         )
+                    elif response_content["status"] == "need_more_info":
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": "\n\n❓需要用户明确需求\n\n",
+                                    "content": response_content["more_info"],
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = False
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
@@ -685,6 +743,17 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(searxng_tool)
                 elif settings['webSearch']['engine'] == 'tavily':
                     tools.append(tavily_tool)
+        if settings['tools']['deepsearch']['enabled']: 
+            deepsearch_messages = request.messages.copy()
+            deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。"
+            response = await client.chat.completions.create(
+                model=model,
+                messages=request.messages,
+                temperature=0.5, 
+                max_tokens=512
+            )
+            user_prompt = response.choices[0].message.content
+            request.messages[-1]['content'] += f"\n\n如果任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
         if settings['reasoner']['enabled']:
             reasoner_messages = request.messages.copy()
             if tools:
@@ -720,7 +789,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 当前结果：
 {response.choices[0].message.content}
 
-请判断初始任务是否被完成，如果完成，请输出json字符串：
+请判断初始任务是否被完成或需要用户明确需求。
+
+如果完成，请输出json字符串：
 {{
 "status": "done",
 "unfinished_task": ""
@@ -730,6 +801,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 {{
 "status": "not_done",
 "unfinished_task": "这里填入未完成的任务"
+}}
+
+如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "more_info": "这里填入你想问用户的问题"
 }}
 """
             response = await client.chat.completions.create(
@@ -747,7 +824,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             response_content = json.loads(response_content)
             if response_content["status"] == "done":
                 search_not_done = False
-            else:
+            elif response_content["status"] == "not_done":
                 search_not_done = True
                 search_task = response_content["unfinished_task"]
                 task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
@@ -763,6 +840,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         "content": task_prompt,
                     }
                 )
+            elif response_content["status"] == "need_more_info":
+                response.choices[0].message.content = response_content["more_info"]
+                search_not_done = False
         while response.choices[0].message.tool_calls or search_not_done:
             if response.choices[0].message.tool_calls:
                 assistant_message = response.choices[0].message
@@ -847,7 +927,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 当前结果：
 {response.choices[0].message.content}
 
-请判断初始任务是否被完成，如果完成，请输出json字符串：
+请判断初始任务是否被完成或需要用户明确需求。
+
+如果完成，请输出json字符串：
 {{
 "status": "done",
 "unfinished_task": ""
@@ -857,6 +939,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 {{
 "status": "not_done",
 "unfinished_task": "这里填入未完成的任务"
+}}
+
+如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "more_info": "这里填入你想问用户的问题"
 }}
 """
                 response = await client.chat.completions.create(
@@ -1015,6 +1103,10 @@ async def chat_endpoint(request: ChatRequest):
         if request.stream:
             return await generate_stream_response(client,reasoner_client, request, settings)
         return await generate_complete_response(client,reasoner_client, request, settings)
+    except asyncio.CancelledError:
+        # 处理客户端中断连接的情况
+        print("Client disconnected")
+        raise
     except Exception as e:
         return JSONResponse(
             status_code=500,
