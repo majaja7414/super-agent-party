@@ -40,16 +40,6 @@
       "tavily_max_results": 10,
       "tavily_api_key": ""
     },
-    "knowledge": {
-      "enabled": false,
-      "model": "mxbai-embed-large:latest",
-      "base_url": "http://127.0.0.1:11434/v1/",
-      "api_key": "ollama",
-      "chunk_size": 512,
-      "overlap_size": 64,
-      "score_threshold": 0.7,
-      "selectedProvider": null
-    },
-    "knowledgeFiles": [],
-    "modelProviders":[]
+    "knowledgeBases": [],
+    "modelProviders": []
 }

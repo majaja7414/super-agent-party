@@ -150,17 +150,16 @@ const app = Vue.createApp({
         tavily_max_results: 10, // 默认值
         tavily_api_key: '',
       },
-      knowledgeSettings: {
-        enabled: true,
+      knowledgeBases: [],
+      showAddKbDialog: false,
+      newKb: {
+        name: '',
+        providerId: null,
         model: '',
         base_url: '',
         api_key: '',
-        chunk_size: 512,
-        overlap_size: 64,
-        score_threshold: 0.7,
-        selectedProvider: null
       },
-      knowledgeFiles: [],
+      newKbFiles: [],
       expandedSections: {
         settingsBase: true,
         reasonerConfig: true,
@@ -170,7 +169,6 @@ const app = Vue.createApp({
         duckduckgoConfig: true,
         searxngConfig: true,
         tavilyConfig: true,
-        knowledgeHeader: true,
         settingsAdvanced: false,
         reasonerAdvanced: false,
         knowledgeAdvanced: false,
@@ -324,7 +322,7 @@ main();`,
         const existingIds = new Set(newProviders.map(p => p.id));
         
         // 自动清理无效的 selectedProvider
-        [this.settings, this.reasonerSettings, this.knowledgeSettings].forEach(config => {
+        [this.settings, this.reasonerSettings].forEach(config => {
           if (config.selectedProvider && !existingIds.has(config.selectedProvider)) {
             config.selectedProvider = null;
             // 可选项：同时重置相关字段
@@ -486,8 +484,7 @@ main();`,
           this.toolsSettings = data.data.tools || {};
           this.reasonerSettings = data.data.reasoner || {};
           this.webSearchSettings = data.data.webSearch || {};
-          this.knowledgeSettings = data.data.knowledge || {};
-          this.knowledgeFiles = data.data.knowledgeFiles || [];
+          this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -752,8 +749,7 @@ main();`,
         tools: this.toolsSettings,
         reasoner: this.reasonerSettings,
         webSearch: this.webSearchSettings, 
-        knowledge: this.knowledgeSettings,
-        knowledgeFiles: this.knowledgeFiles,
+        knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
       }
       this.ws.send(JSON.stringify({
@@ -918,59 +914,6 @@ main();`,
         this.initCopyButtons();
       });
     },
-     // 处理知识库文件上传
-    async handleKnowledgeFile(file) {
-      try {
-        const formData = new FormData()
-        formData.append('files', file.raw)
-        
-        const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
-          method: 'POST',
-          body: formData
-        })
-        
-        const data = await response.json()
-        if (data.success) {
-          this.knowledgeFiles = [
-            ...this.knowledgeFiles,
-            ...data.fileLinks.map(link => ({
-              ...link,
-              localPath: file.raw.path // 保留本地路径供生成使用
-            }))
-          ]
-        }
-        this.autoSaveSettings();
-      } catch (error) {
-        showNotification('文件上传失败', 'error')
-      }
-    },
-    // 删除知识库文件
-    removeKnowledgeFile(index) {
-      this.knowledgeFiles.splice(index, 1)
-      this.autoSaveSettings();
-    },
-    // 生成知识库
-    async generateKnowledgeBase() {
-      try {
-        const response = await fetch(`http://${HOST}:${PORT}/build_knowledge`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            files: this.knowledgeFiles.map(f => f.localPath),
-            config: this.knowledgeSettings
-          })
-        })
-        
-        if (response.ok) {
-          showNotification('知识库生成成功')
-        } else {
-          const error = await response.json()
-          throw new Error(error.message)
-        }
-      } catch (error) {
-        showNotification(`生成失败: ${error.message}`, 'error')
-      }
-    },
     addProvider() {
       this.modelProviders.push({
         id: Date.now(),
@@ -1021,14 +964,6 @@ main();`,
         this.reasonerSettings.model = '';
         this.reasonerSettings.base_url = '';
         this.reasonerSettings.api_key = '';
-      }
-
-      // 知识库配置清理 
-      if (this.knowledgeSettings.selectedProvider === providerId) {
-        this.knowledgeSettings.selectedProvider = null;
-        this.knowledgeSettings.model = '';
-        this.knowledgeSettings.base_url = '';
-        this.knowledgeSettings.api_key = '';
       }
 
       // 触发自动保存
@@ -1123,15 +1058,6 @@ main();`,
       }
     },
     // 在methods中添加
-    selectKnowledgeProvider(providerId) {
-      const provider = this.modelProviders.find(p => p.id === providerId);
-      if (provider) {
-        this.knowledgeSettings.model = provider.modelId;
-        this.knowledgeSettings.base_url = provider.url;
-        this.knowledgeSettings.api_key = provider.apiKey;
-        this.autoSaveSettings();
-      }
-    },
     handleMainProviderVisibleChange(visible) {
       if (!visible) {
         this.selectMainProvider(this.settings.selectedProvider);
@@ -1142,13 +1068,236 @@ main();`,
         this.selectReasonerProvider(this.reasonerSettings.selectedProvider);
       }
     },
-    
-    handleKnowledgeProviderVisibleChange(visible) {
-      if (!visible) {
-        this.selectKnowledgeProvider(this.knowledgeSettings.selectedProvider);
+    // 创建知识库
+    async createKnowledgeBase() {
+      try {
+        // 上传文件
+        let uploadedFiles = [];
+        if (this.newKbFiles.length > 0) {
+          if (!this.isElectron) {
+            // 浏览器环境：通过 FormData 上传
+            const formData = new FormData();
+            for (const file of this.newKbFiles) {
+              if (file.file instanceof Blob) {
+                formData.append('files', file.file, file.name);
+              } else {
+                console.error("Invalid file object:", file);
+                showNotification('文件上传失败: 文件无效', 'error');
+                return;
+              }
+            }
+  
+            try {
+              console.log('Uploading files...');
+              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+                method: 'POST',
+                body: formData
+              });
+  
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server responded with an error:', errorText);
+                showNotification(`文件上传失败: ${errorText}`, 'error');
+                return;
+              }
+  
+              const data = await response.json();
+              if (data.success) {
+                uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+              } else {
+                showNotification('文件上传失败', 'error');
+                return;
+              }
+            } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification('文件上传失败', 'error');
+              return;
+            }
+          } else {
+            // Electron 环境：通过 JSON 上传
+            try {
+              console.log('Uploading Electron files...');
+              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  files: this.newKbFiles.map(file => ({
+                    path: file.path,
+                    name: file.name
+                  }))
+                })
+              });
+  
+              if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Server error:', errorText);
+                showNotification(`文件上传失败: ${errorText}`, 'error');
+                return;
+              }
+  
+              const data = await response.json();
+              if (data.success) {
+                uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+              } else {
+                showNotification('文件上传失败', 'error');
+                return;
+              }
+            } catch (error) {
+              console.error('上传错误:', error);
+              showNotification('文件上传失败', 'error');
+              return;
+            }
+          }
+        }
+  
+        // 生成唯一的 ID
+        const kbId = Date.now();
+  
+        // 构建新的知识库对象，使用上传后的文件链接
+        const newKb = {
+          id: kbId,
+          name: this.newKb.name,
+          providerId: this.newKb.providerId,
+          model: this.newKb.model,
+          base_url: this.newKb.base_url,
+          api_key: this.newKb.api_key,
+          enabled: true, // 默认启用
+          files: uploadedFiles.map(file => ({ // 使用服务器返回的文件链接
+            name: file.name,
+            path: file.path,
+          })),
+        };
+  
+        // 更新 settings 中的 knowledgeBases
+        this.knowledgeBases = [...(this.knowledgeBases || []), newKb];
+        //手动触发modelProviders更新，从而能够实时与后端同步
+        this.modelProviders = this.modelProviders
+        // 保存 settings
+        this.autoSaveSettings();
+  
+        showNotification('知识库创建成功');
+        this.showAddKbDialog = false;
+        this.newKb = { name: '', providerId: null, model: '', base_url: '', api_key: '' };
+        this.newKbFiles = [];
+      } catch (error) {
+        console.error('知识库创建失败:', error);
+        showNotification('知识库创建失败', 'error');
       }
     },
-    
+
+    // 删除知识库
+    async removeKnowledgeBase(kb) {
+      try {
+        // 从 settings 中过滤掉要删除的 knowledgeBase
+        this.knowledgeBases = this.knowledgeBases.filter(
+          item => item.id !== kb.id
+        );
+        //手动触发modelProviders更新，从而能够实时与后端同步
+        this.modelProviders = this.modelProviders
+        // 保存 settings
+        this.autoSaveSettings();
+
+        showNotification('知识库删除成功');
+      } catch (error) {
+        console.error('知识库删除失败:', error);
+        showNotification('知识库删除失败', 'error');
+      }
+    },
+
+    // 切换知识库启用状态
+    async toggleKbEnabled(kb) {
+      try {
+        // 更新 knowledgeBase 的 enabled 状态
+        const kbToUpdateIndex = this.knowledgeBases.findIndex(
+          item => item.id === kb.id
+        );
+
+        if (kbToUpdateIndex !== -1) {
+          this.knowledgeBases[kbToUpdateIndex].enabled = kb.enabled;
+          //手动触发modelProviders更新，从而能够实时与后端同步
+          this.modelProviders = this.modelProviders
+          // 保存 settings
+          this.autoSaveSettings();
+          showNotification(`知识库 ${kb.name} 已${kb.enabled ? '启用' : '禁用'}`);
+        }
+      } catch (error) {
+        console.error('切换知识库状态失败:', error);
+        showNotification('切换知识库状态失败', 'error');
+      }
+    },
+    // 选择供应商
+    selectKbProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.newKb.model = provider.modelId;
+        this.newKb.base_url = provider.url;
+        this.newKb.api_key = provider.apiKey;
+      }
+    },
+
+    // 文件上传相关方法
+    async browseKbFiles() {
+        if (!this.isElectron) {
+          const input = document.createElement('input')
+          input.type = 'file'
+          input.multiple = true
+          input.accept = ALLOWED_EXTENSIONS.map(ext => `.${ext}`).join(',')
+          
+          input.onchange = (e) => {
+            const files = Array.from(e.target.files)
+            const validFiles = files.filter(this.isValidFileType)
+            this.handleKbFiles(validFiles)
+          }
+          input.click()
+        } else {
+          const result = await window.electronAPI.openFileDialog();
+          if (!result.canceled) {
+            const validPaths = result.filePaths
+              .filter(path => {
+                const ext = path.split('.').pop()?.toLowerCase() || ''
+                return ALLOWED_EXTENSIONS.includes(ext)
+              })
+            this.handleKbFiles(validPaths)
+          }
+        }
+    },
+
+    handleKbFiles(files) {
+        if (files.length > 0) {
+          this.addKbFiles(files)
+        } else {
+          this.showErrorAlert()
+        }
+    },
+      // 添加文件到列表
+    addKbFiles(files) {
+      const newFiles = files.map(file => {
+        if (typeof file === 'string') { // Electron路径
+          return {
+            path: file,
+            name: file.split(/[\\/]/).pop()
+          }
+        }
+        return { // 浏览器File对象
+          path: URL.createObjectURL(file),// 生成临时URL
+          name: file.name,
+          file: file
+        }
+      });
+      
+      this.newKbFiles = [...this.newKbFiles, ...newFiles];
+    },
+    async handleKbDrop(event) {
+      event.preventDefault();
+      const files = Array.from(event.dataTransfer.files)
+        .filter(this.isValidFileType);
+      this.handleKbFiles(files);
+    },
+    removeKbFile(index) {
+      this.newKbFiles.splice(index, 1);
+    },
   }
 });
 
