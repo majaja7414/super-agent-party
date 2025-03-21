@@ -4,9 +4,13 @@ import os
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from typing import List, Dict
-from load_files import get_files_json
+if __name__ == "__main__":
+    from load_files import get_files_json
+else:
+    from py.load_files import get_files_json
 from langchain_core.documents import Document
 SETTINGS_FILE = 'config/settings.json'
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
@@ -53,7 +57,7 @@ def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
     
     return all_chunks
 
-def build_vector_store(chunks: List[Dict], kb_id, cur_kb):
+def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
     """构建并保存向量数据库（带安全验证和路径处理）"""
     # 校验输入数据（增强版）
     if not chunks:
@@ -65,11 +69,18 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb):
 
     # 初始化带错误处理的嵌入模型
     try:
-        embeddings = OpenAIEmbeddings(
-            model=cur_kb["model"],
-            api_key=cur_kb["api_key"],
-            base_url=cur_kb["base_url"]
-        )
+        if cur_vendor == "Ollama":
+            embeddings = OllamaEmbeddings(
+                model=cur_kb["model"],
+                base_url=cur_kb["base_url"].rstrip("/v1").rstrip("/v1/")
+            )
+        else:
+            embeddings = OpenAIEmbeddings(
+                model=cur_kb["model"],
+                api_key=cur_kb["api_key"],
+                base_url=cur_kb["base_url"],
+                dimensions=1024
+            )
     except KeyError as e:
         raise ValueError(f"Missing required config key: {e}")
 
@@ -123,7 +134,7 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb):
     return vector_db
 
 
-def query_vector_store(query: str, kb_id, cur_kb):
+def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
     """根据知识库ID查询对应向量数据库"""
     # 构建安全路径
     kb_path = Path(KB_DIR) / str(kb_id)
@@ -134,12 +145,18 @@ def query_vector_store(query: str, kb_id, cur_kb):
     if not os.path.isdir(kb_path):
         raise ValueError(f"Invalid knowledge base path: {kb_id}")
     # 初始化带重试的嵌入模型
-    embeddings = OpenAIEmbeddings(
-        model=cur_kb["model"],
-        api_key=cur_kb["api_key"],
-        base_url=cur_kb["base_url"],
-        dimensions=1024
-    )
+    if cur_vendor == "Ollama":
+        embeddings = OllamaEmbeddings(
+            model=cur_kb["model"],
+            base_url=cur_kb["base_url"].rstrip("/v1").rstrip("/v1/")
+        )
+    else:
+        embeddings = OpenAIEmbeddings(
+            model=cur_kb["model"],
+            api_key=cur_kb["api_key"],
+            base_url=cur_kb["base_url"],
+            dimensions=1024
+        )
     try:
         # 加载指定知识库
         vector_db = FAISS.load_local(
@@ -176,7 +193,14 @@ async def process_knowledge_base(kb_id: int):
     for kb in settings["knowledgeBases"]:
         if kb["id"] == kb_id:
             cur_kb = kb
+            providerId = kb["providerId"]
             break
+    cur_vendor = None
+    for provider in settings["modelProviders"]:
+        if provider["id"] == providerId:
+            cur_vendor = provider["vendor"]
+            break
+    
     if not cur_kb:
         raise ValueError(f"Knowledge base {kb_id} not found in settings")
     # 异步获取文件处理结果
@@ -186,7 +210,7 @@ async def process_knowledge_base(kb_id: int):
     chunks = chunk_documents(processed_results, cur_kb)
     
     # 构建向量存储
-    build_vector_store(chunks, kb_id, cur_kb)
+    build_vector_store(chunks, kb_id, cur_kb,cur_vendor)
 
     return "知识库处理完成"
 
@@ -200,12 +224,42 @@ async def query_knowledge_base(kb_id: int, query: str):
     for kb in settings["knowledgeBases"]:
         if kb["id"] == kb_id:
             cur_kb = kb
+            providerId = kb["providerId"]
             break
+    cur_vendor = None
+    for provider in settings["modelProviders"]:
+        if provider["id"] == providerId:
+            cur_vendor = provider["vendor"]
+            break
+    
     if not cur_kb:
         raise ValueError(f"Knowledge base {kb_id} not found in settings")
     # 查询知识库
-    results = query_vector_store(query,kb_id, cur_kb)
-    return results
+    results = query_vector_store(query,kb_id, cur_kb,cur_vendor)
+    return json.dumps(results, ensure_ascii=False, indent=2)
+
+query_knowledge_tool = {
+    "type": "function",
+    "function": {
+        "name": "query_knowledge_base",
+        "description": f"通过关键词或句子获取的信息。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或句子。",
+                },
+                "kb_id": {
+                    "type": "integer",
+                    "description": "知识库的ID。"
+                }
+            },
+            "required": ["kb_id","query"],
+        },
+    },
+}
+
 
 async def main():
     """示例用法"""
@@ -217,13 +271,10 @@ async def main():
         # 处理知识库并获取结果
         await process_knowledge_base(kb_id)
         results = await query_knowledge_base(kb_id, test_query)
-        # 格式化输出结果
-        for result in results:
-            print(f"内容：{result['content'][:100]}...")
-            print(f"文件名：{result['metadata']['file_name']}")
-            print(f"文件路径：{result['metadata']['file_path']}")
-            print(f"匹配度：{result['score']:.2f}\n")
-            
+
+        # 打印结果
+        print(results)
+
         return results
     except Exception as e:
         print(f"处理过程中发生错误: {str(e)}")

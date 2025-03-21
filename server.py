@@ -3,7 +3,7 @@ import asyncio
 import copy
 import json
 import os
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -17,6 +17,7 @@ from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
+from py.know_base import process_knowledge_base,query_knowledge_base
 HOST = '127.0.0.1'
 PORT = 3456
 local_timezone = get_localzone()
@@ -71,7 +72,8 @@ app.add_middleware(
 _TOOL_HOOKS = {
     "DDGsearch_async": DDGsearch_async,
     "searxng_async": searxng_async,
-    "Tavily_search_async": Tavily_search_async
+    "Tavily_search_async": Tavily_search_async,
+    "query_knowledge_base": query_knowledge_base,
 }
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
@@ -1196,6 +1198,34 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/create_kb")
+async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
+    data = await request.json()
+    kb_id = data.get("kbId")
+    
+    if not kb_id:
+        raise HTTPException(status_code=400, detail="Missing kbId")
+    
+    # 将任务添加到后台队列
+    background_tasks.add_task(process_kb, kb_id)
+    
+    return {"success": True, "message": "知识库处理已开始，请稍后查询状态"}
+
+# 添加状态存储
+kb_status = {}
+@app.get("/kb_status/{kb_id}")
+async def get_kb_status(kb_id: int):
+    status = kb_status.get(kb_id, "not_found")
+    return {"kb_id": kb_id, "status": status}
+
+# 修改 process_kb
+async def process_kb(kb_id: int):
+    kb_status[kb_id] = "processing"
+    try:
+        await process_knowledge_base(kb_id)
+        kb_status[kb_id] = "completed"
+    except Exception as e:
+        kb_status[kb_id] = f"failed: {str(e)}"
 
 
 @app.websocket("/ws")

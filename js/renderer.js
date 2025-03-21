@@ -162,6 +162,7 @@ const app = Vue.createApp({
         chunk_size: 1024,
         chunk_overlap: 256,
         chunk_k: 5,
+        processingStatus: 'processing',
       },
       newKbFiles: [],
       expandedSections: {
@@ -1176,6 +1177,7 @@ main();`,
             name: file.name,
             path: file.path,
           })),
+          processingStatus: 'processing', // 设置处理状态为 processing
         };
   
         // 更新 settings 中的 knowledgeBases
@@ -1186,23 +1188,45 @@ main();`,
         this.autoSaveSettings();
         // post kbId to 后端的create_kb端口
         try {
-          const response = await fetch(`http://${HOST}:${PORT}/create_kb`, {
+          // 1. 触发任务
+          const startResponse = await fetch(`http://${HOST}:${PORT}/create_kb`, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ kbId }),
           });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Server error:', errorText);
-          }
-          showNotification('知识库创建成功');
-        }catch (error) {
+          
+          if (!startResponse.ok) throw new Error('启动失败');
+          // 2. 轮询状态
+          const checkStatus = async () => {
+            const statusResponse = await fetch(`http://${HOST}:${PORT}/kb_status/${kbId}`);
+            const data = await statusResponse.json();
+            console.log(data.status);
+            return data.status;
+          };
+          // 3. 每2秒检查一次状态
+          const interval = setInterval(async () => {
+            const status = await checkStatus();
+            
+            // 找到对应的知识库对象
+            const targetKb = this.knowledgeBases.find(k => k.id === kbId);
+            
+            if (status === 'completed') {
+              clearInterval(interval);
+              targetKb.processingStatus = 'completed';
+              showNotification('知识库处理完成');
+              this.autoSaveSettings();
+            } else if (status.startsWith('failed')) {
+              clearInterval(interval);
+              // 移除失败的知识库
+              this.knowledgeBases = this.knowledgeBases.filter(k => k.id !== kbId);
+              showNotification(`处理失败: ${status}`, 'error');
+              this.autoSaveSettings();
+            }
+          }, 2000);
+        } catch (error) {
           console.error('知识库创建失败:', error);
           showNotification('知识库创建失败', 'error');
-        }
+        }      
         this.showAddKbDialog = false;
         this.newKb = { 
           name: '', 
@@ -1212,7 +1236,8 @@ main();`,
           api_key: '',
           chunk_size: 1024,
           chunk_overlap: 256,
-          chunk_k: 5
+          chunk_k: 5,
+          processingStatus: 'processing',
         };
         this.newKbFiles = [];
       } catch (error) {

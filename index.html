@@ -734,31 +734,48 @@
             <!-- 磁贴网格 -->
             <div class="provider-grid">
               <!-- 知识库磁贴 -->
-              <div
-                class="provider-card knowledge-card"
-                v-for="kb in knowledgeBases"
-                :key="kb.id"
-              >
+              <div class="provider-card knowledge-card" v-for="kb in knowledgeBases" :key="kb.id">
                 <div class="card-header">
-                  <el-switch
-                    v-model="kb.enabled"
-                    @change="toggleKbEnabled(kb)"
-                  ></el-switch>
+                  <!-- 加载状态指示 -->
+                  <template v-if="kb.processingStatus === 'processing'">
+                    <el-icon class="loading-spinner"><Loading /></el-icon>
+                  </template>
+                  <template v-else>
+                    <el-switch v-model="kb.enabled" @change="toggleKbEnabled(kb)"></el-switch>
+                  </template>
+                  
                   <div class="card-actions">
-                    <el-button
-                      @click="removeKnowledgeBase(kb)"
-                      type="danger"
-                      :icon="'delete'"
-                      circle
-                      size="small"
-                    ></el-button>
+                    <el-button @click="removeKnowledgeBase(kb)" type="danger" :icon="'delete'" circle size="small"></el-button>
                   </div>
                 </div>
-                <h3>{{ kb.name }}</h3>
-                <h4>{{ kb.introduction }}</h4>
-                <p>包含文件: {{ kb.files ? kb.files.length : 0 }} 个</p> <!-- 添加显示文件数量的元素 -->
+                
+                <!-- 内容区域根据状态显示 -->
+                <!-- 修改模板部分 -->
+                <template v-if="kb.processingStatus !== 'processing'">
+                  <div class="kb-content">
+                    <div class="kb-header">
+                      <h3 class="kb-title">{{ kb.name }}</h3>
+                      <el-tag v-if="kb.files?.length" type="info" size="small" effect="dark">
+                        {{ kb.files.length }}个文件
+                      </el-tag>
+                    </div>
+                    <p class="kb-description">{{ kb.introduction || '暂无描述' }}</p>
+                    <div class="kb-meta">
+                      <div class="kb-meta-item">
+                        <el-icon class="kb-icon"><document /></el-icon>
+                        <span>模型: {{ kb.model || '默认' }}</span>
+                      </div>
+                      <div class="kb-meta-item">
+                        <el-icon class="kb-icon"><data-line /></el-icon>
+                        <span>分段: {{ kb.chunk_size }} / {{ kb.chunk_overlap }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+                <div v-else class="processing-message">
+                  <p>知识库生成中...</p>
+                </div>
               </div>
-
               <!-- 添加新知识库磁贴 -->
               <div class="provider-card add-tile" @click="showAddKbDialog = true">
                 <el-icon :size="40" color="#909399"><Plus /></el-icon>
