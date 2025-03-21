@@ -1198,11 +1198,11 @@ main();`,
             const errorText = await response.text();
             console.error('Server error:', errorText);
           }
+          showNotification('知识库创建成功');
         }catch (error) {
           console.error('知识库创建失败:', error);
           showNotification('知识库创建失败', 'error');
         }
-        showNotification('知识库创建成功');
         this.showAddKbDialog = false;
         this.newKb = { 
           name: '', 

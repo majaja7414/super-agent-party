@@ -176,3 +176,4 @@ super/
 config/settings.json
 test/
 uploaded_files/
+kb/

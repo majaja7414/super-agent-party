@@ -285,3 +285,15 @@ async def get_files_content(files_path_list):
         else:
             results.append(f"文件 {fp} 内容：\n{content}")
     return "\n\n".join(results)
+
+async def get_files_json(files_list):
+    """异步获取所有文件内容并拼接为JSON格式（增加错误隔离）
+    输入
+    files_list: [{'path': 'path/to/file', 'name': 'file_name'}]
+    """
+    tasks = [get_file_content(files["path"]) for files in files_list]
+    contents = await asyncio.gather(*tasks, return_exceptions=True)
+    results = []
+    for files, content in zip(files_list, contents):
+        results.append({"file_path": files["path"],"file_name": files["name"], "content": str(content)})
+    return results
