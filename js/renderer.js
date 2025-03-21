@@ -158,6 +158,9 @@ const app = Vue.createApp({
         model: '',
         base_url: '',
         api_key: '',
+        chunk_size: 1024,
+        chunk_overlap: 128,
+        chunk_k: 5,
       },
       newKbFiles: [],
       expandedSections: {
@@ -1164,6 +1167,9 @@ main();`,
           base_url: this.newKb.base_url,
           api_key: this.newKb.api_key,
           enabled: true, // 默认启用
+          chunk_size: this.newKb.chunk_size,
+          chunk_overlap: this.newKb.chunk_overlap,
+          chunk_k: this.newKb.chunk_k,
           files: uploadedFiles.map(file => ({ // 使用服务器返回的文件链接
             name: file.name,
             path: file.path,
@@ -1176,7 +1182,24 @@ main();`,
         this.modelProviders = this.modelProviders
         // 保存 settings
         this.autoSaveSettings();
-  
+        // post kbId to 后端的create_kb端口
+        try {
+          const response = await fetch(`http://${HOST}:${PORT}/create_kb`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ kbId }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+          }
+        }catch (error) {
+          console.error('知识库创建失败:', error);
+          showNotification('知识库创建失败', 'error');
+        }
         showNotification('知识库创建成功');
         this.showAddKbDialog = false;
         this.newKb = { name: '', providerId: null, model: '', base_url: '', api_key: '' };

@@ -772,12 +772,12 @@
               width="600px"
               @closed="newKb = { name: '', providerId: '', model: '' }"
             >
-              <el-form label-position="top">
+              <el-form label-position="left" label-width="120px">
                 <el-form-item label="知识库名称" required>
                   <el-input v-model="newKb.name" placeholder="请输入知识库名称" />
                 </el-form-item>
 
-                <el-form-item label="供应商" required>
+                <el-form-item label="供应商">
                   <el-select
                     v-model="newKb.providerId"
                     placeholder="选择供应商"
@@ -803,58 +803,72 @@
                   <el-input
                     v-model="newKb.model"
                     placeholder="模型名称"
-                    :disabled="!newKb.providerId"
                   />
                 </el-form-item>
 
-                <el-form-item label="基础URL">
+                <el-form-item label="基础URL" required>
                   <el-input
                     v-model="newKb.base_url"
                     placeholder="基础URL"
-                    :disabled="!newKb.providerId"
                   />
                 </el-form-item>
 
-                <el-form-item label="API密钥">
+                <el-form-item label="API密钥" required>
                   <el-input
                     v-model="newKb.api_key"
                     placeholder="API密钥"
                     show-password
-                    :disabled="!newKb.providerId"
                   />
                 </el-form-item>
 
-                <!-- 文件上传区域 -->
-                <el-form-item label="上传文件">
-                  <div
-                    class="drop-zone"
-                    @dragover.prevent
-                    @drop.prevent="handleKbDrop"
-                    @click="browseKbFiles"
-                  >
-                    <el-icon :size="50"><upload /></el-icon>
-                    <p>点击或拖放文件到此区域</p>
-                  </div>
-
-                  <!-- 紧凑型文件列表 -->
-                  <div class="compact-file-list" v-if="newKbFiles.length">
-                    <div
-                      v-for="(file, index) in newKbFiles"
-                      :key="index"
-                      class="compact-file-item"
-                    >
-                      <span class="file-name">@{{ file.name }}</span>
-                      <el-button
-                        @click.stop="removeKbFile(index)"
-                        class="delete-icon"
-                        :icon="'delete'"
-                        circle
-                      />
-                    </div>
-                  </div>
+                <el-form-item label="分段大小">
+                  <el-input
+                    v-model="newKb.chunk_size"
+                    placeholder="分段大小"
+                  />
+                </el-form-item>
+                <el-form-item label="重叠大小">
+                  <el-input
+                    v-model="newKb.chunk_overlap"
+                    placeholder="重叠大小"
+                  />
+                </el-form-item>
+                <el-form-item label="返回段落数">
+                  <el-input
+                    v-model="newKb.chunk_k"
+                    placeholder="返回段落数"
+                  />
                 </el-form-item>
               </el-form>
+              <!-- 文件上传区域 -->
+              <el-form-item>
+                <div
+                  class="drop-zone"
+                  @dragover.prevent
+                  @drop.prevent="handleKbDrop"
+                  @click="browseKbFiles"
+                >
+                  <el-icon :size="50"><upload /></el-icon>
+                  <p>点击或拖放文件到此区域</p>
+                </div>
 
+                <!-- 紧凑型文件列表 -->
+                <div class="compact-file-list" v-if="newKbFiles.length">
+                  <div
+                    v-for="(file, index) in newKbFiles"
+                    :key="index"
+                    class="compact-file-item"
+                  >
+                    <span class="file-name">@{{ file.name }}</span>
+                    <el-button
+                      @click.stop="removeKbFile(index)"
+                      class="delete-icon"
+                      :icon="'delete'"
+                      circle
+                    />
+                  </div>
+                </div>
+              </el-form-item>
               <template #footer>
                 <el-button @click="showAddKbDialog = false">取消</el-button>
                 <el-button
