@@ -154,12 +154,13 @@ const app = Vue.createApp({
       showAddKbDialog: false,
       newKb: {
         name: '',
+        introduction: '',
         providerId: null,
         model: '',
         base_url: '',
         api_key: '',
         chunk_size: 1024,
-        chunk_overlap: 128,
+        chunk_overlap: 256,
         chunk_k: 5,
       },
       newKbFiles: [],
@@ -1162,6 +1163,7 @@ main();`,
         const newKb = {
           id: kbId,
           name: this.newKb.name,
+          introduction: this.newKb.introduction,
           providerId: this.newKb.providerId,
           model: this.newKb.model,
           base_url: this.newKb.base_url,
@@ -1202,7 +1204,16 @@ main();`,
         }
         showNotification('知识库创建成功');
         this.showAddKbDialog = false;
-        this.newKb = { name: '', providerId: null, model: '', base_url: '', api_key: '' };
+        this.newKb = { 
+          name: '', 
+          providerId: null, 
+          model: '', 
+          base_url: '', 
+          api_key: '',
+          chunk_size: 1024,
+          chunk_overlap: 256,
+          chunk_k: 5
+        };
         this.newKbFiles = [];
       } catch (error) {
         console.error('知识库创建失败:', error);

@@ -755,6 +755,7 @@
                   </div>
                 </div>
                 <h3>{{ kb.name }}</h3>
+                <h4>{{ kb.introduction }}</h4>
                 <p>包含文件: {{ kb.files ? kb.files.length : 0 }} 个</p> <!-- 添加显示文件数量的元素 -->
               </div>
 
@@ -775,6 +776,10 @@
               <el-form label-position="left" label-width="120px">
                 <el-form-item label="知识库名称" required>
                   <el-input v-model="newKb.name" placeholder="请输入知识库名称" />
+                </el-form-item>
+
+                <el-form-item label="知识库简介">
+                  <el-input v-model="newKb.introduction" type="textarea" placeholder="请输入知识库简介" />
                 </el-form-item>
 
                 <el-form-item label="供应商">
@@ -822,21 +827,30 @@
                 </el-form-item>
 
                 <el-form-item label="分段大小">
-                  <el-input
+                  <el-slider
                     v-model="newKb.chunk_size"
-                    placeholder="分段大小"
+                    :min="512"
+                    :max="4096"
+                    :step="512"
+                    @input="autoSaveSettings"
                   />
                 </el-form-item>
                 <el-form-item label="重叠大小">
-                  <el-input
+                  <el-slider
                     v-model="newKb.chunk_overlap"
-                    placeholder="重叠大小"
+                    :min="128"
+                    :max="1024"
+                    :step="128"
+                    @input="autoSaveSettings"
                   />
                 </el-form-item>
                 <el-form-item label="返回段落数">
-                  <el-input
+                  <el-slider
                     v-model="newKb.chunk_k"
-                    placeholder="返回段落数"
+                    :min="1"
+                    :max="100"
+                    :step="1"
+                    @input="autoSaveSettings"
                   />
                 </el-form-item>
               </el-form>
