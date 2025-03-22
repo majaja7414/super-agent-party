@@ -58,9 +58,9 @@ def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
     
     return all_chunks
 
-def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
-    """构建并保存向量数据库（带安全验证和路径处理）"""
-    # 校验输入数据（增强版）
+def build_vector_store(chunks: List[Dict], kb_id, cur_kb, cur_vendor):
+    """构建并保存向量数据库（支持分批处理）"""
+    # 校验输入数据
     if not chunks:
         raise ValueError("Empty chunks list")
     if not all(isinstance(chunk, dict) for chunk in chunks):
@@ -68,7 +68,7 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
     if not all("text" in chunk and "metadata" in chunk for chunk in chunks):
         raise ValueError("Missing required fields in chunks")
 
-    # 初始化带错误处理的嵌入模型
+    # 初始化嵌入模型
     try:
         if cur_vendor == "Ollama":
             embeddings = OllamaEmbeddings(
@@ -84,7 +84,7 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
     except KeyError as e:
         raise ValueError(f"Missing required config key: {e}")
 
-    # 转换数据结构（带详细错误日志）
+    # 转换文档数据结构
     documents = []
     for idx, chunk in enumerate(chunks):
         try:
@@ -95,12 +95,11 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
             documents.append(doc)
         except Exception as e:
             print(f"Error processing chunk {idx}: {str(e)}")
-            continue  # 跳过错误数据继续处理
-
+    
     if not documents:
         raise ValueError("No valid documents after processing chunks")
 
-    # 创建存储路径（带权限验证）
+    # 创建存储路径
     save_path = Path(KB_DIR) / str(kb_id)
     try:
         save_path.mkdir(parents=True, exist_ok=True)
@@ -109,18 +108,39 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
     except OSError as e:
         raise RuntimeError(f"Path creation failed: {str(e)}")
 
-    # 核心修正点：使用正确的方法创建向量库
-    try:
-        print(f"Creating vector store with {len(documents)} chunks...")
-        # 使用 from_documents 替代 from_embeddings
-        vector_db = FAISS.from_documents(
-            documents=documents,
-            embedding=embeddings
-        )
-    except ValueError as e:
-        if "No vectors found" in str(e):
-            raise RuntimeError("Embedding generation failed. Check API connectivity.")
-        raise
+    # 分批处理文档（每5个一批）
+    batch_size = 5
+    vector_db = None
+    total_batches = (len(documents) + batch_size - 1) // batch_size
+
+    for batch_num in range(total_batches):
+        start_idx = batch_num * batch_size
+        end_idx = start_idx + batch_size
+        current_batch = documents[start_idx:end_idx]
+
+        try:
+            if vector_db is None:
+                # 第一批次创建新数据库
+                vector_db = FAISS.from_documents(
+                    documents=current_batch,
+                    embedding=embeddings
+                )
+            else:
+                # 后续批次增量添加
+                vector_db.add_documents(current_batch)
+            
+            print(f"Processed batch {batch_num + 1}/{total_batches} "
+                  f"({len(current_batch)} documents)")
+
+        except Exception as e:
+            print(f"Failed to process batch {batch_num + 1}: {str(e)}")
+            # 可以选择记录失败批次以便后续重试
+            continue
+
+    if vector_db is None:
+        raise RuntimeError("Failed to create vector store from all batches")
+
+    # 最终保存整个数据库
     try:
         vector_db.save_local(
             folder_path=str(save_path),
@@ -130,6 +150,7 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
         raise RuntimeError(f"Save failed: {str(e)}")
 
     return vector_db
+
 
 
 def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
@@ -262,11 +283,11 @@ async def main():
     """示例用法"""
     try:
         # 示例参数
-        kb_id = 1742631803377
-        test_query = "为啥要升高电压来实现远距离输电"
+        kb_id = 1742632861261
+        test_query = "什么是LLM party？"
         
         # 处理知识库并获取结果
-        # await process_knowledge_base(kb_id)
+        await process_knowledge_base(kb_id)
         results = await query_knowledge_base(kb_id, test_query)
 
         # 打印结果
