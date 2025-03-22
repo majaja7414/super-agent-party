@@ -159,7 +159,27 @@
                 </div>
               </div>
             </el-dialog>
-            <div class="button-group">
+            <el-dialog
+            v-model="showKnowledgeDialog"
+            title="知识库选择"
+            width="400px">
+            <div class="knowledge-dialog-content">
+              <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
+                <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ kb.name }}</div>
+                  <div class="knowledge-desc">{{ kb.introduction || '暂无描述' }}</div>
+                </div>
+              </div>
+              <div v-if="knowledgeBases.length === 0" class="empty-tip">
+                暂无知识库，请先
+                <a href="#" @click.stop.prevent="switchToKnowledgePage">前往知识库页面</a>
+                添加
+              </div>
+            </div>
+          </el-dialog>
+          <div class="button-group">
+            <el-tooltip content="清空对话" placement="top">
               <el-button 
                 @click="clearMessages" 
                 class="icon-btn clear-btn" 
@@ -167,20 +187,68 @@
                 :icon="'Delete'" 
                 circle>
               </el-button>
+            </el-tooltip>
+          
+            <el-tooltip content="文件上传" placement="top">
               <el-button 
                 @click="sendFiles" 
                 class="icon-btn file-btn" 
                 :icon="'DocumentAdd'" 
+                :type="hasFiles ? 'primary' : 'default'"
                 circle>
               </el-button>
+            </el-tooltip>
+          
+            <el-tooltip content="知识库" placement="top">
+              <el-button 
+                @click="showKnowledgeDialog = true"
+                class="icon-btn knowledge-base-btn" 
+                :icon="'Notebook'" 
+                :type="hasEnabledKnowledgeBases ? 'primary' : 'default'"
+                circle>
+              </el-button>
+            </el-tooltip>
+          
+            <el-tooltip content="深度思考" placement="top">
+              <el-button 
+                @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
+                class="icon-btn deep-think-btn" 
+                :type="reasonerSettings.enabled ? 'primary' : 'default'"
+                :icon="'MagicStick'" 
+                circle>
+              </el-button>
+            </el-tooltip>
+          
+            <el-tooltip content="深度研究" placement="top">
+              <el-button 
+                @click="toolsSettings.deepsearch.enabled = !toolsSettings.deepsearch.enabled; autoSaveSettings()"
+                class="icon-btn deep-search-btn" 
+                :type="toolsSettings.deepsearch.enabled ? 'primary' : 'default'"
+                :icon="'Aim'" 
+                circle>
+              </el-button>
+            </el-tooltip>
+          
+            <el-tooltip content="网络搜索" placement="top">
+              <el-button 
+                @click="webSearchSettings.enabled = !webSearchSettings.enabled; autoSaveSettings()"
+                class="icon-btn web-search-btn" 
+                :type="webSearchSettings.enabled ? 'primary' : 'default'"
+                :icon="'Search'" 
+                circle>
+              </el-button>
+            </el-tooltip>
+          
+            <el-tooltip :content="isSending ? '停止生成' : '发送消息'" placement="top">
               <el-button 
                 @click="isSending ? stopGenerate() : sendMessage()" 
-                type="primary"
+                :type="isSending ? 'danger' : 'primary'"
                 class="icon-btn send-btn" 
                 :icon="isSending ? 'SwitchButton' : 'Promotion'" 
                 circle>
               </el-button>
-            </div>                  
+            </el-tooltip>
+          </div>                     
               <div class="input-container">
                 <!-- 紧凑型文件列表 -->
                 <div class="compact-file-list" v-if="files.length">

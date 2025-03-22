@@ -152,6 +152,7 @@ const app = Vue.createApp({
       },
       knowledgeBases: [],
       showAddKbDialog: false,
+      showKnowledgeDialog: false,
       activeCollapse: [],
       newKb: {
         name: '',
@@ -341,6 +342,12 @@ main();`,
     }
   },
   computed: {
+    hasEnabledKnowledgeBases() {
+      return this.knowledgeBases.some(kb => kb.enabled)
+    },
+    hasFiles() {
+      return this.files.length > 0
+    },
     validProvider() {
       if (!this.newProviderTemp.vendor) return false
       if (this.newProviderTemp.vendor === 'custom') {
@@ -819,6 +826,7 @@ main();`,
       this.toggleSection(section)
     },
     clearMessages() {
+      stopGenerate();
       this.messages = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
@@ -1358,6 +1366,11 @@ main();`,
     removeKbFile(index) {
       this.newKbFiles.splice(index, 1);
     },
+    switchToKnowledgePage() {
+      this.activeMenu = 'document';  // 根据你的菜单项配置的实际值设置
+      window.scrollTo(0, 0);
+    },
+    
   }
 });
 

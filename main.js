@@ -175,7 +175,6 @@ app.whenReady().then(async () => {
         const result = await dialog.showOpenDialog({
           properties: ['openFile', 'multiSelections'],
           filters: [
-            ...FILE_FILTERS,
             { name: '所有文件', extensions: ['*'] }
           ]
         })
