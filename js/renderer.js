@@ -942,7 +942,7 @@ main();`,
         const data = await response.json();
         provider.models = data.data.map(m => m.id);
       } catch (error) {
-        showNotification('该供应商不支持模型列表获取', 'error');
+        showNotification('该供应商不支持模型列表获取或未填写API密钥', 'error');
       }
     },
     // 找到原有的 removeProvider 方法，替换为以下代码

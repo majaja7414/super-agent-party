@@ -17,7 +17,7 @@ from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
-from py.know_base import process_knowledge_base,query_knowledge_base
+from py.know_base import process_knowledge_base,query_knowledge_base,kb_tool
 HOST = '127.0.0.1'
 PORT = 3456
 local_timezone = get_localzone()
@@ -114,6 +114,7 @@ def tools_change_messages(request: ChatRequest, settings: dict):
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
         tools = request.tools or []
+        source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -123,13 +124,25 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     file_link = file_link.replace(f"http://{HOST}:{PORT}", "uploaded_files")
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
-            system_message = f"\n\n相关文件内容：{files_content}"
+            fileLinks_message = f"\n\n相关文件内容：{files_content}"
             
             # 修复字符串拼接错误
             if request.messages and request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] += system_message
+                request.messages[0]['content'] += fileLinks_message
             else:
-                request.messages.insert(0, {'role': 'system', 'content': system_message})
+                request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
+            source_prompt += fileLinks_message
+        kb_list = []
+        if settings["knowledgeBases"]:
+            for kb in settings["knowledgeBases"]:
+                if kb["enabled"] and kb["processingStatus"] == "completed":
+                    kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
+        if kb_list:
+            kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += kb_list_message
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
         model = request.model or settings['model']
@@ -168,6 +181,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(searxng_tool)
                     elif settings['webSearch']['engine'] == 'tavily':
                         tools.append(tavily_tool)
+                if kb_list:
+                    tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
                 deepsearch_messages[-1]['content'] += "\n\n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
@@ -356,6 +371,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     model=model,
                     messages=[
                         {
+                        "role": "system",
+                        "content": source_prompt,
+                        },
+                        {
                         "role": "user",
                         "content": search_prompt,
                         }
@@ -424,6 +443,22 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "role":"assistant",
                                         "content": "",
                                         "reasoning_content": "\n\n思考后联网搜索中，请稍候...\n\n"
+                                    }
+                                }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    elif response_content.name in ["query_knowledge_base"]:
+                        chunk_dict = {
+                            "id": "webSearch",
+                            "choices": [
+                                {
+                                    "finish_reason": None,
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "reasoning_content": "\n\n思考后查询知识库中，请稍候...\n\n"
                                     }
                                 }
                             ]
@@ -633,7 +668,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 """
                     response = await client.chat.completions.create(
                         model=model,
-                        messages=[
+                        messages=[                        
+                            {
+                            "role": "system",
+                            "content": source_prompt,
+                            },
                             {
                             "role": "user",
                             "content": search_prompt,

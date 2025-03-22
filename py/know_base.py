@@ -16,6 +16,7 @@ SETTINGS_FILE = 'config/settings.json'
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
 KB_DIR = 'kb'
 os.makedirs(KB_DIR, exist_ok=True)
+
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -77,9 +78,8 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
         else:
             embeddings = OpenAIEmbeddings(
                 model=cur_kb["model"],
-                api_key=cur_kb["api_key"],
-                base_url=cur_kb["base_url"],
-                dimensions=1024
+                openai_api_key=cur_kb["api_key"],
+                openai_api_base=cur_kb["base_url"],
             )
     except KeyError as e:
         raise ValueError(f"Missing required config key: {e}")
@@ -121,8 +121,6 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb,cur_vendor):
         if "No vectors found" in str(e):
             raise RuntimeError("Embedding generation failed. Check API connectivity.")
         raise
-
-    # 安全保存（带版本控制）
     try:
         vector_db.save_local(
             folder_path=str(save_path),
@@ -153,9 +151,8 @@ def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
     else:
         embeddings = OpenAIEmbeddings(
             model=cur_kb["model"],
-            api_key=cur_kb["api_key"],
-            base_url=cur_kb["base_url"],
-            dimensions=1024
+            openai_api_key=cur_kb["api_key"],
+            openai_api_base=cur_kb["base_url"],
         )
     try:
         # 加载指定知识库
@@ -233,22 +230,22 @@ async def query_knowledge_base(kb_id: int, query: str):
             break
     
     if not cur_kb:
-        raise ValueError(f"Knowledge base {kb_id} not found in settings")
+        return f"Knowledge base {kb_id} not found in settings"
     # 查询知识库
     results = query_vector_store(query,kb_id, cur_kb,cur_vendor)
     return json.dumps(results, ensure_ascii=False, indent=2)
 
-query_knowledge_tool = {
+kb_tool = {
     "type": "function",
     "function": {
         "name": "query_knowledge_base",
-        "description": f"通过关键词或句子获取的信息。",
+        "description": f"通过自然语言获取的对应ID的知识库信息。",
         "parameters": {
             "type": "object",
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "需要搜索的关键词或句子。",
+                    "description": "需要搜索的问题。",
                 },
                 "kb_id": {
                     "type": "integer",
@@ -265,11 +262,11 @@ async def main():
     """示例用法"""
     try:
         # 示例参数
-        kb_id = 1742544447950
-        test_query = "需要查询的问题"
+        kb_id = 1742631803377
+        test_query = "为啥要升高电压来实现远距离输电"
         
         # 处理知识库并获取结果
-        await process_knowledge_base(kb_id)
+        # await process_knowledge_base(kb_id)
         results = await query_knowledge_base(kb_id, test_query)
 
         # 打印结果
