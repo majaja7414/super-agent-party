@@ -47,7 +47,7 @@ duckduckgo_tool = {
     "type": "function",
     "function": {
         "name": "DDGsearch_async",
-        "description": f"通过关键词获得DuckDuckGo搜索上的信息。",
+        "description": f"通过关键词获得DuckDuckGo搜索上的信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
         "parameters": {
             "type": "object",
             "properties": {
@@ -104,7 +104,7 @@ searxng_tool = {
     "type": "function",
     "function": {
         "name": "searxng_async",
-        "description": "通过SearXNG开源元搜索引擎获取网络信息。",
+        "description": "通过SearXNG开源元搜索引擎获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
         "parameters": {
             "type": "object",
             "properties": {
@@ -146,7 +146,7 @@ tavily_tool = {
     "type": "function",
     "function": {
         "name": "Tavily_search_async",
-        "description": "通过Tavily专业搜索API获取高质量的网络信息，特别适合获取实时数据和专业分析。",
+        "description": "通过Tavily专业搜索API获取高质量的网络信息，特别适合获取实时数据和专业分析。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
         "parameters": {
             "type": "object",
             "properties": {
