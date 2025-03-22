@@ -327,6 +327,7 @@ main();`,
   mounted() {
     this.initWebSocket();
     this.highlightCode();
+    document.documentElement.setAttribute('data-theme', this.systemSettings.theme);
     if (isElectron) {
       window.electronAPI.onWindowState((_, state) => {
         this.isMaximized = state === 'maximized'
@@ -1456,11 +1457,39 @@ main();`,
       // 这里需要实现语言切换逻辑
       this.autoSaveSettings();
     },
+    // renderer.js 增强方法
     handleThemeChange(val) {
-      this.systemSettings.theme = val;
+      // 更新根属性
       document.documentElement.setAttribute('data-theme', val);
+      
+      // 强制Element Plus更新组件
+      const updateStyle = () => {
+        const themeColor = val === 'dark' ? '#1668dc' : '#409eff';
+        const root = document.documentElement;
+        
+        // 动态注入新主题色
+        root.style.setProperty('--el-color-primary', themeColor, 'important');
+        
+        // 触发Element内部状态更新
+        if (window.__ELEMENT_PLUS_INSTANCE__) {
+          window.__ELEMENT_PLUS_INSTANCE__.config.globalProperties.$ELEMENT.reload();
+        }
+      }
+
+      // 使用动画过渡
+      this.$nextTick(() => {
+        requestAnimationFrame(() => {
+          document.body.style.transition = 'none';
+          updateStyle();
+          setTimeout(() => {
+            document.body.style.transition = 'all 0.3s ease';
+          }, 10);
+        });
+      });
+
       this.autoSaveSettings();
     },
+
     // 方法替换为：
     launchBrowserMode() {
       this.isBrowserOpening = true;
