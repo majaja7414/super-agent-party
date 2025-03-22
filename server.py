@@ -64,11 +64,13 @@ else:
     reasoner_client = AsyncOpenAI()
 def save_settings(settings):
     system_settings = settings['systemSettings']
-    settings= settings.pop('systemSettings')
+    # 删除systemSettings字段
+    no_system_settings = copy.deepcopy(settings)
+    del no_system_settings['systemSettings']
     with open(SYSTEM_SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(system_settings, f, ensure_ascii=False, indent=2)
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(settings, f, ensure_ascii=False, indent=2)
+        json.dump(no_system_settings, f, ensure_ascii=False, indent=2)
 
 app.add_middleware(
     CORSMiddleware,
