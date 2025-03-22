@@ -18,6 +18,7 @@ from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool
 from py.know_base import process_knowledge_base,query_knowledge_base,kb_tool
+os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
 PORT = 3456
 local_timezone = get_localzone()
