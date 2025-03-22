@@ -826,7 +826,7 @@ main();`,
       this.toggleSection(section)
     },
     clearMessages() {
-      stopGenerate();
+      this.stopGenerate();
       this.messages = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
