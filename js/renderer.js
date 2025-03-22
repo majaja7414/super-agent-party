@@ -152,6 +152,7 @@ const app = Vue.createApp({
       },
       knowledgeBases: [],
       showAddKbDialog: false,
+      activeCollapse: [],
       newKb: {
         name: '',
         introduction: '',

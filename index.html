@@ -788,7 +788,19 @@
               v-model="showAddKbDialog"
               title="添加新知识库"
               width="600px"
-              @closed="newKb = { name: '', providerId: '', model: '' }"
+              @closed="() => {
+                newKb = {
+                  name: '',
+                  introduction: '',
+                  providerId: null,
+                  model: '',
+                  base_url: '',
+                  api_key: '',
+                  chunk_size: 1024,
+                  chunk_overlap: 256,
+                  chunk_k: 5
+                }
+              }"
             >
               <el-form label-position="left" label-width="120px">
                 <el-form-item label="知识库名称" required>
@@ -799,7 +811,7 @@
                   <el-input v-model="newKb.introduction" type="textarea" placeholder="请输入知识库简介" />
                 </el-form-item>
 
-                <el-form-item label="供应商">
+                <el-form-item label="供应商" required>
                   <el-select
                     v-model="newKb.providerId"
                     placeholder="选择供应商"
@@ -820,57 +832,66 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
+                <el-collapse v-model="activeCollapse" class="advanced-settings">
+                  <el-collapse-item name="advanced">
+                    <template #title>
+                      <div class="collapse-title">
+                        <el-icon class="mr-2"><Setting /></el-icon>
+                        <span class="font-medium">高级设置</span>
+                      </div>
+                    </template>
+                    <el-form-item label="模型名称" required>
+                      <el-input
+                        v-model="newKb.model"
+                        placeholder="模型名称"
+                      />
+                    </el-form-item>
 
-                <el-form-item label="模型名称" required>
-                  <el-input
-                    v-model="newKb.model"
-                    placeholder="模型名称"
-                  />
-                </el-form-item>
+                    <el-form-item label="基础URL" required>
+                      <el-input
+                        v-model="newKb.base_url"
+                        placeholder="基础URL"
+                      />
+                    </el-form-item>
 
-                <el-form-item label="基础URL" required>
-                  <el-input
-                    v-model="newKb.base_url"
-                    placeholder="基础URL"
-                  />
-                </el-form-item>
+                    <el-form-item label="API密钥" required>
+                      <el-input
+                        v-model="newKb.api_key"
+                        placeholder="API密钥"
+                        show-password
+                      />
+                    </el-form-item>
 
-                <el-form-item label="API密钥" required>
-                  <el-input
-                    v-model="newKb.api_key"
-                    placeholder="API密钥"
-                    show-password
-                  />
+                    <el-form-item label="分段大小">
+                      <el-slider
+                        v-model="newKb.chunk_size"
+                        :min="512"
+                        :max="4096"
+                        :step="512"
+                        @input="autoSaveSettings"
+                      />
+                    </el-form-item>
+                    <el-form-item label="重叠大小">
+                      <el-slider
+                        v-model="newKb.chunk_overlap"
+                        :min="128"
+                        :max="1024"
+                        :step="128"
+                        @input="autoSaveSettings"
+                      />
+                    </el-form-item>
+                    <el-form-item label="返回段落数">
+                      <el-slider
+                        v-model="newKb.chunk_k"
+                        :min="1"
+                        :max="50"
+                        :step="1"
+                        @input="autoSaveSettings"
+                      />
+                    </el-form-item>
+                  </el-form>
                 </el-form-item>
-
-                <el-form-item label="分段大小">
-                  <el-slider
-                    v-model="newKb.chunk_size"
-                    :min="512"
-                    :max="4096"
-                    :step="512"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item label="重叠大小">
-                  <el-slider
-                    v-model="newKb.chunk_overlap"
-                    :min="128"
-                    :max="1024"
-                    :step="128"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item label="返回段落数">
-                  <el-slider
-                    v-model="newKb.chunk_k"
-                    :min="1"
-                    :max="50"
-                    :step="1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-              </el-form>
+              </el-collapse-item>
               <!-- 文件上传区域 -->
               <el-form-item>
                 <div
