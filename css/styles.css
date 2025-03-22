@@ -1,16 +1,79 @@
-[data-theme="dark"] {
-  --bg-color: #1a1a1a;
-  --text-color: #ffffff;
-  --border-color: #434343;
+/* styles.css 完整主题方案 */
+:root {
+  /* 过渡动画 */
+  --transition-duration: 0.3s;
+  --transition-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-
+/* 亮色主题默认值 */
 [data-theme="light"] {
+  /* 基础颜色 */
   --bg-color: #ffffff;
   --text-color: #2c3e50;
   --border-color: #dcdfe6;
+  
+  /* Element Plus 核心变量 */
+  --el-color-primary: #409eff !important;
+  --el-bg-color: var(--bg-color) !important;
+  --el-text-color-primary: var(--text-color) !important;
+  --el-border-color :var(--border-color) !important;
+  --el-border-color-light: var(--border-color) !important;
+  /* 组件颜色 */
+  --el-button-bg-color: var(--el-color-primary) !important;
+  --el-input-bg-color: #f5f7fa !important;
+  --el-menu-bg-color: var(--bg-color) !important;
+  --el-table-bg-color: var(--bg-color) !important;
+  --el-tag-bg-color: #ecf5ff !important;
+  --el-bg-color-page: #f0f2f5 !important;
+  
+  /* 状态颜色 */
+  --el-color-success: #67c23a !important;
+  --el-color-warning: #e6a23c !important;
+  --el-color-danger: #f56c6c !important;
+  --el-color-info: #909399 !important;
+  
+  /* 文字颜色 */
+  --el-text-color-regular: #606266 !important;
+  --el-text-color-secondary: #909399 !important;
+  
+  /* 阴影 */
+  --el-box-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+}
+/* 暗色主题 */
+[data-theme="dark"] {
+  --bg-color: #1a1a1a;
+  --text-color: #e5e7eb;
+  --border-color: #434343;
+  --el-color-primary: #1668dc !important;
+  --el-bg-color: var(--bg-color) !important;
+  --el-text-color-primary: var(--text-color) !important;
+  --el-border-color: var(--border-color) !important;
+  --el-border-color-light: var(--border-color) !important;
+  /* 组件颜色 */
+  --el-button-bg-color: #2a2a2a !important;
+  --el-input-bg-color: #2d2d2d !important;
+  --el-menu-bg-color: #1f1f1f !important;
+  --el-table-bg-color: #262626 !important;
+  --el-tag-bg-color: rgba(22, 104, 220, 0.2) !important;
+  --el-bg-color-page: #1f1f1f !important;
+  /* 状态颜色 */
+  --el-color-success: #85ce61 !important;
+  --el-color-warning: #ebb563 !important;
+  --el-color-danger: #f78989 !important;
+  --el-color-info: #a1a3a8 !important;
+  /* 文字颜色 */
+  --el-text-color-regular: #d0d4db !important;
+  --el-text-color-secondary: #8c8c8c !important;
+  /* 阴影 */
+  --el-box-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
+
 body {
+  background-color: var(--el-bg-color);
+  color: var(--el-text-color-primary);
+  transition: 
+    background-color var(--transition-duration) var(--transition-function),
+    color var(--transition-duration) var(--transition-function);
   margin: 0;
   font-family: var(--el-font-family);
   -webkit-font-smoothing: antialiased;
@@ -113,7 +176,7 @@ body {
   padding: 20px;
   background-color: var(--el-bg-color);
   border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 12px var(--el-box-shadow-light);
   scrollbar-width: none;
 }
 
@@ -149,13 +212,14 @@ body {
 
 .user .message-content {
   background-color: var(--el-color-primary);
-  color: white;
+  color: #ffffff;
   border-radius: 12px 12px 0 12px;
 }
 
 .assistant .message-content {
   background-color: var(--el-bg-color-page);
   border: 1px solid var(--el-border-color-light);
+  color: var(--el-text-color-primary) !important; /* 增加文字颜色定义 */
   border-radius: 12px 12px 12px 0;
 }
 
@@ -179,7 +243,7 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.6;
-  color: var(--el-text-color-primary);
+  color: var(--el-text-color-primary) !important;
   padding: 16px;
 }
 
@@ -208,7 +272,7 @@ body {
 .typing-indicator span {
   width: 8px;
   height: 8px;
-  background-color: var(--el-text-color-secondary);
+  background-color: var(--el-bg-color);
   border-radius: 50%;
   animation: typing 1s infinite ease-in-out;
 }
@@ -237,7 +301,7 @@ body {
   padding: 32px;
   background-color: var(--el-bg-color);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px var(--el-box-shadow-light);
 }
 
 .el-form-item {
@@ -251,12 +315,12 @@ body {
 .full-width-input .el-input__wrapper {
   padding: 8px 16px;
   height: 48px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px var(--el-box-shadow-light);
   transition: all 0.3s ease;
 }
 
 .full-width-input .el-input__wrapper:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--el-box-shadow-light);
 }
 
 .full-width-input .el-input__wrapper.is-focus {
@@ -360,7 +424,7 @@ body {
   color: white;
   padding: 12px 24px;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px var(--el-box-shadow-light);
   opacity: 0;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 9999;
@@ -403,7 +467,7 @@ body {
 }
 
 .tool-item:hover {
-  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px var(--el-box-shadow-light);
 }
 
 /* 拖拽/点击区域样式 */
@@ -563,6 +627,7 @@ body {
   margin: 1em 0;
   border-radius: 8px;
   background: var(--el-bg-color-page);
+  color: var(--el-text-color-primary);
   border: 1px solid var(--el-border-color-light);
 }
 
@@ -572,11 +637,12 @@ body {
   align-items: center;
   padding: 8px 12px;
   background: var(--el-color-primary-light-8);
+  color: var(--el-text-color-regular);
   border-radius: 8px 8px 0 0;
 }
 
 .code-lang {
-  color: var(--el-color-white);
+  color: var(--el-text-color-regular);
   font-size: 0.9em;
   font-family: var(--el-font-family);
 }
@@ -584,7 +650,7 @@ body {
 .copy-button {
   background: none;
   border: none;
-  color: var(--el-color-white);
+  color: var(--el-text-color-regular);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;

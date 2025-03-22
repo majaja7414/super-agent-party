@@ -143,6 +143,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
             source_prompt += fileLinks_message
+        latex_message = "\n\n当你想使用latex公式时，你必须是用 ['$', '$'] 作为行内公式定界符，以及 ['$$', '$$'] 作为行间公式定界符。\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += latex_message
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': latex_message})
         kb_list = []
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
@@ -778,6 +783,17 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[0]['content'] += system_message
             else:
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
+        kb_list = []
+        if settings["knowledgeBases"]:
+            for kb in settings["knowledgeBases"]:
+                if kb["enabled"] and kb["processingStatus"] == "completed":
+                    kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
+        if kb_list:
+            kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += kb_list_message
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
         if settings['webSearch']['enabled']:
