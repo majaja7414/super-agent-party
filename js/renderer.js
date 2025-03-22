@@ -1230,14 +1230,14 @@ main();`,
         this.showAddKbDialog = false;
         this.newKb = { 
           name: '', 
+          introduction: '',
           providerId: null, 
           model: '', 
           base_url: '', 
           api_key: '',
           chunk_size: 1024,
           chunk_overlap: 256,
-          chunk_k: 5,
-          processingStatus: 'processing',
+          chunk_k: 5
         };
         this.newKbFiles = [];
       } catch (error) {
