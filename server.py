@@ -27,6 +27,7 @@ app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
 # 设置模板文件
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
+SYSTEM_SETTINGS_FILE = 'config/system_settings.json'
 # 加载settings_template.json文件
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
@@ -42,6 +43,9 @@ def load_settings():
                 for sub_key, sub_value in value.items():
                     if sub_key not in settings[key]:
                         settings[key][sub_key] = sub_value
+        with open(SYSTEM_SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            system_settings = json.load(f)
+        settings['systemSettings'] = system_settings
         return settings
     except FileNotFoundError:
         # 创建config文件夹
@@ -59,6 +63,10 @@ else:
     client = AsyncOpenAI()
     reasoner_client = AsyncOpenAI()
 def save_settings(settings):
+    system_settings = settings['systemSettings']
+    settings= settings.pop('systemSettings')
+    with open(SYSTEM_SETTINGS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(system_settings, f, ensure_ascii=False, indent=2)
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
 

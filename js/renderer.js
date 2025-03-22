@@ -167,6 +167,16 @@ const app = Vue.createApp({
         processingStatus: 'processing',
       },
       newKbFiles: [],
+      systemSettings: {
+        language: 'zh-CN',
+        theme: 'light',
+      },
+      themeOptions: [
+        { value: 'light', label: '亮色模式' },
+        { value: 'dark', label: '暗色模式' }
+      ],
+      browserBtnColor: '#409EFF',
+      isBrowserOpening: false,
       expandedSections: {
         settingsBase: true,
         reasonerConfig: true,
@@ -251,6 +261,10 @@ const app = Vue.createApp({
         { value: 'pl-PL', label: 'Polski' },
         { value: 'cs-CZ', label: 'Čeština' }
       ],// 语言选项
+      systemlanguageOptions:[
+        { value: 'zh-CN', label: '中文' }, 
+        { value: 'en-US', label: 'English' },
+      ],
       toneOptions:[
         {value: '正常', label: '正常'},
         {value: '正式', label: '正式'},
@@ -368,70 +382,119 @@ main();`,
       if (isElectron) window.electronAPI.windowAction('close');
     },
     handleSelect(key) {
-      if (key === 'web') {
-        const url = `http://${HOST}:${PORT}`;
-        if (isElectron) {
-          window.electronAPI.openExternal(url);
-        } else {
-          window.open(url, '_blank');
-        }
-      } else {
-        this.activeMenu = key;
-      }
+      this.activeMenu = key;
     },
 
     //  使用占位符处理 LaTeX 公式
     formatMessage(content) {
-      // 使用正则表达式查找<think>...</think>标签内的内容
-      const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
-      const thinkTagRegexOpenOnly = /<think>[\s\S]*$/;
-      
-      // 情况2: 同时存在<think>和</think>
-      let formattedContent = content.replace(thinkTagRegexWithClose, match => {
-        // 移除开闭标签并清理首尾空白
-        const thinkContent = match.replace(/<\/?think>/g, '').trim();
-        return thinkContent.split('\n').map(line => `> ${line}`).join('\n');
+      const parts = this.splitCodeAndText(content);
+      let latexPlaceholderCounter = 0;
+      const latexPlaceholders = [];
+      let inUnclosedCodeBlock = false;
+    
+      let processedContent = parts.map(part => {
+        if (part.type === 'code') {
+          inUnclosedCodeBlock = !part.closed;
+          return part.content; // 直接保留原始代码块内容
+        } else if (inUnclosedCodeBlock) {
+          // 处理未闭合代码块中的内容
+          return part.content
+            .replace(/`/g, '\\`') // 转义反引号
+            .replace(/\$/g, '\\$'); // 转义美元符号
+        } else {
+          // 处理非代码内容
+          // 处理think标签
+          const thinkTagRegexWithClose = /<think>([\s\S]*?)<\/think>/g;
+          const thinkTagRegexOpenOnly = /<think>[\s\S]*$/;
+          
+          let formatted = part.content
+            .replace(thinkTagRegexWithClose, (_, p1) => 
+              p1.split('\n').map(line => `> ${line}`).join('\n')
+            )
+            .replace(thinkTagRegexOpenOnly, match => 
+              match.replace('<think>', '').split('\n').map(line => `> ${line}`).join('\n')
+            );
+    
+          // 处理LaTeX公式
+          const latexRegex = /(\$.*?\$)|(\\\[.*?\\\])|(\\$.*?$)/g;
+          return formatted.replace(latexRegex, (match) => {
+            const placeholder = `LATEX_PLACEHOLDER_${latexPlaceholderCounter++}`;
+            latexPlaceholders.push({ placeholder, latex: match });
+            return placeholder;
+          });
+        }
+      }).join('');
+    
+      // 渲染Markdown
+      let rendered = md.render(processedContent);
+    
+      // 恢复LaTeX占位符
+      latexPlaceholders.forEach(({ placeholder, latex }) => {
+        rendered = rendered.replace(placeholder, latex);
       });
-      
-
-      // 情况1: 只有<think>，没有</think>，将<think>之后的所有内容变为引用
-      if (!thinkTagRegexWithClose.test(formattedContent)) {
-        formattedContent = formattedContent.replace(thinkTagRegexOpenOnly, match => {
-          // 移除<think>标签
-          const openThinkContent = match.replace('<think>', '').trim();
-          // 将内容转换为引用格式
-          return openThinkContent.split('\n').map(line => `> ${line}`).join('\n');
-        });
-      }
-      if (formattedContent) {
-        // 使用占位符替换 LaTeX 公式
-        const latexRegex = /(\$.*?\$)|(\\\[.*?\\\])|(\\\(.*?\))/g;
-        let latexPlaceholders = [];
-        formattedContent = formattedContent.replace(latexRegex, (match) => {
-          const placeholder = LATEX_PLACEHOLDER_PREFIX + latexPlaceholderCounter++;
-          latexPlaceholders.push({ placeholder, latex: match });
-          return placeholder;
-        });
-
-        let rendered = md.render(formattedContent);
-
-        // 恢复 LaTeX 公式
-        latexPlaceholders.forEach(({ placeholder, latex }) => {
-          rendered = rendered.replace(placeholder, latex);
-        });
-
-        this.$nextTick(() => {
-          MathJax.typesetPromise()
-            .then(() => {
-              console.log("LaTeX formulas rendered!");
-              this.initCopyButtons(); // 确保复制按钮初始化
-            })
-            .catch(err => console.log("MathJax typesetting error: " + err.message));
-        });
-        return rendered;
-      }
-      return '';
+    
+      // 处理未闭合代码块的转义字符
+      rendered = rendered.replace(/\\\`/g, '`').replace(/\\\$/g, '$');
+    
+      this.$nextTick(() => {
+        MathJax.typesetPromise()
+          .then(() => this.initCopyButtons())
+          .catch(console.error);
+      });
+    
+      return rendered;
     },
+    // 新增方法：检测未闭合代码块
+    hasUnclosedCodeBlock(parts) {
+      return parts.some(p => p.type === 'code' && !p.closed);
+    },
+
+    splitCodeAndText(content) {
+      const codeFenceRegex = /(```[\s\S]*?)(?:```|$)/g; // 修改正则表达式
+      const parts = [];
+      let lastIndex = 0;
+      let hasUnclosed = false;
+
+      // 处理代码块
+      let match;
+      while ((match = codeFenceRegex.exec(content)) !== null) {
+        const textBefore = content.slice(lastIndex, match.index);
+        if (textBefore) parts.push({ type: 'text', content: textBefore });
+
+        // 判断是否闭合
+        const isClosed = match[0].endsWith('```');
+        const codeContent = isClosed ? 
+          match[0] : 
+          match[0] + '\n```'; // 自动补全闭合
+
+        parts.push({
+          type: 'code',
+          content: codeContent,
+          closed: isClosed
+        });
+
+        lastIndex = codeFenceRegex.lastIndex;
+        hasUnclosed = !isClosed;
+      }
+
+      // 处理剩余内容
+      const remaining = content.slice(lastIndex);
+      if (remaining) {
+        if (hasUnclosed) {
+          // 将剩余内容视为代码块
+          parts.push({
+            type: 'code',
+            content: remaining + '\n```',
+            closed: false
+          });
+        } else {
+          parts.push({ type: 'text', content: remaining });
+        }
+      }
+
+      return parts;
+    },
+
     
     handleCopy(event) {
       const button = event.target.closest('.copy-button')
@@ -462,7 +525,15 @@ main();`,
       this.$nextTick(() => {
         const container = this.$refs.messagesContainer;
         if (container) {
-          container.scrollTop = container.scrollHeight;
+          // 定义一个阈值，用来判断是否接近底部
+          const threshold = 100; // 阈值可以根据实际情况调整
+          const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+    
+          if (isAtBottom) {
+            // 如果接近底部，则滚动到底部
+            container.scrollTop = container.scrollHeight;
+          }
+          // 如果不是接近底部，则不执行任何操作
         }
       });
     },
@@ -499,6 +570,7 @@ main();`,
           this.webSearchSettings = data.data.webSearch || {};
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
+          this.systemSettings = data.data.systemSettings || {};
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
@@ -523,7 +595,14 @@ main();`,
         }
       }
     },
-
+    escapeHtml(unsafe) {
+      return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    },  
     // 发送消息
     async sendMessage() {
       if (!this.userInput.trim() || this.isTyping) return;
@@ -604,10 +683,11 @@ main();`,
         }
       }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
+      const escapedContent = this.escapeHtml(userInput.trim());
       // 添加用户消息
       this.messages.push({
         role: 'user',
-        content: userInput,
+        content: escapedContent,
         fileLinks: fileLinks,
         fileLinks_content: fileLinks_content
       });
@@ -764,6 +844,7 @@ main();`,
         webSearch: this.webSearchSettings, 
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
+        systemSettings: this.systemSettings,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -1370,7 +1451,36 @@ main();`,
       this.activeMenu = 'document';  // 根据你的菜单项配置的实际值设置
       window.scrollTo(0, 0);
     },
-    
+    handleSystemLanguageChange(val) {
+      this.systemSettings.language = val;
+      // 这里需要实现语言切换逻辑
+      this.autoSaveSettings();
+    },
+    handleThemeChange(val) {
+      this.systemSettings.theme = val;
+      document.documentElement.setAttribute('data-theme', val);
+      this.autoSaveSettings();
+    },
+    // 方法替换为：
+    launchBrowserMode() {
+      this.isBrowserOpening = true;
+      this.browserBtnColor = '#67c23a'; // 按钮颜色变化
+      
+      setTimeout(() => {
+        const url = `http://${HOST}:${PORT}`;
+        if (isElectron) {
+          window.electronAPI.openExternal(url);
+        } else {
+          window.open(url, '_blank');
+        }
+        
+        // 2秒后恢复状态
+        setTimeout(() => {
+          this.isBrowserOpening = false;
+          this.browserBtnColor = '#409EFF';
+        }, 2000);
+      }, 500);
+    },
   }
 });
 
