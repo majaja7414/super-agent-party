@@ -28,9 +28,18 @@ SETTINGS_FILE = 'config/settings.json'
 # 设置模板文件
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
 SYSTEM_SETTINGS_FILE = 'config/system_settings.json'
-# 加载settings_template.json文件
-with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
-    default_settings = json.load(f)
+SYSTEM_SETTINGS_TEMPLATE_FILE = 'config/system_settings_template.json'
+try:
+    # 加载system_settings.json文件
+    with open(SYSTEM_SETTINGS_FILE, 'r', encoding='utf-8') as f:
+        default_settings = json.load(f)
+except FileNotFoundError:
+    # 如果文件不存在，则创建一个空的system_settings.json文件
+    # 加载system_settings_template.json文件
+    with open(SYSTEM_SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
+        default_settings = json.load(f)
+    with open(SYSTEM_SETTINGS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(default_settings, f, ensure_ascii=False, indent=2)
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -48,8 +57,6 @@ def load_settings():
         settings['systemSettings'] = system_settings
         return settings
     except FileNotFoundError:
-        # 创建config文件夹
-        os.makedirs('config', exist_ok=True)
         # 创建settings.json文件，并写入默认设置
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
             json.dump(default_settings, f, ensure_ascii=False, indent=2)
