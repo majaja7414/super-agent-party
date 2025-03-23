@@ -354,6 +354,19 @@ main();`,
           }
         });
       }
+    },
+    'systemSettings.theme': {
+      handler(newVal) {
+        document.documentElement.setAttribute('data-theme', newVal);
+        // 强制更新 Element Plus 主题
+        const themeColor = newVal === 'dark' ? '#1668dc' : '#409eff';
+        const root = document.documentElement;
+        root.style.setProperty('--el-color-primary', themeColor, 'important');
+        if (window.__ELEMENT_PLUS_INSTANCE__) {
+          window.__ELEMENT_PLUS_INSTANCE__.config.globalProperties.$ELEMENT.reload();
+        }
+      },
+      immediate: true // 立即执行一次以应用初始值
     }
   },
   computed: {
