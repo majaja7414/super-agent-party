@@ -12,11 +12,17 @@
   --border-color: #dcdfe6;
   
   /* Element Plus 核心变量 */
-  --el-color-primary: #409eff !important;
+  --el-color-primary: #409eff;
+  --el-color-primary-light-3: #79bbff;
+  --el-color-primary-light-5: #a0cfff;
+  --el-color-primary-light-7: #c6e2ff;
+  --el-color-primary-rgb: 64, 158, 255 !important;
+  
   --el-bg-color: var(--bg-color) !important;
   --el-text-color-primary: var(--text-color) !important;
   --el-border-color :var(--border-color) !important;
   --el-border-color-light: var(--border-color) !important;
+
   /* 组件颜色 */
   --el-button-bg-color: var(--el-color-primary) !important;
   --el-input-bg-color: #f5f7fa !important;
@@ -37,13 +43,28 @@
   
   /* 阴影 */
   --el-box-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.1) !important;
+
+  /* Input 文字颜色 */
+  --el-input-text-color: var(--text-color);
+  /* Placeholder 颜色 */
+  --el-input-placeholder-color: #999;
+  /* Hover 边框 */
+  --el-input-hover-border-color: var(--el-color-primary-light-3);
+  /* Focus 边框 */
+  --el-input-focus-border-color: var(--el-color-primary);
 }
 /* 暗色主题 */
 [data-theme="dark"] {
   --bg-color: #1a1a1a;
   --text-color: #e5e7eb;
   --border-color: #434343;
-  --el-color-primary: #1668dc !important;
+  --el-color-primary: #1668dc;
+  --el-color-primary-light-3: #2a7ae0;
+  --el-color-primary-light-5: #3d8ce4;
+  --el-color-primary-light-7: #519ee8;
+  --el-color-primary-light-9: #65b0ec;
+  --el-color-primary-rgb: 22, 104, 220 !important;
+
   --el-bg-color: var(--bg-color) !important;
   --el-text-color-primary: var(--text-color) !important;
   --el-border-color: var(--border-color) !important;
@@ -65,6 +86,53 @@
   --el-text-color-secondary: #8c8c8c !important;
   /* 阴影 */
   --el-box-shadow-light: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+
+  --el-input-text-color: #e5e7eb;
+  --el-input-placeholder-color: #666;
+  --el-input-hover-border-color: var(--el-color-primary-light-5);
+  --el-input-focus-border-color: var(--el-color-primary-light-7);
+  
+  /* 调整暗色输入框禁用状态 */
+  --el-input-disabled-bg-color: #333;
+  --el-input-disabled-border-color: #444;
+}
+
+/* 修改默认按钮基础样式 */
+.el-button--default {
+  /* 通用样式 */
+  background-color: var(--bg-color) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-color) !important;
+
+  /* 悬停状态 */
+  &:hover {
+    background-color: var(--hover-bg) !important;
+    border-color: var(--hover-border) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  /* 激活状态 */
+  &:active {
+    transform: translateY(0);
+    box-shadow: none;
+  }
+
+  /* 禁用状态 */
+  &.is-disabled {
+    opacity: 0.6;
+    filter: grayscale(0.3);
+  }
+
+  /* 图标样式 */
+  .el-icon {
+    transition: transform 0.2s;
+    font-size: 18px;
+  }
+
+  &:hover .el-icon {
+    transform: scale(1.1);
+  }
 }
 
 
@@ -86,6 +154,112 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+/* 按钮 */
+.el-button {
+  transition: all var(--transition-duration) !important;
+}
+/* 输入框 */
+.el-input {
+  --el-input-bg-color: var(--el-input-bg-color)!important;
+  --el-input-text-color: var(--el-text-color-primary)!important;
+}
+.el-input__inner {
+  background-color: var(--el-input-bg-color) !important;
+  color: var(--el-text-color-primary) !important;
+  border: 1px solid var(--el-border-color) !important;
+}
+/* 表格 */
+.el-table {
+  --el-table-header-bg-color: var(--el-bg-color-page);
+  --el-table-tr-bg-color: var(--el-bg-color);
+  --el-table-border-color: var(--el-border-color);
+}
+/* 代码块 */
+.code-block {
+  background-color: var(--code-bg-color) !important;
+  border: 1px solid var(--el-border-color) !important;
+}
+.hljs {
+  background-color: var(--code-bg-color) !important;
+  color: var(--code-text-color) !important;
+}
+/* 文件列表 */
+.compact-file-item {
+  background-color: var(--file-bg-color) !important;
+  border: 1px solid var(--el-border-color) !important;
+}
+/* 卡片系统 */
+.provider-card {
+  background-color: var(--card-bg-color) !important;
+  border: 1px solid var(--el-border-color) !important;
+  box-shadow: var(--el-box-shadow-light) !important;
+}
+/* 切换按钮 */
+.el-switch__core {
+  background-color: var(--el-border-color) !important;
+  border-color: var(--el-border-color) !important;
+}
+.el-switch.is-checked .el-switch__core {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
+}
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  background-color: var(--el-bg-color-page);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--el-border-color);
+  border-radius: 3px;
+}
+/* Markdown内容 */
+.markdown-body {
+  color: var(--el-text-color-primary) !important;
+}
+.markdown-body table {
+  background-color: var(--el-bg-color) !important;
+  border-color: var(--el-border-color) !important;
+  color: var(--text-color);
+}
+.markdown-body table th {
+  background-color: var(--el-bg-color-page) !important;
+  color: var(--el-text-color-primary) !important;
+}
+.markdown-body table td {
+  color: var(--el-text-color-primary) !important;
+}
+.markdown-body blockquote {
+  border-left-color: var(--el-border-color) !important;
+}
+.markdown-body hr {
+  border-color: var(--el-border-color) !important;
+}
+.markdown-body code {
+  background-color: var(--code-bg-color) !important;
+  color: var(--code-text-color) !important;
+}
+.markdown-body th {
+  background-color: var(--el-color-primary-light-9) !important;
+}
+/* 状态标签 */
+.el-tag {
+  background-color: var(--el-tag-bg-color) !important;
+  border-color: var(--el-color-primary-light-7) !important;
+}
+/* 加载动画 */
+.loading-spinner {
+  color: var(--el-color-primary) !important;
+}
+/* 工具提示 */
+.el-tooltip__popper {
+  background-color: var(--el-bg-color) !important;
+  border: 1px solid var(--el-border-color) !important;
+  color: var(--el-text-color-primary) !important;
+  box-shadow: var(--el-box-shadow-light) !important;
+}
+
+
 
 /* 顶部栏样式 */
 .top-bar {
@@ -472,7 +646,7 @@ body {
 
 /* 拖拽/点击区域样式 */
 .drop-zone {
-  border: 2px dashed #409eff;
+  border: 2px dashed rgba(var(--el-color-primary-rgb), 0.2);
   border-radius: 8px;
   padding: 40px 20px;
   text-align: center;
@@ -480,12 +654,12 @@ body {
   transition: all 0.3s;
   margin: 0 auto;
   width: 80%;
-  background-color: #f5f7fa;
+  background-color: var(--el-bg-color-page)
 }
 
 .drop-zone:hover {
-  border-color: #79bbff;
-  background-color: #ecf5ff;
+  border-color: var(--border-color);
+  background-color: var(--el-bg-color);
   transform: translateY(-2px);
   box-shadow: 0 2px 12px 0 rgba(64,158,255,.1);
 }
