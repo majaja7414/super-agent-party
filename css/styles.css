@@ -1027,8 +1027,13 @@ body {
   color: #66b1ff;
   text-decoration: underline;
 }
+.browser-mode-btn-container {
+  text-align: center;
+  margin-top: 20px;
+}
 
 .browser-mode-btn {
+  width: 60%;
   text-align: center;
   transition: all 0.3s ease;
   background: linear-gradient(45deg, #409EFF, #79bbff);
@@ -1045,20 +1050,16 @@ body {
   }
 }
 
+.browser-mode-btn span {
+  color: #fff;
+}
+
 .tip-text {
   font-size: 12px;
   color: #909399;
   margin-top: 8px;
 }
 
-.bounce-enter-active {
-  animation: bounce-in 0.5s;
-}
-@keyframes bounce-in {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
 
 .user-message-content div {
   white-space: pre-wrap;

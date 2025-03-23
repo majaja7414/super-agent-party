@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1050,24 +1049,26 @@
                 </el-form-item>
               </div>
             </div>
-            <el-button 
-              class="browser-mode-btn"
-              type="primary"
-              @click="launchBrowserMode"
-              :icon="Globe"
-              :color="browserBtnColor"
-              round
-              size="large">
-              <transition name="bounce">
-                <span v-if="isBrowserOpening" class="ml-2">
-                  <el-icon class="is-loading"><loading /></el-icon>
-                  正在启动...
-                </span>
-                <span v-else class="ml-2">
-                  启动浏览器模式
-                </span>
-              </transition>
-            </el-button>
+            <div class="browser-mode-btn-container">
+              <el-button 
+                class="browser-mode-btn"
+                type="primary"
+                @click="launchBrowserMode"
+                :icon="Globe"
+                :color="browserBtnColor"
+                round
+                size="large">
+                <transition name="bounce">
+                  <span v-if="isBrowserOpening" class="ml-2">
+                    <el-icon class="is-loading"><loading /></el-icon>
+                    正在启动...
+                  </span>
+                  <span v-else class="ml-2">
+                    启动浏览器模式
+                  </span>
+                </transition>
+              </el-button>
+            </div>
           </el-form>
         </div>
         <!-- 推理模型界面 -->
