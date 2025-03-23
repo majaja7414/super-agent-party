@@ -27,7 +27,7 @@ app = FastAPI()
 SETTINGS_FILE = 'config/settings.json'
 # 设置模板文件
 SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
-SYSTEM_SETTINGS_FILE = 'config/system_settings.json'
+SYSTEM_SETTINGS_FILE = 'config/settings_system.json'
 SYSTEM_SETTINGS_TEMPLATE_FILE = 'config/system_settings_template.json'
 try:
     # 加载system_settings.json文件
