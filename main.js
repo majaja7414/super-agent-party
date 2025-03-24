@@ -8,7 +8,6 @@ let mainWindow
 let backendProcess = null
 const HOST = '127.0.0.1'
 const PORT = 3456
-console.log(`http://${HOST}:${PORT}`)
 // 配置日志文件路径
 const logDir = path.join(app.getPath('userData'), 'logs')
 if (!fs.existsSync(logDir)) {
@@ -112,6 +111,7 @@ app.whenReady().then(async () => {
       .then(() => {
         // 页面加载完成后显示窗口
         mainWindow.show()
+        console.log(`APP run on http://${HOST}:${PORT}`);
         if (process.env.NODE_ENV === 'development') {
           mainWindow.webContents.openDevTools()
         }

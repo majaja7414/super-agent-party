@@ -204,8 +204,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(searxng_tool)
                     elif settings['webSearch']['engine'] == 'tavily':
                         tools.append(tavily_tool)
-                if kb_list:
-                    tools.append(kb_tool)
+            if kb_list:
+                tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
                 deepsearch_messages[-1]['content'] += "\n\n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
@@ -820,6 +820,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(searxng_tool)
                 elif settings['webSearch']['engine'] == 'tavily':
                     tools.append(tavily_tool)
+        if kb_list:
+            tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 
             deepsearch_messages = copy.deepcopy(request.messages)
             deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
