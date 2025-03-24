@@ -922,7 +922,7 @@ border: 1px solid var(--border-color) !important;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s;
-  margin: 0 auto;
+  margin: 5% auto;
   width: 80%;
   background-color: var(--el-bg-color-page)
 }
@@ -1258,7 +1258,7 @@ border: 1px solid var(--border-color) !important;
   &:hover {
     background-color: var(--el-color-primary-light-3) !important;
   }
-  &.activated {
+  &:is-selected{
     background-color: var(--el-color-primary-light-3) !important;
   }
 }
