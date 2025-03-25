@@ -20,6 +20,9 @@
       },
       "deepsearch": {
         "enabled": false
+      },
+      "formula": {
+        "enabled": true
       }
     },
     "reasoner": {

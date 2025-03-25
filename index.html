@@ -444,6 +444,15 @@
               </div>
             </div>
             <div class="tool-item">
+              <div class="tool-header">
+                <span>
+                  <el-icon><Edit /></el-icon>
+                  latex公式渲染增强
+                </span>
+                <el-switch v-model="toolsSettings.formula.enabled" @click.stop @change="autoSaveSettings"/>
+              </div>
+            </div>
+            <div class="tool-item">
               <div class="tool-header" @click="toggleSection('language')">
                 <span>
                   <el-icon><comment /></el-icon>

@@ -138,6 +138,9 @@ const app = Vue.createApp({
         },
         deepsearch: {
           enabled: false, // 默认不启用
+        },
+        formula: {
+          enabled: true
         }
       },
       webSearchSettings: {

@@ -127,6 +127,12 @@ def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['inference']['enabled']:
         inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
         request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
+    if settings['tools']['formula']['enabled']:
+        latex_message = "\n\n当你想使用latex公式时，你必须是用 ['$', '$'] 作为行内公式定界符，以及 ['$$', '$$'] 作为行间公式定界符。\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += latex_message
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': latex_message})
     return request
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
@@ -150,11 +156,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
             source_prompt += fileLinks_message
-        latex_message = "\n\n当你想使用latex公式时，你必须是用 ['$', '$'] 作为行内公式定界符，以及 ['$$', '$$'] 作为行间公式定界符。\n\n"
-        if request.messages and request.messages[0]['role'] == 'system':
-            request.messages[0]['content'] += latex_message
-        else:
-            request.messages.insert(0, {'role': 'system', 'content': latex_message})
         kb_list = []
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
@@ -231,11 +232,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 reasoner_messages = copy.deepcopy(request.messages)
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
-                print(request.messages[-1]['content'])
                 # 流式调用推理模型
                 reasoner_stream = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
-                    messages=request.messages,
+                    messages=reasoner_messages,
                     stream=True,
                     max_tokens=1, # 根据实际情况调整
                     temperature=settings['reasoner']['temperature']
@@ -464,6 +464,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(search_chunk)}\n\n"
                     search_not_done = False
+            reasoner_messages = copy.deepcopy(request.messages)
             while tool_calls or search_not_done:
                 full_content = ""
                 if tool_calls:
@@ -548,15 +549,24 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     )
                     if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
                         request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+                    reasoner_messages.append(
+                        {
+                            "role": "assistant",
+                            "content": str(response_content),
+                        }
+                    )
+                    reasoner_messages.append(
+                        {
+                            "role": "user",
+                            "content": f"{response_content.name}工具结果："+str(results),
+                        }
+                    )
                 # 如果启用推理模型
                 if settings['reasoner']['enabled']:
-                    reasoner_messages = copy.deepcopy(request.messages)
-                    if tools:
-                        reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                     # 流式调用推理模型
                     reasoner_stream = await reasoner_client.chat.completions.create(
                         model=settings['reasoner']['model'],
-                        messages=request.messages,
+                        messages=reasoner_messages,
                         stream=True,
                         max_tokens=1, # 根据实际情况调整
                         temperature=settings['reasoner']['temperature']
@@ -867,7 +877,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
             reasoner_response = await reasoner_client.chat.completions.create(
                 model=settings['reasoner']['model'],
-                messages=request.messages,
+                messages=reasoner_messages,
                 stream=False,
                 max_tokens=1, # 根据实际情况调整
                 temperature=settings['reasoner']['temperature']
@@ -962,6 +972,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 )
             elif response_content["status"] == "need_more_info":
                 search_not_done = False
+        reasoner_messages = copy.deepcopy(request.messages)
         while response.choices[0].message.tool_calls or search_not_done:
             if response.choices[0].message.tool_calls:
                 assistant_message = response.choices[0].message
@@ -1013,8 +1024,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 )
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
                 request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+            reasoner_messages.append(
+                {
+                    "role": "assistant",
+                    "content": str(response_content),
+                }
+            )
+            reasoner_messages.append(
+                {
+                    "role": "user",
+                    "content": f"{response_content.name}工具结果："+str(results),
+                }
+            )
             if settings['reasoner']['enabled']:
-                reasoner_messages = copy.deepcopy(request.messages)
+
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 reasoner_response = await reasoner_client.chat.completions.create(
