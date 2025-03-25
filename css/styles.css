@@ -250,10 +250,6 @@ transform: translateX(4px);
   --el-select-dropdown-active-bg-color: var(--primary-color)!important;
 }
 
-.el-popper__arrow {
-  border-color: var(--bg-color) !important;
-}
-
 .el-option {
   &__content {
   background: var(--el-bg-color) !important;
@@ -938,6 +934,17 @@ border: 1px solid var(--border-color) !important;
   margin-top: 15px;
   color: #606266;
   font-size: 14px;
+}
+
+.el-popper__arrow {
+  border-color: var(--border-color) !important;
+}
+.el-popper__arrow::before{
+  background-color: var(--el-bg-color)!important;
+}
+.el-popper{
+  background-color: var(--el-bg-color)!important;
+  color: var(--el-text-color)!important;
 }
 
 .upload-container {

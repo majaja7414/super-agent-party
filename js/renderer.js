@@ -146,6 +146,7 @@ const app = Vue.createApp({
       webSearchSettings: {
         enabled: false,
         engine: 'duckduckgo',
+        crawler: 'jina',
         when: 'before_thinking',
         duckduckgo_max_results: 10, // 默认值
         searxng_url: `http://${HOST}:8080`,
