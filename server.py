@@ -260,18 +260,29 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             open_tag = "<think>"
             close_tag = "</think>"
-
-            response = await client.chat.completions.create(
-                model=model,
-                messages=request.messages,
-                temperature=request.temperature,
-                tools=tools,
-                stream=True,
-                max_tokens=request.max_tokens or settings['max_tokens'],
-                top_p=request.top_p,
-                frequency_penalty=request.frequency_penalty,
-                presence_penalty=request.presence_penalty,
-            )
+            if tools:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=request.temperature,
+                    tools=tools,
+                    stream=True,
+                    max_tokens=request.max_tokens or settings['max_tokens'],
+                    top_p=request.top_p,
+                    frequency_penalty=request.frequency_penalty,
+                    presence_penalty=request.presence_penalty,
+                )
+            else:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=request.temperature,
+                    stream=True,
+                    max_tokens=request.max_tokens or settings['max_tokens'],
+                    top_p=request.top_p,
+                    frequency_penalty=request.frequency_penalty,
+                    presence_penalty=request.presence_penalty,
+                )
             tool_calls = []
             full_content = ""
             search_not_done = False
@@ -562,17 +573,29 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                     # 在推理结束后添加完整推理内容到消息
                     request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=request.messages,
-                    temperature=request.temperature,
-                    tools=tools,
-                    stream=True,
-                    max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p,
-                    frequency_penalty=request.frequency_penalty,
-                    presence_penalty=request.presence_penalty,
-                )
+                if tools:
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=request.messages,
+                        temperature=request.temperature,
+                        tools=tools,
+                        stream=True,
+                        max_tokens=request.max_tokens or settings['max_tokens'],
+                        top_p=request.top_p,
+                        frequency_penalty=request.frequency_penalty,
+                        presence_penalty=request.presence_penalty,
+                    )
+                else:
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=request.messages,
+                        temperature=request.temperature,
+                        stream=True,
+                        max_tokens=request.max_tokens or settings['max_tokens'],
+                        top_p=request.top_p,
+                        frequency_penalty=request.frequency_penalty,
+                        presence_penalty=request.presence_penalty,
+                    )
                 tool_calls = []
                 async for chunk in response:
                     if not chunk.choices:
@@ -848,17 +871,29 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
-        response = await client.chat.completions.create(
-            model=model,
-            messages=request.messages,
-            temperature=request.temperature,
-            tools=tools,
-            stream=False,
-            max_tokens=request.max_tokens or settings['max_tokens'],
-            top_p=request.top_p,
-            frequency_penalty=request.frequency_penalty,
-            presence_penalty=request.presence_penalty,
-        )
+        if tools:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=request.messages,
+                temperature=request.temperature,
+                tools=tools,
+                stream=False,
+                max_tokens=request.max_tokens or settings['max_tokens'],
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+            )
+        else:
+            response = await client.chat.completions.create(
+                model=model,
+                messages=request.messages,
+                temperature=request.temperature,
+                stream=False,
+                max_tokens=request.max_tokens or settings['max_tokens'],
+                top_p=request.top_p,
+                frequency_penalty=request.frequency_penalty,
+                presence_penalty=request.presence_penalty,
+            )
         if response.choices[0].message.tool_calls:
             pass
         elif settings['tools']['deepsearch']['enabled']: 
@@ -985,17 +1020,29 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=settings['reasoner']['temperature']
                 )
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-            response = await client.chat.completions.create(
-                model=model,
-                messages=request.messages,
-                temperature=request.temperature,
-                tools=tools,
-                stream=False,
-                max_tokens=request.max_tokens or settings['max_tokens'],
-                top_p=request.top_p,
-                frequency_penalty=request.frequency_penalty,
-                presence_penalty=request.presence_penalty,
-            )
+            if tools:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=request.temperature,
+                    tools=tools,
+                    stream=False,
+                    max_tokens=request.max_tokens or settings['max_tokens'],
+                    top_p=request.top_p,
+                    frequency_penalty=request.frequency_penalty,
+                    presence_penalty=request.presence_penalty,
+                )
+            else:
+                response = await client.chat.completions.create(
+                    model=model,
+                    messages=request.messages,
+                    temperature=request.temperature,
+                    stream=False,
+                    max_tokens=request.max_tokens or settings['max_tokens'],
+                    top_p=request.top_p,
+                    frequency_penalty=request.frequency_penalty,
+                    presence_penalty=request.presence_penalty,
+                )
             print(response)
             if response.choices[0].message.tool_calls:
                 pass
