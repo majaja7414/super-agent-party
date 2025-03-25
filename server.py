@@ -249,8 +249,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
                     if delta:
-                        full_reasoning += delta.get("reasoning_content", "")
-                    
+                        reasoning_content = delta.get("reasoning_content", "")
+                        if reasoning_content:
+                            full_reasoning += reasoning_content
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
 
                 # 在推理结束后添加完整推理内容到消息
@@ -569,7 +570,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         chunk_dict = chunk.model_dump()
                         delta = chunk_dict["choices"][0].get("delta", {})
                         if delta:
-                            full_reasoning += delta.get("reasoning_content", "")
+                            reasoning_content = delta.get("reasoning_content", "")
+                            if reasoning_content:
+                                full_reasoning += reasoning_content
                         
                         yield f"data: {json.dumps(chunk_dict)}\n\n"
 
