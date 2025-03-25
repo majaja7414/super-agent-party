@@ -481,7 +481,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": "\n\n思考后查询知识库中，请稍候...\n\n"
+                                        "reasoning_content": "\n\n查询知识库中，请稍候...\n\n"
                                     }
                                 }
                             ]
