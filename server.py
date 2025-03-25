@@ -248,7 +248,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
-                    full_reasoning += delta.get("reasoning_content", "")
+                    if delta:
+                        full_reasoning += delta.get("reasoning_content", "")
                     
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
 
@@ -567,7 +568,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                         chunk_dict = chunk.model_dump()
                         delta = chunk_dict["choices"][0].get("delta", {})
-                        full_reasoning += delta.get("reasoning_content", "")
+                        if delta:
+                            full_reasoning += delta.get("reasoning_content", "")
                         
                         yield f"data: {json.dumps(chunk_dict)}\n\n"
 
