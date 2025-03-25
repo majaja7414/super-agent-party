@@ -42,7 +42,8 @@
       "searxng_url": "http://127.0.0.1:8080",
       "searxng_max_results": 10,
       "tavily_max_results": 10,
-      "tavily_api_key": ""
+      "tavily_api_key": "",
+      "jina_api_key": ""
     },
     "knowledgeBases": [],
     "modelProviders": []

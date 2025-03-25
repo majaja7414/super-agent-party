@@ -614,6 +614,27 @@
                 </el-form-item>
               </div>
             </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('jinaConfig')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><search /></el-icon>
+                    jina
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.jinaConfig">
+                <el-form-item label="API Key" class="form-item-align">
+                  <el-input 
+                    v-model="webSearchSettings.jina_api_key" 
+                    placeholder="jina API 密钥(可选)"
+                    show-password
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+              </div>
+            </div>
           </el-form>
         </div>
         <!-- API列表 -->

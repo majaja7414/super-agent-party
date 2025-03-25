@@ -159,3 +159,50 @@ tavily_tool = {
         },
     },
 }
+
+async def jina_crawler_async(original_url):
+    def sync_crawler():
+        detail_url = "https://r.jina.ai/"
+        url = f"{detail_url}{original_url}"
+        settings = load_settings()
+        try:
+            jina_api_key = settings['webSearch'].get('jina_api_key', "")
+            if jina_api_key:
+                headers = {
+                    'Authorization': f'Bearer {jina_api_key}',
+                }
+                response = requests.get(url, headers=headers)
+            else:
+                response = requests.get(url)
+            if response.status_code == 200:
+                return response.text
+            else:
+                return f"获取{original_url}网页信息失败，状态码：{response.status_code}"
+        except requests.RequestException as e:
+            return f"获取{original_url}网页信息失败，错误信息：{str(e)}"
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_crawler)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+jina_crawler_tool = {
+    "type": "function",
+    "function": {
+        "name": "jina_crawler_async",
+        "description": "通过Jina AI的网页爬取API获取指定URL的网页内容。指定URL可以为其他搜索引擎搜索出来的网页链接，也可以是用户给出的网站链接。但不要将本机地址或内网地址开头的URL作为参数传入，因为jina将无法访问到这些URL。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "original_url": {
+                    "type": "string",
+                    "description": "需要爬取的原始URL地址",
+                },
+            },
+            "required": ["original_url"],
+        },
+    },
+}
+

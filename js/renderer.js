@@ -153,6 +153,7 @@ const app = Vue.createApp({
         searxng_max_results: 10, // 默认值
         tavily_max_results: 10, // 默认值
         tavily_api_key: '',
+        jina_api_key: '',
       },
       knowledgeBases: [],
       showAddKbDialog: false,
@@ -190,6 +191,7 @@ const app = Vue.createApp({
         duckduckgoConfig: true,
         searxngConfig: true,
         tavilyConfig: true,
+        jinaConfig: true,
         settingsAdvanced: false,
         reasonerAdvanced: false,
         knowledgeAdvanced: false,
