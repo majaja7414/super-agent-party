@@ -502,9 +502,9 @@ main();`,
         const codeContent = codeBlock?.querySelector('code')?.textContent || ''
         
         navigator.clipboard.writeText(codeContent).then(() => {
-          showNotification('已复制到剪贴板')
+          showNotification(this.t('copy_success'))
         }).catch(() => {
-          showNotification('复制失败', 'error')
+          showNotification(this.t('copy_failed'), 'error')
         })
         
         event.stopPropagation()
@@ -573,7 +573,7 @@ main();`,
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
-            showNotification('设置保存失败', 'error');
+            showNotification(this.t('settings_save_failed'), 'error');
           }
         }
       };
@@ -620,7 +620,7 @@ main();`,
                   formData.append('files', file.file, file.name); // 添加第三个参数为文件名
               } else {
                   console.error("Invalid file object:", file);
-                  showNotification('文件上传失败: 文件无效', 'error');
+                  showNotification(this.t('invalid_file'), 'error');
                   return;
               }
           }
@@ -634,18 +634,18 @@ main();`,
               if (!response.ok) {
                   const errorText = await response.text();
                   console.error('Server responded with an error:', errorText);
-                  showNotification(`文件上传失败: ${errorText}`, 'error');
+                  showNotification(this.t('file_upload_failed'), 'error');
                   return;
               }
               const data = await response.json();
               if (data.success) {
                   fileLinks = data.fileLinks;
               } else {
-                  showNotification('文件上传失败', 'error');
+                  showNotification(this.t('file_upload_failed'), 'error');
               }
           } catch (error) {
               console.error('Error during file upload:', error);
-              showNotification('文件上传失败', 'error');
+              showNotification(this.t('file_upload_failed'), 'error');
           }
         }
         else {
@@ -667,18 +667,18 @@ main();`,
             if (!response.ok) {
               const errorText = await response.text();
               console.error('Server error:', errorText);
-              showNotification(`文件上传失败: ${errorText}`, 'error');
+              showNotification(this.t('file_upload_failed'), 'error');
               return;
             }
             const data = await response.json();
             if (data.success) {
               fileLinks = data.fileLinks;
             } else {
-              showNotification('文件上传失败', 'error');
+              showNotification(this.t('file_upload_failed'), 'error');
             }
           } catch (error) {
             console.error('上传错误:', error);
-            showNotification('文件上传失败', 'error');
+            showNotification(this.t('file_upload_failed'), 'error');
           }
         }
       }
@@ -805,7 +805,7 @@ main();`,
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          showNotification('已停止生成', 'info');
+          showNotification(this.t('message.stopGenerate'), 'info');
         } else {
           showNotification(error.message, 'error');
         }
@@ -880,20 +880,20 @@ main();`,
     copyEndpoint() {
       navigator.clipboard.writeText(`http://${HOST}:${PORT}/v1`)
         .then(() => {
-          showNotification('API端点已复制');
+          showNotification(this.t('copy_success'), 'success');
         })
         .catch(() => {
-          showNotification('复制失败，请手动复制', 'error');
+          showNotification(this.t('copy_fail'), 'error');
         });
     },
 
     copyModel() {
       navigator.clipboard.writeText('super-model')
         .then(() => {
-          showNotification('模型ID已复制');
+          showNotification(this.t('copy_success'));
         })
         .catch(() => {
-          showNotification('复制失败，请手动复制', 'error');
+          showNotification(this.t('copy_fail'), 'error');
         });
     },
 
@@ -1031,7 +1031,7 @@ main();`,
         const data = await response.json();
         provider.models = data.data.map(m => m.id);
       } catch (error) {
-        showNotification('该供应商不支持模型列表获取或未填写API密钥', 'error');
+        showNotification(this.t('fetch_models_failed'), 'error');
       }
     },
     // 找到原有的 removeProvider 方法，替换为以下代码
@@ -1066,7 +1066,7 @@ main();`,
     },
     confirmAddProvider() {
       if (!this.newProviderTemp.vendor) {
-        showNotification('请选择供应商类型', 'warning')
+        showNotification(this.t('vendor_required'), 'warning')
         return
       }
       
@@ -1177,7 +1177,7 @@ main();`,
                 formData.append('files', file.file, file.name);
               } else {
                 console.error("Invalid file object:", file);
-                showNotification('文件上传失败: 文件无效', 'error');
+                showNotification(this.t('invalid_file'), 'error');
                 return;
               }
             }
@@ -1192,7 +1192,7 @@ main();`,
               if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Server responded with an error:', errorText);
-                showNotification(`文件上传失败: ${errorText}`, 'error');
+                showNotification(this.t('file_upload_failed'), 'error');
                 return;
               }
   
@@ -1200,12 +1200,12 @@ main();`,
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
               } else {
-                showNotification('文件上传失败', 'error');
+                showNotification(this.t('file_upload_failed'), 'error');
                 return;
               }
             } catch (error) {
               console.error('Error during file upload:', error);
-              showNotification('文件上传失败', 'error');
+              showNotification(this.t('file_upload_failed'), 'error');
               return;
             }
           } else {
@@ -1228,7 +1228,7 @@ main();`,
               if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Server error:', errorText);
-                showNotification(`文件上传失败: ${errorText}`, 'error');
+                showNotification(this.t('file_upload_failed'), 'error');
                 return;
               }
   
@@ -1236,12 +1236,12 @@ main();`,
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
               } else {
-                showNotification('文件上传失败', 'error');
+                showNotification(this.t('file_upload_failed'), 'error');
                 return;
               }
             } catch (error) {
               console.error('上传错误:', error);
-              showNotification('文件上传失败', 'error');
+              showNotification(this.t('file_upload_failed'), 'error');
               return;
             }
           }
@@ -1303,19 +1303,19 @@ main();`,
             if (status === 'completed') {
               clearInterval(interval);
               targetKb.processingStatus = 'completed';
-              showNotification('知识库处理完成');
+              showNotification(this.t('kb_created_successfully'), 'success');
               this.autoSaveSettings();
             } else if (status.startsWith('failed')) {
               clearInterval(interval);
               // 移除失败的知识库
               this.knowledgeBases = this.knowledgeBases.filter(k => k.id !== kbId);
-              showNotification(`处理失败: ${status}`, 'error');
+              showNotification(this.t('kb_creation_failed'), 'error');
               this.autoSaveSettings();
             }
           }, 2000);
         } catch (error) {
           console.error('知识库创建失败:', error);
-          showNotification('知识库创建失败', 'error');
+          showNotification(this.t('kb_creation_failed'), 'error');
         }      
         this.showAddKbDialog = false;
         this.newKb = { 
@@ -1332,7 +1332,7 @@ main();`,
         this.newKbFiles = [];
       } catch (error) {
         console.error('知识库创建失败:', error);
-        showNotification('知识库创建失败', 'error');
+        showNotification(this.t('kb_creation_failed'), 'error');
       }
     },
 
@@ -1348,10 +1348,10 @@ main();`,
         // 保存 settings
         this.autoSaveSettings();
 
-        showNotification('知识库删除成功');
+        showNotification(this.t('kb_deleted_successfully'), 'success');
       } catch (error) {
         console.error('知识库删除失败:', error);
-        showNotification('知识库删除失败', 'error');
+        showNotification(this.t('kb_deletion_failed'), 'error');
       }
     },
 
@@ -1369,11 +1369,11 @@ main();`,
           this.modelProviders = this.modelProviders
           // 保存 settings
           this.autoSaveSettings();
-          showNotification(`知识库 ${kb.name} 已${kb.enabled ? '启用' : '禁用'}`);
+          showNotification(this.t('kb')+` ${kb.name} ${kb.enabled ? this.t('enabled')  : this.t('disabled')}`, 'success');
         }
       } catch (error) {
         console.error('切换知识库状态失败:', error);
-        showNotification('切换知识库状态失败', 'error');
+        showNotification(this.t('kb_status_change_failed'), 'error');
       }
     },
     // 选择供应商
