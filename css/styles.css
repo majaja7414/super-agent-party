@@ -796,7 +796,6 @@ border: 1px solid var(--border-color) !important;
 }
 
 .el-form-item__label, .el-form-item__content {
-  flex: 1; /* 让标签和内容都占据相等的空间 */
   text-align: center; /* 标签文字左对齐 */
 }
 
@@ -807,7 +806,7 @@ border: 1px solid var(--border-color) !important;
 
 /* 可选：为了让所有标签的横向中心点对齐，可以给标签设定固定的宽度 */
 .el-form-item__label {
-  width: 70px; /* 根据实际情况调整 */
+  width: auto;
   display: inline-block;
   text-align: center;
 }

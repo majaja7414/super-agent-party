@@ -178,6 +178,8 @@ const app = Vue.createApp({
         language: 'zh-CN',
         theme: 'light',
       },
+      currentLanguage: 'zh-CN',
+      translations: translations,
       themeOptions: [
         { value: 'light', label: '亮色模式' },
         { value: 'dark', label: '暗色模式' }
@@ -406,8 +408,7 @@ main();`,
     },
     handleSelect(key) {
       this.activeMenu = key;
-    },
-
+    }, 
     //  使用占位符处理 LaTeX 公式
     formatMessage(content) {
       const parts = this.splitCodeAndText(content);
@@ -594,6 +595,7 @@ main();`,
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
+          this.currentLanguage = this.systemSettings.language || 'zh-CN';
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification('设置保存失败', 'error');
@@ -1474,10 +1476,15 @@ main();`,
       this.activeMenu = 'document';  // 根据你的菜单项配置的实际值设置
       window.scrollTo(0, 0);
     },
+    // 在 methods 中添加
+    t(key) {
+      return this.translations[this.currentLanguage][key] || key;
+    },
     handleSystemLanguageChange(val) {
+      this.currentLanguage = val;
       this.systemSettings.language = val;
-      // 这里需要实现语言切换逻辑
       this.autoSaveSettings();
+      this.$forceUpdate();
     },
     // renderer.js 增强方法
     handleThemeChange(val) {
