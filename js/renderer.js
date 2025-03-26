@@ -359,13 +359,13 @@ main();`,
     },
     toneOptions() {
       return this.toneValues.map(value => ({
-        label: this.$t(`tone.${value}`),
-        value: this.$t(`tone.${value}`) // 或用 value 保持系统一致性
+        label: this.t(`tone.${value}`),
+        value: this.t(`tone.${value}`) // 或用 value 保持系统一致性
       }));
     },
     themeOptions() {
       return this.themeValues.map(value => ({
-        label: this.$t(`theme.${value}`),
+        label: this.t(`theme.${value}`),
         value // 保持原始值（推荐）
       }));
     }
