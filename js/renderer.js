@@ -180,10 +180,7 @@ const app = Vue.createApp({
       },
       currentLanguage: 'zh-CN',
       translations: translations,
-      themeOptions: [
-        { value: 'light', label: '亮色模式' },
-        { value: 'dark', label: '暗色模式' }
-      ],
+      themeValues: ['light', 'dark'],
       browserBtnColor: '#409EFF',
       isBrowserOpening: false,
       expandedSections: {
@@ -205,44 +202,15 @@ const app = Vue.createApp({
       isSending: false, // 是否正在发送
       showAddDialog: false,
       modelProviders: [],
-      vendorOptions: [
-        { label: '自定义OpenAI', value: 'custom' },
-        { label: 'OpenAI', value: 'OpenAI' },
-        { label: 'Ollama', value: 'Ollama' },
-        { label: '深度求索', value: 'Deepseek' },
-        { label: '火山引擎', value: 'Volcano' },
-        { label: '硅基流动', value: 'siliconflow' },
-        { label: '阿里云百炼', value: 'aliyun' },
-        { label: '智谱AI', value: 'ZhipuAI' },
-        { label: '月之暗面', value: 'moonshot' },
-        { label: 'minimax', value: 'minimax' },
-        { label: 'LM studio', value: 'LMstudio' },
-        { label: 'Gemini', value: 'Gemini' },
-        { label: 'Grok', value: 'Grok' },
-        { label: 'mistral', value: 'mistral' },
-        { label: '零一万物', value: 'lingyi' },
-        { label: '百川', value: 'baichuan' },
-        { label: '百度千帆', value: 'qianfan' },
-        { label: '腾讯混元', value: 'hunyuan' },
-        { label: '阶跃星辰', value: 'stepfun' },
-        { label: 'o3', value: 'o3' },
-        { label: 'aihubmix', value: 'aihubmix' },
-        { label: 'ocoolai', value: 'ocoolai' },
-        { label: 'Github', value: 'Github' },
-        { label: 'dmxapi', value: 'dmxapi' },
-        { label: 'openrouter', value: 'openrouter' },
-        { label: 'together', value: 'together' },
-        { label: 'fireworks', value: 'fireworks' },
-        { label: '360智脑', value: '360' },
-        { label: 'Nvidia', value: 'Nvidia' },
-        { label: 'hyperbolic', value: 'hyperbolic' },
-        { label: 'jina', value: 'jina' },
-        { label: 'gitee', value: 'gitee' },
-        { label: 'PPIO', value: 'ppinfra' },
-        { label: 'perplexity', value: 'perplexity' },
-        { label: '无问芯穹', value: 'infini' },
-        { label: '魔搭', value: 'modelscope' },
-        { label: '腾讯云', value: 'tencent' }
+      vendorValues: [
+        'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
+        'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
+        'LMstudio', 'Gemini', 'Grok', 'mistral', 'lingyi',
+        'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'o3',
+        'aihubmix', 'ocoolai', 'Github', 'dmxapi', 'openrouter',
+        'together', 'fireworks', '360', 'Nvidia', 'hyperbolic',
+        'jina', 'gitee', 'ppinfra', 'perplexity', 'infini',
+        'modelscope', 'tencent'
       ],
       newProviderTemp: {
         vendor: '',
@@ -276,21 +244,10 @@ const app = Vue.createApp({
         { value: 'zh-CN', label: '中文' }, 
         { value: 'en-US', label: 'English' },
       ],
-      toneOptions:[
-        {value: '正常', label: '正常'},
-        {value: '正式', label: '正式'},
-        {value: '友好', label: '友好'},
-        {value: '幽默', label: '幽默'},
-        {value: '专业', label: '专业'},
-        {value: '阴阳怪气', label: '阴阳怪气'},
-        {value: '讽刺', label: '讽刺'},
-        {value: '挑逗', label: '挑逗'},
-        {value: '傲娇', label: '傲娇'},
-        {value: '撒娇', label: '撒娇'},
-        {value: '愤怒', label: '愤怒'},
-        {value: '悲伤', label: '悲伤'},
-        {value: '兴奋', label: '兴奋'},
-        {value: '反驳', label: '反驳'},
+      toneValues: [
+        'normal', 'formal', 'friendly', 'humorous', 'professional',
+        'sarcastic', 'ironic', 'flirtatious', 'tsundere', 'coquettish',
+        'angry', 'sad', 'excited', 'refutational'
       ],
       showUploadDialog: false,
       files: [],
@@ -393,6 +350,24 @@ main();`,
         return this.newProviderTemp.url.startsWith('http')
       }
       return true
+    },
+    vendorOptions() {
+      return this.vendorValues.map(value => ({
+        label: this.t(`vendor.${value}`), // 使用统一的翻译键
+        value
+    }));
+    },
+    toneOptions() {
+      return this.toneValues.map(value => ({
+        label: this.$t(`tone.${value}`),
+        value: this.$t(`tone.${value}`) // 或用 value 保持系统一致性
+      }));
+    },
+    themeOptions() {
+      return this.themeValues.map(value => ({
+        label: this.$t(`theme.${value}`),
+        value // 保持原始值（推荐）
+      }));
     }
   },
   methods: {

@@ -124,8 +124,6 @@ class ChatRequest(BaseModel):
 def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
         request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
-    if settings['tools']['language']['enabled']:
-        request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
     if settings['tools']['inference']['enabled']:
         inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
         request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
@@ -236,6 +234,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = copy.deepcopy(request.messages)
+                if settings['tools']['language']['enabled']:
+                    reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 # 流式调用推理模型
@@ -268,6 +268,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             open_tag = "<think>"
             close_tag = "</think>"
+            if settings['tools']['language']['enabled']:
+                request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
@@ -899,6 +901,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
         if settings['reasoner']['enabled']:
             reasoner_messages = copy.deepcopy(request.messages)
+            if settings['tools']['language']['enabled']:
+                reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
             reasoner_response = await reasoner_client.chat.completions.create(
@@ -912,6 +916,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
+        if settings['tools']['language']['enabled']:
+            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         if tools:
             response = await client.chat.completions.create(
                 model=model,

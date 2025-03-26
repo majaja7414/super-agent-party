@@ -939,13 +939,13 @@
                 }
               }"
             >
-              <el-form label-position="left" label-width="120px">
+              <el-form label-position="top" label-width="120px">
                 <el-form-item :label="t('knowledgeBaseName')" required>
-                  <el-input v-model="newKb.name" placeholder="t('enterKnowledgeBaseName')" />
+                  <el-input v-model="newKb.name" :placeholder="t('enterKnowledgeBaseName')" />
                 </el-form-item>
 
                 <el-form-item :label="t('knowledgeBaseIntro')">
-                  <el-input v-model="newKb.introduction" type="textarea" placeholder="t('enterKnowledgeBaseIntro')" />
+                  <el-input v-model="newKb.introduction" type="textarea" :placeholder="t('enterKnowledgeBaseIntro')" />
                 </el-form-item>
 
                 <el-form-item :label="t('provider')" required>
