@@ -1,6 +1,7 @@
 import asyncio
 import json
 import os
+import time
 from bs4 import BeautifulSoup
 from duckduckgo_search import DDGS
 import requests
@@ -200,6 +201,71 @@ jina_crawler_tool = {
                     "type": "string",
                     "description": "需要爬取的原始URL地址",
                 },
+            },
+            "required": ["original_url"],
+        },
+    },
+}
+
+class Crawl4AiTester:
+    def __init__(self, base_url: str = "http://localhost:11235"):
+        self.base_url = base_url
+
+    def submit_and_wait(self, request_data: dict,headers: dict = None, timeout: int = 300) -> dict:
+        # Submit crawl job
+        response = requests.post(f"{self.base_url}/crawl", json=request_data,headers=headers)
+        task_id = response.json()["task_id"]
+        print(f"Task ID: {task_id}")
+
+        # Poll for result
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > timeout:
+                raise TimeoutError(f"Task {task_id} timeout")
+
+            result = requests.get(f"{self.base_url}/task/{task_id}",headers=headers)
+            status = result.json()
+
+            if status["status"] == "completed":
+                return status
+
+            time.sleep(2)
+
+async def Crawl4Ai_search_async(original_url):
+    def sync_search():
+        settings = load_settings()
+        try:
+            tester = Crawl4AiTester()
+            api_key = settings['webSearch'].get('Crawl4Ai_api_key', "test_api_code")
+            headers = {"Authorization": f"Bearer {api_key}"} if api_key else None
+            request = {
+                "urls": original_url,
+                "priority": 10
+            }
+            result = tester.submit_and_wait(request, headers=headers)
+            return result['result']['markdown']
+        except Exception as e:
+            return f"获取{original_url}网页信息失败，错误信息：{str(e)}"
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+Crawl4Ai_tool = {
+    "type": "function",
+    "function": {
+        "name": "Crawl4Ai_search_async",
+        "description": "通过Crawl4Ai服务爬取指定URL的网页内容，返回Markdown格式的文本。回答时需在末尾以[网页标题](链接地址)格式标注来源（链接中避免空格）。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "original_url": {
+                    "type": "string",
+                    "description": "需要爬取的目标URL地址，必须包含协议（如https://）",
+                }
             },
             "required": ["original_url"],
         },

@@ -154,6 +154,8 @@ const app = Vue.createApp({
         tavily_max_results: 10, // 默认值
         tavily_api_key: '',
         jina_api_key: '',
+        Crawl4Ai_url: 'http://127.0.0.1:11235',
+        Crawl4Ai_api_key: 'test_api_code'
       },
       knowledgeBases: [],
       showAddKbDialog: false,
@@ -192,6 +194,7 @@ const app = Vue.createApp({
         searxngConfig: true,
         tavilyConfig: true,
         jinaConfig: true,
+        Crawl4AiConfig: true,
         settingsAdvanced: false,
         reasonerAdvanced: false,
         knowledgeAdvanced: false,

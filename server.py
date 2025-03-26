@@ -16,8 +16,8 @@ import time
 from typing import List, Dict
 from tzlocal import get_localzone
 from py.load_files import get_files_content
-from py.web_search import DDGsearch_async,duckduckgo_tool,searxng_async, searxng_tool,Tavily_search_async, tavily_tool,jina_crawler_async, jina_crawler_tool
-from py.know_base import process_knowledge_base,query_knowledge_base,kb_tool
+from py.web_search import *
+from py.know_base import *
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
 PORT = 3456
@@ -93,6 +93,7 @@ _TOOL_HOOKS = {
     "Tavily_search_async": Tavily_search_async,
     "query_knowledge_base": query_knowledge_base,
     "jina_crawler_async": jina_crawler_async,
+    "Crawl4Ai_search_async": Crawl4Ai_search_async,
 }
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
@@ -208,6 +209,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(tavily_tool)
                     if settings['webSearch']['crawler'] == 'jina':
                         tools.append(jina_crawler_tool)
+                    elif settings['webSearch']['crawler'] == 'crawl4ai':
+                        tools.append(Crawl4Ai_tool)
             if kb_list:
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
@@ -488,7 +491,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             ]
                         }
                         yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    elif response_content.name in  ["jina_crawler_async"]:
+                    elif response_content.name in  ["jina_crawler_async","Crawl4Ai_search_async"]:
                         chunk_dict = {
                             "id": "webSearch",
                             "choices": [
@@ -879,6 +882,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(tavily_tool)
                 if settings['webSearch']['crawler'] == 'jina':
                     tools.append(jina_crawler_tool)
+                elif settings['webSearch']['crawler'] == 'crawl4ai':
+                    tools.append(Crawl4Ai_tool)
         if kb_list:
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 

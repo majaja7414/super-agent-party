@@ -577,7 +577,7 @@
                 <el-form-item label="基础URL" class="form-item-align">
                   <el-input 
                     v-model="webSearchSettings.searxng_url" 
-                    placeholder="SearXNG URL"
+                    placeholder="SearXNG URL (docker部署后开放的端口)"
                     @input="autoSaveSettings"
                     class="full-width-input"
                   />
@@ -628,6 +628,35 @@
                   <el-input 
                     v-model="webSearchSettings.jina_api_key" 
                     placeholder="jina API 密钥(可选)"
+                    show-password
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header" @click="toggleSection('Crawl4AiConfig')">
+                <div class="header-left">
+                  <span>
+                    <el-icon><search /></el-icon>
+                    Crawl4Ai
+                  </span>
+                </div>
+              </div>
+              <div class="tool-content" v-show="expandedSections.Crawl4AiConfig">
+                <el-form-item label="Base url" class="form-item-align">
+                  <el-input 
+                    v-model="webSearchSettings.Crawl4Ai_url" 
+                    placeholder="Crawl4Ai url (docker部署后开放的端口)"
+                    @input="autoSaveSettings"
+                    class="full-width-input"
+                  />
+                </el-form-item>
+                <el-form-item label="API Key" class="form-item-align">
+                  <el-input 
+                    v-model="webSearchSettings.Crawl4Ai_api_key" 
+                    placeholder="Crawl4Ai API 密钥(可选)"
                     show-password
                     @input="autoSaveSettings"
                     class="full-width-input"
