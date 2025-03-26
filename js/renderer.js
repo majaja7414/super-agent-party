@@ -104,7 +104,7 @@ const app = Vue.createApp({
         api_key: '',
         temperature: 0.7,  // 默认温度值
         max_tokens: 4096,    // 默认最大输出长度
-        max_rounds: 10,    // 默认最大轮数
+        max_rounds: 0,    // 默认最大轮数
         selectedProvider: null,
       },
       reasonerSettings: {
@@ -561,7 +561,7 @@ main();`,
             api_key: data.data.api_key || '',
             temperature: data.data.temperature || 0.7,
             max_tokens: data.data.max_tokens || 4096,
-            max_rounds: data.data.max_rounds || 10,
+            max_rounds: data.data.max_rounds || 0,
             selectedProvider: data.data.selectedProvider || '',
           };
           this.toolsSettings = data.data.tools || {};
@@ -692,7 +692,7 @@ main();`,
         fileLinks_content: fileLinks_content
       });
       this.files = [];
-      let max_rounds = this.settings.max_rounds || 10;
+      let max_rounds = this.settings.max_rounds || 0;
       let messages;
       
       if (max_rounds === 0) {
