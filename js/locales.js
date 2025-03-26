@@ -163,6 +163,7 @@ const translations = {
       'kb': '知识库',
       'enabled': '启用',
       'disabled': '禁用',
+      'browserUse': '浏览器控制',
     },
     'en-US': {
       'superApiParty': 'Super API Party',
@@ -327,6 +328,7 @@ const translations = {
       'kb': 'Knowledge Base',
       'enabled': 'Enabled',
       'disabled': 'Disabled',
+      'browserUse': 'Browser Control',
     }
   };
   
