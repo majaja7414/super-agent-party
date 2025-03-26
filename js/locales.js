@@ -221,7 +221,7 @@ const translations = {
       'advancedConfiguration': 'Advanced Configuration',
       'temperature': 'Temperature',
       'outputLength': 'Output Length',
-      'conversationRounds': 'Conversation Rounds (0, memory will not be compressed)',
+      'conversationRounds': 'Conversation Rounds (when it is 0, memory compression will not occur)',
       'files': ' files',
       'model': 'Model',
       'default': 'Default',
