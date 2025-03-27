@@ -90,11 +90,11 @@
             <template #title>{{ t('webSearch') }}</template>
           </el-menu-item>
           <el-menu-item index="document">
-            <el-icon><document /></el-icon>
+            <el-icon><Notebook /></el-icon>
             <template #title>{{ t('knowledgeBase') }}</template>
           </el-menu-item>
           <el-menu-item index="browserUse">
-            <el-icon><Moon /></el-icon>
+            <el-icon><chrome-filled /></el-icon>
             <template #title>{{ t('browserUse') }}</template>
           </el-menu-item>
           <el-menu-item index="api-box">
@@ -196,7 +196,7 @@
               <el-button
                 @click="sendFiles"
                 class="icon-btn file-btn"
-                :icon="'DocumentAdd'"
+                :icon="'Paperclip'"
                 :type="hasFiles ? 'primary' : 'default'"
                 circle>
               </el-button>
