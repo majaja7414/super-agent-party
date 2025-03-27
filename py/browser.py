@@ -2,6 +2,7 @@ import json
 import subprocess
 import os
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from browser_use import Agent,Browser,BrowserConfig
 import asyncio
 from dotenv import load_dotenv
@@ -65,18 +66,45 @@ def get_chrome_path():
         raise Exception("未找到谷歌浏览器安装路径，请手动指定路径")
     
 async def browser_task(task: str):
-    chrome_instance_path = get_chrome_path()
+    if settings['browser']['chrome_path']:
+        chrome_instance_path = settings['browser']['chrome_path']
+    else:
+        chrome_instance_path = get_chrome_path()
     settings = load_settings()
     model = settings['browser']['model'] or 'gpt-4o-mini'
     api_key = settings['browser']['api_key'] or ''
     base_url = settings['browser']['base_url'] or 'https://api.openai.com/v1'
+    cur_vendor = None
+    for provider in settings["modelProviders"]:
+        if provider["id"] == settings['browser']['selectedProvider']:
+            cur_vendor = provider["vendor"]
+            break
+    if cur_vendor == "anthropic":
+        llm=ChatAnthropic(model=model,api_key=api_key,base_url=base_url)
+    else:
+        llm=ChatOpenAI(model=model,api_key=api_key,base_url=base_url)
     agent = Agent(
         task=task,
         browser=Browser(config=BrowserConfig(chrome_instance_path=chrome_instance_path)),
-        llm=ChatOpenAI(model=model,api_key=api_key,base_url=base_url),
+        llm=llm,
     )
     result = await agent.run()
     return result
+
+browser_task_tool = {
+    "type": "function",
+    "function": {
+        "name": "browser_task",
+        "description": "用浏览器自动执行你给出的任务的工具，输入任务描述，返回任务执行结果",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "task": {"type": "string", "description": "要执行的任务描述"},
+            },
+            "required": ["task"],
+        },
+    },
+}
 
 if __name__ == "__main__":
     asyncio.run(browser_task())

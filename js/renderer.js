@@ -183,6 +183,14 @@ const app = Vue.createApp({
       themeValues: ['light', 'dark'],
       browserBtnColor: '#409EFF',
       isBrowserOpening: false,
+      browserSettings: {
+        enabled: false,
+        chrome_path: '',
+        model: 'gpt-4o-mini',
+        api_key: '',
+        base_url: '',
+        selectedProvider: null,
+      },
       expandedSections: {
         settingsBase: true,
         reasonerConfig: true,
@@ -197,6 +205,8 @@ const app = Vue.createApp({
         settingsAdvanced: false,
         reasonerAdvanced: false,
         knowledgeAdvanced: false,
+        browserConfig: true,
+        browserAdvanced: false,
       },
       abortController: null, // 用于中断请求的控制器
       isSending: false, // 是否正在发送
@@ -571,6 +581,7 @@ main();`,
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
+          this.browserSettings = data.data.browser || {};
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification(this.t('settings_save_failed'), 'error');
@@ -845,6 +856,7 @@ main();`,
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
+        browser: this.browserSettings,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -1490,6 +1502,20 @@ main();`,
           this.browserBtnColor = '#409EFF';
         }, 2000);
       }, 500);
+    },
+    selectBrowserProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.browserSettings.model = provider.modelId;
+        this.browserSettings.base_url = provider.url;
+        this.browserSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+    handleBrowserProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectBrowserProvider(this.browserSettings.selectedProvider);
+      }
     },
   }
 });
