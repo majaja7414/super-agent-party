@@ -172,7 +172,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         model = request.model or settings['model']
         if model == 'super-model':
             model = settings['model']
-        async def stream_generator():
+        async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                     chunk_dict = {
@@ -198,6 +198,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         results = await Tavily_search_async(user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
+                        tool_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n<details><summary>搜索结果</summary>\n\n{str(results)}</details>\n\n",
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(tool_chunk)}\n\n"
                 if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
                     if settings['webSearch']['engine'] == 'duckduckgo':
                         tools.append(duckduckgo_tool)
@@ -588,7 +596,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     tool_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n<details><summary>{response_content.name}</summary>\n\n{str(results)}</details>\n\n",
+                                "reasoning_content": f"\n\n<details><summary>{response_content.name}工具结果</summary>\n\n{str(results)}</details>\n\n",
                             }
                         }]
                     }
@@ -823,7 +831,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
-            stream_generator(),
+            stream_generator(user_prompt),
             media_type="text/event-stream",
             headers={
                 "Content-Type": "text/event-stream",
