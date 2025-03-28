@@ -585,6 +585,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             "content": f"{response_content.name}工具结果："+str(results),
                         }
                     )
+                    tool_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": f"\n\n<details><summary>{response_content.name}</summary>\n\n{str(results)}</details>\n\n",
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(tool_chunk)}\n\n"
                 # 如果启用推理模型
                 if settings['reasoner']['enabled']:
                     # 流式调用推理模型

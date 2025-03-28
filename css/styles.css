@@ -1095,17 +1095,13 @@ border: 1px solid var(--border-color) !important;
 }
 
 .copy-button {
-  background: none;
+  background: var(--el-bg-color-page);
   border: none;
   color: var(--el-color-primary);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
   transition: all 0.2s;
-}
-
-.copy-button:hover {
-  background: var(--el-color-info);
 }
 
 /* 在样式表中添加覆盖规则 */
