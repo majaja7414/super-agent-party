@@ -198,10 +198,20 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         results = await Tavily_search_async(user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
+                        # 获取时间戳和uuid
+                        timestamp = time.time()
+                        uid = str(uuid.uuid4())
+                        # 构造文件名
+                        filename = f"{timestamp}_{uid}.txt"
+                        # 将搜索结果写入uploaded_file文件夹下的filename文件
+                        with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                            f.write(str(results))           
+                        # 将文件链接更新为新的链接
+                        fileLink=f"http://{HOST}:{PORT}/uploaded_files/{filename}"
                         tool_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n<details><summary>搜索结果</summary>\n\n{str(results)}</details>\n\n",
+                                    "reasoning_content": f"\n\n[搜索结果]({fileLink})\n\n",
                                 }
                             }]
                         }
@@ -593,10 +603,20 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             "content": f"{response_content.name}工具结果："+str(results),
                         }
                     )
+                    # 获取时间戳和uuid
+                    timestamp = time.time()
+                    uid = str(uuid.uuid4())
+                    # 构造文件名
+                    filename = f"{timestamp}_{uid}.txt"
+                    # 将搜索结果写入uploaded_file文件夹下的filename文件
+                    with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                        f.write(str(results))            
+                    # 将文件链接更新为新的链接
+                    fileLink=f"http://{HOST}:{PORT}/uploaded_files/{filename}"
                     tool_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n<details><summary>{response_content.name}工具结果</summary>\n\n{str(results)}</details>\n\n",
+                                "reasoning_content": f"\n\n[{response_content.name}工具结果]({fileLink})\n\n",
                             }
                         }]
                     }

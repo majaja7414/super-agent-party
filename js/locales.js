@@ -1,7 +1,6 @@
 // locales.js
 const translations = {
     'zh-CN': {
-      'superApiParty': '超级API派对',
       'chat': '对话',
       'mainModel': '主模型',
       'tools': '工具',
@@ -171,7 +170,6 @@ const translations = {
       'browserConfigNotice': '请确保Chrome浏览器已安装并配置正确，否则可能会导致无法正常使用。添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。'
     },
     'en-US': {
-      'superApiParty': 'Super API Party',
       'chat': 'Chat',
       'mainModel': 'Main Model',
       'tools': 'Tools',
