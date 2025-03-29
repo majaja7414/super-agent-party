@@ -15,11 +15,12 @@ python-pptx
 tavily-python
 pywin32; sys_platform == 'win32'
 bs4
-browser-use
+
 langchain_openai
+langchain_ollama
+langchain_anthropic
 langchain_community
 faiss-cpu
-playwright
 
 
 sympy
@@ -27,3 +28,6 @@ pandas
 matplotlib
 numpy
 scipy
+
+browser-use
+playwright

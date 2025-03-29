@@ -24,7 +24,7 @@ function startBackend() {
   }
   
   // 启动后端进程
-  backendProcess = spawn('python', [
+  backendProcess = spawn('./super/Scripts/python.exe', [
     '-m',
     'uvicorn',
     'server:app',

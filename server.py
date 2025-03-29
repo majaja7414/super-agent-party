@@ -3,6 +3,7 @@ import asyncio
 import copy
 import json
 import os
+import re
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 import logging
 from fastapi.staticfiles import StaticFiles
@@ -33,14 +34,16 @@ SYSTEM_SETTINGS_TEMPLATE_FILE = 'config/system_settings_template.json'
 try:
     # 加载system_settings.json文件
     with open(SYSTEM_SETTINGS_FILE, 'r', encoding='utf-8') as f:
-        default_settings = json.load(f)
+        system_settings = json.load(f)
 except FileNotFoundError:
     # 如果文件不存在，则创建一个空的system_settings.json文件
     # 加载system_settings_template.json文件
     with open(SYSTEM_SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
-        default_settings = json.load(f)
+        system_settings = json.load(f)
     with open(SYSTEM_SETTINGS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(default_settings, f, ensure_ascii=False, indent=2)
+        json.dump(system_settings, f, ensure_ascii=False, indent=2)
+with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
+    default_settings = json.load(f)
 def load_settings():
     try:
         with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
@@ -445,10 +448,16 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "content": search_prompt,
                         }
                     ],
-                    temperature=0.5,
-                    response_format={"type": "json_object"},
+                    temperature=0.5
                 )
                 response_content = response.choices[0].message.content
+                # 用re 提取```json 包裹json字符串 ```
+                if "```json" in response_content:
+                    try:
+                        response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
+                    except:
+                        # 用re 提取```json 之后的内容
+                        response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
                 response_content = json.loads(response_content)
                 if response_content["status"] == "done":
                     search_chunk = {
@@ -820,9 +829,15 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                         ],
                         temperature=0.5,
-                        response_format={"type": "json_object"},
                     )
                     response_content = response.choices[0].message.content
+                    # 用re 提取```json 包裹json字符串 ```
+                    if "```json" in response_content:
+                        try:
+                            response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
+                        except:
+                            # 用re 提取```json 之后的内容
+                            response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
                     response_content = json.loads(response_content)
                     if response_content["status"] == "done":
                         search_chunk = {
@@ -892,6 +907,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     search_not_done = False
     search_task = ""
     try:
+        model = request.model or settings['model']
+        if model == 'super-model':
+            model = settings['model']
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -1038,9 +1056,15 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     }
                 ],
                 temperature=0.5,
-                response_format={"type": "json_object"},
             )
             response_content = search_response.choices[0].message.content
+            # 用re 提取```json 包裹json字符串 ```
+            if "```json" in response_content:
+                try:
+                    response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
+                except:
+                    # 用re 提取```json 之后的内容
+                    response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
             response_content = json.loads(response_content)
             if response_content["status"] == "done":
                 search_not_done = False
@@ -1201,9 +1225,15 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         }
                     ],
                     temperature=0.5,
-                    response_format={"type": "json_object"},
                 )
                 response_content = search_response.choices[0].message.content
+                # 用re 提取```json 包裹json字符串 ```
+                if "```json" in response_content:
+                    try:
+                        response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
+                    except:
+                        # 用re 提取```json 之后的内容
+                        response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
                 response_content = json.loads(response_content)
                 if response_content["status"] == "done":
                     search_not_done = False
@@ -1349,6 +1379,7 @@ async def chat_endpoint(request: ChatRequest):
     try:
         if request.stream:
             return await generate_stream_response(client,reasoner_client, request, settings)
+        
         return await generate_complete_response(client,reasoner_client, request, settings)
     except asyncio.CancelledError:
         # 处理客户端中断连接的情况
