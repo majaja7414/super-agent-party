@@ -68,7 +68,7 @@ const translations = {
       'selectProvider': '选择供应商',
       'firstTimeUse': '首次使用，你可以在',
       'keyBoxInterface': '钥匙箱界面',
-      'addProviderReturnSelect': '添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。',
+      'addProviderReturnSelect': '添加新的供应商。',
       'advancedConfiguration': '高级配置',
       'temperature': '温度',
       'outputLength': '输出长度',
@@ -167,7 +167,10 @@ const translations = {
       'chromePath': 'Chrome路径',
       'chromePathPlaceholder': '请输入Chrome路径（可选）',
       'resetToDefault': '重置为默认',
-      'browserConfigNotice': '首次使用，请添加新的供应商。添加供应商后，请返回此页面并选择【具有视觉能力的模型】以继续。',
+      'browserConfigNotice': '添加供应商后，请返回此页面并选择【具有视觉能力的模型】以继续。视觉模型名称中一般包含“vision”、“image”、“img”等关键词。',
+      'mainmodelnotice': '请选择供应商后，请返回此页面并选择【具有工具能力和稳定JSON格式输出能力的模型】以继续。',
+      'addresonerNotice': '请选择供应商后，请返回此页面并选择【具有推理能力的模型】以继续。推理模型名称中一般包含“reasoner”、“R1”等关键词。',
+      'addemdNotice': '请选择供应商后，请返回此页面并选择【词嵌入模型】以继续。词嵌入模型名称中一般包含“embedding”、“ebd”、“bge”等关键词。',
       'usePlaywright':"是否使用Playwright"
     },
     'en-US': {
@@ -337,7 +340,10 @@ const translations = {
       'chromePath': 'Chrome Path',
       'chromePathPlaceholder': 'Please enter the path to the Chrome executable(optional)',
       'resetToDefault': 'Reset to default',
-      'browserConfigNotice': 'For the first time, please add a new supplier. After adding a supplier, please return to this page and select [Models with Visual Capabilities] to continue.',
+      'browserConfigNotice': 'After adding a supplier, please return to this page and select [Models with Visual Capabilities] to continue.Visual model names typically include keywords such as "vision", "image", and "img".',
+      'mainmodelnotice': 'After selecting a vendor, please return to this page and select [Models with tool capabilities and stable JSON format output capabilities] to continue.',
+      'addresonerNotice': 'After selecting a vendor, please return to this page and select [Models with reasoning capabilities] to continue.The name of the reasoning model generally includes keywords such as "reasoner" and "R1".',
+      'addemdNotice': 'After selecting a supplier, please return to this page and select [word embedding model] to continue. Word embedding model names generally contain keywords such as "embedding", "ebd", "bge", etc.',
       'usePlaywright': 'Whether to use Playwright',
     }
   };

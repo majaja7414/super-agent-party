@@ -475,7 +475,7 @@
               <el-alert type="info" :closable="false" class="mb-2">
                 <template #default>
                   <div class="alert-content">
-                    {{ t('browserConfigNotice') }}
+                    {{ t('firstTimeUse') }}
                     <el-link
                       type="primary"
                       :underline="false"
@@ -484,6 +484,8 @@
                     >
                       <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
                     </el-link>
+                    {{ t('addProviderReturnSelect') }}
+                    {{ t('browserConfigNotice') }}
                   </div>
                 </template>
               </el-alert>
@@ -916,6 +918,7 @@
                         <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
                       </el-link>
                       {{ t('addProviderReturnSelect') }}
+                      {{ t('mainmodelnotice') }}
                     </div>
                   </template>
                 </el-alert>
@@ -1091,6 +1094,23 @@
                     </el-option>
                   </el-select>
                 </el-form-item>
+                <el-alert type="info" :closable="false" class="mb-2">
+                  <template #default>
+                    <div class="alert-content">
+                      {{ t('firstTimeUse') }}
+                      <el-link
+                        type="primary"
+                        :underline="false"
+                        class="font-medium"
+                        @click="switchToApiBox"
+                      >
+                        <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
+                      </el-link>
+                      {{ t('addProviderReturnSelect') }}
+                      {{ t('addemdNotice') }}
+                    </div>
+                  </template>
+                </el-alert>
                 <el-collapse v-model="activeCollapse" class="advanced-settings">
                   <el-collapse-item name="advanced">
                     <template #title>
@@ -1318,6 +1338,7 @@
                     <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
                   </el-link>
                   {{ t('addProviderReturnSelect') }}
+                  {{ t('addresonerNotice') }}
                 </div>
               </template>
             </el-alert>
