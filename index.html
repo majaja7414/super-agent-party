@@ -242,6 +242,16 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('browserUse')" placement="top">
+              <el-button
+                @click="browserSettings.enabled = !browserSettings.enabled; autoSaveSettings()"
+                class="icon-btn web-search-btn"
+                :type="browserSettings.enabled ? 'primary' : 'default'"
+                :icon="'chrome-filled'"
+                circle>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="isSending ? t('stopGenerating') : t('sendMessage')" placement="top">
               <el-button
                 @click="isSending ? stopGenerate() : sendMessage()"
@@ -452,6 +462,14 @@
                       </div>
                     </el-option>
                   </el-select>
+                </el-form-item>
+                <!-- 是否使用playright浏览器 -->
+                <el-form-item :label="t('usePlaywright')" class="form-item-align" label-position="left">
+                  <el-switch 
+                  v-model="browserSettings.usePlaywright" 
+                  @click.stop 
+                  @change="autoSaveSettings"
+                  />
                 </el-form-item>
               </div>
               <el-alert type="info" :closable="false" class="mb-2">

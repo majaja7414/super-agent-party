@@ -63,14 +63,17 @@ def get_chrome_path():
     if chrome_path and os.path.isfile(chrome_path):
         return chrome_path
     else:
-        raise Exception("未找到谷歌浏览器安装路径，请手动指定路径")
+        raise None
     
 async def browser_task(task: str):
-    if settings['browser']['chrome_path']:
-        chrome_instance_path = settings['browser']['chrome_path']
-    else:
-        chrome_instance_path = get_chrome_path()
     settings = load_settings()
+    if not settings['browser']['usePlaywright']:
+        if settings['browser']['chrome_path']:
+            chrome_instance_path = settings['browser']['chrome_path']
+        else:
+            chrome_instance_path = get_chrome_path()
+    else:
+        chrome_instance_path = None
     model = settings['browser']['model'] or 'gpt-4o-mini'
     api_key = settings['browser']['api_key'] or ''
     base_url = settings['browser']['base_url'] or 'https://api.openai.com/v1'
@@ -83,11 +86,18 @@ async def browser_task(task: str):
         llm=ChatAnthropic(model=model,api_key=api_key,base_url=base_url)
     else:
         llm=ChatOpenAI(model=model,api_key=api_key,base_url=base_url)
-    agent = Agent(
-        task=task,
-        browser=Browser(config=BrowserConfig(chrome_instance_path=chrome_instance_path)),
-        llm=llm,
-    )
+    if chrome_instance_path:
+        agent = Agent(
+            task=task,
+            browser=Browser(config=BrowserConfig(chrome_instance_path=chrome_instance_path)),
+            llm=llm,
+        )
+    else:
+        agent = Agent(
+            task=task,
+            browser=Browser(),
+            llm=llm,
+        )
     result = await agent.run()
     return result
 
@@ -107,4 +117,4 @@ browser_task_tool = {
 }
 
 if __name__ == "__main__":
-    asyncio.run(browser_task())
+    asyncio.run(browser_task("给出deepseekv3和GPT 4o哪个价格的价格对比表"))

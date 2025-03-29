@@ -35,6 +35,7 @@
     },
     "browser":{
       "enabled": false,
+      "usePlaywright": true,
       "chrome_path": "",
       "model": "",
       "api_key": "",

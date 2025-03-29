@@ -167,7 +167,8 @@ const translations = {
       'chromePath': 'Chrome路径',
       'chromePathPlaceholder': '请输入Chrome路径（可选）',
       'resetToDefault': '重置为默认',
-      'browserConfigNotice': '请确保Chrome浏览器已安装并配置正确，否则可能会导致无法正常使用。添加新的供应商。添加供应商后，请返回此页面并选择供应商以继续。'
+      'browserConfigNotice': '首次使用，请添加新的供应商。添加供应商后，请返回此页面并选择【具有视觉能力的模型】以继续。',
+      'usePlaywright':"是否使用Playwright"
     },
     'en-US': {
       'chat': 'Chat',
@@ -336,7 +337,8 @@ const translations = {
       'chromePath': 'Chrome Path',
       'chromePathPlaceholder': 'Please enter the path to the Chrome executable(optional)',
       'resetToDefault': 'Reset to default',
-      'browserConfigNotice': 'Please make sure Chrome browser is installed and configured correctly, otherwise it may not work properly. Add a new supplier. After adding a supplier, please return to this page and select a supplier to continue.',
+      'browserConfigNotice': 'For the first time, please add a new supplier. After adding a supplier, please return to this page and select [Models with Visual Capabilities] to continue.',
+      'usePlaywright': 'Whether to use Playwright',
     }
   };
   

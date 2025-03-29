@@ -185,6 +185,7 @@ const app = Vue.createApp({
       isBrowserOpening: false,
       browserSettings: {
         enabled: false,
+        usePlaywright: true,
         chrome_path: '',
         model: 'gpt-4o-mini',
         api_key: '',

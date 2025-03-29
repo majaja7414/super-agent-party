@@ -19,6 +19,9 @@ browser-use
 langchain_openai
 langchain_community
 faiss-cpu
+playwright
+
+
 sympy
 pandas
 matplotlib

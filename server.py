@@ -18,6 +18,7 @@ from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import *
 from py.know_base import *
+from py.browser import *
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
 PORT = 3456
@@ -94,6 +95,7 @@ _TOOL_HOOKS = {
     "query_knowledge_base": query_knowledge_base,
     "jina_crawler_async": jina_crawler_async,
     "Crawl4Ai_search_async": Crawl4Ai_search_async,
+    "browser_task": browser_task,
 }
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
@@ -227,6 +229,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(jina_crawler_tool)
                     elif settings['webSearch']['crawler'] == 'crawl4ai':
                         tools.append(Crawl4Ai_tool)
+            if settings['browser']['enabled']:
+                tools.append(browser_task_tool)
             if kb_list:
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
@@ -538,6 +542,22 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "role":"assistant",
                                         "content": "",
                                         "reasoning_content": "\n\n查询知识库中，请稍候...\n\n"
+                                    }
+                                }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    elif response_content.name in ["browser_task"]:
+                        chunk_dict = {
+                            "id": "webSearch",
+                            "choices": [
+                                {
+                                    "finish_reason": None,
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "reasoning_content": "\n\n正在控制浏览器执行任务中...\n\n"
                                     }
                                 }
                             ]
@@ -922,6 +942,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(jina_crawler_tool)
                 elif settings['webSearch']['crawler'] == 'crawl4ai':
                     tools.append(Crawl4Ai_tool)
+        if settings['browser']['enabled']:
+            tools.append(browser_task_tool)
         if kb_list:
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 

@@ -1555,3 +1555,7 @@ border: 1px solid var(--border-color) !important;
 .user-message-content div {
   white-space: pre-wrap;
 }
+
+.form-item-align .el-switch {
+  margin-left: auto;
+}
