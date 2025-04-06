@@ -659,7 +659,7 @@
                 </el-form-item>
               </div>
             </div>
-            <div class="tool-item">
+            <div class="tool-item" v-show="webSearchSettings.engine === 'duckduckgo'">
               <div class="tool-header" @click="toggleSection('duckduckgoConfig')">
                 <div class="header-left">
                   <span>
@@ -680,7 +680,7 @@
                 </el-form-item>
               </div>
             </div>
-            <div class="tool-item">
+            <div class="tool-item" v-show="webSearchSettings.engine === 'searxng'">
               <div class="tool-header" @click="toggleSection('searxngConfig')">
                 <div class="header-left">
                   <span>
@@ -709,7 +709,7 @@
                 </el-form-item>
               </div>
             </div>
-            <div class="tool-item">
+            <div class="tool-item" v-show="webSearchSettings.engine === 'tavily'">
               <div class="tool-header" @click="toggleSection('tavilyConfig')">
                 <div class="header-left">
                   <span>
@@ -739,7 +739,7 @@
                 </el-form-item>
               </div>
             </div>
-            <div class="tool-item">
+            <div class="tool-item" v-show="webSearchSettings.crawler === 'jina'">
               <div class="tool-header" @click="toggleSection('jinaConfig')">
                 <div class="header-left">
                   <span>
@@ -760,7 +760,7 @@
                 </el-form-item>
               </div>
             </div>
-            <div class="tool-item">
+            <div class="tool-item" v-show="webSearchSettings.crawler === 'crawl4ai'">
               <div class="tool-header" @click="toggleSection('Crawl4AiConfig')">
                 <div class="header-left">
                   <span>
