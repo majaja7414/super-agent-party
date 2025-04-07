@@ -60,7 +60,7 @@ if settings:
         mcp_client_list[server_name] = McpClient()
         async def initialize_mcp_client():
             await mcp_client_list[server_name].initialize(server_name, server_config)
-            mcp_client_list[server_name].disabled = server_config['disabled']
+            mcp_client_list[server_name].disabled = server_config.get('disabled', False)
         asyncio.run(initialize_mcp_client())
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
@@ -560,6 +560,22 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
                                         "role":"assistant",
                                         "content": "",
                                         "reasoning_content": "\n\n正在控制浏览器执行任务中...\n\n"
+                                    }
+                                }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    else:
+                        chunk_dict = {
+                            "id": "webSearch",
+                            "choices": [
+                                {
+                                    "finish_reason": None,
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "reasoning_content": f"\n\n调用{response_content.name}工具中，请稍候...\n\n"
                                     }
                                 }
                             ]
@@ -1379,7 +1395,7 @@ async def chat_endpoint(request: ChatRequest):
             if server_name not in settings['mcpServers']:
                 mcp_client_list[server_name] = McpClient()
                 await mcp_client_list[server_name].initialize(server_name, server_config)
-            mcp_client_list[server_name].disabled = server_config['disabled']
+            mcp_client_list[server_name].disabled = server_config.get('disabled', False)
         for server_name,server_config in settings['mcpServers'].items():
             if server_name not in current_settings['mcpServers']:
                  mcp_client_list[server_name].disabled = True
