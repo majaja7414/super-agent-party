@@ -145,6 +145,8 @@ const app = Vue.createApp({
       },
       mcpServers: {},
       showAddMCPDialog: false,
+      showMCPConfirm: false,
+      deletingMCPName: null,
       newMCPJson: '',
       webSearchSettings: {
         enabled: false,
@@ -1543,23 +1545,31 @@ main();`,
     },
   
   
-    // 删除服务器
     removeMCPServer(name) {
+      this.deletingMCPName = name
+      this.showMCPConfirm = true
+    },
+    // 新增确认方法
+    confirmDeleteMCP() {
       try {
-        if (confirm(this.t('confirmDeleteMCP'))) {
-          // Vue3的正确响应式删除方式
-          const newServers = { ...this.mcpServers }
-          delete newServers[name]
-          this.mcpServers = newServers // 重新赋值触发响应式更新
-          
-          this.autoSaveSettings();
-          showNotification(this.t('mcpDeleted'), 'success');
-        }
+        const name = this.deletingMCPName
+        const newServers = { ...this.mcpServers }
+        delete newServers[name]
+        this.mcpServers = newServers
+        
+        this.$nextTick(() => {
+          this.autoSaveSettings()
+          this.focusInputField()
+        })
+        
+        showNotification(this.t('mcpDeleted'), 'success')
       } catch (error) {
-        console.error('Error:', error.message);
-        showNotification(this.t('mcpDeleteFailed'), 'error');
+        console.error('Error:', error.message)
+        showNotification(this.t('mcpDeleteFailed'), 'error')
+      } finally {
+        this.showMCPConfirm = false
       }
-    }
+    },
     
   }
 });

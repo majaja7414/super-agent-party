@@ -511,6 +511,19 @@
                 </el-button>
               </template>
             </el-dialog>
+            <el-dialog
+              v-model="showMCPConfirm"
+              :title="t('confirmDeleteTitle')"
+              width="400px"
+              @closed="deletingMCPName = null">
+              <div class="confirm-content">
+                <p>{{ t('confirmDeleteMCP', { name: deletingMCPName }) }}</p>
+                <div class="confirm-buttons">
+                  <el-button @click="showMCPConfirm = false">{{ t('cancel') }}</el-button>
+                  <el-button type="danger" @click="confirmDeleteMCP">{{ t('confirm') }}</el-button>
+                </div>
+              </div>
+            </el-dialog>
           </div>
         </div>
 
