@@ -31,3 +31,5 @@ scipy
 
 browser-use
 playwright
+mcp
+nest_asyncio

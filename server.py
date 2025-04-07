@@ -20,6 +20,7 @@ from py.load_files import get_files_content
 from py.web_search import *
 from py.know_base import *
 from py.browser import *
+from py.mcp_clients import *
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
 PORT = 3456
@@ -57,6 +58,13 @@ if settings:
 else:
     client = AsyncOpenAI()
     reasoner_client = AsyncOpenAI()
+
+if settings:
+    mcp_client = McpClient()
+    async def initialize_mcp_client():
+        await mcp_client.initialize(settings)
+    asyncio.run(initialize_mcp_client())
+
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
@@ -82,6 +90,9 @@ _TOOL_HOOKS = {
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
+    if '-' in tool_name and tool_name not in _TOOL_HOOKS:
+        result = await mcp_client.call_tool(tool_name, tool_params)
+        return result
     if tool_name not in _TOOL_HOOKS:
         return None
     tool_call = globals().get(tool_name)
@@ -121,6 +132,11 @@ def tools_change_messages(request: ChatRequest, settings: dict):
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     try:
         tools = request.tools or []
+        print(tools)
+        if mcp_client:
+            functions = await mcp_client.get_openai_functions()
+            tools.extend(functions)
+            print(tools)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -882,6 +898,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
+    if mcp_client:
+        functions = await mcp_client.get_openai_functions()
+        tools.extend(functions)
     search_not_done = False
     search_task = ""
     try:
@@ -1036,6 +1055,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=0.5,
             )
             response_content = search_response.choices[0].message.content
+            print(response_content)
             # 用re 提取```json 包裹json字符串 ```
             if "```json" in response_content:
                 try:
@@ -1237,8 +1257,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
         if open_tag in content and close_tag in content:
-            # 使用正则表达式提取标签内容
-            import re
             reasoning_content = re.search(fr'{open_tag}(.*?)\{close_tag}', content, re.DOTALL)
             if reasoning_content:
                 # 存储到 reasoning_content 字段
@@ -1338,7 +1356,6 @@ async def chat_endpoint(request: ChatRequest):
             client = AsyncOpenAI(
                 base_url=settings['base_url'] or "https://api.openai.com/v1",
             )
-        settings = current_settings
     if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
         or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
         if current_settings['reasoner']['api_key']:
@@ -1350,8 +1367,11 @@ async def chat_endpoint(request: ChatRequest):
             reasoner_client = AsyncOpenAI(
                 base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
             )
-        settings = current_settings
-    elif current_settings != settings:
+    if current_settings['mcpServers'] != settings['mcpServers']:
+        if mcp_client is None:
+            mcp_client = McpClient()
+        mcp_client.initialize(current_settings)
+    if current_settings != settings:
         settings = current_settings
 
     try:

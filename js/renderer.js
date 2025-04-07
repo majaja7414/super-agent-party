@@ -143,6 +143,7 @@ const app = Vue.createApp({
           enabled: true
         }
       },
+      mcpServers: {},
       webSearchSettings: {
         enabled: false,
         engine: 'duckduckgo',
@@ -583,6 +584,7 @@ main();`,
           this.systemSettings = data.data.systemSettings || {};
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.browserSettings = data.data.browser || {};
+          this.mcpServers = data.data.mcpServers || {};
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification(this.t('settings_save_failed'), 'error');
@@ -858,6 +860,7 @@ main();`,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
         browser: this.browserSettings,
+        mcpServers: this.mcpServers,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',

@@ -10,6 +10,7 @@
       "language": "zh-CN",
       "theme": "light"
     },
+    "mcpServers": {},
     "tools": {
       "time": {
         "enabled": true
