@@ -171,7 +171,18 @@ const translations = {
       'mainmodelnotice': '请选择供应商后，请返回此页面并选择【具有工具能力和稳定JSON格式输出能力的模型】以继续。',
       'addresonerNotice': '请选择供应商后，请返回此页面并选择【具有推理能力的模型】以继续。推理模型名称中一般包含“reasoner”、“R1”等关键词。',
       'addemdNotice': '请选择供应商后，请返回此页面并选择【词嵌入模型】以继续。词嵌入模型名称中一般包含“embedding”、“ebd”、“bge”等关键词。',
-      'usePlaywright':"是否使用Playwright"
+      'usePlaywright':"是否使用Playwright",
+      'mcpServers': 'MCP服务器',
+      'addNewMCP': '添加新服务器',
+      'mcpJsonFormat': 'JSON格式示例：',
+      'mcpJsonInput': 'MCP配置（JSON格式）',
+      'mcpJsonPlaceholder': '输入完整的MCP服务器配置...',
+      'autoApprove': '自动审批',
+      'confirmDeleteMCP': '确定要删除这个MCP服务器吗？',
+      'mcpAddedSuccess': 'MCP服务器添加成功',
+      'mcpAddFailed': 'MCP服务器添加失败',
+      'invalidJsonFormat': '无效的JSON格式',
+      'nvalidMCPConfig': '缺少必要字段（command/args）',
     },
     'en-US': {
       'chat': 'Chat',
@@ -345,6 +356,17 @@ const translations = {
       'addresonerNotice': 'After selecting a vendor, please return to this page and select [Models with reasoning capabilities] to continue.The name of the reasoning model generally includes keywords such as "reasoner" and "R1".',
       'addemdNotice': 'After selecting a supplier, please return to this page and select [word embedding model] to continue. Word embedding model names generally contain keywords such as "embedding", "ebd", "bge", etc.',
       'usePlaywright': 'Whether to use Playwright',
+      'mcpServers': 'MCP Servers',
+      'addNewMCP': 'Add New Server',
+      'mcpJsonFormat': 'JSON Format Example:',
+      'mcpJsonInput': 'MCP Configuration (JSON)',
+      'mcpJsonPlaceholder': 'Enter full MCP server configuration...',
+      'autoApprove': 'Auto Approve',
+      'confirmDeleteMCP': 'Are you sure to delete this MCP server?',
+      'mcpAddedSuccess': 'MCP server added successfully',
+      'mcpAddFailed': 'Failed to add MCP server',
+      'invalidJsonFormat': 'Invalid JSON format',
+      'invalidMCPConfig': 'Missing required fields (command/args)',
     }
   };
   

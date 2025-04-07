@@ -52,7 +52,7 @@
           <el-icon><Minus /></el-icon>
         </el-button>
         <el-button @click="maximizeWindow" class="top-bar-btn" text>
-          <el-icon><Expand /></el-icon>
+          <el-icon><full-screen /></el-icon>
         </el-button>
         <el-button @click="closeWindow" class="top-bar-btn" text>
           <el-icon><Close /></el-icon>
@@ -100,7 +100,11 @@
           <el-menu-item index="api-box">
             <el-icon><box /></el-icon>
               <template #title>{{ t('keyBox') }}</template>
-            </el-menu-item>
+          </el-menu-item>
+          <el-menu-item index="mcp">
+            <el-icon><Expand /></el-icon>
+            <template #title>{{ t('mcpServers') }}</template>
+          </el-menu-item>
           <el-menu-item index="api">
             <el-icon><connection /></el-icon>
             <template #title>{{ t('api') }}</template>
@@ -420,6 +424,89 @@
                   @click="confirmAddProvider"
                   :disabled="!validProvider"
                 >
+                  {{ t('confirmAdd') }}
+                </el-button>
+              </template>
+            </el-dialog>
+          </div>
+        </div>
+        <!-- MCP -->
+        <div v-show="activeMenu === 'mcp'" class="page mcp-container">
+          <div class="keybox-container">
+            <!-- 磁贴网格 -->
+            <div class="provider-grid">
+              <div class="provider-card knowledge-card" v-for="(server, name) in mcpServers" :key="name">
+                <div class="card-header">
+                  <el-switch
+                    :active-value="false"  
+                    :inactive-value="true" 
+                    v-model="server.disabled"
+                    @change="autoSaveSettings"
+                    class="kb-switch"
+                  ></el-switch>
+                  <div class="card-actions">
+                    <el-button
+                      @click="removeMCPServer(name)"
+                      type="danger"
+                      :icon="'Delete'"
+                      circle
+                      size="small"
+                    ></el-button>
+                  </div>
+                </div>
+                <div class="kb-content">
+                  <div class="kb-header">
+                    <h3 class="kb-title">{{ name }}</h3>
+                  </div>
+                </div>
+              </div>
+        
+              <!-- 添加新磁贴 -->
+              <div class="provider-card add-tile" @click="showAddMCPDialog = true">
+                <el-icon :size="40" color="#909399"><Plus /></el-icon>
+                <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
+              </div>
+            </div>
+
+            <!-- 添加MCP对话框 -->
+            <el-dialog
+              v-model="showAddMCPDialog"
+              :title="t('addNewMCP')"
+              width="600px"
+              @closed="newMCPJson = ''">
+              <el-form label-position="top">
+                <el-alert type="info" :closable="false" class="mb-2">
+                  {{ t('mcpJsonFormat') }}
+                  <pre class="json-example">
+"mcpServers": {
+  "echo-server": {
+    "command": "node",
+    "args": [
+      "D:/AI/echo-mcp/build/index.js"
+    ],
+    "disabled": false,
+    "autoApproveEnabled": false
+  }
+}
+                  </pre>
+                </el-alert>
+                <el-form-item :label="t('mcpJsonInput')">
+                  <el-input
+                    v-model="newMCPJson"
+                    type="textarea"
+                    :rows="8"
+                    :placeholder="t('mcpJsonPlaceholder')"
+                    resize="none"
+                  />
+                </el-form-item>
+              </el-form>
+
+              <template #footer>
+                <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
+                <el-button 
+                  type="primary" 
+                  @click="addMCPServer"
+                  :disabled="!newMCPJson">
                   {{ t('confirmAdd') }}
                 </el-button>
               </template>

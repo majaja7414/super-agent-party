@@ -144,6 +144,8 @@ const app = Vue.createApp({
         }
       },
       mcpServers: {},
+      showAddMCPDialog: false,
+      newMCPJson: '',
       webSearchSettings: {
         enabled: false,
         engine: 'duckduckgo',
@@ -383,6 +385,8 @@ main();`,
     }
   },
   methods: {
+
+  
     // 窗口控制
     minimizeWindow() {
       if (isElectron) window.electronAPI.windowAction('minimize');
@@ -1521,6 +1525,42 @@ main();`,
         this.selectBrowserProvider(this.browserSettings.selectedProvider);
       }
     },
+    addMCPServer() {
+      try {
+        const input = this.newMCPJson.trim();
+        const parsed = JSON.parse(input.startsWith('{') ? input : `{${input}}`);
+        const servers = parsed.mcpServers || parsed;
+        if (typeof servers !== 'object' || Array.isArray(servers)) {
+          throw new Error('Invalid MCP format');
+        }
+        this.mcpServers = { ...this.mcpServers, ...servers };
+        this.newMCPJson = '';
+        this.showAddMCPDialog = false;
+        this.autoSaveSettings();
+      } catch (error) {
+        console.error('Error:', error.message);
+      }
+    },
+  
+  
+    // 删除服务器
+    removeMCPServer(name) {
+      try {
+        if (confirm(this.t('confirmDeleteMCP'))) {
+          // Vue3的正确响应式删除方式
+          const newServers = { ...this.mcpServers }
+          delete newServers[name]
+          this.mcpServers = newServers // 重新赋值触发响应式更新
+          
+          this.autoSaveSettings();
+          showNotification(this.t('mcpDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error.message);
+        showNotification(this.t('mcpDeleteFailed'), 'error');
+      }
+    }
+    
   }
 });
 

@@ -1559,3 +1559,54 @@ border: 1px solid var(--border-color) !important;
 .form-item-align .el-switch {
   margin-left: auto;
 }
+
+/* MCP服务器磁贴样式 */
+.mcp-container .provider-card {
+  position: relative;
+  min-height: 180px;
+  transition: transform 0.2s ease;
+}
+
+.mcp-container .kb-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px;
+}
+
+.mcp-container .kb-switch {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+}
+
+.mcp-container .card-actions {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+}
+
+.mcp-container .kb-meta {
+  border-top: 1px solid var(--el-border-color-light);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.mcp-container .kb-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.mcp-container .kb-meta-item .el-switch {
+  margin-left: auto;
+}
+
+.mcp-container .el-tag--info {
+  background-color: rgba(var(--el-color-primary-rgb), 0.1);
+  border-color: rgba(var(--el-color-primary-rgb), 0.2);
+  color: var(--el-color-primary);
+}
+

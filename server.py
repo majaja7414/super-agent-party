@@ -40,10 +40,6 @@ def load_settings():
         for key, value in default_settings.items():
             if key not in settings:
                 settings[key] = value
-            elif isinstance(value, dict):
-                for sub_key, sub_value in value.items():
-                    if sub_key not in settings[key]:
-                        settings[key][sub_key] = sub_value
         return settings
     except FileNotFoundError:
         # 创建settings.json文件，并写入默认设置
@@ -58,13 +54,14 @@ if settings:
 else:
     client = AsyncOpenAI()
     reasoner_client = AsyncOpenAI()
-
+mcp_client_list = {}
 if settings:
-    mcp_client = McpClient()
-    async def initialize_mcp_client():
-        await mcp_client.initialize(settings)
-    asyncio.run(initialize_mcp_client())
-
+    for server_name,server_config in settings['mcpServers'].items():
+        mcp_client_list[server_name] = McpClient()
+        async def initialize_mcp_client():
+            await mcp_client_list[server_name].initialize(server_name, server_config)
+            mcp_client_list[server_name].disabled = server_config['disabled']
+        asyncio.run(initialize_mcp_client())
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
         json.dump(settings, f, ensure_ascii=False, indent=2)
@@ -90,10 +87,11 @@ _TOOL_HOOKS = {
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
-    if '-' in tool_name and tool_name not in _TOOL_HOOKS:
-        result = await mcp_client.call_tool(tool_name, tool_params)
-        return result
     if tool_name not in _TOOL_HOOKS:
+        for server_name, mcp_client in mcp_client_list.items():
+            if tool_name in mcp_client.tools_list:
+                result = await mcp_client.call_tool(tool_name, tool_params)
+                return str(result.model_dump())
         return None
     tool_call = globals().get(tool_name)
     try:
@@ -129,14 +127,15 @@ def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': latex_message})
     return request
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
+async def generate_stream_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
     try:
         tools = request.tools or []
         print(tools)
-        if mcp_client:
-            functions = await mcp_client.get_openai_functions()
-            tools.extend(functions)
-            print(tools)
+        if mcp_client_list:
+            for server_name, mcp_client in mcp_client_list.items():
+                function = await mcp_client.get_openai_functions()
+                if function:
+                    tools.extend(function)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -894,13 +893,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict):
+async def generate_complete_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
-    if mcp_client:
-        functions = await mcp_client.get_openai_functions()
-        tools.extend(functions)
+    tools = request.tools or []
+    print(tools)
+    if mcp_client_list:
+        for server_name, mcp_client in mcp_client_list.items():
+            function = await mcp_client.get_openai_functions()
+            if function:
+                tools.extend(function)
     search_not_done = False
     search_task = ""
     try:
@@ -1340,7 +1343,7 @@ async def get_models():
 
 @app.post("/v1/chat/completions")
 async def chat_endpoint(request: ChatRequest):
-    global client, settings,reasoner_client
+    global client, settings,reasoner_client,mcp_client_list
 
     current_settings = load_settings()
 
@@ -1367,18 +1370,27 @@ async def chat_endpoint(request: ChatRequest):
             reasoner_client = AsyncOpenAI(
                 base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
             )
+    
     if current_settings['mcpServers'] != settings['mcpServers']:
-        if mcp_client is None:
-            mcp_client = McpClient()
-        mcp_client.initialize(current_settings)
+        # 更新mcp_client_list
+        # 对于新增的服务器，将配置添加到mcp_client_list，并初始化
+        # 对于已删除的服务器，将配置从mcp_client_list中移除
+        for server_name,server_config in current_settings['mcpServers'].items():
+            if server_name not in settings['mcpServers']:
+                mcp_client_list[server_name] = McpClient()
+                await mcp_client_list[server_name].initialize(server_name, server_config)
+            mcp_client_list[server_name].disabled = server_config['disabled']
+        for server_name,server_config in settings['mcpServers'].items():
+            if server_name not in current_settings['mcpServers']:
+                 mcp_client_list[server_name].disabled = True
+
     if current_settings != settings:
         settings = current_settings
 
     try:
         if request.stream:
-            return await generate_stream_response(client,reasoner_client, request, settings)
-        
-        return await generate_complete_response(client,reasoner_client, request, settings)
+            return await generate_stream_response(client,reasoner_client,mcp_client_list, request, settings)
+        return await generate_complete_response(client,reasoner_client,mcp_client_list, request, settings)
     except asyncio.CancelledError:
         # 处理客户端中断连接的情况
         print("Client disconnected")
