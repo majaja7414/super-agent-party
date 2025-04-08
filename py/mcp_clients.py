@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional
 import anyio
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
+from mcp.client.sse import sse_client
 import json
 from typing import Any, Dict, List, Tuple
 import shutil
@@ -60,16 +61,27 @@ class McpClient:
             server_script_path: Path to the server script (.py or .js)
         """
         self.server_name = server_name
-        command = server_config.get('command', 'uv')
-        server_params = StdioServerParameters(
-            command = get_command_path(command),
-            args=server_config.get('args', []),
-            env=server_config.get('env', None)
-        )
+        command = server_config.get('command', '')
+        if not command:
+            server_url = server_config.get('url', '')
+            if not server_url:
+                self.disabled = True
+                return
+            else:
+                # 初始化SSE客户端
+                stream = await self.exit_stack.enter_async_context(sse_client(server_url))
+                self.stdio, self.write = stream
+                self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+        else:
+            server_params = StdioServerParameters(
+                command = get_command_path(command),
+                args=server_config.get('args', []),
+                env=server_config.get('env', None)
+            )
         
-        stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
-        self.stdio, self.write = stdio_transport
-        self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+            stdio_transport = await self.exit_stack.enter_async_context(stdio_client(server_params))
+            self.stdio, self.write = stdio_transport
+            self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
         
         await self.session.initialize()
         
