@@ -155,9 +155,8 @@ const app = Vue.createApp({
   "mcpServers": {
     "echo-server": {
       "command": "node",
-      "args": ["D:/AI/echo-mcp/build/index.js"],
+      "args": ["path/to/echo-mcp/build/index.js"],
       "disabled": false,
-      "autoApproveEnabled": false
     }
   }
 }`,
