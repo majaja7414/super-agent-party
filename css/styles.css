@@ -1610,3 +1610,141 @@ border: 1px solid var(--border-color) !important;
   color: var(--el-color-primary);
 }
 
+/* 侧边栏Logo样式 */
+.sidebar-logo {
+  /* 侧边栏最底部 */
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--el-bg-color);
+}
+
+
+.logo-icon img {
+  width: 24px;
+  height: 24px;
+  border: none;
+  vertical-align: middle;
+  bottom: 0;
+}
+
+/* 开源声明页面 */
+.logo-container {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.license-notice {
+  background: var(--el-bg-color-page);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 16px var(--el-box-shadow-light);
+}
+
+.notice-section {
+  border-left: 4px solid var(--el-color-warning);
+  padding-left: 1rem;
+  margin: 2rem 0;
+}
+
+.warning-text {
+  color: var(--el-color-warning);
+  font-size: 16px;
+  line-height: 1.8;
+}
+
+.warning-text-en {
+  color: var(--el-color-warning-light-3);
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+}
+
+.contact-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-light);
+}
+
+.contact-section h3 {
+  color: var(--el-color-primary);
+  margin-bottom: 1rem;
+}
+
+.contact-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.contact-link {
+  color: var(--el-color-primary);
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.contact-link:hover {
+  color: var(--el-color-primary-light-3);
+  text-decoration: underline;
+}
+
+.social-links {
+  margin-top: 2rem;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: var(--el-bg-color);
+  border-radius: 8px;
+  transition: transform 0.3s;
+}
+
+.link-item:hover {
+  transform: translateX(10px);
+  box-shadow: 0 2px 8px var(--el-box-shadow-light);
+}
+
+.link-item .el-icon {
+  font-size: 24px;
+  margin-right: 1rem;
+  color: var(--el-color-primary);
+}
+
+.social-link {
+  color: var(--el-color-success);
+  margin-left: 0.5rem;
+  text-decoration: none;
+}
+
+.qq-group {
+  color: var(--el-color-primary);
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.agreement-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--el-border-color-light);
+  text-align: center;
+}
+
+.agreement-link {
+  color: var(--el-color-info);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.agreement-link:hover {
+  text-decoration: underline;
+}
