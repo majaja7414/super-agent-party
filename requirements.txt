@@ -22,13 +22,6 @@ langchain_anthropic
 langchain_community
 faiss-cpu
 
-
-sympy
-pandas
-matplotlib
-numpy
-scipy
-
 browser-use
 playwright
 mcp
