@@ -185,6 +185,9 @@ const translations = {
       'mcpAddFailed': 'MCP服务器添加失败',
       'invalidJsonFormat': '无效的JSON格式',
       'nvalidMCPConfig': '缺少必要字段（command/args）',
+      'serverType': '服务器类型',
+      'stdioServer': '标准输入输出',
+      'sseServer': '服务器发送事件 (SSE)',
     },
     'en-US': {
       'chat': 'Chat',
@@ -371,6 +374,9 @@ const translations = {
       'mcpAddFailed': 'Failed to add MCP server',
       'invalidJsonFormat': 'Invalid JSON format',
       'invalidMCPConfig': 'Missing required fields (command/args)',
+      'serverType': 'Server Type',
+      'stdioServer': 'Standard I/O',
+      'sseServer': 'Server-Sent Events (SSE)',
     }
   };
   

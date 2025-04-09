@@ -148,6 +148,28 @@ const app = Vue.createApp({
       showMCPConfirm: false,
       deletingMCPName: null,
       newMCPJson: '',
+      newMCPType: 'stdio', // 新增类型字段
+      currentMCPExample: '',
+      mcpExamples: {
+        stdio: `{
+  "mcpServers": {
+    "echo-server": {
+      "command": "node",
+      "args": ["D:/AI/echo-mcp/build/index.js"],
+      "disabled": false,
+      "autoApproveEnabled": false
+    }
+  }
+}`,
+        sse: `{
+  "mcpServers": {
+    "mcp-server": {
+      "url": "SSE_URL",
+      "disabled": false
+    }
+  }
+}`
+      },
       webSearchSettings: {
         enabled: false,
         engine: 'duckduckgo',
@@ -387,8 +409,16 @@ main();`,
     }
   },
   methods: {
+    updateMCPExample() {
+      this.currentMCPExample = this.mcpExamples[this.newMCPType];
+    },
+    
+    // 初始化对话框时设置默认示例
+    showAddMCPDialog() {
+      this.newMCPType = 'stdio';
+      this.newMCPJson = this.mcpExamples.stdio;
+    },
 
-  
     // 窗口控制
     minimizeWindow() {
       if (isElectron) window.electronAPI.windowAction('minimize');

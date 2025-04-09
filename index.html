@@ -462,7 +462,7 @@
               </div>
         
               <!-- 添加新磁贴 -->
-              <div class="provider-card add-tile" @click="showAddMCPDialog = true">
+              <div class="provider-card add-tile" @click="showAddMCPDialog = true;updateMCPExample()">
                 <el-icon :size="40" color="#909399"><Plus /></el-icon>
                 <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
               </div>
@@ -470,46 +470,42 @@
 
             <!-- 添加MCP对话框 -->
             <el-dialog
-              v-model="showAddMCPDialog"
-              :title="t('addNewMCP')"
-              width="600px"
-              @closed="newMCPJson = ''">
-              <el-form label-position="top">
-                <el-alert type="info" :closable="false" class="mb-2">
-                  {{ t('mcpJsonFormat') }}
-                  <pre class="json-example">
-"mcpServers": {
-  "echo-server": {
-    "command": "node",
-    "args": [
-      "D:/AI/echo-mcp/build/index.js"
-    ],
-    "disabled": false,
-    "autoApproveEnabled": false
-  }
-}</pre>
-                </el-alert>
-                <el-form-item :label="t('mcpJsonInput')">
-                  <el-input
-                    v-model="newMCPJson"
-                    type="textarea"
-                    :rows="8"
-                    :placeholder="t('mcpJsonPlaceholder')"
-                    resize="none"
-                  />
-                </el-form-item>
-              </el-form>
-
-              <template #footer>
-                <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
-                <el-button 
-                  type="primary" 
-                  @click="addMCPServer"
-                  :disabled="!newMCPJson">
-                  {{ t('confirmAdd') }}
-                </el-button>
-              </template>
-            </el-dialog>
+            v-model="showAddMCPDialog"
+            :title="t('addNewMCP')"
+            width="600px"
+            @closed="newMCPJson = ''">
+            <el-form label-position="top">
+              <el-form-item :label="t('serverType')">
+                <el-select 
+                  v-model="newMCPType" 
+                  @change="updateMCPExample"
+                  class="full-width-input">
+                  <el-option 
+                    :label="t('stdioServer')" 
+                    value="stdio">
+                  </el-option>
+                  <el-option
+                    :label="t('sseServer')"
+                    value="sse">
+                  </el-option>
+                </el-select>
+              </el-form-item>
+          
+              <el-alert type="info" :closable="false" class="mb-2">
+                {{ t('mcpJsonFormat') }}
+                <pre class="json-example">{{ currentMCPExample }}</pre>
+              </el-alert>
+          
+              <el-form-item :label="t('mcpJsonInput')">
+                <el-input
+                  v-model="newMCPJson"
+                  type="textarea"
+                  :rows="8"
+                  :placeholder="t('mcpJsonPlaceholder')"
+                  resize="none"/>
+              </el-form-item>
+            </el-form>
+          </el-dialog>          
             <el-dialog
               v-model="showMCPConfirm"
               :title="t('confirmDeleteTitle')"
