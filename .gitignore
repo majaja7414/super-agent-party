@@ -177,3 +177,5 @@ config/settings*.json
 test/
 uploaded_files/
 kb/
+dist/
+build_python.spec
