@@ -97,13 +97,13 @@
             <el-icon><chrome-filled /></el-icon>
             <template #title>{{ t('browserUse') }}</template>
           </el-menu-item>
-          <el-menu-item index="api-box">
-            <el-icon><box /></el-icon>
-              <template #title>{{ t('keyBox') }}</template>
-          </el-menu-item>
           <el-menu-item index="mcp">
             <el-icon><Expand /></el-icon>
             <template #title>{{ t('mcpServers') }}</template>
+          </el-menu-item>
+          <el-menu-item index="api-box">
+            <el-icon><box /></el-icon>
+              <template #title>{{ t('keyBox') }}</template>
           </el-menu-item>
           <el-menu-item index="api">
             <el-icon><connection /></el-icon>
@@ -185,6 +185,30 @@
               </div>
             </div>
           </el-dialog>
+          <el-dialog
+            v-model="showMCPServerDialog"
+            :title="t('mcpServersManagement')"
+            width="400px">
+            <div class="knowledge-dialog-content">
+              <!-- 服务器列表 -->
+              <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
+                <el-switch 
+                  :active-value="false"  
+                  :inactive-value="true" 
+                  v-model="server.disabled" 
+                  @change="autoSaveSettings">
+                </el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ name }}</div>
+                </div>
+              </div>
+              <div v-if="Object.keys(mcpServers).length === 0" class="empty-tip">
+                {{ t('nomcpServers') }}
+                <a href="#" @click.stop.prevent="switchTomcpServers">{{ t('goTomcpServers') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
           <div class="button-group">
             <el-tooltip :content="t('clearChat')" placement="top">
               <el-button
@@ -242,6 +266,16 @@
                 class="icon-btn web-search-btn"
                 :type="webSearchSettings.enabled ? 'primary' : 'default'"
                 :icon="'Search'"
+                circle>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('mcpServers')" placement="top">
+              <el-button
+                @click="showMCPServerDialog = true"
+                class="icon-btn mcp-btn"
+                :type="hasEnabledMCPServers ? 'primary' : 'default'"
+                :icon="'Expand'"
                 circle>
               </el-button>
             </el-tooltip>
@@ -505,6 +539,15 @@
                   resize="none"/>
               </el-form-item>
             </el-form>
+            <template #footer>
+              <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
+              <el-button 
+                type="primary" 
+                @click="addMCPServer"
+                :disabled="!newMCPJson">
+                {{ t('confirmAdd') }}
+              </el-button>
+            </template>
           </el-dialog>          
             <el-dialog
               v-model="showMCPConfirm"

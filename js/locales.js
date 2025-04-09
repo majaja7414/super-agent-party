@@ -188,6 +188,14 @@ const translations = {
       'serverType': '服务器类型',
       'stdioServer': '标准输入输出',
       'sseServer': '服务器发送事件 (SSE)',
+      'mcpAdded': 'MCP服务器添加成功',
+      'invalidCommand': '无效的命令路径',
+      'duplicateServer': '服务器名称已存在',
+      'mcpServersManagement': 'MCP服务器管理',
+      'manageMCPServers': '管理MCP服务器',
+      'addNewMCP': '添加新服务器',
+      'nomcpServers': '没有MCP服务器',
+      'goTomcpServers': '去MCP服务器页面',
     },
     'en-US': {
       'chat': 'Chat',
@@ -377,6 +385,14 @@ const translations = {
       'serverType': 'Server Type',
       'stdioServer': 'Standard I/O',
       'sseServer': 'Server-Sent Events (SSE)',
+      'mcpAdded': 'MCP server added successfully',
+      'invalidCommand': 'Invalid command path',
+      'duplicateServer': 'Server name already exists',
+      'mcpServersManagement': 'MCP Servers Management',
+      'manageMCPServers': 'Manage MCP Servers', 
+      'addNewMCP': 'Add New Server',
+      'nomcpServers': 'No MCP servers found',
+      'goTomcpServers': 'Go to MCP Servers page',
     }
   };
   

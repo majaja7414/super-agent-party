@@ -187,6 +187,7 @@ const app = Vue.createApp({
       knowledgeBases: [],
       showAddKbDialog: false,
       showKnowledgeDialog: false,
+      showMCPServerDialog: false,
       activeCollapse: [],
       newKb: {
         name: '',
@@ -379,6 +380,10 @@ main();`,
     hasEnabledKnowledgeBases() {
       return this.knowledgeBases.some(kb => kb.enabled)
     },
+    hasEnabledMCPServers() {
+      // 检查this.mcpServers中的sever中是否有disable为false的
+      return Object.values(this.mcpServers).some(server => !server.disabled);
+    },
     hasFiles() {
       return this.files.length > 0
     },
@@ -418,7 +423,13 @@ main();`,
       this.newMCPType = 'stdio';
       this.newMCPJson = this.mcpExamples.stdio;
     },
-
+    toggleMCPServer(name, status) {
+      this.mcpServers[name].disabled = !status
+      this.autoSaveSettings()
+    },
+    switchTomcpServers() {
+      this.activeMenu = 'mcp'
+    },
     // 窗口控制
     minimizeWindow() {
       if (isElectron) window.electronAPI.windowAction('minimize');
@@ -1557,25 +1568,57 @@ main();`,
         this.selectBrowserProvider(this.browserSettings.selectedProvider);
       }
     },
-    addMCPServer() {
+    // 在methods中添加
+    async addMCPServer() {
       try {
-        const input = this.newMCPJson.trim();
-        const parsed = JSON.parse(input.startsWith('{') ? input : `{${input}}`);
-        const servers = parsed.mcpServers || parsed;
-        if (typeof servers !== 'object' || Array.isArray(servers)) {
-          throw new Error('Invalid MCP format');
-        }
-        this.mcpServers = { ...this.mcpServers, ...servers };
-        this.newMCPJson = '';
-        this.showAddMCPDialog = false;
-        this.autoSaveSettings();
+          const input = this.newMCPJson.trim();
+          const parsed = JSON.parse(input.startsWith('{') ? input : `{${input}}`);
+          const servers = parsed.mcpServers || parsed;
+          if (typeof servers !== 'object' || Array.isArray(servers)) {
+            throw new Error('Invalid MCP format');
+          }
+          const response = await fetch(`http://${HOST}:${PORT}/api/mcp/add`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  config: JSON.parse(this.newMCPJson)
+              })
+          });
+
+          if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.detail || '添加失败');
+          }
+          this.mcpServers = { ...this.mcpServers, ...servers };
+          this.newMCPJson = ''; // 清空输入框
+          this.showAddMCPDialog = false;
+          this.autoSaveSettings();
+          showNotification(this.t('mcpAdded'), 'success');
       } catch (error) {
-        console.error('Error:', error.message);
+          console.error('添加MCP服务器失败:', error);
+          showNotification(error.message, 'error');
+          this.newMCPJson = ''; // 清空错误配置
       }
     },
+
   
   
-    removeMCPServer(name) {
+    async removeMCPServer(name) {
+      const response = await fetch(`http://${HOST}:${PORT}/api/mcp/remove`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serverName: name
+          })
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || '删除失败');
+      }
       this.deletingMCPName = name
       this.showMCPConfirm = true
     },
