@@ -11,7 +11,6 @@
     "@electron/remote": "^2.1.2",
     "@element-plus/icons-vue": "^2.3.1",
     "cli-progress": "^3.12.0",
-    "electron": "^35.0.0",
     "element-plus": "^2.9.6",
     "markdown-it": "^14.1.0",
     "vue": "^3.5.13"
