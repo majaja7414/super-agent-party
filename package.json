@@ -4,7 +4,8 @@
   "description": "",
   "main": "main.js",
   "scripts": {
-    "start": "electron .",
+    "start": "cross-env NODE_ENV=production electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder",
     "pack": "electron-builder --dir"
@@ -56,9 +57,10 @@
   },
   "devDependencies": {
     "electron": "^35.0.0",
-    "electron-builder": "^24.13.3"
+    "cross-env": "^7.0.3",
+    "electron-builder": "^24.9.1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "AGPL-3.0"
 }

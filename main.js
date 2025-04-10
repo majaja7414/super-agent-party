@@ -1,4 +1,3 @@
-// main.js
 const remoteMain = require('@electron/remote/main')
 const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron')
 const path = require('path')
@@ -8,111 +7,111 @@ let mainWindow
 let backendProcess = null
 const HOST = '127.0.0.1'
 const PORT = 3456
+const isDev = process.env.NODE_ENV === 'development'
 // 配置日志文件路径
 const logDir = path.join(app.getPath('userData'), 'logs')
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true })
 }
-
 function startBackend() {
-  const backendScript = path.join(__dirname, 'server.py')
   const spawnOptions = {
     cwd: __dirname,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
     shell: false
   }
-  
-  // 启动后端进程
-  backendProcess = spawn('./super/Scripts/python.exe', [
-    '-m',
-    'uvicorn',
-    'server:app',
-    '--port', '3456',
-    '--host', HOST
-  ], spawnOptions)
-
-  // 日志文件处理
+  if (isDev) {
+    // 开发模式使用Python启动
+    const backendScript = path.join(__dirname, 'server.py')
+    backendProcess = spawn('./super/Scripts/python.exe', [
+      '-m',
+      'uvicorn',
+      'server:app',
+      '--port', PORT.toString(),
+      '--host', HOST
+    ], spawnOptions)
+  } else {
+    // 生产模式使用编译后的可执行文件
+    const exePath = path.join(__dirname, 'dist', 'server', 'server.exe')
+    backendProcess = spawn(exePath, [], {
+      ...spawnOptions,
+      cwd: path.dirname(exePath)
+    })
+  }
+  // 日志处理（保持不变）
   const logStream = fs.createWriteStream(
     path.join(logDir, `backend-${Date.now()}.log`),
     { flags: 'a' }
   )
-
-  // 处理输出
   backendProcess.stdout.on('data', (data) => {
     logStream.write(`[INFO] ${data}`)
   })
-
   backendProcess.stderr.on('data', (data) => {
     logStream.write(`[ERROR] ${data}`)
   })
-
   backendProcess.on('error', (err) => {
     logStream.write(`Process error: ${err.message}`)
   })
-
   backendProcess.on('close', (code) => {
     logStream.end(`\nProcess exited with code ${code}\n`)
   })
 }
-
-// main.js 修改部分
+// 健康检查（保持不变）
 async function waitForBackend() {
-  const MAX_RETRIES = 30; // 最大重试次数
-  const RETRY_INTERVAL = 1000; // 每次重试间隔 1 秒
+  const MAX_RETRIES = 30;
+  const RETRY_INTERVAL = 1000;
   const HEALTH_CHECK_URL = `http://${HOST}:${PORT}/health`;
   console.log(`Please wait a moment, the service is starting...`);
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
       const response = await fetch(HEALTH_CHECK_URL);
-      // 接收到{"status": "ok"}
       if (response.ok) {
         const data = await response.json();
-        if (data.status === 'ok') {
-          return; // 后端已启动
-        }
+        if (data.status === 'ok') return;
       }
-    } catch (err) {
-      //console.log(`${i + 1}/${MAX_RETRIES}`);
-    }
+    } catch (err) {}
     await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL));
   }
   throw new Error('Backend failed to start');
 }
-
-
 app.whenReady().then(async () => {
   try {
     startBackend();
     await waitForBackend();
     console.log(`Please wait a moment, the window is being created...`);
     remoteMain.initialize();
-    // 创建无边框窗口
+    
     const { width, height } = screen.getPrimaryDisplay().workAreaSize
     mainWindow = new BrowserWindow({
       width: width,
       height: height,
       frame: false,
-      show: false, // 初始隐藏窗口
+      show: false,
       icon: 'static/source/icon.png',
       webPreferences: {
-        preload: path.join(__dirname,'static/js/preload.js'),
+        preload: path.join(__dirname, 'static/js/preload.js'),
         nodeIntegration: false,
-        sandbox: false, 
-        contextIsolation: true, // 保持启用
-        enableRemoteModule: false, // 显式禁用旧版 remote
+        sandbox: false,
+        contextIsolation: true,
+        enableRemoteModule: false,
         webSecurity: false,
-        devTools: true, // 开发者工具
+        devTools: isDev, // 仅开发模式开启开发者工具
+        // 启用缓存配置
+        partition: 'persist:main-session',
+        cache: true
       }
     })
+    // 仅开发模式禁用缓存
+    if (isDev) {
+      app.commandLine.appendSwitch('disable-http-cache')
+    }
     remoteMain.enable(mainWindow.webContents)
-    // 加载页面
+    
     mainWindow.loadURL(`http://${HOST}:${PORT}`)
       .then(() => {
-        // 页面加载完成后显示窗口
         mainWindow.show()
-        console.log(`APP run on http://${HOST}:${PORT}`);
-        if (process.env.NODE_ENV === 'development') {
+        console.log(`APP running on http://${HOST}:${PORT}`)
+        if (isDev) {
           mainWindow.webContents.openDevTools()
         }
       })
@@ -183,11 +182,11 @@ app.whenReady().then(async () => {
       ipcMain.handle('check-path-exists', (_, path) => {
         return fs.existsSync(path);
       });
-    } catch (err) {
-      console.error('Failed to start backend:', err);
-      dialog.showErrorBox('启动失败', '后端服务启动失败，请检查日志');
-      app.quit();
-    }
+  } catch (err) {
+    console.error('启动失败:', err);
+    dialog.showErrorBox('启动失败', '服务启动失败，请检查日志');
+    app.quit();
+  }
 })
 
 // 应用退出处理
@@ -208,6 +207,3 @@ app.on('window-all-closed', () => {
     app.quit()
   }
 })
-
-// 禁用缓存
-app.commandLine.appendSwitch('disable-http-cache')
