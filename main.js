@@ -94,9 +94,9 @@ app.whenReady().then(async () => {
       height: height,
       frame: false,
       show: false, // 初始隐藏窗口
-      icon: 'source/icon.png',
+      icon: 'static/source/icon.png',
       webPreferences: {
-        preload: path.join(__dirname,'js/preload.js'),
+        preload: path.join(__dirname,'static/js/preload.js'),
         nodeIntegration: false,
         sandbox: false, 
         contextIsolation: true, // 保持启用

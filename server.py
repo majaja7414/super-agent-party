@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI, APIStatusError
 from pydantic import BaseModel
 from fastapi import status
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 import uuid
 import time
 from typing import List, Dict
@@ -1633,9 +1633,8 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"WebSocket error: {e}")
 
 app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
-app.mount("/css", StaticFiles(directory="css"), name="css")
-app.mount("/js", StaticFiles(directory="js"), name="js")
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
+app.mount("/node_modules", StaticFiles(directory="node_modules"), name="node_modules")
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
