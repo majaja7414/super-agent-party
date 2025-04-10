@@ -15,22 +15,22 @@ if (!fs.existsSync(logDir)) {
 }
 
 function startBackend() {
-  const backendScript = path.join(__dirname, 'server.py')
+  const backendExe = path.join(__dirname, process.env.NODE_ENV === 'development' ? 'dist/server/server.exe' : 'app.asar.unpacked/dist/server/server.exe')
+  const serverDir = path.join(__dirname, process.env.NODE_ENV === 'development' ? 'dist/server' : 'app.asar.unpacked/dist/server')
   const spawnOptions = {
-    cwd: __dirname,
+    cwd: serverDir,
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
-    shell: false
+    shell: false,
+    env: {
+      ...process.env,
+      PYTHONPATH: serverDir,
+      NODE_PATH: path.join(__dirname, process.env.NODE_ENV === 'development' ? 'node_modules' : 'app.asar.unpacked/node_modules')
+    }
   }
   
   // 启动后端进程
-  backendProcess = spawn('./super/Scripts/python.exe', [
-    '-m',
-    'uvicorn',
-    'server:app',
-    '--port', '3456',
-    '--host', HOST
-  ], spawnOptions)
+  backendProcess = spawn(backendExe, [], spawnOptions)
 
   // 日志文件处理
   const logStream = fs.createWriteStream(
@@ -94,15 +94,15 @@ app.whenReady().then(async () => {
       height: height,
       frame: false,
       show: false, // 初始隐藏窗口
-      icon: 'static/source/icon.png',
+      icon: path.join(__dirname, process.env.NODE_ENV === 'development' ? 'static/source/icon.png' : 'app.asar.unpacked/static/source/icon.png'),
       webPreferences: {
-        preload: path.join(__dirname,'static/js/preload.js'),
+        preload: path.join(__dirname, process.env.NODE_ENV === 'development' ? 'static/js/preload.js' : 'app.asar.unpacked/static/js/preload.js'),
         nodeIntegration: false,
         sandbox: false, 
         contextIsolation: true, // 保持启用
         enableRemoteModule: false, // 显式禁用旧版 remote
         webSecurity: false,
-        devTools: true, // 开发者工具
+        devTools: false, // 开发者工具
       }
     })
     remoteMain.enable(mainWindow.webContents)
@@ -210,4 +210,4 @@ app.on('window-all-closed', () => {
 })
 
 // 禁用缓存
-app.commandLine.appendSwitch('disable-http-cache')
+// app.commandLine.appendSwitch('disable-http-cache')
