@@ -156,7 +156,7 @@ const app = Vue.createApp({
     "echo-server": {
       "command": "node",
       "args": ["path/to/echo-mcp/build/index.js"],
-      "disabled": false,
+      "disabled": false
     }
   }
 }`,
