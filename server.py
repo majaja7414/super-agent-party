@@ -1633,7 +1633,6 @@ async def websocket_endpoint(websocket: WebSocket):
         print(f"WebSocket error: {e}")
 
 app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
-app.mount("/node_modules", StaticFiles(directory="node_modules"), name="node_modules")
 app.mount("/css", StaticFiles(directory="css"), name="css")
 app.mount("/js", StaticFiles(directory="js"), name="js")
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
