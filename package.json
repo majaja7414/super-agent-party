@@ -1,7 +1,7 @@
 {
   "name": "super-agent-party",
-  "version": "1.0.0",
-  "description": "",
+  "version": "0.1.0",
+  "description": "超级智能体派对 | 链接一切模型、知识库、搜索引擎、浏览器、MCP服务器；可以web端、桌面端、API等多种方式使用",
   "main": "main.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production electron .",
@@ -9,43 +9,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder",
     "pack": "electron-builder --dir"
-  },
-  "build": {
-    "appId": "com.superagent.party",
-    "productName": "Super Agent Party",
-    "directories": {
-      "output": "release"
-    },
-    "asarUnpack": [
-      "dist/server/**/*",
-      "node_modules/**/*",
-      "static/**/*"
-    ],
-    "files": [
-      "**/*",
-      "node_modules/**/*",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
-      "!**/node_modules/*.d.ts",
-      "!**/node_modules/.bin",
-      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
-      "!.editorconfig",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
-      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
-      "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
-      "dist/server/**/*"
-    ],
-    "win": {
-      "target": "nsis",
-      "icon": "static/source/icon.png"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true
-    }
   },
   "dependencies": {
     "@electron/remote": "^2.1.2",
@@ -60,7 +23,50 @@
     "cross-env": "^7.0.3",
     "electron-builder": "^24.9.1"
   },
-  "keywords": [],
-  "author": "",
-  "license": "AGPL-3.0"
+  "keywords": ["AI", "Multi-Agent", "Productivity", "Automation", "MCP"],
+  "author": "heshengtao",
+  "license": "AGPL-3.0",
+  "build": {
+    "appId": "com.superagent.party",
+    "productName": "Super Agent Party",
+    "copyright": "Copyright © 2025 Heshengtao",
+    "compression": "maximum",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "**/*",
+      "!**/*.{pyc,pyo,pyd}",
+      "!py/",
+      "!super/",
+      "!kb/",
+      "!uploaded_files/",
+      "!build/",
+      "!release/",
+      "!**/__pycache__/",
+      "!server.py"
+    ],
+    "extraResources": [
+      {
+        "from": "dist/server/",
+        "to": "server",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "icon": "static/source/icon.png",
+      "target": ["nsis"],
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "legalTrademarks": "Super Agent Party™",
+      "publisherName": "Heshengtao",
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "menuCategory": "Productivity Tools"
+    }
+  }
 }

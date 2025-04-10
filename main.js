@@ -32,7 +32,10 @@ function startBackend() {
     ], spawnOptions)
   } else {
     // 生产模式使用编译后的可执行文件
-    const exePath = path.join(__dirname, 'dist', 'server', 'server.exe')
+    const exePath = path.join(
+      process.env.PORTABLE_EXECUTABLE_DIR || app.getAppPath(),
+      '../server/server.exe'
+    ).replace('app.asar', 'app.asar.unpacked')
     backendProcess = spawn(exePath, [], {
       ...spawnOptions,
       cwd: path.dirname(exePath)
