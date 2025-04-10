@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Loading</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      color: white;
+    }
+
+    .loading-container {
+        width: 500px;  /* 新增固定宽度 */
+        padding: 50px; /* 调整内边距 */
+      text-align: center;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      width: 80px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    }
+
+    .loader {
+      position: relative;
+      width: 100px;
+        height: 100px;
+        margin: 30px auto;
+    }
+
+    .loader-inner {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #00ff88;
+      animation: spin 1.5s linear infinite;
+    }
+
+    .loader-inner:nth-child(2) {
+      border-top-color: #00b4d8;
+      animation-delay: -0.5s;
+    }
+
+    .loader-inner:nth-child(3) {
+      border-top-color: #ff6b6b;
+      animation-delay: -1s;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .progress-container {
+        width: 300px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 2px;
+      margin: 20px auto;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88 0%, #00b4d8 100%);
+      transition: width 0.3s ease-out;
+    }
+
+    .status-text {
+      margin-top: 20px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      letter-spacing: 0.5px;
+    }
+
+    .loading-text {
+        font-size: 26px;
+        margin-bottom: 25px;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .loading-text::after {
+      content: '...';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60% { content: '...'; }
+      80%, 100% { content: ''; }
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-container">
+    <img src="./source/icon.png" class="logo" alt="Logo">
+    <div class="loading-text">加载中</div>
+    <div class="loader">
+      <div class="loader-inner"></div>
+      <div class="loader-inner"></div>
+      <div class="loader-inner"></div>
+    </div>
+    <div class="progress-container">
+      <div class="progress-bar" id="progress"></div>
+    </div>
+    <div class="status-text" id="status">初始化核心服务</div>
+  </div>
+
+  <script>
+    const progressElem = document.getElementById('progress')
+    const statusElem = document.getElementById('status')
+    const steps = [
+      { text: '正在加载资源文件...', duration: 1500 },
+      { text: '初始化AI引擎...', duration: 2000 },
+      { text: '建立安全连接...', duration: 1800 },
+      { text: '准备用户界面...', duration: 1200 }
+    ]
+
+    let currentStep = 0
+    let progress = 0
+
+    function updateProgress() {
+      if (currentStep < steps.length) {
+        const step = steps[currentStep]
+        statusElem.textContent = step.text
+        
+        const interval = setInterval(() => {
+          progress += Math.random() * 2
+          if (progress >= 100 * (currentStep + 1) / steps.length) {
+            clearInterval(interval)
+            currentStep++
+            if (currentStep < steps.length) {
+              setTimeout(updateProgress, 100)
+            }
+          }
+          progressElem.style.width = `${Math.min(progress, 100)}%`
+        }, 50)
+
+        setTimeout(() => {
+          clearInterval(interval)
+        }, step.duration)
+      }
+    }
+
+    // 启动进度模拟
+    setTimeout(updateProgress, 500)
+    
+    // 监听来自主进程的真实进度更新（需要Electron IPC支持）
+    // window.ipcRenderer.on('progress-update', (event, data) => {
+    //   progressElem.style.width = `${data.progress}%`
+    //   statusElem.textContent = data.status
+    // })
+  </script>
+</body>
+</html>
