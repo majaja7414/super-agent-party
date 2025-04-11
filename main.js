@@ -178,7 +178,6 @@ app.whenReady().then(async () => {
         webSecurity: false,
         devTools: isDev, // 开发模式下启用开发者工具，但是不默认展开
         partition: 'persist:main-session',
-        cache: true
       }
     })
 
@@ -277,6 +276,4 @@ process.on('uncaughtException', (err) => {
   app.quit()
 })
 
-if (isDev) {
-  app.commandLine.appendSwitch('disable-http-cache')
-}
+app.commandLine.appendSwitch('disable-http-cache')
