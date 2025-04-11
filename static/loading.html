@@ -3,123 +3,327 @@
 <head>
   <meta charset="UTF-8">
   <title>Loading</title>
-  <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="source/icon.png" type="image/png">
   <style>
+
+    :root {
+      --primary-glow: #00d9ff;
+      --secondary-glow: #0082ff;
+      --accent-color: #00eeff;
+      --bg-dark: #0a0e17;
+      --bg-light: #141c2b;
+      --text-primary: rgba(255, 255, 255, 0.95);
+      --text-secondary: rgba(255, 255, 255, 0.7);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
     body {
       margin: 0;
       height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      color: white;
+      background: radial-gradient(circle at 50% 50%, var(--bg-light) 0%, var(--bg-dark) 100%);
+      font-family: 'Inter', sans-serif;
+      color: var(--text-primary);
+      overflow: hidden;
+      position: relative;
     }
-
+    
+    /* Background grid effect */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        linear-gradient(rgba(18, 30, 52, 0.8) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(18, 30, 52, 0.8) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -1;
+      opacity: 0.3;
+      perspective: 1000px;
+      transform-style: preserve-3d;
+      animation: gridMove 30s linear infinite;
+    }
+    
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+    
     .loading-container {
-        width: 500px;  /* 新增固定宽度 */
-        padding: 50px; /* 调整内边距 */
+      width: 600px;
+      height: 500px;
+      padding: 50px;
       text-align: center;
-      padding: 40px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      background: rgba(20, 28, 43, 0.7);
+      border-radius: 24px;
+      backdrop-filter: blur(20px);
+      box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+        0 0 30px rgba(0, 217, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      transition: all 0.5s ease;
     }
-
+    
+    /* Glow effect around container */
+    .loading-container::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(
+        circle at center,
+        rgba(0, 217, 255, 0.1) 0%,
+        transparent 70%
+      );
+      opacity: 0.7;
+      z-index: -1;
+      animation: pulse 4s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 0.8; }
+    }
+    
     .logo {
-      width: 80px;
-      margin-bottom: 20px;
-      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+      width: 90px;
+      margin-bottom: 25px;
+      filter: drop-shadow(0 0 12px rgba(0, 217, 255, 0.5));
+      animation: logoFloat 3s ease-in-out infinite;
     }
-
+    
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    .loading-text {
+      font-size: 28px;
+      font-weight: 500;
+      margin-bottom: 30px;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 10px rgba(0, 217, 255, 0.5);
+      position: relative;
+      display: inline-block;
+    }
+    
+    .loading-text::after {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-left: 4px;
+      border-radius: 50%;
+      background-color: var(--accent-color);
+      box-shadow: 0 0 10px var(--accent-color);
+      animation: dots 1.5s infinite;
+      vertical-align: middle;
+    }
+    
+    @keyframes dots {
+      0%, 100% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    
     .loader {
       position: relative;
-      width: 100px;
-        height: 100px;
-        margin: 30px auto;
+      width: 120px;
+      height: 120px;
+      margin: 35px auto;
     }
-
+    
     .loader-inner {
       position: absolute;
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #00ff88;
-      animation: spin 1.5s linear infinite;
+      border: 2px solid transparent;
+      border-top-color: var(--primary-glow);
+      animation: spin 1.5s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+      box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
     }
-
+    
+    .loader-inner:nth-child(1) {
+      width: 100%;
+      height: 100%;
+    }
+    
     .loader-inner:nth-child(2) {
-      border-top-color: #00b4d8;
-      animation-delay: -0.5s;
+      width: 80%;
+      height: 80%;
+      top: 10%;
+      left: 10%;
+      border-top-color: var(--secondary-glow);
+      animation-duration: 2s;
+      animation-direction: reverse;
     }
-
+    
     .loader-inner:nth-child(3) {
-      border-top-color: #ff6b6b;
-      animation-delay: -1s;
+      width: 60%;
+      height: 60%;
+      top: 20%;
+      left: 20%;
+      border-top-color: #00ffaa;
+      animation-duration: 2.5s;
     }
-
+    
+    /* Center dot */
+    .loader::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 20px var(--accent-color);
+      animation: pulse 2s infinite;
+    }
+    
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
     }
-
+    
     .progress-container {
-        width: 300px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 2px;
-      margin: 20px auto;
+      width: 320px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      margin: 25px auto;
       overflow: hidden;
+      position: relative;
     }
-
+    
+    .progress-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      animation: shimmer 2s infinite;
+      transform: translateX(-100%);
+    }
+    
+    @keyframes shimmer {
+      100% { transform: translateX(100%); }
+    }
+    
     .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, #00ff88 0%, #00b4d8 100%);
+      background: linear-gradient(90deg, var(--secondary-glow) 0%, var(--primary-glow) 50%, #00ffaa 100%);
+      border-radius: 3px;
       transition: width 0.3s ease-out;
+      position: relative;
+      box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
     }
-
+    
     .status-text {
-      margin-top: 20px;
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.8);
+      margin-top: 25px;
+      font-size: 15px;
+      color: var(--text-secondary);
       letter-spacing: 0.5px;
+      font-weight: 400;
+      position: relative;
+      display: inline-block;
+      padding: 8px 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
-
-    .loading-text {
-        font-size: 26px;
-        margin-bottom: 25px;
-      letter-spacing: 1px;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    
+    /* Decorative elements */
+    .tech-decoration {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: -1;
     }
-
-    .loading-text::after {
-      content: '...';
-      animation: dots 1.5s infinite;
+    
+    .tech-circle {
+      position: absolute;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 217, 255, 0.3);
+      opacity: 0.5;
     }
-
-    @keyframes dots {
-      0%, 20% { content: '.'; }
-      40% { content: '..'; }
-      60% { content: '...'; }
-      80%, 100% { content: ''; }
+    
+    .tech-circle:nth-child(1) {
+      width: 200px;
+      height: 200px;
+      top: -100px;
+      right: -100px;
+    }
+    
+    .tech-circle:nth-child(2) {
+      width: 150px;
+      height: 150px;
+      bottom: -75px;
+      left: -75px;
+    }
+    
+    .tech-line {
+      position: absolute;
+      background: linear-gradient(90deg, transparent, rgba(0, 217, 255, 0.2), transparent);
+      height: 1px;
+    }
+    
+    .tech-line:nth-child(3) {
+      width: 100%;
+      top: 30%;
+      left: 0;
+      transform: rotate(-5deg);
+    }
+    
+    .tech-line:nth-child(4) {
+      width: 80%;
+      bottom: 25%;
+      right: 0;
+      transform: rotate(5deg);
     }
   </style>
 </head>
 <body>
   <div class="loading-container">
+    <div class="tech-decoration">
+      <div class="tech-circle"></div>
+      <div class="tech-circle"></div>
+      <div class="tech-line"></div>
+      <div class="tech-line"></div>
+    </div>
+    
     <img src="./source/icon.png" class="logo" alt="Logo">
-    <div class="loading-text">加载中</div>
+
     <div class="loader">
       <div class="loader-inner"></div>
       <div class="loader-inner"></div>
       <div class="loader-inner"></div>
     </div>
+    
     <div class="progress-container">
       <div class="progress-bar" id="progress"></div>
     </div>
+    
     <div class="status-text" id="status">初始化核心服务</div>
   </div>
 
@@ -159,14 +363,22 @@
       }
     }
 
+    // Add subtle animation to the container
+    const loadingContainer = document.querySelector('.loading-container');
+    document.addEventListener('mousemove', (e) => {
+      const x = e.clientX / window.innerWidth - 0.5;
+      const y = e.clientY / window.innerHeight - 0.5;
+      
+      loadingContainer.style.transform = `
+        perspective(1000px) 
+        rotateX(${y * 2}deg) 
+        rotateY(${x * -2}deg)
+        translateZ(10px)
+      `;
+    });
+
     // 启动进度模拟
     setTimeout(updateProgress, 500)
-    
-    // 监听来自主进程的真实进度更新（需要Electron IPC支持）
-    // window.ipcRenderer.on('progress-update', (event, data) => {
-    //   progressElem.style.width = `${data.progress}%`
-    //   statusElem.textContent = data.status
-    // })
   </script>
 </body>
 </html>

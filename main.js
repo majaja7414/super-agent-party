@@ -21,7 +21,7 @@ function createLoadingWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
   loadingWindow = new BrowserWindow({
     width: 600,
-    height: 450,
+    height: 500,
     frame: false,
     transparent: true,
     alwaysOnTop: true,
