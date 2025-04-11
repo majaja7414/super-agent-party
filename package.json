@@ -14,16 +14,23 @@
     "@electron/remote": "^2.1.2",
     "@element-plus/icons-vue": "^2.3.1",
     "cli-progress": "^3.12.0",
+    "electron-updater": "^6.6.2",
     "element-plus": "^2.9.6",
     "markdown-it": "^14.1.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
-    "electron": "^35.0.0",
     "cross-env": "^7.0.3",
+    "electron": "^35.0.0",
     "electron-builder": "^24.9.1"
   },
-  "keywords": ["AI", "Multi-Agent", "Productivity", "Automation", "MCP"],
+  "keywords": [
+    "AI",
+    "Multi-Agent",
+    "Productivity",
+    "Automation",
+    "MCP"
+  ],
   "author": "heshengtao",
   "license": "AGPL-3.0",
   "build": {
@@ -50,12 +57,16 @@
       {
         "from": "dist/server/",
         "to": "server",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
       "icon": "static/source/icon.png",
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "artifactName": "${productName}-Setup-${version}.${ext}",
       "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao",
