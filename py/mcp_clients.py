@@ -14,24 +14,10 @@ import shutil
 import nest_asyncio
 from dotenv import load_dotenv
 from contextlib import AsyncExitStack
+
 load_dotenv() 
 nest_asyncio.apply()
-SETTINGS_FILE = 'config/settings.json'
-SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
-def load_settings():
-    try:
-        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # 创建config文件夹
-        os.makedirs('config', exist_ok=True)
-        # 加载settings_template.json文件
-        with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
-            default_settings = json.load(f)
-        # 创建settings.json文件，并写入默认设置
-        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(default_settings, f, ensure_ascii=False, indent=2)
-        return default_settings
+
 
 def get_command_path(command_name, default_command='uv'):
     """Find the full path of a command on the system PATH."""

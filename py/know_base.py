@@ -12,25 +12,11 @@ if __name__ == "__main__":
 else:
     from py.load_files import get_files_json
 from langchain_core.documents import Document
-SETTINGS_FILE = 'config/settings.json'
-SETTINGS_TEMPLATE_FILE = 'config/settings_template.json'
+from py.get_setting import load_settings
+
 KB_DIR = 'kb'
 os.makedirs(KB_DIR, exist_ok=True)
 
-def load_settings():
-    try:
-        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # 创建config文件夹
-        os.makedirs('config', exist_ok=True)
-        # 加载settings_template.json文件
-        with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
-            default_settings = json.load(f)
-        # 创建settings.json文件，并写入默认设置
-        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(default_settings, f, ensure_ascii=False, indent=2)
-        return default_settings
 
 def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
     """为每个文件单独分块并添加元数据"""
