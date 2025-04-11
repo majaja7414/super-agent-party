@@ -26,6 +26,7 @@ function createLoadingWindow() {
     transparent: true,
     alwaysOnTop: true,
     resizable: false,
+    icon: 'static/source/icon.png',
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
