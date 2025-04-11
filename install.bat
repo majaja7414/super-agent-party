@@ -6,9 +6,6 @@ REM 激活虚拟环境并安装Python依赖
 CALL super\Scripts\activate.bat
 pip install -r requirements.txt
 
-REM 安装Playwright的Chromium浏览器
-playwright install chromium
-
 REM 初始化Node.js环境
 CALL npm install
 
