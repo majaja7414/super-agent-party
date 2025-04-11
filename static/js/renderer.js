@@ -349,9 +349,8 @@ main();`,
       deep: true,
       handler(newProviders) {
         const existingIds = new Set(newProviders.map(p => p.id));
-        
         // 自动清理无效的 selectedProvider
-        [this.settings, this.reasonerSettings].forEach(config => {
+        [this.settings, this.reasonerSettings,this.browserSettings].forEach(config => {
           if (config.selectedProvider && !existingIds.has(config.selectedProvider)) {
             config.selectedProvider = null;
             // 可选项：同时重置相关字段
@@ -359,6 +358,12 @@ main();`,
             config.base_url = '';
             config.api_key = '';
           }
+          if (!config.selectedProvider && newProviders.length > 0) {
+            config.selectedProvider = newProviders[0].id;
+          }
+        });
+        [this.settings, this.reasonerSettings, this.browserSettings].forEach(config => {
+          if (config.selectedProvider) this.syncProviderConfig(config);
         });
       }
     },
@@ -417,6 +422,35 @@ main();`,
     }
   },
   methods: {
+    syncProviderConfig(targetConfig) {
+      // 当有选中供应商时执行同步
+      if (targetConfig.selectedProvider) {
+        // 在供应商列表中查找匹配项
+        const provider = this.modelProviders.find(
+          p => p.id === targetConfig.selectedProvider && !p.disabled
+        );
+        if (provider) {
+          // 同步核心配置
+          const shouldUpdate = 
+            targetConfig.model !== provider.modelId ||
+            targetConfig.base_url !== provider.url ||
+            targetConfig.api_key !== provider.apiKey;
+          if (shouldUpdate) {
+            targetConfig.model = provider.modelId || '';
+            targetConfig.base_url = provider.url || '';
+            targetConfig.api_key = provider.apiKey || '';
+            console.log(`已同步 ${provider.vendor} 配置`);
+          }
+        } else {
+          // 清理无效的供应商选择
+          console.warn('找不到匹配的供应商，已重置配置');
+          targetConfig.selectedProvider = null;
+          targetConfig.model = '';
+          targetConfig.base_url = '';
+          targetConfig.api_key = '';
+        }
+      }
+    },
     updateMCPExample() {
       this.currentMCPExample = this.mcpExamples[this.newMCPType];
     },
