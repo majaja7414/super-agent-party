@@ -175,25 +175,17 @@ app.whenReady().then(async () => {
         contextIsolation: true,
         enableRemoteModule: false,
         webSecurity: false,
-        devTools: isDev,
+        devTools: isDev, // 开发模式下启用开发者工具，但是不默认展开
         partition: 'persist:main-session',
         cache: true
       }
     })
-
-    if (isDev) {
-      app.commandLine.appendSwitch('disable-http-cache')
-    }
 
     remoteMain.enable(mainWindow.webContents)
     
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)
     mainWindow.show()
-
-    if (isDev) {
-      mainWindow.webContents.openDevTools()
-    }
 
     // 窗口控制事件
     ipcMain.handle('window-action', (_, action) => {
@@ -283,3 +275,7 @@ process.on('uncaughtException', (err) => {
   dialog.showErrorBox('致命错误', `未捕获异常: ${err.message}`)
   app.quit()
 })
+
+if (isDev) {
+  app.commandLine.appendSwitch('disable-http-cache')
+}
