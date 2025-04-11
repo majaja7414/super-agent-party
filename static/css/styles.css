@@ -1561,11 +1561,6 @@ border: 1px solid var(--border-color) !important;
 }
 
 /* MCP服务器磁贴样式 */
-.mcp-container .provider-card {
-  position: relative;
-  min-height: 180px;
-  transition: transform 0.2s ease;
-}
 
 .mcp-container .kb-header {
   display: flex;
@@ -1717,17 +1712,17 @@ border: 1px solid var(--border-color) !important;
 .link-item .el-icon {
   font-size: 24px;
   margin-right: 1rem;
-  color: var(--el-color-primary);
+  color: var(--el-color-primary-light-3);
 }
 
 .social-link {
-  color: var(--el-color-success);
+  color: var(--el-color-primary-light-3);
   margin-left: 0.5rem;
   text-decoration: none;
 }
 
 .qq-group {
-  color: var(--el-color-primary);
+  color: var(--el-color-primary-light-3);
   font-weight: 500;
   margin-left: 0.5rem;
 }

@@ -94,6 +94,7 @@ const MIME_WHITELIST = [
 const app = Vue.createApp({
   data() {
     return {
+      isExpanded: true,
       isElectron: isElectron,
       isCollapse: true,
       activeMenu: 'home',
@@ -376,6 +377,9 @@ main();`,
     }
   },
   computed: {
+    iconClass() {
+      return this.isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+    },
     hasEnabledKnowledgeBases() {
       return this.knowledgeBases.some(kb => kb.enabled)
     },
@@ -442,6 +446,10 @@ main();`,
     handleSelect(key) {
       this.activeMenu = key;
     }, 
+    toggleIcon() {
+      this.isExpanded = !this.isExpanded; // 点击时切换状态
+      this.maximizeWindow();
+    },
     //  使用占位符处理 LaTeX 公式
     formatMessage(content) {
       const parts = this.splitCodeAndText(content);

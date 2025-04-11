@@ -11,6 +11,7 @@
   <script src="js/clipboard.min.js"></script>
   <!-- 引入Element Plus样式 -->
   <link rel="stylesheet" href="node_modules/element-plus/dist/index.css">
+  <link rel="stylesheet" href="fontawesome/css/all.min.css">
   <link rel="icon" href="source/icon.png" type="image/png">
   <!-- Include markdown-it and highlight.js scripts -->
   <script src="js/markdown-it.min.js"></script>
@@ -49,13 +50,19 @@
     <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
         <el-button @click="minimizeWindow" class="top-bar-btn" text>
-          <el-icon><Minus /></el-icon>
+          <el-icon>
+            <i class="fa-solid fa-minus"></i>
+          </el-icon>
         </el-button>
-        <el-button @click="maximizeWindow" class="top-bar-btn" text>
-          <el-icon><full-screen /></el-icon>
+        <el-button @click="toggleIcon" class="top-bar-btn" text>
+          <el-icon>
+            <i :class="iconClass"></i>
+          </el-icon>
         </el-button>
         <el-button @click="closeWindow" class="top-bar-btn" text>
-          <el-icon><Close /></el-icon>
+          <el-icon>
+            <i class="fa-solid fa-xmark"></i>
+          </el-icon>
         </el-button>
       </div>
     </el-header>
@@ -70,47 +77,69 @@
           class="el-menu-vertical"
           @select="handleSelect">
           <el-menu-item index="home">
-            <el-icon><chat-dot-square /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-comment"></i>
+            </el-icon>
             <template #title>{{ t('chat') }}</template>
           </el-menu-item>
           <el-menu-item index="settings">
-            <el-icon><cpu /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-microchip"></i>
+            </el-icon>
             <template #title>{{ t('mainModel') }}</template>
           </el-menu-item>
           <el-menu-item index="tools">
-            <el-icon><tools /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-screwdriver-wrench"></i>
+            </el-icon>
             <template #title>{{ t('tools') }}</template>
           </el-menu-item>
           <el-menu-item index="reasoner">
-            <el-icon><magic-stick /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-brain"></i>
+            </el-icon>
             <template #title>{{ t('reasoner') }}</template>
           </el-menu-item>
           <el-menu-item index="websearch">
-            <el-icon><search /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </el-icon>
             <template #title>{{ t('webSearch') }}</template>
           </el-menu-item>
           <el-menu-item index="document">
-            <el-icon><Notebook /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-book"></i>
+            </el-icon>
             <template #title>{{ t('knowledgeBase') }}</template>
           </el-menu-item>
           <el-menu-item index="browserUse">
-            <el-icon><chrome-filled /></el-icon>
+            <el-icon>
+              <i class="fa-brands fa-chrome"></i>
+            </el-icon>
             <template #title>{{ t('browserUse') }}</template>
           </el-menu-item>
           <el-menu-item index="mcp">
-            <el-icon><Expand /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-server"></i>
+            </el-icon>
             <template #title>{{ t('mcpServers') }}</template>
           </el-menu-item>
           <el-menu-item index="api-box">
-            <el-icon><box /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-box"></i>
+            </el-icon>
               <template #title>{{ t('keyBox') }}</template>
           </el-menu-item>
           <el-menu-item index="api">
-            <el-icon><connection /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-link"></i>
+            </el-icon>
             <template #title>{{ t('api') }}</template>
           </el-menu-item>
           <el-menu-item index="system">
-            <el-icon><setting /></el-icon>
+            <el-icon>
+              <i class="fa-solid fa-gear"></i>
+            </el-icon>
             <template #title>{{ t('systemSettings') }}</template>
           </el-menu-item>
           <el-menu-item 
@@ -221,8 +250,8 @@
                 @click="clearMessages"
                 class="icon-btn clear-btn"
                 type="danger"
-                :icon="'Delete'"
                 circle>
+                <i class="fa-solid fa-trash"></i>
               </el-button>
             </el-tooltip>
 
@@ -230,9 +259,9 @@
               <el-button
                 @click="sendFiles"
                 class="icon-btn file-btn"
-                :icon="'Paperclip'"
                 :type="hasFiles ? 'primary' : 'default'"
                 circle>
+                <i class="fa-solid fa-paperclip"></i>
               </el-button>
             </el-tooltip>
 
@@ -240,9 +269,9 @@
               <el-button
                 @click="showKnowledgeDialog = true"
                 class="icon-btn knowledge-base-btn"
-                :icon="'Notebook'"
                 :type="hasEnabledKnowledgeBases ? 'primary' : 'default'"
                 circle>
+                <i class="fa-solid fa-book"></i>
               </el-button>
             </el-tooltip>
 
@@ -251,8 +280,8 @@
                 @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
                 class="icon-btn deep-think-btn"
                 :type="reasonerSettings.enabled ? 'primary' : 'default'"
-                :icon="'MagicStick'"
                 circle>
+                <i class="fa-solid fa-brain"></i>
               </el-button>
             </el-tooltip>
 
@@ -261,8 +290,8 @@
                 @click="toolsSettings.deepsearch.enabled = !toolsSettings.deepsearch.enabled; autoSaveSettings()"
                 class="icon-btn deep-search-btn"
                 :type="toolsSettings.deepsearch.enabled ? 'primary' : 'default'"
-                :icon="'Aim'"
                 circle>
+                <i class="fa-solid fa-flask"></i>
               </el-button>
             </el-tooltip>
 
@@ -271,8 +300,8 @@
                 @click="webSearchSettings.enabled = !webSearchSettings.enabled; autoSaveSettings()"
                 class="icon-btn web-search-btn"
                 :type="webSearchSettings.enabled ? 'primary' : 'default'"
-                :icon="'Search'"
                 circle>
+                <i class="fa-solid fa-magnifying-glass"></i>
               </el-button>
             </el-tooltip>
 
@@ -281,8 +310,8 @@
                 @click="showMCPServerDialog = true"
                 class="icon-btn mcp-btn"
                 :type="hasEnabledMCPServers ? 'primary' : 'default'"
-                :icon="'Expand'"
                 circle>
+                <i class="fa-solid fa-server"></i>
               </el-button>
             </el-tooltip>
 
@@ -291,8 +320,8 @@
                 @click="browserSettings.enabled = !browserSettings.enabled; autoSaveSettings()"
                 class="icon-btn web-search-btn"
                 :type="browserSettings.enabled ? 'primary' : 'default'"
-                :icon="'chrome-filled'"
                 circle>
+                <i class="fa-brands fa-chrome"></i>
               </el-button>
             </el-tooltip>
 
@@ -301,8 +330,8 @@
                 @click="isSending ? stopGenerate() : sendMessage()"
                 :type="isSending ? 'danger' : 'primary'"
                 class="icon-btn send-btn"
-                :icon="isSending ? 'SwitchButton' : 'Promotion'"
                 circle>
+                <i :class="isSending ? 'fa-solid fa-stop' : 'fa-solid fa-paper-plane'" aria-hidden="true"></i>
               </el-button>
             </el-tooltip>
           </div>
@@ -316,7 +345,9 @@
                       class="delete-icon"
                       :icon="'delete'"
                       circle
-                    />
+                    >
+                    <i class="fa-solid fa-trash"></i>
+                    </el-button>
                   </div>
                 </div>
                 <el-input
@@ -340,18 +371,20 @@
                   <div class="card-actions">
                     <el-button
                       @click="fetchModelsForProvider(provider)"
-                      :icon="'Search'"
                       type="primary"
                       circle
                       size="small"
-                    ></el-button>
+                    >
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-button>
                     <el-button
                       @click="removeProvider(index)"
                       type="danger"
-                      :icon="'Delete'"
                       circle
                       size="small"
-                    ></el-button>
+                    >
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
                   </div>
                 </div>
 
@@ -405,7 +438,7 @@
               </div>
               <!-- 添加新磁贴 -->
               <div class="provider-card add-tile" @click="showAddDialog = true">
-                <el-icon :size="40" color="#909399"><Plus /></el-icon>
+                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
                 <div style="color: #606266; margin-top: 10px;">{{ t('addNewProvider') }}</div>
               </div>
             </div>
@@ -488,10 +521,11 @@
                     <el-button
                       @click="removeMCPServer(name)"
                       type="danger"
-                      :icon="'Delete'"
                       circle
                       size="small"
-                    ></el-button>
+                    >
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
                   </div>
                 </div>
                 <div class="kb-content">
@@ -503,7 +537,7 @@
         
               <!-- 添加新磁贴 -->
               <div class="provider-card add-tile" @click="showAddMCPDialog = true;updateMCPExample()">
-                <el-icon :size="40" color="#909399"><Plus /></el-icon>
+                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
                 <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
               </div>
             </div>
@@ -593,7 +627,9 @@
 
             <div class="social-links">
               <div class="link-item">
-                <el-icon><Link /></el-icon>
+                <el-icon class="logo-icon">
+                  <i class="fa-brands fa-github"></i>
+                </el-icon>
                 <span>GitHub：</span>
                 <a href="https://github.com/heshengtao/super-agent-party" 
                   target="_blank" 
@@ -603,7 +639,9 @@
               </div>
               
               <div class="link-item">
-                <el-icon><VideoPlay /></el-icon>
+                <el-icon>
+                  <i class="fa-brands fa-bilibili"></i>
+                </el-icon>
                 <span>Bilibili：</span>
                 <a href="https://space.bilibili.com/26978344" 
                   target="_blank" 
@@ -613,7 +651,9 @@
               </div>
 
               <div class="link-item">
-                <el-icon><VideoPlay /></el-icon>
+                <el-icon>
+                  <i class="fa-brands fa-discord"></i>
+                </el-icon>
                 <span>discord：</span>
                 <a href="https://discord.com/invite/f2dsAKKr2V" 
                   target="_blank" 
@@ -623,7 +663,9 @@
               </div>
 
               <div class="link-item">
-                <el-icon><ChatLineSquare /></el-icon>
+                <el-icon>
+                  <i class="fa-brands fa-qq"></i>
+                </el-icon>
                 <span>QQ交流群：</span>
                 <span class="qq-group">931057213</span>
               </div>
@@ -648,7 +690,9 @@
               <div class="tool-header" @click="toggleSection('browserConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><chrome-filled /></el-icon>
+                    <el-icon>
+                      <i class="fa-brands fa-chrome"></i>
+                    </el-icon>
                     {{ t('browserConfiguration') }}
                   </span>
                 </div>
@@ -696,7 +740,9 @@
                       class="font-medium"
                       @click="switchToApiBox"
                     >
-                      <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
+                      <el-icon class="mr-1">
+                        <i class="fa-solid fa-key"></i>
+                      </el-icon>{{ t('keyBoxInterface') }}
                     </el-link>
                     {{ t('addProviderReturnSelect') }}
                     {{ t('browserConfigNotice') }}
@@ -709,7 +755,9 @@
               <div class="tool-header" @click="toggleSection('browserAdvanced')">
                 <div class="header-left">
                   <span>
-                    <el-icon><coffee-cup /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-mug-saucer"></i>
+                    </el-icon>
                     {{ t('advancedConfiguration') }}
                   </span>
                 </div>
@@ -758,7 +806,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><timer /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-clock"></i>
+                  </el-icon>
                   {{ t('currentTime') }}
                 </span>
                 <el-switch v-model="toolsSettings.time.enabled" @click.stop @change="autoSaveSettings"/>
@@ -767,7 +817,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><Aim /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-flask"></i>
+                  </el-icon>
                   {{ t('deepResearch') }}
                 </span>
                 <el-switch v-model="toolsSettings.deepsearch.enabled" @click.stop @change="autoSaveSettings"/>
@@ -776,7 +828,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><reading-lamp /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-brain"></i>
+                  </el-icon>
                   {{ t('fakeInference') }}
                 </span>
                 <el-switch v-model="toolsSettings.inference.enabled" @click.stop @change="autoSaveSettings"/>
@@ -785,7 +839,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><Edit /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                  </el-icon>
                   {{ t('latexRenderingEnhancement') }}
                 </span>
                 <el-switch v-model="toolsSettings.formula.enabled" @click.stop @change="autoSaveSettings"/>
@@ -794,7 +850,9 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('language')">
                 <span>
-                  <el-icon><comment /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-comments"></i>
+                  </el-icon>
                   {{ t('languageTone') }}
                 </span>
                 <el-switch v-model="toolsSettings.language.enabled" @click.stop @change="autoSaveSettings"/>
@@ -832,7 +890,9 @@
               <div class="tool-header" @click="toggleSection('webSearchConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     {{ t('webSearch') }}
                   </span>
                 </div>
@@ -877,7 +937,9 @@
               <div class="tool-header" @click="toggleSection('duckduckgoConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     DuckDuckGo
                   </span>
                 </div>
@@ -898,7 +960,9 @@
               <div class="tool-header" @click="toggleSection('searxngConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     SearXNG
                   </span>
                 </div>
@@ -927,7 +991,9 @@
               <div class="tool-header" @click="toggleSection('tavilyConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     Tavily
                   </span>
                 </div>
@@ -957,7 +1023,9 @@
               <div class="tool-header" @click="toggleSection('jinaConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     jina
                   </span>
                 </div>
@@ -978,7 +1046,9 @@
               <div class="tool-header" @click="toggleSection('Crawl4AiConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><search /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-magnifying-glass"></i>
+                    </el-icon>
                     Crawl4Ai
                   </span>
                 </div>
@@ -1012,7 +1082,9 @@
             <div class="tool-item">
               <div class="tool-header" @click="toggleSection('superapi')">
                   <span>
-                    <el-icon><key /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-key"></i>
+                    </el-icon>
                     {{ t('useSuperAPI') }}
                   </span>
               </div>
@@ -1027,9 +1099,10 @@
                     <template #append>
                       <el-button
                         @click="copyModel"
-                        :icon="'document-copy'"
                         class="copy-btn"
-                      />
+                      >
+                      <i class="fa-solid fa-copy"></i>
+                      </el-button>
                     </template>
                   </el-input>
                 </el-form-item>
@@ -1044,9 +1117,10 @@
                     <template #append>
                       <el-button
                         @click="copyEndpoint"
-                        :icon="'document-copy'"
                         class="copy-btn"
-                      />
+                      >
+                      <i class="fa-solid fa-copy"></i>
+                      </el-button>
                     </template>
                   </el-input>
                 </el-form-item>
@@ -1086,7 +1160,9 @@
               <div class="tool-header" @click="toggleSection('settingsBase')">
                 <div class="header-left">
                   <span>
-                    <el-icon><trophy-base /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-microchip"></i>
+                    </el-icon>
                     {{ t('basicConfiguration') }}
                   </span>
                 </div>
@@ -1129,7 +1205,9 @@
                         class="font-medium"
                         @click="switchToApiBox"
                       >
-                        <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
+                        <el-icon class="mr-1">
+                          <i class="fa-solid fa-key"></i>
+                        </el-icon>{{ t('keyBoxInterface') }}
                       </el-link>
                       {{ t('addProviderReturnSelect') }}
                       {{ t('mainmodelnotice') }}
@@ -1142,7 +1220,9 @@
               <div class="tool-header" @click="toggleSection('settingsAdvanced')">
                 <div class="header-left">
                   <span>
-                    <el-icon><coffee-cup /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-mug-saucer"></i>
+                    </el-icon>
                     {{ t('advancedConfiguration') }}
                   </span>
                 </div>
@@ -1214,7 +1294,9 @@
                 <div class="card-header">
                   <!-- 加载状态指示 -->
                   <template v-if="kb.processingStatus === 'processing'">
-                    <el-icon class="loading-spinner"><Loading /></el-icon>
+                    <el-icon class="loading-spinner">
+                      <i class="fa-solid fa-spinner"></i>
+                    </el-icon>
                   </template>
                   <template v-else>
                     <el-switch v-model="kb.enabled" @change="toggleKbEnabled(kb)"></el-switch>
@@ -1238,11 +1320,15 @@
                     <p class="kb-description">{{ kb.introduction || t('noDescription') }}</p>
                     <div class="kb-meta">
                       <div class="kb-meta-item">
-                        <el-icon class="kb-icon"><document /></el-icon>
+                        <el-icon class="kb-icon">
+                          <i class="fa-solid fa-file"></i>
+                        </el-icon>
                         <span>{{ t('model') }}: {{ kb.model || t('default') }}</span>
                       </div>
                       <div class="kb-meta-item">
-                        <el-icon class="kb-icon"><data-line /></el-icon>
+                        <el-icon class="kb-icon">
+                          <i class="fa-solid fa-database"></i>
+                        </el-icon>
                         <span>{{ t('segment') }}: {{ kb.chunk_size }} / {{ kb.chunk_overlap }}</span>
                       </div>
                     </div>
@@ -1254,7 +1340,9 @@
               </div>
               <!-- 添加新知识库磁贴 -->
               <div class="provider-card add-tile" @click="showAddKbDialog = true">
-                <el-icon :size="40" color="#909399"><Plus /></el-icon>
+                <el-icon :size="40" color="#909399">
+                  <i class="fa-solid fa-plus"></i>
+                </el-icon>
                 <div style="color: #606266; margin-top: 10px;">{{ t('addNewKnowledgeBase') }}</div>
               </div>
             </div>
@@ -1318,7 +1406,9 @@
                         class="font-medium"
                         @click="switchToApiBox"
                       >
-                        <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
+                        <el-icon class="mr-1">
+                          <i class="fa-solid fa-key"></i>
+                        </el-icon>{{ t('keyBoxInterface') }}
                       </el-link>
                       {{ t('addProviderReturnSelect') }}
                       {{ t('addemdNotice') }}
@@ -1329,7 +1419,9 @@
                   <el-collapse-item name="advanced">
                     <template #title>
                       <div class="collapse-title">
-                        <el-icon class="mr-2"><Setting /></el-icon>
+                        <el-icon class="mr-2">
+                          <i class="fa-solid fa-mug-saucer"></i>
+                        </el-icon>
                         <span class="font-medium">{{ t('advancedSettings') }}</span>
                       </div>
                     </template>
@@ -1393,7 +1485,9 @@
                   @drop.prevent="handleKbDrop"
                   @click="browseKbFiles"
                 >
-                  <el-icon :size="50"><upload /></el-icon>
+                  <el-icon :size="50">
+                    <i class="fa-solid fa-upload"></i>
+                  </el-icon>
                   <p>{{ t('clickOrDrop') }}</p>
                 </div>
 
@@ -1408,9 +1502,10 @@
                     <el-button
                       @click.stop="removeKbFile(index)"
                       class="delete-icon"
-                      :icon="'delete'"
                       circle
                     />
+                    <i class="fa-solid fa-trash"></i>
+                    </el-button>
                   </div>
                 </div>
               </el-form-item>
@@ -1432,7 +1527,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><comment /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-language"></i>
+                  </el-icon>
                   {{ t('systemLanguage') }}
                 </span>
               </div>
@@ -1456,7 +1553,9 @@
             <div class="tool-item">
               <div class="tool-header">
                 <span>
-                  <el-icon><brush /></el-icon>
+                  <el-icon>
+                    <i class="fa-solid fa-brush"></i>
+                  </el-icon>
                   {{ t('themeSettings') }}
                 </span>
               </div>
@@ -1481,10 +1580,10 @@
                 class="browser-mode-btn"
                 type="primary"
                 @click="launchBrowserMode"
-                :icon="Globe"
                 :color="browserBtnColor"
                 round
                 size="large">
+                <i class="fa-solid fa-globe"></i>
                 <transition name="bounce">
                   <span v-if="isBrowserOpening" class="ml-2">
                     <el-icon class="is-loading"><loading /></el-icon>
@@ -1505,7 +1604,9 @@
               <div class="tool-header" @click="toggleSection('reasonerConfig')">
                 <div class="header-left">
                   <span>
-                    <el-icon><reading-lamp /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-brain"></i>
+                    </el-icon>
                     {{ t('reasonerConfig') }}
                   </span>
                 </div>
@@ -1549,7 +1650,9 @@
                     class="font-medium"
                     @click="switchToApiBox"
                   >
-                    <el-icon class="mr-1"><key /></el-icon>{{ t('keyBoxInterface') }}
+                    <el-icon class="mr-1">
+                      <i class="fa-solid fa-key"></i>
+                    </el-icon>{{ t('keyBoxInterface') }}
                   </el-link>
                   {{ t('addProviderReturnSelect') }}
                   {{ t('addresonerNotice') }}
@@ -1561,7 +1664,9 @@
               <div class="tool-header" @click="toggleSection('reasonerAdvanced')">
                 <div class="header-left">
                   <span>
-                    <el-icon><coffee-cup /></el-icon>
+                    <el-icon>
+                      <i class="fa-solid fa-mug-saucer"></i>
+                    </el-icon>
                     {{ t('advancedConfiguration') }}
                   </span>
                 </div>
