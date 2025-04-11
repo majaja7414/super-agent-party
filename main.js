@@ -150,7 +150,7 @@ app.whenReady().then(async () => {
       })(),
       (async () => {
         remoteMain.initialize()
-        await new Promise(resolve => setTimeout(resolve, 500)) // 模拟预加载
+        await new Promise(resolve => setTimeout(resolve, 600)) // 模拟预加载
       })()
     ])
 
