@@ -211,15 +211,6 @@ const app = Vue.createApp({
       themeValues: ['light', 'dark'],
       browserBtnColor: '#409EFF',
       isBrowserOpening: false,
-      browserSettings: {
-        enabled: false,
-        usePlaywright: true,
-        chrome_path: '',
-        model: 'gpt-4o-mini',
-        api_key: '',
-        base_url: '',
-        selectedProvider: null,
-      },
       expandedSections: {
         settingsBase: true,
         reasonerConfig: true,
@@ -234,8 +225,6 @@ const app = Vue.createApp({
         settingsAdvanced: false,
         reasonerAdvanced: false,
         knowledgeAdvanced: false,
-        browserConfig: true,
-        browserAdvanced: false,
       },
       abortController: null, // 用于中断请求的控制器
       isSending: false, // 是否正在发送
@@ -350,7 +339,7 @@ main();`,
       handler(newProviders) {
         const existingIds = new Set(newProviders.map(p => p.id));
         // 自动清理无效的 selectedProvider
-        [this.settings, this.reasonerSettings,this.browserSettings].forEach(config => {
+        [this.settings, this.reasonerSettings].forEach(config => {
           if (config.selectedProvider && !existingIds.has(config.selectedProvider)) {
             config.selectedProvider = null;
             // 可选项：同时重置相关字段
@@ -362,7 +351,7 @@ main();`,
             config.selectedProvider = newProviders[0].id;
           }
         });
-        [this.settings, this.reasonerSettings, this.browserSettings].forEach(config => {
+        [this.settings, this.reasonerSettings].forEach(config => {
           if (config.selectedProvider) this.syncProviderConfig(config);
         });
       }
@@ -671,7 +660,6 @@ main();`,
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
-          this.browserSettings = data.data.browser || {};
           this.mcpServers = data.data.mcpServers || {};
         } else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -947,7 +935,6 @@ main();`,
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
-        browser: this.browserSettings,
         mcpServers: this.mcpServers,
       }
       this.ws.send(JSON.stringify({
@@ -1594,20 +1581,6 @@ main();`,
           this.browserBtnColor = '#409EFF';
         }, 2000);
       }, 500);
-    },
-    selectBrowserProvider(providerId) {
-      const provider = this.modelProviders.find(p => p.id === providerId);
-      if (provider) {
-        this.browserSettings.model = provider.modelId;
-        this.browserSettings.base_url = provider.url;
-        this.browserSettings.api_key = provider.apiKey;
-        this.autoSaveSettings();
-      }
-    },
-    handleBrowserProviderVisibleChange(visible) {
-      if (!visible) {
-        this.selectBrowserProvider(this.browserSettings.selectedProvider);
-      }
     },
     // 在methods中添加
     async addMCPServer() {
