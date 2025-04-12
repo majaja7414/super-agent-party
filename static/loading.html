@@ -331,35 +331,27 @@
     const progressElem = document.getElementById('progress')
     const statusElem = document.getElementById('status')
     const steps = [
-      { text: '正在加载资源文件...', duration: 1500 },
-      { text: '初始化AI引擎...', duration: 2000 },
-      { text: '建立安全连接...', duration: 1800 },
-      { text: '准备用户界面...', duration: 1200 }
+      { text: '初始化核心服务...', duration: 600 },
+      { text: '验证安全证书...', duration: 600 },
+      { text: '加载用户配置...', duration: 800 }
     ]
-
     let currentStep = 0
     let progress = 0
-
     function updateProgress() {
       if (currentStep < steps.length) {
         const step = steps[currentStep]
         statusElem.textContent = step.text
         
         const interval = setInterval(() => {
-          progress += Math.random() * 2
+          progress += Math.random() * 2.5 // 加快进度增长速度
           if (progress >= 100 * (currentStep + 1) / steps.length) {
             clearInterval(interval)
             currentStep++
-            if (currentStep < steps.length) {
-              setTimeout(updateProgress, 100)
-            }
+            if (currentStep < steps.length) setTimeout(updateProgress, 15) // 缩短步骤间隔
           }
           progressElem.style.width = `${Math.min(progress, 100)}%`
-        }, 50)
-
-        setTimeout(() => {
-          clearInterval(interval)
-        }, step.duration)
+        }, 15) // 更密集的更新间隔
+        setTimeout(() => clearInterval(interval), step.duration)
       }
     }
 
@@ -378,7 +370,7 @@
     });
 
     // 启动进度模拟
-    setTimeout(updateProgress, 500)
+    setTimeout(updateProgress, 200)
   </script>
 </body>
 </html>

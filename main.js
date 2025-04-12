@@ -148,10 +148,6 @@ app.whenReady().then(async () => {
         startBackend()
         await waitForBackend()
       })(),
-      (async () => {
-        remoteMain.initialize()
-        await new Promise(resolve => setTimeout(resolve, 600)) // 模拟预加载
-      })()
     ])
 
     // 关闭加载窗口
