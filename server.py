@@ -11,51 +11,72 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import AsyncOpenAI, APIStatusError
 from pydantic import BaseModel
 from fastapi import status
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
 import shutil
 from typing import List, Dict
-from tzlocal import get_localzone
 from py.load_files import get_files_content
 from py.web_search import (
-    DDGsearch_async, 
-    searxng_async, 
-    Tavily_search_async,
-    jina_crawler_async,
-    Crawl4Ai_search_async, 
     duckduckgo_tool, 
     searxng_tool, 
     tavily_tool, 
     jina_crawler_tool, 
     Crawl4Ai_tool
 )
-from py.know_base import process_knowledge_base, query_knowledge_base, kb_tool
+from py.know_base import process_knowledge_base, kb_tool
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path
-
+from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
 PORT = 3456
-local_timezone = get_localzone()
-logger = logging.getLogger(__name__)
-app = FastAPI()
-
-settings = load_settings()
-if settings:
-    client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
-    reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
-else:
-    client = AsyncOpenAI()
-    reasoner_client = AsyncOpenAI()
+local_timezone = None
+logger = None
+settings = None
+client = None
+reasoner_client = None
 mcp_client_list = {}
-if settings:
-    for server_name,server_config in settings['mcpServers'].items():
-        mcp_client_list[server_name] = McpClient()
-        async def initialize_mcp_client():
+_TOOL_HOOKS = {}
+
+@asynccontextmanager
+async def lifespan(app: FastAPI): 
+    global settings, client, reasoner_client, mcp_client_list,local_timezone,logger,_TOOL_HOOKS
+    from tzlocal import get_localzone
+    from py.web_search import (
+        DDGsearch_async, 
+        searxng_async, 
+        Tavily_search_async,
+        jina_crawler_async,
+        Crawl4Ai_search_async, 
+    )
+    from py.know_base import query_knowledge_base
+    local_timezone = get_localzone()
+    logger = logging.getLogger(__name__)
+    settings = load_settings()
+    if settings:
+        client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
+        reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
+    else:
+        client = AsyncOpenAI()
+        reasoner_client = AsyncOpenAI()
+    if settings:
+        for server_name,server_config in settings['mcpServers'].items():
+            mcp_client_list[server_name] = McpClient()
             await mcp_client_list[server_name].initialize(server_name, server_config)
             mcp_client_list[server_name].disabled = server_config.get('disabled', False)
-        asyncio.run(initialize_mcp_client())
+
+    _TOOL_HOOKS = {
+        "DDGsearch_async": DDGsearch_async,
+        "searxng_async": searxng_async,
+        "Tavily_search_async": Tavily_search_async,
+        "query_knowledge_base": query_knowledge_base,
+        "jina_crawler_async": jina_crawler_async,
+        "Crawl4Ai_search_async": Crawl4Ai_search_async,
+    }
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -64,15 +85,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_TOOL_HOOKS = {
-    "DDGsearch_async": DDGsearch_async,
-    "searxng_async": searxng_async,
-    "Tavily_search_async": Tavily_search_async,
-    "query_knowledge_base": query_knowledge_base,
-    "jina_crawler_async": jina_crawler_async,
-    "Crawl4Ai_search_async": Crawl4Ai_search_async,
-}
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     if "multi_tool_use." in tool_name:
@@ -179,11 +191,11 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
                     }
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
                     if settings['webSearch']['engine'] == 'duckduckgo':
-                        results = await DDGsearch_async(user_prompt)
+                        results = await _TOOL_HOOKS["DDGsearch_async"](user_prompt)
                     elif settings['webSearch']['engine'] == 'searxng':
-                        results = await searxng_async(user_prompt)
+                        results = await _TOOL_HOOKS["searxng_async"](user_prompt)
                     elif settings['webSearch']['engine'] == 'tavily':
-                        results = await Tavily_search_async(user_prompt)
+                        results = await _TOOL_HOOKS["Tavily_search_async"](user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
                         # 获取时间戳和uuid
@@ -930,11 +942,11 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
-                    results = await DDGsearch_async(user_prompt)
+                    results = await _TOOL_HOOKS["DDGsearch_async"](user_prompt)
                 elif settings['webSearch']['engine'] == 'searxng':
-                    results = await searxng_async(user_prompt)
+                    results = await _TOOL_HOOKS["searxng_async"](user_prompt)
                 elif settings['webSearch']['engine'] == 'tavily':
-                    results = await Tavily_search_async(user_prompt)
+                    results = await _TOOL_HOOKS["Tavily_search_async"](user_prompt)
                 if results:
                     request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
