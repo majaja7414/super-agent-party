@@ -183,3 +183,4 @@ package-lock.json
 release/
 server.build/
 server.dist/
+tiktoken_cache/

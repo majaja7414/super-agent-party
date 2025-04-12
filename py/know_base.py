@@ -1,18 +1,30 @@
 import asyncio
-import json
+from tiktoken_ext import openai_public
+import tiktoken_ext
 import os
+if __name__ == "__main__":
+    from load_files import get_files_json
+    from get_setting import load_settings,base_path
+else:
+    from py.load_files import get_files_json
+    from py.get_setting import load_settings,base_path
+def get_tiktoken_cache_path():
+    cache_path = os.path.join(base_path, "tiktoken_cache")
+    os.makedirs(cache_path, exist_ok=True)
+    return cache_path
+
+# 在程序启动时设置环境变量
+os.environ["TIKTOKEN_CACHE_DIR"] = get_tiktoken_cache_path()
+
+import json
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
 from typing import List, Dict
-if __name__ == "__main__":
-    from load_files import get_files_json
-else:
-    from py.load_files import get_files_json
+
 from langchain_core.documents import Document
-from py.get_setting import load_settings
 
 KB_DIR = 'kb'
 os.makedirs(KB_DIR, exist_ok=True)
@@ -264,12 +276,11 @@ kb_tool = {
     },
 }
 
-
 async def main():
     """示例用法"""
     try:
         # 示例参数
-        kb_id = 1742632861261
+        kb_id = 1744547848224
         test_query = "什么是LLM party？"
         
         # 处理知识库并获取结果

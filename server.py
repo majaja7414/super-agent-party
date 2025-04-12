@@ -62,23 +62,22 @@ app.add_middleware(
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     global mcp_client_list,_TOOL_HOOKS
-    if _TOOL_HOOKS == {}:
-        from py.web_search import (
-            DDGsearch_async, 
-            searxng_async, 
-            Tavily_search_async,
-            jina_crawler_async,
-            Crawl4Ai_search_async, 
-        )
-        from py.know_base import query_knowledge_base
-        _TOOL_HOOKS = {
-            "DDGsearch_async": DDGsearch_async,
-            "searxng_async": searxng_async,
-            "Tavily_search_async": Tavily_search_async,
-            "query_knowledge_base": query_knowledge_base,
-            "jina_crawler_async": jina_crawler_async,
-            "Crawl4Ai_search_async": Crawl4Ai_search_async,
-        }
+    from py.web_search import (
+        DDGsearch_async, 
+        searxng_async, 
+        Tavily_search_async,
+        jina_crawler_async,
+        Crawl4Ai_search_async, 
+    )
+    from py.know_base import query_knowledge_base
+    _TOOL_HOOKS = {
+        "DDGsearch_async": DDGsearch_async,
+        "searxng_async": searxng_async,
+        "Tavily_search_async": Tavily_search_async,
+        "query_knowledge_base": query_knowledge_base,
+        "jina_crawler_async": jina_crawler_async,
+        "Crawl4Ai_search_async": Crawl4Ai_search_async,
+    }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
     if tool_name not in _TOOL_HOOKS:
@@ -87,12 +86,13 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
                 result = await mcp_client.call_tool(tool_name, tool_params)
                 return str(result.model_dump())
         return None
-    tool_call = globals().get(tool_name)
+    tool_call = _TOOL_HOOKS[tool_name]
     try:
         ret_out = await tool_call(**tool_params)
         return ret_out
-    except:
-        return f"调用工具{tool_name}失败"
+    except Exception as e:
+        logger.error(f"Error calling tool {tool_name}: {e}")
+        return f"Error calling tool {tool_name}: {e}"
 
 
 class ChatRequest(BaseModel):
