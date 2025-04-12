@@ -16,15 +16,6 @@ import uuid
 import time
 import shutil
 from typing import List, Dict
-from py.load_files import get_files_content
-from py.web_search import (
-    duckduckgo_tool, 
-    searxng_tool, 
-    tavily_tool, 
-    jina_crawler_tool, 
-    Crawl4Ai_tool
-)
-from py.know_base import process_knowledge_base, kb_tool
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
@@ -41,16 +32,8 @@ _TOOL_HOOKS = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
-    global settings, client, reasoner_client, mcp_client_list,local_timezone,logger,_TOOL_HOOKS
+    global settings, client, reasoner_client, mcp_client_list,local_timezone,logger
     from tzlocal import get_localzone
-    from py.web_search import (
-        DDGsearch_async, 
-        searxng_async, 
-        Tavily_search_async,
-        jina_crawler_async,
-        Crawl4Ai_search_async, 
-    )
-    from py.know_base import query_knowledge_base
     local_timezone = get_localzone()
     logger = logging.getLogger(__name__)
     settings = load_settings()
@@ -65,15 +48,6 @@ async def lifespan(app: FastAPI):
             mcp_client_list[server_name] = McpClient()
             await mcp_client_list[server_name].initialize(server_name, server_config)
             mcp_client_list[server_name].disabled = server_config.get('disabled', False)
-
-    _TOOL_HOOKS = {
-        "DDGsearch_async": DDGsearch_async,
-        "searxng_async": searxng_async,
-        "Tavily_search_async": Tavily_search_async,
-        "query_knowledge_base": query_knowledge_base,
-        "jina_crawler_async": jina_crawler_async,
-        "Crawl4Ai_search_async": Crawl4Ai_search_async,
-    }
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -87,6 +61,24 @@ app.add_middleware(
 )
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
+    global mcp_client_list,_TOOL_HOOKS
+    if _TOOL_HOOKS == {}:
+        from py.web_search import (
+            DDGsearch_async, 
+            searxng_async, 
+            Tavily_search_async,
+            jina_crawler_async,
+            Crawl4Ai_search_async, 
+        )
+        from py.know_base import query_knowledge_base
+        _TOOL_HOOKS = {
+            "DDGsearch_async": DDGsearch_async,
+            "searxng_async": searxng_async,
+            "Tavily_search_async": Tavily_search_async,
+            "query_knowledge_base": query_knowledge_base,
+            "jina_crawler_async": jina_crawler_async,
+            "Crawl4Ai_search_async": Crawl4Ai_search_async,
+        }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
     if tool_name not in _TOOL_HOOKS:
@@ -130,6 +122,18 @@ def tools_change_messages(request: ChatRequest, settings: dict):
     return request
 
 async def generate_stream_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
+    from py.load_files import get_files_content
+    from py.web_search import (
+        DDGsearch_async, 
+        searxng_async, 
+        Tavily_search_async,
+        duckduckgo_tool, 
+        searxng_tool, 
+        tavily_tool, 
+        jina_crawler_tool, 
+        Crawl4Ai_tool
+    )
+    from py.know_base import kb_tool
     try:
         tools = request.tools or []
         print(tools)
@@ -191,11 +195,11 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
                     }
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
                     if settings['webSearch']['engine'] == 'duckduckgo':
-                        results = await _TOOL_HOOKS["DDGsearch_async"](user_prompt)
+                        results = await DDGsearch_async(user_prompt)
                     elif settings['webSearch']['engine'] == 'searxng':
-                        results = await _TOOL_HOOKS["searxng_async"](user_prompt)
+                        results = await searxng_async(user_prompt)
                     elif settings['webSearch']['engine'] == 'tavily':
-                        results = await _TOOL_HOOKS["Tavily_search_async"](user_prompt)
+                        results = await Tavily_search_async(user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
                         # 获取时间戳和uuid
@@ -894,6 +898,18 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
         )
 
 async def generate_complete_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
+    from py.load_files import get_files_content
+    from py.web_search import (
+        DDGsearch_async, 
+        searxng_async, 
+        Tavily_search_async,
+        duckduckgo_tool, 
+        searxng_tool, 
+        tavily_tool, 
+        jina_crawler_tool, 
+        Crawl4Ai_tool
+    )
+    from py.know_base import kb_tool
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
@@ -942,11 +958,11 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
-                    results = await _TOOL_HOOKS["DDGsearch_async"](user_prompt)
+                    results = await DDGsearch_async(user_prompt)
                 elif settings['webSearch']['engine'] == 'searxng':
-                    results = await _TOOL_HOOKS["searxng_async"](user_prompt)
+                    results = await searxng_async(user_prompt)
                 elif settings['webSearch']['engine'] == 'tavily':
-                    results = await _TOOL_HOOKS["Tavily_search_async"](user_prompt)
+                    results = await Tavily_search_async(user_prompt)
                 if results:
                     request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
@@ -1590,6 +1606,7 @@ async def get_kb_status(kb_id: int):
 async def process_kb(kb_id: int):
     kb_status[kb_id] = "processing"
     try:
+        from py.know_base import process_knowledge_base
         await process_knowledge_base(kb_id)
         kb_status[kb_id] = "completed"
     except Exception as e:
