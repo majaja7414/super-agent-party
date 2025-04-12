@@ -343,14 +343,14 @@
         statusElem.textContent = step.text
         
         const interval = setInterval(() => {
-          progress += Math.random() * 2.5 // 加快进度增长速度
+          progress += Math.random() * 2 // 加快进度增长速度
           if (progress >= 100 * (currentStep + 1) / steps.length) {
             clearInterval(interval)
             currentStep++
-            if (currentStep < steps.length) setTimeout(updateProgress, 15) // 缩短步骤间隔
+            if (currentStep < steps.length) setTimeout(updateProgress, 2) // 缩短步骤间隔
           }
           progressElem.style.width = `${Math.min(progress, 100)}%`
-        }, 15) // 更密集的更新间隔
+        }, 17) // 更密集的更新间隔
         setTimeout(() => clearInterval(interval), step.duration)
       }
     }
