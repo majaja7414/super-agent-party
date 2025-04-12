@@ -438,6 +438,7 @@ main();`,
           targetConfig.base_url = '';
           targetConfig.api_key = '';
         }
+        this.autoSaveSettings();
       }
     },
     updateMCPExample() {
