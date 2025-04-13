@@ -46,8 +46,15 @@ async def lifespan(app: FastAPI):
     if settings:
         for server_name,server_config in settings['mcpServers'].items():
             mcp_client_list[server_name] = McpClient()
-            await mcp_client_list[server_name].initialize(server_name, server_config)
-            mcp_client_list[server_name].disabled = server_config.get('disabled', False)
+            # 初始化mcp客户端，限制10秒内，否则跳过
+            try:
+                await asyncio.wait_for(mcp_client_list[server_name].initialize(server_name, server_config), timeout=5)
+                mcp_client_list[server_name].disabled = server_config.get('disabled', False)
+            except asyncio.TimeoutError:
+                logger.error(f"Failed to initialize MCP client for {server_name} in 5 seconds")
+                del mcp_client_list[server_name]
+                del settings['mcpServers'][server_name]
+                save_settings(settings)
     yield
 
 app = FastAPI(lifespan=lifespan)
