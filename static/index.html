@@ -358,7 +358,16 @@
               <!-- 已有智能体 -->
               <div class="provider-card agent-card" v-for="agent in agents" :key="agent.id">
                 <div class="card-header">
-                  <el-switch v-model="agent.enabled" @change="autoSaveSettings"></el-switch>
+                  <!-- 带复制功能的ID展示 -->
+                  <el-tag 
+                    type="info" 
+                    size="mini" 
+                    class="agent-id clickable"
+                    @click="copyAgentId(agent.id)"
+                  >
+                    {{ agent.id }}
+                    <i class="fa-regular fa-copy"></i>
+                  </el-tag>
                   <div class="card-actions">
                     <!-- 更新删除按钮样式 -->
                     <el-button @click="removeAgent(agent.id)" type="danger" circle size="small">
@@ -370,16 +379,6 @@
                 <div class="agent-content">
                   <div class="agent-header">
                     <span class="agent-name">{{ agent.name }}</span>
-                    <!-- 带复制功能的ID展示 -->
-                    <el-tag 
-                      type="info" 
-                      size="mini" 
-                      class="agent-id clickable"
-                      @click="copyAgentId(agent.id)"
-                    >
-                      {{ agent.id }}
-                      <i class="fa-regular fa-copy"></i>
-                    </el-tag>
                   </div>
                   <p class="agent-prompt">{{ agent.system_prompt }}</p>
                 </div>

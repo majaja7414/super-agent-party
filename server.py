@@ -1682,7 +1682,6 @@ async def websocket_endpoint(websocket: WebSocket):
                     "name": data['data']['name'],
                     "system_prompt": data['data']['system_prompt'],
                     "config_path": config_path,
-                    "enabled": True
                 }
                 save_settings(current_settings)
                 
