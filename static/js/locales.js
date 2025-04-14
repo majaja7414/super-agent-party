@@ -7,7 +7,7 @@ const translations = {
       'reasoner': '推理',
       'webSearch': '联网',
       'knowledgeBase': '知识库',
-      'keyBox': '钥匙箱',
+      'keyBox': '模型服务',
       'api': 'API',
       'systemSettings': '系统设置',
       'uploadFile': '上传文件',
@@ -68,7 +68,7 @@ const translations = {
       'basicConfiguration': '基础配置',
       'selectProvider': '选择供应商',
       'firstTimeUse': '首次使用，你可以在',
-      'keyBoxInterface': '钥匙箱界面',
+      'keyBoxInterface': '模型服务界面',
       'addProviderReturnSelect': '添加新的供应商。',
       'advancedConfiguration': '高级配置',
       'temperature': '温度',
@@ -197,6 +197,7 @@ const translations = {
       'nomcpServers': '没有MCP服务器',
       'goTomcpServers': '去MCP服务器页面',
       'callingMethod': '调用方法',
+      'modelService': '模型服务',
     },
     'en-US': {
       'chat': 'Chat',
@@ -205,7 +206,7 @@ const translations = {
       'reasoner': 'Reasoner',
       'webSearch': 'Web Search',
       'knowledgeBase': 'Knowledge Base',
-      'keyBox': 'Key Box',
+      'keyBox': 'Model Service',
       'api': 'API',
       'systemSettings': 'System Settings',
       'uploadFile': 'Upload File',
@@ -266,7 +267,7 @@ const translations = {
       'basicConfiguration': 'Basic Configuration',
       'selectProvider': 'Select Provider',
       'firstTimeUse': 'For the first time, you can',
-      'keyBoxInterface': 'Key Box Interface',
+      'keyBoxInterface': 'Model Service Interface',
       'addProviderReturnSelect': 'Add a new provider. After adding the provider, return to this page and select the provider to continue.',
       'advancedConfiguration': 'Advanced Configuration',
       'temperature': 'Temperature',
@@ -395,6 +396,7 @@ const translations = {
       'nomcpServers': 'No MCP servers found',
       'goTomcpServers': 'Go to MCP Servers page',
       'callingMethod': 'Calling Method',
+      'modelService': 'Model Service',
     }
   };
   

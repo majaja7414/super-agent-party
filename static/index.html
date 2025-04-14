@@ -122,7 +122,7 @@
             <el-icon>
               <i class="fa-solid fa-key"></i>
             </el-icon>
-              <template #title>{{ t('keyBox') }}</template>
+              <template #title>{{ t('modelService') }}</template>
           </el-menu-item>
           <el-menu-item index="api">
             <el-icon>
@@ -1449,7 +1449,7 @@
                 :color="browserBtnColor"
                 round
                 size="large">
-                <i class="fa-solid fa-globe"></i>
+                <i class="fa-solid fa-globe" v-if="!isBrowserOpening"></i>
                 <transition name="bounce">
                   <span v-if="isBrowserOpening" class="ml-2">
                     <el-icon class="is-loading"><loading /></el-icon>
