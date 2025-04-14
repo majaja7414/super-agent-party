@@ -88,6 +88,12 @@
             </el-icon>
             <template #title>{{ t('mainModel') }}</template>
           </el-menu-item>
+          <el-menu-item index="agents">
+            <el-icon>
+              <i class="fa-solid fa-robot"></i>
+            </el-icon>
+            <template #title>{{ t('agents') }}</template>
+          </el-menu-item>
           <el-menu-item index="tools">
             <el-icon>
               <i class="fa-solid fa-screwdriver-wrench"></i>
@@ -344,6 +350,66 @@
                 />
               </div>
         </div>
+        <!---- 智能体页面 ---->
+        <div v-show="activeMenu === 'agents'" class="page agents-container">
+          <div class="keybox-container">
+            <!-- 磁贴网格 -->
+            <div class="provider-grid">
+              <!-- 已有智能体 -->
+              <div class="provider-card agent-card" v-for="agent in agents" :key="agent.id">
+                <div class="card-header">
+                  <el-switch v-model="agent.enabled" @change="autoSaveSettings"/>
+                  <div class="card-actions">
+                    <el-button @click="editAgent(agent)" type="primary" circle size="small">
+                      <i class="fa-solid fa-pen"></i>
+                    </el-button>
+                    <el-button @click="removeAgent(agent.id)" type="danger" circle size="small">
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
+                  </div>
+                </div>
+                <div class="agent-content">
+                  <div class="agent-header">
+                    <span class="agent-name">{{ agent.name }}</span>
+                    <el-tag type="info" size="mini" class="agent-id">{{ agent.id }}</el-tag>
+                  </div>
+                  <p class="agent-prompt">{{ agent.system_prompt }}</p>
+                </div>
+              </div>
+              <!-- 添加新智能体 -->
+              <div class="provider-card add-tile" @click="showAgentForm = true">
+                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                <div style="color: #606266; margin-top: 10px;">{{ t('addNewAgent') }}</div>
+              </div>
+            </div>
+            <!-- 智能体编辑对话框 -->
+            <el-dialog v-model="showAgentForm" :title="editingAgent ? t('editAgent') : t('addAgent')" width="600px">
+              <el-form label-position="top">
+                <el-form-item :label="t('agentName')" required>
+                  <el-input v-model="newAgent.name" :placeholder="t('agentNamePlaceholder')"/>
+                </el-form-item>
+                <el-form-item :label="t('systemPrompt')" required>
+                  <el-input 
+                    v-model="newAgent.system_prompt" 
+                    type="textarea" 
+                    :rows="6"
+                    :placeholder="t('systemPromptPlaceholder')"/>
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="showAgentForm = false">{{ t('cancel') }}</el-button>
+                <el-button 
+                  type="primary" 
+                  @click="saveAgent"
+                  :disabled="!newAgent.name || !newAgent.system_prompt">
+                  {{ t('createAgent') }}
+                </el-button>
+              </template>
+            </el-dialog>
+          </div>
+        </div>
+        
+
         <div v-show="activeMenu === 'api-box'" class="page tools-container">
           <div class="keybox-container">
             <!-- 磁贴网格 -->

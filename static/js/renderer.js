@@ -206,6 +206,15 @@ const app = Vue.createApp({
         language: 'zh-CN',
         theme: 'light',
       },
+      agents: {},
+      showAgentForm: false,
+      editingAgent: null,
+      newAgent: {
+        id: '',
+        name: '',
+        system_prompt: ''
+      },
+      editingAgent: false,
       currentLanguage: 'zh-CN',
       translations: translations,
       themeValues: ['light', 'dark'],
@@ -654,6 +663,7 @@ main();`,
             max_rounds: data.data.max_rounds || 0,
             selectedProvider: data.data.selectedProvider || '',
           };
+          this.agents = data.data.agents || {};
           this.toolsSettings = data.data.tools || {};
           this.reasonerSettings = data.data.reasoner || {};
           this.webSearchSettings = data.data.webSearch || {};
@@ -662,7 +672,8 @@ main();`,
           this.systemSettings = data.data.systemSettings || {};
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.mcpServers = data.data.mcpServers || {};
-        } else if (data.type === 'settings_saved') {
+        } 
+        else if (data.type === 'settings_saved') {
           if (!data.success) {
             showNotification(this.t('settings_save_failed'), 'error');
           }
@@ -930,6 +941,7 @@ main();`,
     autoSaveSettings() {
       const payload = {
         ...this.settings,
+        agents: this.agents,
         tools: this.toolsSettings,
         reasoner: this.reasonerSettings,
         webSearch: this.webSearchSettings, 
@@ -1658,7 +1670,21 @@ main();`,
         this.showMCPConfirm = false
       }
     },
-    
+      // 保存智能体
+    truncatePrompt(text) {
+      return text.length > 100 ? text.substring(0, 100) + '...' : text;
+    },
+    async saveAgent() {
+      const payload = {
+        type: 'save_agent',
+        data: {
+          name: this.newAgent.name,
+          system_prompt: this.newAgent.system_prompt
+        }
+      };
+      this.ws.send(JSON.stringify(payload));
+      this.showAgentForm = false;
+    },
   }
 });
 

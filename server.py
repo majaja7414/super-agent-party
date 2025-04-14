@@ -16,8 +16,10 @@ import uuid
 import time
 import shutil
 from typing import List, Dict
+
+import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path
+from py.get_setting import load_settings,save_settings,base_path,AGENTS_BASE_PATH
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
@@ -930,9 +932,7 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
     search_not_done = False
     search_task = ""
     try:
-        model = request.model or settings['model']
-        if model == 'super-model':
-            model = settings['model']
+        model = settings['model']
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -1010,9 +1010,7 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
                 temperature=settings['reasoner']['temperature']
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-        model = request.model or settings['model']
-        if model == 'super-model':
-            model = settings['model']
+        model = settings['model']
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         if tools:
@@ -1365,53 +1363,62 @@ async def get_models():
 @app.post("/v1/chat/completions")
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client,mcp_client_list
+    model = request.model or 'super-model' # 默认使用 'super-model'
+    if model == 'super-model':
+        current_settings = load_settings()
 
-    current_settings = load_settings()
+        # 动态更新客户端配置
+        if (current_settings['api_key'] != settings['api_key'] 
+            or current_settings['base_url'] != settings['base_url']):
+            if current_settings['api_key']:
+                client = AsyncOpenAI(
+                    api_key=current_settings['api_key'],
+                    base_url=current_settings['base_url'] or "https://api.openai.com/v1",
+                )
+            else:
+                client = AsyncOpenAI(
+                    base_url=settings['base_url'] or "https://api.openai.com/v1",
+                )
+        if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
+            or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
+            if current_settings['reasoner']['api_key']:
+                reasoner_client = AsyncOpenAI(
+                    api_key=current_settings['reasoner']['api_key'],
+                    base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+                )
+            else:
+                reasoner_client = AsyncOpenAI(
+                    base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+                )
+        
+        if current_settings['mcpServers'] != settings['mcpServers']:
+            # 更新mcp_client_list
+            # 对于新增的服务器，将配置添加到mcp_client_list，并初始化
+            # 对于已删除的服务器，将配置从mcp_client_list中移除
+            for server_name,server_config in current_settings['mcpServers'].items():
+                if server_name not in settings['mcpServers']:
+                    mcp_client_list[server_name] = McpClient()
+                    await mcp_client_list[server_name].initialize(server_name, server_config)
+                mcp_client_list[server_name].disabled = server_config.get('disabled', False)
+            for server_name,server_config in settings['mcpServers'].items():
+                if server_name not in current_settings['mcpServers']:
+                    mcp_client_list[server_name].disabled = True
 
-    # 动态更新客户端配置
-    if (current_settings['api_key'] != settings['api_key'] 
-        or current_settings['base_url'] != settings['base_url']):
-        if current_settings['api_key']:
-            client = AsyncOpenAI(
-                api_key=current_settings['api_key'],
-                base_url=current_settings['base_url'] or "https://api.openai.com/v1",
-            )
-        else:
-            client = AsyncOpenAI(
-                base_url=settings['base_url'] or "https://api.openai.com/v1",
-            )
-    if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
-        or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
-        if current_settings['reasoner']['api_key']:
-            reasoner_client = AsyncOpenAI(
-                api_key=current_settings['reasoner']['api_key'],
-                base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-            )
-        else:
-            reasoner_client = AsyncOpenAI(
-                base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-            )
-    
-    if current_settings['mcpServers'] != settings['mcpServers']:
-        # 更新mcp_client_list
-        # 对于新增的服务器，将配置添加到mcp_client_list，并初始化
-        # 对于已删除的服务器，将配置从mcp_client_list中移除
-        for server_name,server_config in current_settings['mcpServers'].items():
-            if server_name not in settings['mcpServers']:
-                mcp_client_list[server_name] = McpClient()
-                await mcp_client_list[server_name].initialize(server_name, server_config)
-            mcp_client_list[server_name].disabled = server_config.get('disabled', False)
-        for server_name,server_config in settings['mcpServers'].items():
-            if server_name not in current_settings['mcpServers']:
-                 mcp_client_list[server_name].disabled = True
-
-    if current_settings != settings:
-        settings = current_settings
-
+        if current_settings != settings:
+            settings = current_settings
+        agent_settings = current_settings
+    else:
+        current_settings = load_settings()
+        agentSettings = current_settings['agents'].get(model, {})
+        if not agentSettings:
+            raise HTTPException(status_code=400, detail="Agent not found")
+        if agentSettings['config_path']:
+            with open(agentSettings['config_path'], 'r') as f:
+                agent_settings = json.load(f)
     try:
         if request.stream:
-            return await generate_stream_response(client,reasoner_client,mcp_client_list, request, settings)
-        return await generate_complete_response(client,reasoner_client,mcp_client_list, request, settings)
+            return await generate_stream_response(client,reasoner_client,mcp_client_list, request, agent_settings)
+        return await generate_complete_response(client,reasoner_client,mcp_client_list, request, agent_settings)
     except asyncio.CancelledError:
         # 处理客户端中断连接的情况
         print("Client disconnected")
@@ -1635,6 +1642,33 @@ async def websocket_endpoint(websocket: WebSocket):
             elif data.get("type") == "get_settings":
                 settings = load_settings()
                 await websocket.send_json({"type": "settings", "data": settings})
+            elif data.get("type") == "save_agent":
+                current_settings = load_settings()
+                
+                # 生成智能体ID和配置路径
+                agent_id = str(shortuuid.ShortUUID().random(length=8))
+                config_path = os.path.join(AGENTS_BASE_PATH, f"{agent_id}.json")
+                
+                # 创建独立配置文件（复制当前配置并移除agents部分）
+                config_copy = {k:v for k,v in current_settings.items() if k != 'agents'}
+                with open(config_path, 'w') as f:
+                    json.dump(config_copy, f)
+                
+                # 更新主配置
+                current_settings['agents'][agent_id] = {
+                    "id": agent_id,
+                    "name": data['data']['name'],
+                    "system_prompt": data['data']['system_prompt'],
+                    "config_path": config_path,
+                    "enabled": True
+                }
+                save_settings(current_settings)
+                
+                # 广播更新后的配置
+                await websocket.send_json({
+                    "type": "settings",
+                    "data": current_settings
+                })
     except Exception as e:
         print(f"WebSocket error: {e}")
 

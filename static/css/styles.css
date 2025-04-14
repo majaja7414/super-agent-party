@@ -1743,3 +1743,25 @@ border: 1px solid var(--border-color) !important;
 .agreement-link:hover {
   text-decoration: underline;
 }
+
+.agent-prompt {
+  display: -webkit-box;
+  color: var(--el-color-info);
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5em;
+  max-height: 4.5em; /* 3 lines */
+}
+
+.agent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: large;
+  color: var(--text-color);
+}
+.agent-id {
+  font-family: monospace;
+  user-select: all;
+}
