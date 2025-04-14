@@ -221,6 +221,54 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showAgentDialog"
+            :title="t('agentSettings')"
+            width="500px">
+            <div class="agent-dialog-content">
+              <!-- 主智能体选择 -->
+              <div class="agent-section">
+                <h3>{{ t('mainAgent') }}</h3>
+                <el-select 
+                  v-model="mainAgent"
+                  @change="autoSaveSettings">
+                  <el-option
+                    label="super-model"
+                    value="super-model"
+                  >
+                  </el-option>
+                  <el-option
+                    v-for="(agent, id) in agents"
+                    :key="id"
+                    :label="agent.name"
+                    :value="id"
+                  >
+                  </el-option>
+                </el-select>
+              </div>
+              <!-- 工具智能体选择 -->
+              <div class="agent-section">
+                <h3>{{ t('toolAgents') }}</h3>
+                <div 
+                  v-for="(agent, id) in agents" 
+                  :key="id"
+                  class="knowledge-item">
+                  <el-switch 
+                    v-model="agent.enabled"
+                    @change="autoSaveSettings">
+                  </el-switch>
+                  <div class="knowledge-info">
+                    <div class="knowledge-name">{{ agent.name }}</div>
+                  </div>
+                </div>
+                <div v-if="Object.keys(agents).length === 0" class="empty-tip">
+                  {{ t('noagents') }}
+                  <a href="#" @click.stop.prevent="switchToagents">{{ t('goToagents') }}</a>
+                  {{ t('add') }}
+                </div>
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showMCPServerDialog"
             :title="t('mcpServersManagement')"
             width="400px">
@@ -302,6 +350,16 @@
                 :type="webSearchSettings.enabled ? 'primary' : 'default'"
                 circle>
                 <i class="fa-solid fa-globe"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('agents')" placement="top">
+              <el-button
+                @click="showAgentDialog = true"
+                class="icon-btn agent-btn"
+                :type="hasAgentChanges ? 'primary' : 'default'"
+                circle>
+                <i class="fa-solid fa-robot"></i>
               </el-button>
             </el-tooltip>
 

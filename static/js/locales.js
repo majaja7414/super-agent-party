@@ -213,6 +213,12 @@ const translations = {
       'editAgent': '编辑智能体',
       'deleteAgent': '删除智能体',
       'agentInfo': '点击创建智能体后，会按照您当前的配置生成一个可调用的智能体，包含系统提示词、模型服务、知识库、工具、推理模型、MCP服务器等配置。您可以点击左上角的标签复制智能体ID作为OpenAI API请求中的`model`参数，这将会调用对应的智能体。',
+      'agents': '智能体',
+      'mainAgent': '主智能体',
+      'toolAgents': '工具智能体',
+      'agentSettings': '智能体设置',
+      'noagents': '没有智能体',
+      'goToagents': '去智能体页面',
     },
     'en-US': {
       'chat': 'Chat',
@@ -427,6 +433,12 @@ const translations = {
       'editAgent': 'Edit Agent',
       'deleteAgent': 'Delete Agent',
       'agentInfo': 'After clicking Create Agent, a callable agent will be generated according to your current configuration, including system prompts, model services, knowledge bases, tools, inference models, MCP servers, etc. You can click on the tab in the upper left corner to copy the agent ID as the `model` parameter in the OpenAI API request, which will call the corresponding agent.',
+      'agents': 'Agents',
+      'mainAgent': 'Main Agent', 
+      'toolAgents': 'Tool Agents',
+      'agentSettings': 'Agent Settings',
+      'noagents': 'No Agents found',
+      'goToagents': 'Go to Agents page',
     }
   };
   

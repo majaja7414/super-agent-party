@@ -209,6 +209,8 @@ const app = Vue.createApp({
       agents: {},
       showAgentForm: false,
       editingAgent: null,
+      showAgentDialog: false,
+      mainAgent: 'super-model',
       newAgent: {
         id: '',
         name: '',
@@ -417,9 +419,17 @@ main();`,
         label: this.t(`theme.${value}`),
         value // 保持原始值（推荐）
       }));
-    }
+    },
+    hasAgentChanges() {
+      return this.mainAgent !== 'super-model' || 
+        Object.values(this.agents).some(a => a.enabled)
+    },
+    
   },
   methods: {
+    switchToagents() {
+      this.activeMenu = 'agents';
+    },
     syncProviderConfig(targetConfig) {
       // 当有选中供应商时执行同步
       if (targetConfig.selectedProvider) {
@@ -826,6 +836,7 @@ main();`,
             // 'Authorization': `Bearer ${YOUR_API_KEY}`  
           },
           body: JSON.stringify({
+            model: this.mainAgent,
             messages: messages,
             stream: true,
             fileLinks: Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
