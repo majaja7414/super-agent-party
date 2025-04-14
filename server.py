@@ -1466,7 +1466,7 @@ async def add_mcp_server(request: Request):
         for server_name, server_config in mcp_servers.items():
             # 基本验证
             if 'disabled' not in server_config:
-                server_config['disabled'] = False
+                mcp_servers[server_name]['disabled'] = False
             
             # 类型验证
             if 'url' in server_config:

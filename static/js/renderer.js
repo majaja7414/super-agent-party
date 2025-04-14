@@ -1617,6 +1617,13 @@ main();`,
           if (typeof servers !== 'object' || Array.isArray(servers)) {
             throw new Error('Invalid MCP format');
           }
+          // 检查servers对象是否包含所有必需的'disabled'属性
+          for (const serverName in servers) {
+              if (typeof servers[serverName] !== 'object' || !('disabled' in servers[serverName])) {
+                  // 添加'disabled'属性
+                  servers[serverName].disabled = false;
+              }
+          }
           const response = await fetch(`http://${HOST}:${PORT}/api/mcp/add`, {
               method: 'POST',
               headers: {
