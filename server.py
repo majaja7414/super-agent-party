@@ -1422,6 +1422,21 @@ async def chat_endpoint(request: ChatRequest):
                     request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
+        client = AsyncOpenAI(
+            api_key=agent_settings['api_key'],
+            base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
+        )
+        reasoner_client = AsyncOpenAI(
+            api_key=agent_settings['reasoner']['api_key'],
+            base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+        )
+
+        for server_name,server_config in current_settings['mcpServers'].items():
+            if server_name not in agent_settings['mcpServers']:
+                mcp_client_list[server_name].disabled = True
+            else:
+                mcp_client_list[server_name].disabled = agent_settings['mcpServers'][server_name].get('disabled', False)
+
     try:
         if request.stream:
             return await generate_stream_response(client,reasoner_client,mcp_client_list, request, agent_settings)
