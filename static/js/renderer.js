@@ -1684,7 +1684,24 @@ main();`,
       };
       this.ws.send(JSON.stringify(payload));
       this.showAgentForm = false;
+      this.newAgent = {
+        id: '',
+        name: '',
+        system_prompt: ''
+      };
     },
+    copyAgentId(id) {
+      navigator.clipboard.writeText(id)
+      showNotification(`Agent ${id} copyed`, 'success');
+    },
+    removeAgent(id) {
+      if (this.agents.hasOwnProperty(id)) {
+        delete this.agents[id]
+        this.agents = { ...this.agents }
+      }
+      showNotification(`Agent ${id} removed`, 'success');
+      this.autoSaveSettings();
+    }
   }
 });
 

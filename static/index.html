@@ -358,20 +358,28 @@
               <!-- 已有智能体 -->
               <div class="provider-card agent-card" v-for="agent in agents" :key="agent.id">
                 <div class="card-header">
-                  <el-switch v-model="agent.enabled" @change="autoSaveSettings"/>
+                  <el-switch v-model="agent.enabled" @change="autoSaveSettings"></el-switch>
                   <div class="card-actions">
-                    <el-button @click="editAgent(agent)" type="primary" circle size="small">
-                      <i class="fa-solid fa-pen"></i>
-                    </el-button>
+                    <!-- 更新删除按钮样式 -->
                     <el-button @click="removeAgent(agent.id)" type="danger" circle size="small">
                       <i class="fa-solid fa-trash"></i>
                     </el-button>
                   </div>
                 </div>
+                
                 <div class="agent-content">
                   <div class="agent-header">
                     <span class="agent-name">{{ agent.name }}</span>
-                    <el-tag type="info" size="mini" class="agent-id">{{ agent.id }}</el-tag>
+                    <!-- 带复制功能的ID展示 -->
+                    <el-tag 
+                      type="info" 
+                      size="mini" 
+                      class="agent-id clickable"
+                      @click="copyAgentId(agent.id)"
+                    >
+                      {{ agent.id }}
+                      <i class="fa-regular fa-copy"></i>
+                    </el-tag>
                   </div>
                   <p class="agent-prompt">{{ agent.system_prompt }}</p>
                 </div>
@@ -425,7 +433,7 @@
                       circle
                       size="small"
                     >
-                    <i class="fa-solid fa-globe"></i>
+                    <i class="fa-solid fa-magnifying-glass"></i>
                     </el-button>
                     <el-button
                       @click="removeProvider(index)"
@@ -1235,7 +1243,9 @@
                   </template>
 
                   <div class="card-actions">
-                    <el-button @click="removeKnowledgeBase(kb)" type="danger" :icon="'delete'" circle size="small"></el-button>
+                    <el-button @click="removeKnowledgeBase(kb)" type="danger"  circle size="small">
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
                   </div>
                 </div>
 

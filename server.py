@@ -1652,7 +1652,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 # 创建独立配置文件（复制当前配置并移除agents部分）
                 config_copy = {k:v for k,v in current_settings.items() if k != 'agents'}
                 with open(config_path, 'w') as f:
-                    json.dump(config_copy, f)
+                    json.dump(config_copy, f, indent=4, ensure_ascii=False)
                 
                 # 更新主配置
                 current_settings['agents'][agent_id] = {

@@ -209,6 +209,9 @@ const translations = {
       'systemPrompt': '系统提示词',
       'systemPromptPlaceholder': '请输入系统提示词',
       'createAgent': '创建智能体',
+      'copyAgentId': '复制智能体ID',
+      'editAgent': '编辑智能体',
+      'deleteAgent': '删除智能体',
     },
     'en-US': {
       'chat': 'Chat',
@@ -419,6 +422,9 @@ const translations = {
       'systemPrompt': 'System Prompt',
       'systemPromptPlaceholder': 'Please enter the system prompt',
       'createAgent': 'Create Agent',
+      'copyAgentId': 'Copy Agent ID',
+      'editAgent': 'Edit Agent',
+      'deleteAgent': 'Delete Agent',
     }
   };
   
