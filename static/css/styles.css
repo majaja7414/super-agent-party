@@ -1746,12 +1746,13 @@ border: 1px solid var(--border-color) !important;
 
 .agent-prompt {
   display: -webkit-box;
+  -webkit-line-clamp: 4;
   color: var(--el-color-info);
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 1.5em;
-  max-height: 4.5em; /* 3 lines */
+  line-height: 1.2em;
+  max-height: 4.8em; /* 4 lines */
 }
 
 .agent-header {
@@ -1760,6 +1761,7 @@ border: 1px solid var(--border-color) !important;
   gap: 8px;
   font-size: large;
   color: var(--text-color);
+  margin: 8px;
 }
 .agent-id {
   font-family: monospace;

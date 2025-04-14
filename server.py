@@ -1671,10 +1671,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
                 config_path = os.path.join(AGENTS_BASE_PATH, f"{agent_id}.json")
                 
-                # 创建独立配置文件（复制当前配置并移除agents部分）
-                config_copy = {k:v for k,v in current_settings.items() if k != 'agents'}
                 with open(config_path, 'w') as f:
-                    json.dump(config_copy, f, indent=4, ensure_ascii=False)
+                    json.dump(current_settings, f, indent=4, ensure_ascii=False)
                 
                 # 更新主配置
                 current_settings['agents'][agent_id] = {
@@ -1682,6 +1680,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "name": data['data']['name'],
                     "system_prompt": data['data']['system_prompt'],
                     "config_path": config_path,
+                    "enabled": False,
                 }
                 save_settings(current_settings)
                 
