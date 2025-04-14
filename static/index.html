@@ -404,6 +404,17 @@
                     :placeholder="t('systemPromptPlaceholder')"/>
                 </el-form-item>
               </el-form>
+              <el-alert
+                type="info"
+                :closable="false"
+                class="mb-2"
+              >
+                <template #default>
+                  <div class="alert-content">
+                    {{ t('agentInfo') }}
+                  </div>
+                </template>
+              </el-alert>
               <template #footer>
                 <el-button @click="showAgentForm = false">{{ t('cancel') }}</el-button>
                 <el-button 
