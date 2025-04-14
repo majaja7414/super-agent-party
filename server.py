@@ -182,9 +182,7 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
                 request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
-        model = request.model or settings['model']
-        if model == 'super-model':
-            model = settings['model']
+        model = settings['model']
         async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -1010,7 +1008,6 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
                 temperature=settings['reasoner']['temperature']
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-        model = settings['model']
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         if tools:
@@ -1360,6 +1357,10 @@ async def get_models():
             }
         )
 
+class Message(BaseModel):
+    role: str
+    content: str
+
 @app.post("/v1/chat/completions")
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client,mcp_client_list
@@ -1415,6 +1416,12 @@ async def chat_endpoint(request: ChatRequest):
         if agentSettings['config_path']:
             with open(agentSettings['config_path'], 'r') as f:
                 agent_settings = json.load(f)
+            # 将"system_prompt"插入到request.messages[0].content中
+            if agentSettings['system_prompt']:
+                if request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
     try:
         if request.stream:
             return await generate_stream_response(client,reasoner_client,mcp_client_list, request, agent_settings)
