@@ -938,8 +938,8 @@ main();`,
           const lastMessage = this.messages[this.messages.length - 1];
           if (lastMessage.role === 'assistant') {
             // 可选：添加截断标记
-            if (lastMessage.content && !lastMessage.content.endsWith('(已停止)')) {
-              lastMessage.content += '\n\n(生成已停止)';
+            if (lastMessage.content && !lastMessage.content.endsWith(this.t('message.stopGenerate'))) {
+              lastMessage.content += '\n\n'+this.t('message.stopGenerate');
             }
           }
         }
