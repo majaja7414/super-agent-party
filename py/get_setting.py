@@ -16,8 +16,6 @@ CONFIG_BASE_PATH = os.path.join(base_path, 'config')
 os.makedirs(CONFIG_BASE_PATH, exist_ok=True)
 SETTINGS_FILE = os.path.join(CONFIG_BASE_PATH, 'settings.json')
 SETTINGS_TEMPLATE_FILE = os.path.join(CONFIG_BASE_PATH, 'settings_template.json')
-AGENTS_BASE_PATH = os.path.join(base_path, 'agents')
-os.makedirs(AGENTS_BASE_PATH, exist_ok=True)
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
 def load_settings():

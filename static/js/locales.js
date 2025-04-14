@@ -219,6 +219,7 @@ const translations = {
       'agentSettings': '智能体设置',
       'noagents': '没有智能体',
       'goToagents': '去智能体页面',
+      'defaultAgent': '默认智能体',
     },
     'en-US': {
       'chat': 'Chat',
@@ -439,6 +440,7 @@ const translations = {
       'agentSettings': 'Agent Settings',
       'noagents': 'No Agents found',
       'goToagents': 'Go to Agents page',
+      'defaultAgent': 'Default Agent',
     }
   };
   

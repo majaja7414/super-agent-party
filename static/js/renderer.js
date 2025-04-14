@@ -674,6 +674,7 @@ main();`,
             selectedProvider: data.data.selectedProvider || '',
           };
           this.agents = data.data.agents || {};
+          this.mainAgent = data.data.mainAgent || 'super-model';
           this.toolsSettings = data.data.tools || {};
           this.reasonerSettings = data.data.reasoner || {};
           this.webSearchSettings = data.data.webSearch || {};
@@ -953,6 +954,7 @@ main();`,
       const payload = {
         ...this.settings,
         agents: this.agents,
+        mainAgent: this.mainAgent,
         tools: this.toolsSettings,
         reasoner: this.reasonerSettings,
         webSearch: this.webSearchSettings, 

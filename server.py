@@ -19,7 +19,7 @@ from typing import List, Dict
 
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path,AGENTS_BASE_PATH
+from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 HOST = '127.0.0.1'
@@ -130,7 +130,8 @@ def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': latex_message})
     return request
 
-async def generate_stream_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
+    global mcp_client_list
     from py.load_files import get_files_content
     from py.web_search import (
         DDGsearch_async, 
@@ -148,9 +149,11 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
         print(tools)
         if mcp_client_list:
             for server_name, mcp_client in mcp_client_list.items():
-                function = await mcp_client.get_openai_functions()
-                if function:
-                    tools.extend(function)
+                if server_name in settings['mcpServers']:
+                    if settings['mcpServers'][server_name]['disabled'] == False:
+                        function = await mcp_client.get_openai_functions()
+                        if function:
+                            tools.extend(function)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -904,7 +907,8 @@ async def generate_stream_response(client,reasoner_client,mcp_client_list, reque
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client,reasoner_client,mcp_client_list, request: ChatRequest, settings: dict):
+async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict):
+    global mcp_client_list
     from py.load_files import get_files_content
     from py.web_search import (
         DDGsearch_async, 
@@ -924,9 +928,11 @@ async def generate_complete_response(client,reasoner_client,mcp_client_list, req
     print(tools)
     if mcp_client_list:
         for server_name, mcp_client in mcp_client_list.items():
-            function = await mcp_client.get_openai_functions()
-            if function:
-                tools.extend(function)
+            if server_name in settings['mcpServers']:
+                if settings['mcpServers'][server_name]['disabled'] == False:
+                    function = await mcp_client.get_openai_functions()
+                    if function:
+                        tools.extend(function)
     search_not_done = False
     search_task = ""
     try:
@@ -1391,23 +1397,22 @@ async def chat_endpoint(request: ChatRequest):
                 reasoner_client = AsyncOpenAI(
                     base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
                 )
-        
-        if current_settings['mcpServers'] != settings['mcpServers']:
-            # 更新mcp_client_list
-            # 对于新增的服务器，将配置添加到mcp_client_list，并初始化
-            # 对于已删除的服务器，将配置从mcp_client_list中移除
-            for server_name,server_config in current_settings['mcpServers'].items():
-                if server_name not in settings['mcpServers']:
-                    mcp_client_list[server_name] = McpClient()
-                    await mcp_client_list[server_name].initialize(server_name, server_config)
-                mcp_client_list[server_name].disabled = server_config.get('disabled', False)
-            for server_name,server_config in settings['mcpServers'].items():
-                if server_name not in current_settings['mcpServers']:
-                    mcp_client_list[server_name].disabled = True
 
         if current_settings != settings:
             settings = current_settings
-        agent_settings = current_settings
+        try:
+            if request.stream:
+                return await generate_stream_response(client,reasoner_client, request, settings)
+            return await generate_complete_response(client,reasoner_client, request, settings)
+        except asyncio.CancelledError:
+            # 处理客户端中断连接的情况
+            print("Client disconnected")
+            raise
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"error": {"message": str(e), "type": "server_error", "code": 500}}
+            )
     else:
         current_settings = load_settings()
         agentSettings = current_settings['agents'].get(model, {})
@@ -1422,34 +1427,28 @@ async def chat_endpoint(request: ChatRequest):
                     request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
-        client = AsyncOpenAI(
+        agent_client = AsyncOpenAI(
             api_key=agent_settings['api_key'],
             base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
         )
-        reasoner_client = AsyncOpenAI(
+        agent_reasoner_client = AsyncOpenAI(
             api_key=agent_settings['reasoner']['api_key'],
             base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
         )
 
-        for server_name,server_config in current_settings['mcpServers'].items():
-            if server_name not in agent_settings['mcpServers']:
-                mcp_client_list[server_name].disabled = True
-            else:
-                mcp_client_list[server_name].disabled = agent_settings['mcpServers'][server_name].get('disabled', False)
-
-    try:
-        if request.stream:
-            return await generate_stream_response(client,reasoner_client,mcp_client_list, request, agent_settings)
-        return await generate_complete_response(client,reasoner_client,mcp_client_list, request, agent_settings)
-    except asyncio.CancelledError:
-        # 处理客户端中断连接的情况
-        print("Client disconnected")
-        raise
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": {"message": str(e), "type": "server_error", "code": 500}}
-        )
+        try:
+            if request.stream:
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings)
+            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings)
+        except asyncio.CancelledError:
+            # 处理客户端中断连接的情况
+            print("Client disconnected")
+            raise
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"error": {"message": str(e), "type": "server_error", "code": 500}}
+            )
     
 @app.post("/api/mcp/add")
 async def add_mcp_server(request: Request):
@@ -1669,7 +1668,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # 生成智能体ID和配置路径
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
-                config_path = os.path.join(AGENTS_BASE_PATH, f"{agent_id}.json")
+                os.makedirs('agents', exist_ok=True)
+                config_path = os.path.join('agents', f"{agent_id}.json")
                 
                 with open(config_path, 'w') as f:
                     json.dump(current_settings, f, indent=4, ensure_ascii=False)
