@@ -60,7 +60,7 @@ const translations = {
       'jinaAPIKeyPlaceholder': 'jina API 密钥(可选)',
       'crawl4AiURLPlaceholder': 'Crawl4Ai url (docker部署后开放的端口)',
       'crawl4AiAPIKeyPlaceholder': 'Crawl4Ai API 密钥(可选)',
-      'useSuperAPI': '使用Super API',
+      'useSuperAPI': '使用Openai API',
       'modelName': '模型名称',
       'apiEndpoint': 'API 端点',
       'exampleLanguage': '示例语言',
@@ -196,6 +196,7 @@ const translations = {
       'addNewMCP': '添加新服务器',
       'nomcpServers': '没有MCP服务器',
       'goTomcpServers': '去MCP服务器页面',
+      'callingMethod': '调用方法',
     },
     'en-US': {
       'chat': 'Chat',
@@ -257,7 +258,7 @@ const translations = {
       'jinaAPIKeyPlaceholder': 'Jina API Key (optional)',
       'crawl4AiURLPlaceholder': 'Crawl4Ai url (docker deployment exposed port)',
       'crawl4AiAPIKeyPlaceholder': 'Crawl4Ai API Key (optional)',
-      'useSuperAPI': 'Use Super API',
+      'useSuperAPI': 'Use Openai API',
       'modelName': 'Model Name',
       'apiEndpoint': 'API Endpoint',
       'exampleLanguage': 'Example Language',
@@ -393,6 +394,7 @@ const translations = {
       'addNewMCP': 'Add New Server',
       'nomcpServers': 'No MCP servers found',
       'goTomcpServers': 'Go to MCP Servers page',
+      'callingMethod': 'Calling Method',
     }
   };
   

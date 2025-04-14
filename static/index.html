@@ -96,13 +96,13 @@
           </el-menu-item>
           <el-menu-item index="reasoner">
             <el-icon>
-              <i class="fa-solid fa-brain"></i>
+              <i class="fa-solid fa-atom"></i>
             </el-icon>
             <template #title>{{ t('reasoner') }}</template>
           </el-menu-item>
           <el-menu-item index="websearch">
             <el-icon>
-              <i class="fa-solid fa-magnifying-glass"></i>
+              <i class="fa-solid fa-globe"></i>
             </el-icon>
             <template #title>{{ t('webSearch') }}</template>
           </el-menu-item>
@@ -128,7 +128,7 @@
             <el-icon>
               <i class="fa-solid fa-link"></i>
             </el-icon>
-            <template #title>{{ t('api') }}</template>
+            <template #title>{{ t('callingMethod') }}</template>
           </el-menu-item>
           <el-menu-item index="system">
             <el-icon>
@@ -275,7 +275,7 @@
                 class="icon-btn deep-think-btn"
                 :type="reasonerSettings.enabled ? 'primary' : 'default'"
                 circle>
-                <i class="fa-solid fa-brain"></i>
+                <i class="fa-solid fa-atom"></i>
               </el-button>
             </el-tooltip>
 
@@ -295,7 +295,7 @@
                 class="icon-btn web-search-btn"
                 :type="webSearchSettings.enabled ? 'primary' : 'default'"
                 circle>
-                <i class="fa-solid fa-magnifying-glass"></i>
+                <i class="fa-solid fa-globe"></i>
               </el-button>
             </el-tooltip>
 
@@ -359,7 +359,7 @@
                       circle
                       size="small"
                     >
-                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <i class="fa-solid fa-globe"></i>
                     </el-button>
                     <el-button
                       @click="removeProvider(index)"
@@ -696,7 +696,7 @@
               <div class="tool-header">
                 <span>
                   <el-icon>
-                    <i class="fa-solid fa-brain"></i>
+                    <i class="fa-solid fa-atom"></i>
                   </el-icon>
                   {{ t('fakeInference') }}
                 </span>
@@ -758,7 +758,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     {{ t('webSearch') }}
                   </span>
@@ -805,7 +805,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     DuckDuckGo
                   </span>
@@ -828,7 +828,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     SearXNG
                   </span>
@@ -859,7 +859,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     Tavily
                   </span>
@@ -891,7 +891,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     jina
                   </span>
@@ -914,7 +914,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-magnifying-glass"></i>
+                      <i class="fa-solid fa-globe"></i>
                     </el-icon>
                     Crawl4Ai
                   </span>
@@ -1471,7 +1471,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-brain"></i>
+                      <i class="fa-solid fa-atom"></i>
                     </el-icon>
                     {{ t('reasonerConfig') }}
                   </span>
