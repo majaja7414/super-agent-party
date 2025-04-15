@@ -1140,13 +1140,21 @@ main();`,
     },
     async fetchModelsForProvider(provider) {
       try {
-        const response = await fetch(`${provider.url}/models`, {
+        const response = await fetch(`http://${HOST}:${PORT}/v1/providers/models`, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${provider.apiKey}`
-          }
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: provider.url,
+            api_key: provider.apiKey
+          })
         });
+        if (!response.ok) {
+          throw new Error('Failed to fetch models');
+        }
         const data = await response.json();
-        provider.models = data.data.map(m => m.id);
+        provider.models = data.data;
       } catch (error) {
         showNotification(this.t('fetch_models_failed'), 'error');
       }

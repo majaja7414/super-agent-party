@@ -1362,9 +1362,22 @@ async def get_models():
             }
         )
 
-class Message(BaseModel):
-    role: str
-    content: str
+class ProviderModelRequest(BaseModel):
+    url: str
+    api_key: str
+
+@app.post("/v1/providers/models")
+async def fetch_provider_models(request: ProviderModelRequest):
+    try:
+        # 使用传入的provider配置创建AsyncOpenAI客户端
+        client = AsyncOpenAI(api_key=request.api_key, base_url=request.url)
+        # 获取模型列表
+        model_list = await client.models.list()
+        # 提取模型ID并返回
+        return JSONResponse(content={"data": [model.id for model in model_list.data]})
+    except Exception as e:
+        # 处理异常，返回错误信息
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/v1/chat/completions")
 async def chat_endpoint(request: ChatRequest):
