@@ -22,7 +22,7 @@ from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
-HOST = '127.0.0.1'
+HOST = '0.0.0.0'
 PORT = 3456
 local_timezone = None
 logger = None
