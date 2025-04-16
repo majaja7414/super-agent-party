@@ -1,4 +1,5 @@
 {
+    "isdocker": false,
     "model": "",
     "base_url": "",
     "api_key": "",

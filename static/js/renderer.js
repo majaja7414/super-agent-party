@@ -94,6 +94,7 @@ const MIME_WHITELIST = [
 const app = Vue.createApp({
   data() {
     return {
+      isdocker: false,
       isExpanded: true,
       isElectron: isElectron,
       isCollapse: true,
@@ -664,6 +665,7 @@ main();`,
         }
 
         if (data.type === 'settings') {
+          this.isdocker = data.data.isdocker;
           this.settings = {
             model: data.data.model || '',
             base_url: data.data.base_url || '',
@@ -1218,7 +1220,7 @@ main();`,
         'Volcano': 'https://ark.cn-beijing.volces.com/api/v3',
         'moonshot': 'https://api.moonshot.cn/v1',
         'minimax': 'https://api.minimax.chat/v1',
-        'Ollama': 'http://127.0.0.1:11434/v1',
+        'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
         'Gemini': 'https://generativelanguage.googleapis.com/v1beta',
         'Grok': 'https://api.groq.com/openai/v1',
