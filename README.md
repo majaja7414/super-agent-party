@@ -2,7 +2,9 @@
 
 ## 简介
 
-## docker部署
+## 部署方法
+
+### docker部署
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
@@ -11,7 +13,7 @@ docker build -t super-agent-party .
 docker run -d -p 3456:3456 super-agent-party:latest
 ```
 
-## 源码部署
+### 源码部署
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
