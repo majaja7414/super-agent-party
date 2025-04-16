@@ -32,6 +32,7 @@ docker run -d -p 3456:3456 super-agent-party:latest
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
+python -m venv super
 super\Scripts\activate # windows
 # source super/bin/activate # linux or mac
 pip install -r requirements.txt
