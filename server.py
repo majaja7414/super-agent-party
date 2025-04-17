@@ -19,10 +19,13 @@ from typing import List, Dict
 
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path
+from py.get_setting import load_settings,save_settings,base_path,in_docker
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
-HOST = '0.0.0.0'
+if in_docker():
+    HOST = '0.0.0.0'
+else:
+    HOST = '127.0.0.1'
 PORT = 3456
 local_timezone = None
 logger = None
