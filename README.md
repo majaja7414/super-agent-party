@@ -28,8 +28,8 @@
 1. 获取docker镜像（二选一）：
 - 从dockerhub拉取官网镜像：
 ```shell
-docker pull heshengtao/super-agent-party:latest
-docker run -d -p 3456:3456 heshengtao/super-agent-party:latest
+docker pull ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
 ```
 
 - 从源码生成镜像：
