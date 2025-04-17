@@ -9,7 +9,7 @@
 
 If you want to transform a large model into an intelligent agent that can access knowledge bases, connect to the internet, utilize MCP services, perform deep thinking and in-depth research, and also be usable via OpenAI API calls or directly through web and desktop applications, then this project is for you.
 
-![image](static/source/image1.png)
+![image](static/source/image.png)
 
 ## Features
 

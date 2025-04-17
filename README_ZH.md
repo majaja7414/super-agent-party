@@ -9,7 +9,7 @@
 
 如果你想要让一个大模型变成一个智能体，接入知识库、联网、MCP服务、深度思考、深度研究，并且还能够通过Openai API调用或web端、桌面端直接使用，那么这个项目就是为你准备的。
 
-![image](static/source/image1.png)
+![image](static/source/image.png)
 
 ## 功能
 
