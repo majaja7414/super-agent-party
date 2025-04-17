@@ -467,11 +467,6 @@ main();`,
       this.currentMCPExample = this.mcpExamples[this.newMCPType];
     },
     
-    // 初始化对话框时设置默认示例
-    showAddMCPDialog() {
-      this.newMCPType = 'stdio';
-      this.newMCPJson = this.mcpExamples.stdio;
-    },
     toggleMCPServer(name, status) {
       this.mcpServers[name].disabled = !status
       this.autoSaveSettings()
