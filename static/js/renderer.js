@@ -157,7 +157,9 @@ const app = Vue.createApp({
   "mcpServers": {
     "echo-server": {
       "command": "node",
-      "args": ["path/to/echo-mcp/build/index.js"],
+      "args": [
+        "path/to/echo-mcp/build/index.js"
+      ],
       "disabled": false
     }
   }
@@ -964,6 +966,7 @@ main();`,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
         mcpServers: this.mcpServers,
+        isdocker: this.isdocker,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -1663,25 +1666,25 @@ main();`,
   
   
     async removeMCPServer(name) {
-      const response = await fetch(`http://${HOST}:${PORT}/api/mcp/remove`, {
+      this.deletingMCPName = name
+      this.showMCPConfirm = true
+    },
+    // 新增确认方法
+    async confirmDeleteMCP() {
+      try {
+        const response = await fetch(`http://${HOST}:${PORT}/api/mcp/remove`, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            serverName: name
+            serverName: this.deletingMCPName
           })
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || '删除失败');
-      }
-      this.deletingMCPName = name
-      this.showMCPConfirm = true
-    },
-    // 新增确认方法
-    confirmDeleteMCP() {
-      try {
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || '删除失败');
+        }
         const name = this.deletingMCPName
         const newServers = { ...this.mcpServers }
         delete newServers[name]

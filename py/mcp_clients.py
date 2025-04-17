@@ -33,7 +33,7 @@ def get_command_path(command_name, default_command='uv'):
 class McpClient:
     def __init__(self):
         # Initialize session and client objects
-        self.session: Optional[ClientSession] = None
+        self.session: ClientSession = None
         self.exit_stack = AsyncExitStack()
         self.server_name = None
         self.tools = []
@@ -105,6 +105,5 @@ class McpClient:
         response = await self.session.call_tool(tool_name, tool_params)
         return response
     
-    async def cleanup(self):
-        """Clean up resources"""
+    async def close(self):
         await self.exit_stack.aclose()
