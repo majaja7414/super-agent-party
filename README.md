@@ -20,6 +20,8 @@
 ## 使用方法
 
 ### docker部署
+
+1. 生成docker容器：
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
@@ -28,14 +30,32 @@ docker build -t super-agent-party .
 docker run -d -p 3456:3456 super-agent-party:latest
 ```
 
+2. 访问http://localhost:3456/
+
 ### 源码部署
+
+1. 下载仓库：
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
+```
+
+2. 安装依赖：
+- windows: 点击脚本`install.bat`或`install_cnpm.bat`（中国网络环境选择install_cnpm.bat）
+- macos/linux:点击脚本`install.sh`或`install_cnpm.sh`（中国网络环境选择install_cnpm.sh）
+- 或者手动执行以下命令以安装依赖：
+```shell
 python -m venv super
 super\Scripts\activate # windows
-# source super/bin/activate # linux or mac
+# source super/bin/activate # macos/linux
 pip install -r requirements.txt
 npm install
-python server.py
+```
+
+3. 启动服务：
+- windows: 点击脚本`start_with_dev.bat`
+- macos/linux:点击脚本`start_with_dev.sh`
+- 或者手动执行以下命令以启动服务：
+```shell
+npm run dev
 ```
