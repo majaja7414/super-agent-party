@@ -1,4 +1,4 @@
-![image](./static/source/party.png)
+![image](static/source/party.png)
 
 <div align="center">
   <a href="./README_ZH.md"><img src="https://img.shields.io/badge/简体中文-d9d9d9"></a>
