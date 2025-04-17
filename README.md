@@ -25,7 +25,14 @@
 
 ### docker部署
 
-1. 生成docker容器：
+1. 获取docker镜像（二选一）：
+- 从dockerhub拉取官网镜像：
+```shell
+docker pull heshengtao/super-agent-party:latest
+docker run -d -p 3456:3456 heshengtao/super-agent-party:latest
+```
+
+- 从源码生成镜像：
 ```shell
 git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
@@ -44,7 +51,7 @@ git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
 ```
 
-2. 安装依赖：
+2. 安装依赖（三选一）：
 - windows: 点击脚本`install.bat`
 - macos/linux:点击脚本`install.sh`
 - 或者手动执行以下命令以安装依赖：
@@ -56,7 +63,7 @@ pip install -r requirements.txt
 npm install
 ```
 
-3. 启动服务：
+3. 启动服务（三选一）：
 - windows: 点击脚本`start_with_dev.bat`
 - macos/linux:点击脚本`start_with_dev.sh`
 - 或者手动执行以下命令以启动服务：
