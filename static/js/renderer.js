@@ -1619,43 +1619,61 @@ main();`,
     // 在methods中添加
     async addMCPServer() {
       try {
-          const input = this.newMCPJson.trim();
-          const parsed = JSON.parse(input.startsWith('{') ? input : `{${input}}`);
-          const servers = parsed.mcpServers || parsed;
-          if (typeof servers !== 'object' || Array.isArray(servers)) {
-            throw new Error('Invalid MCP format');
+        const input = this.newMCPJson.trim();
+        const parsed = JSON.parse(input.startsWith('{') ? input : `{${input}}`);
+        const servers = parsed.mcpServers || parsed;
+        
+        // 将服务器name作为ID
+        const mcpId = Object.keys(servers)[0];
+        
+        // 添加临时状态
+        this.mcpServers = {
+          ...this.mcpServers,
+          [mcpId]: {
+            ...servers[Object.keys(servers)[0]],
+            processingStatus: 'initializing' // 新增状态字段
           }
-          // 检查servers对象是否包含所有必需的'disabled'属性
-          for (const serverName in servers) {
-              if (typeof servers[serverName] !== 'object' || !('disabled' in servers[serverName])) {
-                  // 添加'disabled'属性
-                  servers[serverName].disabled = false;
-              }
+        };
+        
+        this.showAddMCPDialog = false;
+        this.newMCPJson = '';
+        this.autoSaveSettings();
+        // 触发后台任务
+        const response = await fetch(`http://${HOST}:${PORT}/create_mcp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mcpId })
+        });
+        
+        // 启动状态轮询
+        const checkStatus = async () => {
+          const statusRes = await fetch(`http://${HOST}:${PORT}/mcp_status/${mcpId}`);
+          return statusRes.json();
+        };
+        
+        const interval = setInterval(async () => {
+          const { status } = await checkStatus();
+          
+          if (status === 'ready') {
+            clearInterval(interval);
+            this.mcpServers[mcpId].processingStatus = 'ready';
+            this.autoSaveSettings();
+            showNotification(this.t('mcpAdded'), 'success');
+          } else if (status.startsWith('failed')) {
+            clearInterval(interval);
+            this.mcpServers = Object.fromEntries(
+              Object.entries(this.mcpServers).filter(([k]) => k !== mcpId)
+            );
+            showNotification(this.t('mcpCreationFailed'), 'error');
           }
-          const response = await fetch(`http://${HOST}:${PORT}/api/mcp/add`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                  config: JSON.parse(this.newMCPJson)
-              })
-          });
-
-          if (!response.ok) {
-              const errorData = await response.json();
-              throw new Error(errorData.detail || '添加失败');
-          }
-          this.mcpServers = { ...this.mcpServers, ...servers };
-          this.newMCPJson = ''; // 清空输入框
-          this.showAddMCPDialog = false;
-          this.autoSaveSettings();
-          showNotification(this.t('mcpAdded'), 'success');
+        }, 2000);
+        
+        this.autoSaveSettings();
       } catch (error) {
-          console.error('添加MCP服务器失败:', error);
-          showNotification(error.message, 'error');
-          this.newMCPJson = ''; // 清空错误配置
+        console.error('MCP服务器添加失败:', error);
+        showNotification(error.message, 'error');
       }
+      this.autoSaveSettings();
     },
 
   
@@ -1667,7 +1685,7 @@ main();`,
     // 新增确认方法
     async confirmDeleteMCP() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/api/mcp/remove`, {
+        const response = await fetch(`http://${HOST}:${PORT}/api/remove_mcp`, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',
@@ -1686,8 +1704,7 @@ main();`,
         this.mcpServers = newServers
         
         this.$nextTick(() => {
-          this.autoSaveSettings()
-          this.focusInputField()
+          this.autoSaveSettings();
         })
         
         showNotification(this.t('mcpDeleted'), 'success')

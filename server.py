@@ -1465,66 +1465,48 @@ async def chat_endpoint(request: ChatRequest):
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
     
-@app.post("/api/mcp/add")
-async def add_mcp_server(request: Request):
-    global settings
-    try:
-        data = await request.json()
-        config = data.get("config", {})
-        
-        if not config:
-            raise HTTPException(status_code=400, detail="Empty configuration")
-        
-        # 解析MCP配置
-        mcp_servers = config.get("mcpServers", config)  # 兼容两种格式
-        
-        # 验证配置格式
-        for server_name, server_config in mcp_servers.items():
-            # 基本验证
-            if 'disabled' not in server_config:
-                mcp_servers[server_name]['disabled'] = False
-            
-            # 类型验证
-            if 'url' in server_config:
-                # SSE类型验证
-                if not server_config['url'].startswith(('http://', 'https://')):
-                    raise ValueError(f"Invalid URL format for {server_name}")
-            else:
-                # 标准类型验证
-                if 'command' not in server_config:
-                    raise ValueError(f"Missing command for {server_name}")
-                
-                # 验证可执行文件是否存在（仅本地命令）
-                if not shutil.which(server_config['command']):
-                    raise ValueError(f"Command not found: {server_config['command']}")
-
-        # 合并到全局设置
-        current_settings = load_settings()
-        current_settings['mcpServers'].update(mcp_servers)
-        
-        # 保存到配置文件
-        save_settings(current_settings)
-        settings = current_settings
-        # 初始化新的客户端
-        global mcp_client_list
-        for server_name, server_config in mcp_servers.items():
-            if server_name not in mcp_client_list:
-                client = McpClient()
-                await client.initialize(server_name, server_config)
-                client.disabled = server_config.get('disabled', False)
-                mcp_client_list[server_name] = client
-
-        return JSONResponse({"success": True, "added": list(mcp_servers.keys())})
+# 添加状态存储
+mcp_status = {}
+@app.post("/create_mcp")
+async def create_mcp_endpoint(request: Request, background_tasks: BackgroundTasks):
+    data = await request.json()
+    mcp_id = data.get("mcpId")
     
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON format")
-    except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+    if not mcp_id:
+        raise HTTPException(status_code=400, detail="Missing mcpId")
+    
+    # 将任务添加到后台队列
+    background_tasks.add_task(process_mcp, mcp_id)
+    
+    return {"success": True, "message": "MCP服务器初始化已开始"}
+@app.get("/mcp_status/{mcp_id}")
+async def get_mcp_status(mcp_id: str):
+    status = mcp_status.get(mcp_id, "not_found")
+    return {"mcp_id": mcp_id, "status": status}
+async def process_mcp(mcp_id: str):
+    global mcp_client_list
+    mcp_status[mcp_id] = "initializing"
+    try:
+        # 获取对应服务器的配置
+        cur_settings = load_settings()
+        server_config = cur_settings['mcpServers'][mcp_id]
+        
+        # 执行初始化逻辑
+        if mcp_id not in mcp_client_list:
+            mcp_client_list[mcp_id] = McpClient()    
+            await mcp_client_list[mcp_id].initialize(mcp_id, server_config)
+        else:
+            mcp_client_list[mcp_id].disabled = False
+        mcp_status[mcp_id] = "ready"
+        
     except Exception as e:
-        logger.error(f"添加MCP服务器失败: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        mcp_client_list[mcp_id].disabled = True
+        mcp_status[mcp_id] = f"failed: {str(e)}"
+        # 清理失败配置
+        cur_settings['mcpServers'].pop(mcp_id, None)
+        save_settings(cur_settings)
 
-@app.post("/api/mcp/remove")
+@app.post("/api/remove_mcp")
 async def remove_mcp_server(request: Request):
     global settings, mcp_client_list
     try:

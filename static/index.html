@@ -637,13 +637,21 @@
             <div class="provider-grid">
               <div class="provider-card knowledge-card" v-for="(server, name) in mcpServers" :key="name">
                 <div class="card-header">
-                  <el-switch
-                    :active-value="false"  
-                    :inactive-value="true" 
-                    v-model="server.disabled"
-                    @change="autoSaveSettings"
-                    class="kb-switch"
-                  ></el-switch>
+                  <!-- 加载状态指示 -->
+                  <template v-if="server.processingStatus === 'initializing'">
+                    <el-icon class="loading-spinner">
+                      <i class="fa-solid fa-spinner"></i>
+                    </el-icon>
+                  </template>
+                  <template v-else>
+                    <el-switch
+                      :active-value="false"  
+                      :inactive-value="true" 
+                      v-model="server.disabled"
+                      @change="autoSaveSettings"
+                      class="kb-switch"
+                    ></el-switch>
+                  </template>
                   <div class="card-actions">
                     <el-button
                       @click="removeMCPServer(name)"
