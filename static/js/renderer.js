@@ -1631,7 +1631,8 @@ main();`,
           ...this.mcpServers,
           [mcpId]: {
             ...servers[Object.keys(servers)[0]],
-            processingStatus: 'initializing' // 新增状态字段
+            processingStatus: 'initializing', // 新增状态字段
+            disabled:false
           }
         };
         
