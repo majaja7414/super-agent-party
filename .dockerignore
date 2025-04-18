@@ -12,7 +12,6 @@ test/
 uploaded_files/
 kb/
 build_python.spec
-package-lock.json
 server.build/
 server.dist/
 tiktoken_cache/
