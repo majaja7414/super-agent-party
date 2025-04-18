@@ -7,3 +7,13 @@ __pycache__
 release/
 build/
 dist/
+config/settings*.json
+test/
+uploaded_files/
+kb/
+build_python.spec
+package-lock.json
+server.build/
+server.dist/
+tiktoken_cache/
+agents/
