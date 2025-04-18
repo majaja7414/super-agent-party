@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
                 logger.error(f"Failed to initialize MCP client for {server_name} in 5 seconds")
                 mcp_client_list[server_name].disabled = True
                 del settings['mcpServers'][server_name]
-                save_settings(settings)
+        save_settings(settings)
     yield
 
 app = FastAPI(lifespan=lifespan)
