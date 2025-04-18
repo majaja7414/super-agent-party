@@ -152,7 +152,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         if mcp_client_list:
             for server_name, mcp_client in mcp_client_list.items():
                 if server_name in settings['mcpServers']:
-                    if settings['mcpServers'][server_name]['disabled'] == False:
+                    if 'disabled' not in settings['mcpServers'][server_name]:
+                        settings['mcpServers'][server_name]['disabled'] = False
+                    if settings['mcpServers'][server_name]['disabled'] == False and settings['mcpServers'][server_name]['processingStatus'] == 'ready':
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
@@ -931,7 +933,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     if mcp_client_list:
         for server_name, mcp_client in mcp_client_list.items():
             if server_name in settings['mcpServers']:
-                if settings['mcpServers'][server_name]['disabled'] == False:
+                if 'disabled' not in settings['mcpServers'][server_name]:
+                    settings['mcpServers'][server_name]['disabled'] = False
+                if settings['mcpServers'][server_name]['disabled'] == False and settings['mcpServers'][server_name]['processingStatus'] == 'ready':
                     function = await mcp_client.get_openai_functions()
                     if function:
                         tools.extend(function)

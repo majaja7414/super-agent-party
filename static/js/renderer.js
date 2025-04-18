@@ -1632,7 +1632,7 @@ main();`,
           [mcpId]: {
             ...servers[Object.keys(servers)[0]],
             processingStatus: 'initializing', // 新增状态字段
-            disabled:false
+            disabled:true
           }
         };
         
@@ -1658,6 +1658,7 @@ main();`,
           if (status === 'ready') {
             clearInterval(interval);
             this.mcpServers[mcpId].processingStatus = 'ready';
+            this.mcpServers[mcpId].disabled = false;
             this.autoSaveSettings();
             showNotification(this.t('mcpAdded'), 'success');
           } else if (status.startsWith('failed')) {
