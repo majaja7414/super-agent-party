@@ -1498,7 +1498,7 @@ async def process_mcp(mcp_id: str):
         # 执行初始化逻辑
         if mcp_id not in mcp_client_list:
             mcp_client_list[mcp_id] = McpClient()    
-            await asyncio.wait_for(mcp_client_list[mcp_id].initialize(mcp_id, server_config), timeout=5)
+            await asyncio.wait_for(mcp_client_list[mcp_id].initialize(mcp_id, server_config), timeout=10)
         else:
             mcp_client_list[mcp_id].disabled = False
         mcp_status[mcp_id] = "ready"
