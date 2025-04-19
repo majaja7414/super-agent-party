@@ -16,7 +16,7 @@ import uuid
 import time
 import shutil
 from typing import List, Dict
-
+import aisuite as ai
 import shortuuid
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path,in_docker
@@ -1392,31 +1392,44 @@ async def chat_endpoint(request: ChatRequest):
     model = request.model or 'super-model' # 默认使用 'super-model'
     if model == 'super-model':
         current_settings = load_settings()
-
+        providerId = current_settings['selectedProvider'] 
+        reasoner_providerId = current_settings['reasoner']['selectedProvider']
+        vendor = None
+        reasoner_vendor = None
+        for provider in current_settings["modelProviders"]:
+            if provider["id"] == providerId:
+                vendor = provider["vendor"]
+            if provider["id"] == reasoner_providerId:
+                reasoner_vendor = provider["vendor"]
+            if vendor is not None and reasoner_vendor is not None:
+                break
         # 动态更新客户端配置
         if (current_settings['api_key'] != settings['api_key'] 
             or current_settings['base_url'] != settings['base_url']):
-            if current_settings['api_key']:
+            if vendor == 'Anthropic':
+                provider_configs ={
+                    "api_key": current_settings['api_key'],
+                    "base_url": current_settings['base_url'] or "https://api.anthropic.com/v1"
+                }
+                client = ai.Client(provider_configs)
+            else:
                 client = AsyncOpenAI(
                     api_key=current_settings['api_key'],
                     base_url=current_settings['base_url'] or "https://api.openai.com/v1",
                 )
-            else:
-                client = AsyncOpenAI(
-                    base_url=settings['base_url'] or "https://api.openai.com/v1",
-                )
         if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
             or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
-            if current_settings['reasoner']['api_key']:
+            if reasoner_vendor == 'Anthropic':
+                reasoner_provider_configs ={
+                    "api_key": current_settings['reasoner']['api_key'],
+                    "base_url": current_settings['reasoner']['base_url'] or "https://api.anthropic.com/v1"
+                }
+                client = ai.Client(reasoner_provider_configs)
+            else:
                 reasoner_client = AsyncOpenAI(
                     api_key=current_settings['reasoner']['api_key'],
                     base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
                 )
-            else:
-                reasoner_client = AsyncOpenAI(
-                    base_url=settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-                )
-
         if current_settings != settings:
             settings = current_settings
         try:
@@ -1435,6 +1448,17 @@ async def chat_endpoint(request: ChatRequest):
     else:
         current_settings = load_settings()
         agentSettings = current_settings['agents'].get(model, {})
+        providerId = agentSettings['selectedProvider'] 
+        reasoner_providerId = agentSettings['reasoner']['selectedProvider']
+        vendor = None
+        reasoner_vendor = None
+        for provider in agentSettings["modelProviders"]:
+            if provider["id"] == providerId:
+                vendor = provider["vendor"]
+            if provider["id"] == reasoner_providerId:
+                reasoner_vendor = provider["vendor"]
+            if vendor is not None and reasoner_vendor is not None:
+                break
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
         if agentSettings['config_path']:
@@ -1446,14 +1470,28 @@ async def chat_endpoint(request: ChatRequest):
                     request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
-        agent_client = AsyncOpenAI(
-            api_key=agent_settings['api_key'],
-            base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
-        )
-        agent_reasoner_client = AsyncOpenAI(
-            api_key=agent_settings['reasoner']['api_key'],
-            base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-        )
+        if vendor == 'Anthropic':
+            provider_configs ={
+                "api_key": agent_settings['api_key'],
+                "base_url": agent_settings['base_url'] or "https://api.anthropic.com/v1"
+            }
+            client = ai.Client(provider_configs)
+        else:
+            agent_client = AsyncOpenAI(
+                api_key=agent_settings['api_key'],
+                base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
+            )
+        if reasoner_vendor == 'Anthropic':
+            reasoner_provider_configs ={
+                "api_key": agent_settings['reasoner']['api_key'],
+                "base_url": agent_settings['reasoner']['base_url'] or "https://api.anthropic.com/v1"
+            }
+            client = ai.Client(reasoner_provider_configs)
+        else:
+            agent_reasoner_client = AsyncOpenAI(
+                api_key=agent_settings['reasoner']['api_key'],
+                base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+            )
 
         try:
             if request.stream:

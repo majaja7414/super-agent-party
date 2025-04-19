@@ -17,9 +17,10 @@ pywin32; sys_platform == 'win32'
 bs4
 langchain_openai
 langchain_ollama
-langchain_anthropic
 langchain_community
 faiss-cpu
 mcp
 nest_asyncio
 shortuuid
+aisuite[all]
+docstring_parser
