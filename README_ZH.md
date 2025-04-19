@@ -12,7 +12,7 @@
 ![image](static/source/image-ZN.png)
 
 ## 效果演示
-![video](https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573)
+https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## 功能
 

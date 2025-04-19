@@ -12,7 +12,7 @@ If you want to transform a large model into an intelligent agent that can access
 ![image](static/source/image.png)
 
 ## Demo
-![video](https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573)
+https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## Features
 
