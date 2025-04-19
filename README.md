@@ -11,6 +11,9 @@ If you want to transform a large model into an intelligent agent that can access
 
 ![image](static/source/image.png)
 
+## Demo
+![video](https://private-user-images.githubusercontent.com/20573295/435359569-1118302b-139a-4b33-ac08-adbde647f573.mp4?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NDUwMzkzMTMsIm5iZiI6MTc0NTAzOTAxMywicGF0aCI6Ii8yMDU3MzI5NS80MzUzNTk1NjktMTExODMwMmItMTM5YS00YjMzLWFjMDgtYWRiZGU2NDdmNTczLm1wND9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTA0MTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUwNDE5VDA1MDMzM1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWZjYzkzOTI5ODliZTgyMjIwMjIwYjBjNTNjYTM4YmNkYjhkNjJhM2ZlYTY4ZTJlODQyZmJjN2MyYzMzNTg0OWQmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.gU65UW7vCaOhmFi4VBWoUZxaQndFStg34wudby6C2yg)
+
 ## Features
 
 1. Knowledge Base: Enables large models to answer based on information within the knowledge base. If there are multiple knowledge bases, the model will proactively query the relevant one based on the question.
