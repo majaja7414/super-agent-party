@@ -19,14 +19,10 @@ from typing import List, Dict
 import aisuite as ai
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path,in_docker
+from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
+from py.agent_tool import get_agent_tool
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
-if in_docker():
-    HOST = '0.0.0.0'
-else:
-    HOST = '127.0.0.1'
-PORT = 3456
 local_timezone = None
 logger = None
 settings = None
@@ -81,6 +77,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         Crawl4Ai_search_async, 
     )
     from py.know_base import query_knowledge_base
+    from py.agent_tool import agent_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -88,6 +85,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "query_knowledge_base": query_knowledge_base,
         "jina_crawler_async": jina_crawler_async,
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
+        "agent_tool_call": agent_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -148,7 +146,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.know_base import kb_tool
     try:
         tools = request.tools or []
-        print(tools)
         if mcp_client_list:
             for server_name, mcp_client in mcp_client_list.items():
                 if server_name in settings['mcpServers']:
@@ -158,6 +155,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
+        get_agent_tool_fuction = await get_agent_tool(settings)
+        if get_agent_tool_fuction:
+            tools.append(get_agent_tool_fuction)
+        print(tools)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -598,7 +599,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "tool_calls":tool_calls,
+                                        "tool_calls":modified_data,
                                     }
                                 }
                             ]
@@ -939,6 +940,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     function = await mcp_client.get_openai_functions()
                     if function:
                         tools.extend(function)
+    get_agent_tool_fuction = await get_agent_tool(settings)
+    if get_agent_tool_fuction:
+        tools.append(get_agent_tool_fuction)
     search_not_done = False
     search_task = ""
     try:
@@ -1448,17 +1452,6 @@ async def chat_endpoint(request: ChatRequest):
     else:
         current_settings = load_settings()
         agentSettings = current_settings['agents'].get(model, {})
-        providerId = agentSettings['selectedProvider'] 
-        reasoner_providerId = agentSettings['reasoner']['selectedProvider']
-        vendor = None
-        reasoner_vendor = None
-        for provider in agentSettings["modelProviders"]:
-            if provider["id"] == providerId:
-                vendor = provider["vendor"]
-            if provider["id"] == reasoner_providerId:
-                reasoner_vendor = provider["vendor"]
-            if vendor is not None and reasoner_vendor is not None:
-                break
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
         if agentSettings['config_path']:
@@ -1470,6 +1463,17 @@ async def chat_endpoint(request: ChatRequest):
                     request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
+        providerId = agent_settings['selectedProvider'] 
+        reasoner_providerId = agent_settings['reasoner']['selectedProvider']
+        vendor = None
+        reasoner_vendor = None
+        for provider in agent_settings["modelProviders"]:
+            if provider["id"] == providerId:
+                vendor = provider["vendor"]
+            if provider["id"] == reasoner_providerId:
+                reasoner_vendor = provider["vendor"]
+            if vendor is not None and reasoner_vendor is not None:
+                break
         if vendor == 'Anthropic':
             provider_configs ={
                 "api_key": agent_settings['api_key'],

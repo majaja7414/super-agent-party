@@ -13,6 +13,12 @@ def in_docker():
         pass
     return False
 
+if in_docker():
+    HOST = '0.0.0.0'
+else:
+    HOST = '127.0.0.1'
+PORT = 3456
+
 def get_base_path():
     """判断当前是开发环境还是打包环境，返回基础路径"""
     if getattr(sys, 'frozen', False):
