@@ -166,8 +166,16 @@ const app = Vue.createApp({
 }`,
         sse: `{
   "mcpServers": {
-    "mcp-server": {
-      "url": "SSE_URL",
+    "sse-server": {
+      "url": "http://localhost:8000/sse",
+      "disabled": false
+    }
+  }
+}`,
+        ws: `{
+  "mcpServers": {
+    "websocket-server": {
+      "url": "ws://localhost:8000/ws",
       "disabled": false
     }
   }
