@@ -30,6 +30,7 @@ class McpClient:
         self.session: ClientSession = None
         self.exit_stack = AsyncExitStack()
         self.server_name = None
+        self.server_config = None
         self.tools = []
         self.tools_list = []
         self.disabled = False
@@ -43,6 +44,8 @@ class McpClient:
             try:
                 await self._connect(server_name, server_config)
                 print("成功连接到服务器")
+                # 启动监控
+                await self.start_monitoring()
                 break
             except Exception as e:
                 logging.error(f"连接失败: {e}, 尝试重连...")
@@ -55,6 +58,7 @@ class McpClient:
 
     async def _connect(self, server_name, server_config):
         self.server_name = server_name
+        self.server_config = server_config
         command = server_config.get('command', '')
         if not command:
             server_url = server_config.get('url', '')
@@ -86,14 +90,16 @@ class McpClient:
         while not self.disabled:
             if not await self.check_connection():
                 print("检测到连接丢失，尝试重新连接...")
-                await self.initialize(self.server_name, server_config={'url': 'your_server_url'})  # 根据实际情况修改server_config
+                await self.initialize(self.server_name, self.server_config)  # 根据实际情况修改server_config
             await asyncio.sleep(10)  # 每隔10秒检查一次连接状态
 
     async def check_connection(self):
         try:
             # 这里根据你的具体需求来检查连接有效性，例如发送一个测试请求
-            response = await self.session.some_ping_method()  # 需要替换为实际的ping方法
-            return response.successful
+            response = await self.session.list_tools()  # 需要替换为实际的ping方法
+            if response.tools:
+                return True
+            return False
         except Exception as e:
             logging.error(f"检查连接时出错: {e}")
             return False

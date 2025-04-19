@@ -69,3 +69,39 @@ super\Scripts\activate # Windows
 pip install -r requirements.txt
 npm install
 ```
+
+## Configuration
+1. Click on the System Settings in the left sidebar to set language options, system themes, and open this application in web mode.
+2. Navigate to the Model Services Interface in the left sidebar to configure the cloud service providers you need to call, such as OpenAI, DeepSeek, etc. Select a model service provider and fill in the corresponding API key, then click the magnifying glass button at the top right corner to fetch the model list from that provider, choose your desired model to complete the configuration.
+3. Access the Primary Model and Inference Model interfaces in the left sidebar for more precise model configurations. By default, it selects the first model from the model service provider. You can also choose other models. Note! The primary model needs to have tool invocation capabilities (most inference models do not have tool capabilities), while inference models need to have inference capabilities.
+4. Go to the MCP Service Interface in the left sidebar to configure MCP services. Currently, two calling methods are supported: standard input/output and Server-Sent Events (SSE). The standard input/output method requires configuring various parameters of the MCP server; if errors occur, ensure that the local environment has the necessary package managers installed (e.g., uv, npm, etc.). The SSE method requires configuring the MCP server's address.
+5. Click on the Internet Function Interface in the left sidebar to configure internet functions. Currently, it supports three search engines and two web-to-markdown tools: DuckDuckGo, SearXNG, Tavily, Jina, Crawl4AI. DuckDuckGo does not require configuration; SearXNG requires configuring the Docker image address; Tavily requires an API key; Jina does not require configuration; Crawl4AI requires configuring the Docker image address.
+6. Access the Knowledge Base Interface in the left sidebar to configure the knowledge base. Before configuring the knowledge base, you need to complete the configuration of the word embedding model in the Model Services Interface.
+
+## Disclaimer:
+This open-source project and its contents (hereinafter referred to as the "Project") are provided for reference only and do not imply any explicit or implicit warranty. Project contributors are not responsible for the completeness, accuracy, reliability, or applicability of the Project. Any reliance on the content of the Project is undertaken at your own risk. Under no circumstances will the project contributors be liable for any indirect, special, or consequential damages arising out of the use of the Project content.
+
+## Support:
+
+### Join Community
+If there are issues with the plugin or if you have other questions, feel free to join our community.
+
+1. QQ Group: `931057213`
+
+<div style="display: flex; justify-content: center;">
+    <img src="doc/image/Q群.jpg" style="width: 48%;" />
+</div>
+
+2. WeChat Group: `we_glm` (Join the group after adding the assistant's WeChat)
+
+3. Discord:[Discord Link](https://discord.gg/f2dsAKKr2V)
+
+### Follow Us
+1. To stay updated with the latest features of this project, follow the Bilibili account: [派酱](https://space.bilibili.com/26978344)
+
+### Donate Support
+If my work has brought you value, please consider buying me a coffee! Your support not only energizes the project but also warms the creator's heart.☕💖 Every cup counts!
+<div style="display:flex; justify-content:space-between;">
+    <img src="doc/image/zhifubao.jpg" style="width: 48%;" />
+    <img src="doc/image/wechat.jpg" style="width: 48%;" />
+</div> 
