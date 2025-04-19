@@ -1,11 +1,11 @@
 # Contributor License Agreement (CLA)
 
 
-Thank you for your interest in contributing to super_agent_party (the "Project"). By contributing to this Project, you agree to the following terms and conditions:
+Thank you for your interest in contributing to super agent party (the "Project"). By contributing to this Project, you agree to the following terms and conditions:
 
 
 1. **Grant of Copyright License**:
-   You hereby grant to  Copyright (C)  2024 heshengtao a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute your contributions and such derivative works.
+   You hereby grant to  Copyright (C)  2025 heshengtao a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute your contributions and such derivative works.
 
 
 2. **Grant of Patent License**:
