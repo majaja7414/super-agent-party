@@ -7,6 +7,7 @@ from typing import Dict, List, Any, Optional
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
+from mcp.client.websocket import websocket_client
 import shutil
 import nest_asyncio
 from dotenv import load_dotenv
@@ -66,9 +67,14 @@ class McpClient:
                 self.disabled = True
                 return
             else:
-                stream = await self.exit_stack.enter_async_context(sse_client(server_url))
-                self.stdio, self.write = stream
-                self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+                if server_url.startswith("ws://") or server_url.startswith("wss://"):
+                    stream = await self.exit_stack.enter_async_context(websocket_client(server_url))
+                    self.stdio, self.write = stream
+                    self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+                elif server_url.startswith("http://") or server_url.startswith("https://"):
+                    stream = await self.exit_stack.enter_async_context(sse_client(server_url))
+                    self.stdio, self.write = stream
+                    self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
         else:
             server_params = StdioServerParameters(
                 command=get_command_path(command),
@@ -95,11 +101,8 @@ class McpClient:
 
     async def check_connection(self):
         try:
-            # 这里根据你的具体需求来检查连接有效性，例如发送一个测试请求
-            response = await self.session.list_tools()  # 需要替换为实际的ping方法
-            if response.tools:
-                return True
-            return False
+            await self.session.send_ping()  
+            return True
         except Exception as e:
             logging.error(f"检查连接时出错: {e}")
             return False
