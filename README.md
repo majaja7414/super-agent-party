@@ -23,9 +23,10 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 - [tavily](https://tavily.com/) (requires applying for an API key)
 - [jina](https://github.com/jina-ai/jina) (can be used without an API key for web scraping)
 - [crawl4ai](https://github.com/unclecode/crawl4ai) (can be deployed locally with Docker for web scraping).
-3. [MCP](https://modelcontextprotocol.io/introduction) Services: Enable large models to proactively call MCP services based on question requirements. Currently supports two calling methods: standard input/output and Server-Sent Events (SSE).
-4. Deep Thinking: Transplants the reasoning capabilities of reasoning models into tool-invoking or multimodal models so that large models can use reasoning models for analysis before invoking tools. For example, if deepseek-V3 can invoke tools but the reasoning model deepseek-R1 cannot, the reasoning capability of deepseek-R1 can be transplanted into deepseek-V3 to allow it to reason using deepseek-R1 before invoking tools.
-5. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
+3. [MCP](https://modelcontextprotocol.io/introduction) Service, enabling large models to proactively invoke MCP services based on questioning needs. Currently, it supports three invocation methods: standard input/output, Server-Sent Events (SSE), and websocket.
+4. [A2A](https://github.com/google/A2A) Service, enabling large models to proactively invoke A2A services based on questioning needs.
+5. Deep Thinking: Transplants the reasoning capabilities of reasoning models into tool-invoking or multimodal models so that large models can use reasoning models for analysis before invoking tools. For example, if deepseek-V3 can invoke tools but the reasoning model deepseek-R1 cannot, the reasoning capability of deepseek-R1 can be transplanted into deepseek-V3 to allow it to reason using deepseek-R1 before invoking tools.
+6. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
 
 ## Usage
 
