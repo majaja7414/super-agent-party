@@ -124,6 +124,12 @@
             </el-icon>
             <template #title>{{ t('mcpServers') }}</template>
           </el-menu-item>
+          <el-menu-item index="a2a">
+            <el-icon>
+              <i class="fa-solid fa-plug"></i>
+            </el-icon>
+            <template #title>{{ t('a2aServers') }}</template>
+          </el-menu-item>
           <el-menu-item index="api-box">
             <el-icon>
               <i class="fa-solid fa-cloud"></i>
@@ -480,6 +486,58 @@
                   @click="saveAgent"
                   :disabled="!newAgent.name || !newAgent.system_prompt">
                   {{ t('createAgent') }}
+                </el-button>
+              </template>
+            </el-dialog>
+          </div>
+        </div>
+
+        <!---- a2a页面 ---->
+        <div v-show="activeMenu === 'a2a'" class="page a2a-container">
+          <div class="keybox-container">
+            <div class="provider-grid">
+              <div class="provider-card a2a-card" v-for="(server, url) in a2aServers" :key="url">
+                <div class="card-header">
+                  <template v-if="server.status === 'initializing'">
+                    <el-icon class="loading-spinner">
+                      <i class="fa-solid fa-spinner"></i>
+                    </el-icon>
+                  </template>
+                  <template v-else>
+                    <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
+                  </template>
+                  <div class="card-actions">
+                    <el-button @click="removeA2AServer(url)" type="danger" circle size="small">
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
+                  </div>
+                </div>
+                <div class="a2a-content">
+                  <h3 class="a2a-name">{{ server.name }}</h3>
+                  <p class="a2a-description">{{ server.description }}</p>
+                  <div class="a2a-skills">
+                    <el-tag v-for="(skill, index) in server.skills" :key="index" type="info" size="small">
+                      {{ skill }}
+                    </el-tag>
+                  </div>
+                </div>
+              </div>
+              <div class="provider-card add-tile" @click="showAddA2ADialog = true">
+                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                <div style="color: #606266; margin-top: 10px;">{{ t('addA2AServer') }}</div>
+              </div>
+            </div>
+        
+            <!-- 添加A2A服务器对话框 -->
+            <el-dialog v-model="showAddA2ADialog" :title="t('addA2AServer')" width="500px">
+              <el-input v-model="newA2AUrl" placeholder="http://127.0.0.1:5000"></el-input>
+              <template #footer>
+                <el-button @click="showAddA2ADialog = false">{{ t('cancel') }}</el-button>
+                <el-button 
+                  type="primary" 
+                  @click="addA2AServer"
+                  :disabled="!isValidUrl(newA2AUrl)">
+                  {{ t('confirmAdd') }}
                 </el-button>
               </template>
             </el-dialog>

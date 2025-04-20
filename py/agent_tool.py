@@ -4,7 +4,7 @@ from openai import AsyncOpenAI
 async def get_agent_tool(settings):
     tool_agent_list = []
     for agent_id,agent_config in settings['agents'].items():
-        if settings['agents'][agent_id]['enabled']:
+        if agent_config['enabled']:
             tool_agent_list.append({"agent_id": agent_id, "agent_skill": agent_config["system_prompt"]})
     if len(tool_agent_list) > 0:
         tool_agent_list = json.dumps(tool_agent_list, ensure_ascii=False, indent=4)

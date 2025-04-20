@@ -199,6 +199,9 @@ const app = Vue.createApp({
       showAddKbDialog: false,
       showKnowledgeDialog: false,
       showMCPServerDialog: false,
+      a2aServers: {},
+      showAddA2ADialog: false,
+      newA2AUrl: '',
       activeCollapse: [],
       newKb: {
         name: '',
@@ -690,6 +693,7 @@ main();`,
           this.systemSettings = data.data.systemSettings || {};
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.mcpServers = data.data.mcpServers || {};
+          this.a2aServers = data.data.a2aServers || {};
         } 
         else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -969,6 +973,7 @@ main();`,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
         mcpServers: this.mcpServers,
+        a2aServers: this.a2aServers,
         isdocker: this.isdocker,
       }
       this.ws.send(JSON.stringify({
@@ -1756,6 +1761,50 @@ main();`,
         this.agents = { ...this.agents }
       }
       showNotification(`Agent ${id} removed`, 'success');
+      this.autoSaveSettings();
+    },
+    isValidUrl(url) {
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    async addA2AServer() {
+      try {
+        this.showAddA2ADialog = false;
+        const newurl = this.newA2AUrl;
+        this.newA2AUrl = '';
+        this.a2aServers = {
+          ...this.a2aServers,
+          [newurl]: {
+            status: 'initializing',
+          }
+        };
+        this.autoSaveSettings();
+        const response = await fetch(`http://${HOST}:${PORT}/a2a/initialize`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: newurl })
+        });
+        
+        const data = await response.json();
+        this.a2aServers[newurl] = {
+          ...this.a2aServers[newurl],
+          ...data
+        }
+
+        this.autoSaveSettings();
+      } catch (error) {
+        console.error('A2A初始化失败:', error);
+        this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== newurl));
+        this.autoSaveSettings();
+        showNotification(this.t('a2aInitFailed'), 'error');
+      }
+    },
+    removeA2AServer(url) {
+      this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== url));
       this.autoSaveSettings();
     }
   }

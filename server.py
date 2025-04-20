@@ -21,6 +21,7 @@ import shortuuid
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
 from py.agent_tool import get_agent_tool
+from py.a2a_tool import get_a2a_tool
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 local_timezone = None
@@ -78,6 +79,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     )
     from py.know_base import query_knowledge_base
     from py.agent_tool import agent_tool_call
+    from py.a2a_tool import a2a_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -86,6 +88,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "jina_crawler_async": jina_crawler_async,
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
         "agent_tool_call": agent_tool_call,
+        "a2a_tool_call": a2a_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -158,6 +161,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_agent_tool_fuction = await get_agent_tool(settings)
         if get_agent_tool_fuction:
             tools.append(get_agent_tool_fuction)
+        get_a2a_tool_fuction = await get_a2a_tool(settings)
+        if get_a2a_tool_fuction:
+            tools.append(get_a2a_tool_fuction)
         print(tools)
         source_prompt = ""
         if request.fileLinks:
@@ -943,6 +949,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     get_agent_tool_fuction = await get_agent_tool(settings)
     if get_agent_tool_fuction:
         tools.append(get_agent_tool_fuction)
+    get_a2a_tool_fuction = await get_a2a_tool(settings)
+    if get_a2a_tool_fuction:
+        tools.append(get_a2a_tool_fuction)
     search_not_done = False
     search_task = ""
     try:
@@ -1582,6 +1591,24 @@ async def remove_mcp_server(request: Request):
         logger.error(f"移除MCP服务器失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/a2a/initialize")
+async def initialize_a2a(request: Request):
+    from python_a2a import A2AClient
+    data = await request.json()
+    try:
+        client = A2AClient(data['url'])
+        agent_card = client.agent_card.to_json()
+        agent_card = json.loads(agent_card)
+        return JSONResponse({
+            **agent_card,
+            "status": "ready",
+            "enabled": True
+        })
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 # 在现有路由之后添加health路由
 @app.get("/health")

@@ -56,5 +56,6 @@
     },
     "knowledgeBases": [],
     "modelProviders": [],
-    "agents": {}
+    "agents": {},
+    "a2aServers": {}
 }

@@ -223,6 +223,9 @@ const translations = {
       'goToagents': '去智能体页面',
       'defaultAgent': '默认智能体',
       'aboutUs': '关于我们',
+      'a2aServers': 'A2A 服务器',
+      'addA2AServer': '添加A2A服务器', 
+      'a2aInitFailed': 'A2A初始化失败',
     },
     'en-US': {
       'chat': 'Chat',
@@ -447,6 +450,9 @@ const translations = {
       'goToagents': 'Go to Agents page',
       'defaultAgent': 'Default Agent',
       'aboutUs': 'About Us',
+      'a2aServers': 'A2A Servers',
+      'addA2AServer': 'Add A2A Server',
+      'a2aInitFailed': 'A2A initialization failed',
     }
   };
   
