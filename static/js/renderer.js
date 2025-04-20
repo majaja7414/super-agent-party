@@ -736,9 +736,8 @@ main();`,
         .replace(/'/g, "&#039;");
     },  
     // 发送消息
-    async sendMessage() {
+    async sendMessage() { 
       if (!this.userInput.trim() || this.isTyping) return;
-      
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
       if (fileLinks.length > 0){
@@ -826,7 +825,11 @@ main();`,
       this.files = [];
       let max_rounds = this.settings.max_rounds || 0;
       let messages;
-      
+      // 把窗口滚动到底部
+      this.$nextTick(() => {
+        const container = this.$refs.messagesContainer;
+        container.scrollTop = container.scrollHeight;
+      });
       if (max_rounds === 0) {
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
