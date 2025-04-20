@@ -226,6 +226,11 @@ const translations = {
       'a2aServers': 'A2A 服务器',
       'addA2AServer': '添加A2A服务器', 
       'a2aInitFailed': 'A2A初始化失败',
+      'noA2AServersPrompt': '尚未添加任何A2A服务器，是否立即添加？',
+      'noA2AServers': '没有可用的A2A服务器',
+      'a2aServersManagement': 'A2A服务器管理',
+      'goToAdd': '去添加',
+      'A2AUrl': 'A2A服务器地址',
     },
     'en-US': {
       'chat': 'Chat',
@@ -453,6 +458,11 @@ const translations = {
       'a2aServers': 'A2A Servers',
       'addA2AServer': 'Add A2A Server',
       'a2aInitFailed': 'A2A initialization failed',
+      'noA2AServersPrompt': 'No A2A servers added yet. Go to add one?',
+      'noA2AServers': 'No available A2A servers',
+      'a2aServersManagement': 'A2A Servers Management', 
+      'goToAdd': 'Add Now',
+      'A2AUrl': 'A2A URL',
     }
   };
   

@@ -200,6 +200,7 @@ const app = Vue.createApp({
       showKnowledgeDialog: false,
       showMCPServerDialog: false,
       a2aServers: {},
+      showA2AServerDialog: false,
       showAddA2ADialog: false,
       newA2AUrl: '',
       activeCollapse: [],
@@ -399,6 +400,10 @@ main();`,
     iconClass() {
       return this.isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
     },
+    hasEnabledA2AServers() {
+      return Object.values(this.a2aServers).some(server => server.enabled);
+    },
+
     hasEnabledKnowledgeBases() {
       return this.knowledgeBases.some(kb => kb.enabled)
     },
@@ -443,6 +448,9 @@ main();`,
   methods: {
     switchToagents() {
       this.activeMenu = 'agents';
+    },
+    switchToa2aServers() {
+      this.activeMenu = 'a2a';
     },
     syncProviderConfig(targetConfig) {
       // 当有选中供应商时执行同步
@@ -1806,7 +1814,7 @@ main();`,
     removeA2AServer(url) {
       this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== url));
       this.autoSaveSettings();
-    }
+    },
   }
 });
 

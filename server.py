@@ -20,8 +20,6 @@ import aisuite as ai
 import shortuuid
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
-from py.agent_tool import get_agent_tool
-from py.a2a_tool import get_a2a_tool
 from contextlib import asynccontextmanager
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 local_timezone = None
@@ -147,6 +145,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         Crawl4Ai_tool
     )
     from py.know_base import kb_tool
+    from py.agent_tool import get_agent_tool
+    from py.a2a_tool import get_a2a_tool
     try:
         tools = request.tools or []
         if mcp_client_list:
@@ -932,6 +932,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         Crawl4Ai_tool
     )
     from py.know_base import kb_tool
+    from py.agent_tool import get_agent_tool
+    from py.a2a_tool import get_a2a_tool
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []

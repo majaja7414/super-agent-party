@@ -298,6 +298,25 @@
               </div>
             </div>
           </el-dialog>
+          <el-dialog
+            v-model="showA2AServerDialog"
+            :title="t('a2aServersManagement')"
+            width="400px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
+                <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ server.name }}</div>
+                  <div class="knowledge-desc">{{ server.description }}</div>
+                </div>
+              </div>
+              <div v-if="Object.keys(a2aServers).length === 0" class="empty-tip">
+                {{ t('noA2AServers') }}
+                <a href="#" @click.stop.prevent="switchToa2aServers">{{ t('addA2AServer') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
           <div class="button-group">
             <el-tooltip :content="t('clearChat')" placement="top">
               <el-button
@@ -376,6 +395,16 @@
                 :type="hasEnabledMCPServers ? 'primary' : 'default'"
                 circle>
                 <i class="fa-solid fa-server"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('a2aServers')" placement="top">
+              <el-button
+                @click="this.showA2AServerDialog = true"
+                class="icon-btn a2a-btn"
+                :type="hasEnabledA2AServers ? 'primary' : 'default'"
+                circle>
+                <i class="fa-solid fa-plug"></i>
               </el-button>
             </el-tooltip>
 
@@ -529,8 +558,12 @@
             </div>
         
             <!-- 添加A2A服务器对话框 -->
-            <el-dialog v-model="showAddA2ADialog" :title="t('addA2AServer')" width="500px">
-              <el-input v-model="newA2AUrl" placeholder="http://127.0.0.1:5000"></el-input>
+            <el-dialog v-model="showAddA2ADialog" :title="t('addA2AServer')" width="500px" label-position="top">
+              <el-form label-position="top">
+                <el-form-item :label="t('A2AUrl')" required>
+                  <el-input v-model="newA2AUrl" placeholder="http://127.0.0.1:5000"></el-input>
+                </el-form-item>
+              </el-form>
               <template #footer>
                 <el-button @click="showAddA2ADialog = false">{{ t('cancel') }}</el-button>
                 <el-button 
