@@ -1767,3 +1767,12 @@ border: 1px solid var(--border-color) !important;
   font-family: monospace;
   user-select: all;
 }
+
+.agent-config-tabs {
+  margin: 25px;
+}
+
+.agent-config-tabs .el-tabs__content {
+  max-height: 400px;
+  overflow-y: auto;
+}

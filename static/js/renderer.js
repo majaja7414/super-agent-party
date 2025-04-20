@@ -304,6 +304,7 @@ const app = Vue.createApp({
         'angry', 'sad', 'excited', 'refutational'
       ],
       showUploadDialog: false,
+      agentTabActive: 'tools',
       files: [],
       selectedCodeLang: 'python',
       codeExamples: {

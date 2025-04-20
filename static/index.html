@@ -208,24 +208,24 @@
               </div>
             </el-dialog>
             <el-dialog
-            v-model="showKnowledgeDialog"
-            :title="t('knowledgeBaseSelection')"
-            width="400px">
-            <div class="knowledge-dialog-content">
-              <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
-                <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
-                <div class="knowledge-info">
-                  <div class="knowledge-name">{{ kb.name }}</div>
-                  <div class="knowledge-desc">{{ kb.introduction || t('noDescription') }}</div>
+              v-model="showKnowledgeDialog"
+              :title="t('knowledgeBaseSelection')"
+              width="400px">
+              <div class="knowledge-dialog-content">
+                <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
+                  <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
+                  <div class="knowledge-info">
+                    <div class="knowledge-name">{{ kb.name }}</div>
+                    <div class="knowledge-desc">{{ kb.introduction || t('noDescription') }}</div>
+                  </div>
+                </div>
+                <div v-if="knowledgeBases.length === 0" class="empty-tip">
+                  {{ t('noKnowledgeBase') }}
+                  <a href="#" @click.stop.prevent="switchToKnowledgePage">{{ t('goToKnowledgeBase') }}</a>
+                  {{ t('add') }}
                 </div>
               </div>
-              <div v-if="knowledgeBases.length === 0" class="empty-tip">
-                {{ t('noKnowledgeBase') }}
-                <a href="#" @click.stop.prevent="switchToKnowledgePage">{{ t('goToKnowledgeBase') }}</a>
-                {{ t('add') }}
-              </div>
-            </div>
-          </el-dialog>
+            </el-dialog>
           <el-dialog
             v-model="showAgentDialog"
             :title="t('agentSettings')"
@@ -496,6 +496,88 @@
                     :rows="6"
                     :placeholder="t('systemPromptPlaceholder')"/>
                 </el-form-item>
+                  <!-- 新增标签页 -->
+                  <el-tabs v-model="agentTabActive" class="agent-config-tabs">
+                    <!-- 工具 -->
+                    <el-tab-pane :label="t('tools')" name="tools">
+                      <div class="knowledge-dialog-content">
+                        <div class="knowledge-item">
+                          <el-switch v-model="webSearchSettings.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ t('webSearch') }}</div>
+                          </div>
+                        </div>
+                        <div class="knowledge-item">
+                          <el-switch v-model="reasonerSettings.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ t('deepThinking') }}</div>
+                          </div>
+                        </div>
+                        <div class="knowledge-item">
+                          <el-switch v-model="toolsSettings.deepsearch.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ t('deepResearch') }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <!-- 知识库 -->
+                    <el-tab-pane :label="t('knowledgeBase')" name="knowledge">
+                      <div class="knowledge-dialog-content">
+                        <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
+                          <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ kb.name }}</div>
+                            <div class="knowledge-desc">{{ kb.introduction || t('noDescription') }}</div>
+                          </div>
+                        </div>
+                        <div v-if="knowledgeBases.length === 0" class="empty-tip">
+                          {{ t('noKnowledgeBase') }}
+                          <a href="#" @click.stop.prevent="switchToKnowledgePage">{{ t('goToKnowledgeBase') }}</a>
+                          {{ t('add') }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <!-- MCP服务器 -->
+                    <el-tab-pane :label="t('mcpServers')" name="mcp">
+                      <div class="knowledge-dialog-content">
+                        <!-- 服务器列表 -->
+                        <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
+                          <el-switch 
+                            :active-value="false"  
+                            :inactive-value="true" 
+                            v-model="server.disabled" 
+                            @change="autoSaveSettings">
+                          </el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ name }}</div>
+                          </div>
+                        </div>
+                        <div v-if="Object.keys(mcpServers).length === 0" class="empty-tip">
+                          {{ t('nomcpServers') }}
+                          <a href="#" @click.stop.prevent="switchTomcpServers">{{ t('goTomcpServers') }}</a>
+                          {{ t('add') }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                    <!-- A2A服务器 -->
+                    <el-tab-pane :label="t('a2aServers')" name="a2a">
+                      <div class="knowledge-dialog-content">
+                        <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
+                          <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="knowledge-info">
+                            <div class="knowledge-name">{{ server.name }}</div>
+                            <div class="knowledge-desc">{{ server.description }}</div>
+                          </div>
+                        </div>
+                        <div v-if="Object.keys(a2aServers).length === 0" class="empty-tip">
+                          {{ t('noA2AServers') }}
+                          <a href="#" @click.stop.prevent="switchToa2aServers">{{ t('addA2AServer') }}</a>
+                          {{ t('add') }}
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
               </el-form>
               <el-alert
                 type="info"
