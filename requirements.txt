@@ -24,4 +24,4 @@ nest_asyncio
 shortuuid
 aisuite[all]
 docstring_parser
-python-a2a[all]
+python-a2a[all]==0.3.0
