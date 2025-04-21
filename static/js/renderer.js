@@ -47,9 +47,9 @@ const md = window.markdownit({
   highlight: function (str, lang) {
     const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
     try {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button">复制</button></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button"><i class="fa-solid fa-copy"></i></button></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
     } catch (__) {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button">复制</button></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button"><i class="fa-solid fa-copy"></i></button></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
     }
   }
 });

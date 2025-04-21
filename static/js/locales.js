@@ -230,6 +230,7 @@ const translations = {
       'a2aServersManagement': 'A2A服务器管理',
       'goToAdd': '去添加',
       'A2AUrl': 'A2A服务器地址',
+      'preview': '预览',
     },
     'en-US': {
       'chat': 'Chat',
@@ -461,6 +462,7 @@ const translations = {
       'a2aServersManagement': 'A2A Servers Management', 
       'goToAdd': 'Add Now',
       'A2AUrl': 'A2A URL',
+      'preview': 'Preview',
     }
   };
   
