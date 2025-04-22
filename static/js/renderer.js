@@ -46,10 +46,15 @@ const md = window.markdownit({
   typographer: true,
   highlight: function (str, lang) {
     const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+    const previewable = ['html', 'mermaid'].includes(language);
+    
+    // 添加预览按钮
+    const previewButton = previewable ? 
+      `<button class="preview-button" data-lang="${language}"><i class="fa-solid fa-eye"></i></button>` : '';
     try {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button"><i class="fa-solid fa-copy"></i></button></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
     } catch (__) {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><button class="copy-button"><i class="fa-solid fa-copy"></i></button></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
     }
   }
 });

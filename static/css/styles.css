@@ -1086,15 +1086,23 @@ border: 1px solid var(--border-color) !important;
   background: var(--el-color-primary);
   color: var(--el-text-color);
   border-radius: 8px 8px 0 0;
+  width: 100%;
 }
 
 .code-lang {
   color: var(--el-text-color);
   font-size: 0.9em;
   font-family: var(--el-font-family);
+  margin-right: auto;
 }
 
-.copy-button {
+/* 设置按钮组的样式 */
+.code-actions {
+  display: flex;
+  gap: 5px; /* 按钮之间的间距 */
+}
+
+.copy-button, .preview-button{
   background: var(--el-bg-color-page);
   border: none;
   color: var(--el-color-primary);
@@ -1102,6 +1110,9 @@ border: 1px solid var(--border-color) !important;
   padding: 4px 8px;
   border-radius: 4px;
   transition: all 0.2s;
+}
+.copy-button:hover, .preview-button:hover {
+  background: var(--code-bg-color);
 }
 
 /* 在样式表中添加覆盖规则 */
