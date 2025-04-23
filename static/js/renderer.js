@@ -754,6 +754,13 @@ main();`,
       const attemptRender = async () => {
         try {
           diagramContainer.textContent = code;
+          // 根据this.systemSettings.theme设置Mermaid主题
+          if (this.systemSettings.theme === 'dark') {
+            mermaid.theme('dark');
+          }
+          else {
+            mermaid.theme('default');
+          }
           await mermaid.run({
             nodes: [diagramContainer],
             suppressErrors: false

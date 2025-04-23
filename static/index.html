@@ -19,20 +19,11 @@
   <script src="js/locales.js"></script>
   <script src="js/mermaid.min.js"></script>
   <script>
-    if (systemSettings.theme === 'dark') {
-      mermaid.initialize({ 
-        startOnLoad: false,
-        securityLevel: 'loose',
-        theme: 'dark',
-      });
-    }
-    else {
-      mermaid.initialize({ 
-        startOnLoad: false,
-        securityLevel: 'loose',
-        theme: 'default',
-      });
-    }
+    mermaid.initialize({ 
+      startOnLoad: false,
+      securityLevel: 'loose',
+      theme: 'default',
+    });
   </script>
   <!--  MathJax 配置  -->
   <script>
