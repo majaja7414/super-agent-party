@@ -50,7 +50,7 @@ const md = window.markdownit({
       // 检测标准语法特征
       const mermaidPatterns = [
         // 检测图表类型声明
-        /^\s*(graph|sequenceDiagram|gantt|classDiagram|pie|stateDiagram|gitGraph|journey|flowchart)\b/i,
+        /^\s*(graph|sequenceDiagram|gantt|classDiagram|pie|stateDiagram|gitGraph|journey|flowchart|mindmap)\b/i,
         // 检测节点关系语法
         /-->|==>|:::|\|\|/,
         // 检测样式配置语法
@@ -627,14 +627,14 @@ main();`,
           this.showErrorToast('代码内容为空');
           return;
         }
-        // 查找/创建预览容器
-        let previewContainer = codeBlock.nextElementSibling;
-        const isNewContainer = !previewContainer?.classList.contains('preview-container');
+        // codeBlock中查找/创建预览容器
+        let previewContainer = codeBlock.querySelector('.preview-container');
+        const isNewContainer = !previewContainer;
         
         if (isNewContainer) {
           previewContainer = document.createElement('div');
           previewContainer.className = 'preview-container loading';
-          codeBlock.after(previewContainer);
+          codeBlock.appendChild(previewContainer);
         }
         // 状态切换逻辑
         if (previewContainer.classList.contains('active')) {
@@ -669,10 +669,7 @@ main();`,
       // 更新按钮状态
       button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
       
-      // 创建新预览容器
-      previewContainer = document.createElement('div');
-      previewContainer.className = 'preview-container active loading';
-      codeBlock.appendChild(previewContainer);
+      previewContainer.classList.add('active', 'loading');
       // 渲染内容
       requestAnimationFrame(() => {
         try {
