@@ -651,22 +651,47 @@ main();`,
     expandPreview({ previewContainer, button, lang, codeContent }) {
       console.log('🔼 展开预览:', { lang, length: codeContent.length });
       
-      previewContainer.classList.add('active');
+      const codeBlock = button.closest('.code-block');
+  
+      // 检查是否已有预览
+      const existingPreview = codeBlock.querySelector('.preview-container.active');
+      if (existingPreview) {
+        this.collapsePreview(existingPreview, button);
+        return;
+      }
+      // 标记代码块状态
+      codeBlock.dataset.previewActive = "true";
+      
+      // 隐藏代码内容
+      const codeContentDiv = codeBlock.querySelector('.code-content');
+      codeContentDiv.style.display = 'none';
+      
+      // 更新按钮状态
       button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
       
-      // 清空旧内容（保留加载状态）
-      previewContainer.innerHTML = '<div class="loader"></div>';
-      // 延迟渲染避免阻塞UI
+      // 创建新预览容器
+      previewContainer = document.createElement('div');
+      previewContainer.className = 'preview-container active loading';
+      codeBlock.appendChild(previewContainer);
+      // 渲染内容
       requestAnimationFrame(() => {
         try {
           if (lang === 'html') {
             this.renderHtmlPreview(previewContainer, codeContent);
+            // 动态调整iframe高度
+            const iframe = previewContainer.querySelector('iframe');
+            iframe.onload = () => {
+              iframe.style.height = iframe.contentWindow.document.body.scrollHeight + 'px';
+            };
           } else if (lang === 'mermaid') {
-            this.renderMermaidPreview(previewContainer, codeContent);
-          } else {
-            throw new Error(`不支持的语言类型: ${lang}`);
+            this.renderMermaidPreview(previewContainer, codeContent).then(() => {
+              // Mermaid渲染完成后调整高度
+              const svg = previewContainer.querySelector('svg');
+              if (svg) {
+                previewContainer.style.minHeight = svg.getBBox().height + 50 + 'px';
+              }
+            });
           }
-          
           previewContainer.classList.remove('loading');
         } catch (err) {
           console.error('🚨 预览渲染失败:', err);
@@ -674,17 +699,24 @@ main();`,
         }
       });
     },
-    // 收起预览面板
+    // 修改 collapsePreview 方法
     collapsePreview(previewContainer, button) {
       console.log('🔽 收起预览');
       
-      previewContainer.classList.remove('active');
-      button.innerHTML = '<i class="fa-solid fa-eye"></i>';
+      const codeBlock = previewContainer.parentElement;
+  
+      // 重置代码块状态
+      delete codeBlock.dataset.previewActive;
       
-      // 延迟清理DOM
-      setTimeout(() => {
-        previewContainer.innerHTML = '';
-      }, 300);
+      // 显示代码内容
+      const codeContentDiv = codeBlock.querySelector('.code-content');
+      codeContentDiv.style.display = 'block';
+      
+      // 移除预览容器
+      previewContainer.remove();
+      
+      // 重置按钮状态
+      button.innerHTML = '<i class="fa-solid fa-eye"></i>';
     },
     // HTML渲染器
     renderHtmlPreview(container, code) {
