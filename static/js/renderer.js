@@ -50,7 +50,7 @@ const md = window.markdownit({
       // 检测标准语法特征
       const mermaidPatterns = [
         // 检测图表类型声明
-        /^\s*(graph|sequenceDiagram|gantt|classDiagram|pie|stateDiagram|gitGraph|journey|flowchart|mindmap)\b/i,
+        /^\s*(graph|sequenceDiagram|gantt|classDiagram|pie|stateDiagram|gitGraph|journey|flowchart|mindmap|quadrantChart|erDiagram|requirementDiagram|gitGraph|C4Context|timeline|zenuml|sankey-beta|xychart-beta|block-beta|packet-beta|kanban|architecture-beta|radar-beta)\b/i,
         // 检测节点关系语法
         /-->|==>|:::|\|\|/,
         // 检测样式配置语法
