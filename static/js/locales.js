@@ -231,6 +231,7 @@ const translations = {
       'goToAdd': '去添加',
       'A2AUrl': 'A2A服务器地址',
       'preview': '预览',
+      'mermaidError': 'Mermaid语法错误',
     },
     'en-US': {
       'chat': 'Chat',
@@ -463,6 +464,7 @@ const translations = {
       'goToAdd': 'Add Now',
       'A2AUrl': 'A2A URL',
       'preview': 'Preview',
+      'mermaidError': 'Mermaid error',
     }
   };
   

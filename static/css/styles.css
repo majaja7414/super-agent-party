@@ -1086,7 +1086,6 @@ border: 1px solid var(--border-color) !important;
   background: var(--el-color-primary);
   color: var(--el-text-color);
   border-radius: 8px 8px 0 0;
-  width: 100%;
 }
 
 .code-lang {
@@ -1786,4 +1785,48 @@ border: 1px solid var(--border-color) !important;
 .agent-config-tabs .el-tabs__content {
   max-height: 400px;
   overflow-y: auto;
+}
+
+/* 预览容器 */
+.preview-container {
+  transition: all 0.3s ease;
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+}
+.preview-container.active {
+  max-height: 500px;
+  opacity: 1;
+  margin: 15px 0;
+}
+/* 加载状态 */
+.loader {
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+/* 错误提示 */
+.error-alert {
+  padding: 12px;
+  background: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 6px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.error-alert h4 {
+  margin: 0 0 4px 0;
+  color: var(--el-color-danger);
+}
+.error-alert code {
+  font-size: 0.9em;
+  color: var(--el-color-danger-light-3);
 }

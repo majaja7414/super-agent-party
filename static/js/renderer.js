@@ -45,16 +45,34 @@ const md = window.markdownit({
   linkify: true,
   typographer: true,
   highlight: function (str, lang) {
-    const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+    let language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+    const isPotentialMermaid = (code) => {
+      // 检测标准语法特征
+      const mermaidPatterns = [
+        // 检测图表类型声明
+        /^\s*(graph|sequenceDiagram|gantt|classDiagram|pie|stateDiagram|gitGraph|journey|flowchart)\b/i,
+        // 检测节点关系语法
+        /-->|==>|:::|\|\|/,
+        // 检测样式配置语法
+        /^style\s+[\w]+\s+/im,
+        // 检测注释语法
+        /%%\{.*\}\n?/
+      ];
+      
+      return mermaidPatterns.some(pattern => pattern.test(code));
+    };
+    // 自动升级普通文本中的 Mermaid 内容
+    if (language === 'plaintext' && isPotentialMermaid(str)) {
+      language = 'mermaid';
+    };
     const previewable = ['html', 'mermaid'].includes(language);
-    
     // 添加预览按钮
     const previewButton = previewable ? 
       `<button class="preview-button" data-lang="${language}"><i class="fa-solid fa-eye"></i></button>` : '';
     try {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></div></pre>`;
     } catch (__) {
-      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><code class="hljs">${md.utils.escapeHtml(str)}</code></pre>`;
+      return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs">${md.utils.escapeHtml(str)}</code></div></pre>`;
     }
   }
 });
@@ -312,6 +330,7 @@ const app = Vue.createApp({
       agentTabActive: 'knowledge',
       files: [],
       selectedCodeLang: 'python',
+      previewClickHandler: null,
       codeExamples: {
         python: `from openai import OpenAI
 client = OpenAI(
@@ -355,6 +374,9 @@ main();`,
   mounted() {
     this.initWebSocket();
     this.highlightCode();
+    this.$nextTick(() => {
+      this.initPreviewButtons();
+    });
     document.documentElement.setAttribute('data-theme', this.systemSettings.theme);
     if (isElectron) {
       window.electronAPI.onWindowState((_, state) => {
@@ -569,11 +591,171 @@ main();`,
     
       this.$nextTick(() => {
         MathJax.typesetPromise()
-          .then(() => this.initCopyButtons())
+          .then(() => {
+            this.initCopyButtons();
+            this.initPreviewButtons();
+          })
           .catch(console.error);
       });
     
       return rendered;
+    },
+
+    initPreviewButtons() {
+      // 清理旧事件监听器
+      if (this._previewEventHandler) {
+        document.body.removeEventListener('click', this._previewEventHandler);
+      }
+      // 主事件处理器
+      this._previewEventHandler = (e) => {
+        const button = e.target.closest('.preview-button');
+        if (!button) return;
+        e.preventDefault();
+        e.stopPropagation();
+        console.debug('🏁 预览按钮触发:', button);
+        // 获取代码上下文
+        const codeBlock = button.closest('.code-block');
+        if (!codeBlock) {
+          console.error('❌ 未找到代码块容器');
+          return;
+        }
+        // 获取代码内容
+        const lang = button.dataset.lang;
+        const codeContent = codeBlock.querySelector('code')?.textContent?.trim();
+        if (!codeContent) {
+          console.warn('⚠️ 空代码内容', codeBlock);
+          this.showErrorToast('代码内容为空');
+          return;
+        }
+        // 查找/创建预览容器
+        let previewContainer = codeBlock.nextElementSibling;
+        const isNewContainer = !previewContainer?.classList.contains('preview-container');
+        
+        if (isNewContainer) {
+          previewContainer = document.createElement('div');
+          previewContainer.className = 'preview-container loading';
+          codeBlock.after(previewContainer);
+        }
+        // 状态切换逻辑
+        if (previewContainer.classList.contains('active')) {
+          this.collapsePreview(previewContainer, button);
+        } else {
+          this.expandPreview({ previewContainer, button, lang, codeContent });
+        }
+      };
+      // 绑定事件监听
+      document.body.addEventListener('click', this._previewEventHandler);
+      console.log('🔧 预览按钮事件监听已初始化');
+    },
+    // 展开预览面板
+    expandPreview({ previewContainer, button, lang, codeContent }) {
+      console.log('🔼 展开预览:', { lang, length: codeContent.length });
+      
+      previewContainer.classList.add('active');
+      button.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+      
+      // 清空旧内容（保留加载状态）
+      previewContainer.innerHTML = '<div class="loader"></div>';
+      // 延迟渲染避免阻塞UI
+      requestAnimationFrame(() => {
+        try {
+          if (lang === 'html') {
+            this.renderHtmlPreview(previewContainer, codeContent);
+          } else if (lang === 'mermaid') {
+            this.renderMermaidPreview(previewContainer, codeContent);
+          } else {
+            throw new Error(`不支持的语言类型: ${lang}`);
+          }
+          
+          previewContainer.classList.remove('loading');
+        } catch (err) {
+          console.error('🚨 预览渲染失败:', err);
+          this.showPreviewError(previewContainer, err);
+        }
+      });
+    },
+    // 收起预览面板
+    collapsePreview(previewContainer, button) {
+      console.log('🔽 收起预览');
+      
+      previewContainer.classList.remove('active');
+      button.innerHTML = '<i class="fa-solid fa-eye"></i>';
+      
+      // 延迟清理DOM
+      setTimeout(() => {
+        previewContainer.innerHTML = '';
+      }, 300);
+    },
+    // HTML渲染器
+    renderHtmlPreview(container, code) {
+      console.log('🌐 渲染HTML预览');
+      
+      const sandbox = document.createElement('iframe');
+      sandbox.srcdoc = `<!DOCTYPE html>
+        <html>
+          <head>
+            <base href="http://${HOST}:${PORT}/">
+            <link rel="stylesheet" href="/css/styles.css">
+            <style>body { margin: 0; padding: 15px; }</style>
+          </head>
+          <body>${code}</body>
+        </html>`;
+      
+      sandbox.style.cssText = `
+        width: 100%;
+        height: 400px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+      `;
+      
+      container.replaceChildren(sandbox);
+    },
+    // Mermaid渲染器（带重试机制）
+    async renderMermaidPreview(container, code) {
+      console.log('📊 渲染Mermaid图表');
+      
+      const diagramContainer = document.createElement('div');
+      diagramContainer.className = 'mermaid-diagram';
+      container.replaceChildren(diagramContainer);
+      // 异步渲染逻辑
+      let retryCount = 0;
+      const maxRetries = 3;
+      
+      const attemptRender = async () => {
+        try {
+          diagramContainer.textContent = code;
+          await mermaid.run({
+            nodes: [diagramContainer],
+            suppressErrors: false
+          });
+          console.log('✅ Mermaid渲染成功');
+        } catch (err) {
+          if (retryCount < maxRetries) {
+            retryCount++;
+            console.warn(`🔄 重试渲染 (${retryCount}/${maxRetries})`);
+            diagramContainer.innerHTML = '';
+            await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+            await attemptRender();
+          } else {
+            throw new Error(`Mermaid渲染失败: ${err.message}`);
+          }
+        }
+      };
+      await attemptRender();
+    },
+    // 错误处理
+    showPreviewError(container, error) {
+      container.classList.add('error');
+      container.innerHTML = `
+        <div class="error-alert">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            <h4>预览渲染失败</h4>
+            <code>${error.message}</code>
+          </div>
+        </div>
+      `;
     },
     // 新增方法：检测未闭合代码块
     hasUnclosedCodeBlock(parts) {
