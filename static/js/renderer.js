@@ -756,10 +756,10 @@ main();`,
           diagramContainer.textContent = code;
           // 根据this.systemSettings.theme设置Mermaid主题
           if (this.systemSettings.theme === 'dark') {
-            mermaid.theme('dark');
+            mermaid.setTheme('dark');
           }
           else {
-            mermaid.theme('default');
+            mermaid.setTheme('default');
           }
           await mermaid.run({
             nodes: [diagramContainer],
