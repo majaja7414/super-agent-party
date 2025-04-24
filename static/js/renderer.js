@@ -413,6 +413,11 @@ main();`,
     'systemSettings.theme': {
       handler(newVal) {
         document.documentElement.setAttribute('data-theme', newVal);
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'loose',
+          theme: newVal === 'dark' ? 'dark' : 'default'
+        });
         // 强制更新 Element Plus 主题
         const themeColor = newVal === 'dark' ? '#1668dc' : '#409eff';
         const root = document.documentElement;
