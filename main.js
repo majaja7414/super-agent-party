@@ -212,7 +212,9 @@ app.whenReady().then(async () => {
         .then(() => console.log(`Opened ${url} in the default browser.`))
         .catch(err => console.error(`Error opening ${url}:`, err))
     })
-
+    ipcMain.handle('readFile', async (_, path) => {
+      return fs.promises.readFile(path);
+    });
     // 文件对话框处理器
     ipcMain.handle('open-file-dialog', async (options) => {
       const result = await dialog.showOpenDialog({

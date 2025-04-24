@@ -958,76 +958,40 @@ main();`,
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
       if (fileLinks.length > 0){
-        if (!this.isElectron) {
-          // 如果不是在Electron环境中，则通过http://127.0.0.1:3456/load_file 接口上传文件，将文件上传到blob对应的链接
-          const formData = new FormData();
-          
-          // 使用 'files' 作为键名，而不是 'file'
-          for (const file of fileLinks) {
-              if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
-                  formData.append('files', file.file, file.name); // 添加第三个参数为文件名
-              } else {
-                  console.error("Invalid file object:", file);
-                  showNotification(this.t('invalid_file'), 'error');
-                  return;
-              }
-          }
-      
-          try {
-              console.log('Uploading files...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
-                  method: 'POST',
-                  body: formData
-              });
-              if (!response.ok) {
-                  const errorText = await response.text();
-                  console.error('Server responded with an error:', errorText);
-                  showNotification(this.t('file_upload_failed'), 'error');
-                  return;
-              }
-              const data = await response.json();
-              if (data.success) {
-                  fileLinks = data.fileLinks;
-              } else {
-                  showNotification(this.t('file_upload_failed'), 'error');
-              }
-          } catch (error) {
-              console.error('Error during file upload:', error);
-              showNotification(this.t('file_upload_failed'), 'error');
-          }
+        const formData = new FormData();
+        
+        // 使用 'files' 作为键名，而不是 'file'
+        for (const file of fileLinks) {
+            if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
+                formData.append('files', file.file, file.name); // 添加第三个参数为文件名
+            } else {
+                console.error("Invalid file object:", file);
+                showNotification(this.t('invalid_file'), 'error');
+                return;
+            }
         }
-        else {
-          // Electron环境处理逻辑
-          try {
-            console.log('Uploading Electron files...');
+    
+        try {
+            console.log('Uploading files...');
             const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                files: fileLinks.map(file => ({
-                  path: file.path,
-                  name: file.name
-                }))
-              })
+                method: 'POST',
+                body: formData
             });
             if (!response.ok) {
-              const errorText = await response.text();
-              console.error('Server error:', errorText);
-              showNotification(this.t('file_upload_failed'), 'error');
-              return;
+                const errorText = await response.text();
+                console.error('Server responded with an error:', errorText);
+                showNotification(this.t('file_upload_failed'), 'error');
+                return;
             }
             const data = await response.json();
             if (data.success) {
-              fileLinks = data.fileLinks;
+                fileLinks = data.fileLinks;
             } else {
-              showNotification(this.t('file_upload_failed'), 'error');
+                showNotification(this.t('file_upload_failed'), 'error');
             }
-          } catch (error) {
-            console.error('上传错误:', error);
+        } catch (error) {
+            console.error('Error during file upload:', error);
             showNotification(this.t('file_upload_failed'), 'error');
-          }
         }
       }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
@@ -1290,12 +1254,21 @@ main();`,
       } else {
         const result = await window.electronAPI.openFileDialog();
         if (!result.canceled) {
-          const validPaths = result.filePaths
-            .filter(path => {
-              const ext = path.split('.').pop()?.toLowerCase() || ''
-              return ALLOWED_EXTENSIONS.includes(ext)
-            })
-          this.handleFiles(validPaths)
+          // 转换Electron文件路径为File对象
+          const files = await Promise.all(
+            result.filePaths
+              .filter(path => {
+                const ext = path.split('.').pop()?.toLowerCase() || '';
+                return ALLOWED_EXTENSIONS.includes(ext);
+              })
+              .map(async path => {
+                // 读取文件内容并转换为File对象
+                const buffer = await window.electronAPI.readFile(path);
+                const blob = new Blob([buffer]);
+                return new File([blob], path.split(/[\\/]/).pop());
+              })
+          );
+          this.handleFiles(files);
         }
       }
     },
@@ -1342,19 +1315,11 @@ main();`,
 
     // 添加文件到列表
     addFiles(files) {
-      const newFiles = files.map(file => {
-        if (typeof file === 'string') { // Electron路径
-          return {
-            path: file,
-            name: file.split(/[\\/]/).pop()
-          }
-        }
-        return { // 浏览器File对象
-          path: URL.createObjectURL(file),// 生成临时URL
-          name: file.name,
-          file: file
-        }
-      });
+      const newFiles = files.map(file => ({
+        path: URL.createObjectURL(file), // 统一生成Blob URL
+        name: file.name,
+        file: file     // 统一包含File对象
+      }));
       
       this.files = [...this.files, ...newFiles];
       this.showUploadDialog = false;

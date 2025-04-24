@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 文件对话框
   openFileDialog: () => ipcRenderer.invoke('open-file-dialog'),
-  
+  readFile: (filePath) => ipcRenderer.invoke('readFile', filePath),
   // 路径处理
   pathJoin: (...args) => path.join(...args),
   
