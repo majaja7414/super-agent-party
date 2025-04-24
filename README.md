@@ -28,6 +28,11 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 5. Deep Thinking: Transplants the reasoning capabilities of reasoning models into tool-invoking or multimodal models so that large models can use reasoning models for analysis before invoking tools. For example, if deepseek-V3 can invoke tools but the reasoning model deepseek-R1 cannot, the reasoning capability of deepseek-R1 can be transplanted into deepseek-V3 to allow it to reason using deepseek-R1 before invoking tools.
 6. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
 
+## Recent Updates
+The following updates have been merged into the main branch but have not yet been released to the release version:
+1. Support for the A2A service has been added, allowing the invocation of the A2A service.
+2. Support for previewing HTML and Mermaid formats has been added.
+
 ## Usage
 
 ### Windows Desktop Installation
