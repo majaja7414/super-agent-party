@@ -81,6 +81,14 @@ pip install -r requirements.txt
 npm install
 ```
 
+3. Start the service (choose one of the three options):
+- Windows: Click on the script `start_with_dev.bat`
+- MacOS/Linux: Click on the script `start_with_dev.sh`
+- Or manually execute the following command to start the service:
+```shell
+npm run dev
+```
+
 ## Configuration
 
 1. Click on the System Settings in the left sidebar to set language options, system themes, and open this application in web mode.
