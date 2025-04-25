@@ -65,7 +65,7 @@ function startBackend() {
   if (isDev) {
     // 开发模式使用Python启动
     const backendScript = path.join(__dirname, 'server.py')
-    backendProcess = spawn('./super/Scripts/python.exe', [
+    backendProcess = spawn('./.venv/Scripts/python.exe', [
       '-m',
       'uvicorn',
       'server:app',
