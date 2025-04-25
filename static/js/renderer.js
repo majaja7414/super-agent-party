@@ -117,6 +117,7 @@ const MIME_WHITELIST = [
 const app = Vue.createApp({
   data() {
     return {
+      system_prompt: '',
       isdocker: false,
       isExpanded: true,
       isElectron: isElectron,
@@ -1009,6 +1010,16 @@ main();`,
       }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
       const escapedContent = this.escapeHtml(userInput.trim());
+      // 添加系统消息
+      if (this.system_prompt) {
+        // 如果this.messages本身有system消息，则替换，否则添加
+        const systemMessage = this.messages.find(msg => msg.role === 'system');
+        if (systemMessage) {
+          systemMessage.content = this.system_prompt;
+        } else {
+          this.messages.push({role: 'system', content: this.system_prompt});
+        }
+      }
       // 添加用户消息
       this.messages.push({
         role: 'user',

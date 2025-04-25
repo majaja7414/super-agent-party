@@ -233,6 +233,7 @@ const translations = {
       'preview': '预览',
       'mermaidError': 'Mermaid语法错误',
       'useWebmode': '使用浏览器模式',
+      'chatHistory': '聊天记录',
     },
     'en-US': {
       'chat': 'Chat',
@@ -467,6 +468,7 @@ const translations = {
       'preview': 'Preview',
       'mermaidError': 'Mermaid error',
       'useWebmode': 'Use Web Mode',
+      'chatHistory': 'Chat History',
     }
   };
   
