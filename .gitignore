@@ -173,7 +173,7 @@ cython_debug/
 node_modules/
 super/
 
-config/settings*.json
+config/settings.json
 test/
 uploaded_files/
 kb/
