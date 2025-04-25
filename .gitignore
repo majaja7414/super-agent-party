@@ -179,7 +179,6 @@ uploaded_files/
 kb/
 dist/
 build_python.spec
-package-lock.json
 release/
 server.build/
 server.dist/
