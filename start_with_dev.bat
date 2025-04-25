@@ -1,6 +1,6 @@
 @echo off
 
 :: 激活虚拟环境
-call super\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 
 start cmd /k "npm run dev"

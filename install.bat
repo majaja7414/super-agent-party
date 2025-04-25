@@ -1,9 +1,9 @@
 @echo off
 REM 创建超级虚拟环境
-python -m venv super
+python -m venv .venv
 
 REM 激活虚拟环境并安装Python依赖
-CALL super\Scripts\activate.bat
+CALL .venv\Scripts\activate.bat
 pip install -r requirements.txt
 
 REM 初始化Node.js环境

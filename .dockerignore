@@ -17,3 +17,4 @@ tiktoken_cache/
 agents/
 config/settings.json
 test/
+.venv/

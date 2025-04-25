@@ -74,7 +74,7 @@ cd super-agent-party
 - MacOS/Linux: Click `install.sh` script
 - Or manually execute the following commands to install dependencies:
 ```shell
-python -m venv super
+python -m venv .venv
 super\Scripts\activate # Windows
 # source super/bin/activate # MacOS/Linux
 pip install -r requirements.txt

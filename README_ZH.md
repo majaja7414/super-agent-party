@@ -69,15 +69,20 @@ git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
 ```
 
-2. 安装依赖（三选一）：
+2. 安装依赖（四选一）：
 - windows: 点击脚本`install.bat`
 - macos/linux:点击脚本`install.sh`
-- 或者手动执行以下命令以安装依赖：
+- 或者使用pip和npm安装依赖：
 ```shell
-python -m venv super
-super\Scripts\activate # windows
-# source super/bin/activate # macos/linux
+python -m venv .venv
+.venv\Scripts\activate # windows
+# source .venv/bin/activate # macos/linux
 pip install -r requirements.txt
+npm install
+```
+- 或者使用uv和npm安装依赖：
+```shell
+uv sync
 npm install
 ```
 
@@ -86,6 +91,8 @@ npm install
 - macos/linux:点击脚本`start_with_dev.sh`
 - 或者手动执行以下命令以启动服务：
 ```shell
+.venv\Scripts\activate # windows
+# source .venv/bin/activate # macos/linux
 npm run dev
 ```
 
