@@ -1,7 +1,7 @@
 {
   "name": "super-agent-party",
-  "version": "0.1.0",
-  "description": "超级智能体派对 | 链接一切模型、知识库、搜索引擎、MCP服务器；可以web端、桌面端、API等多种方式使用",
+  "version": "v0.1.1",
+  "description": "超级智能体派对 | 链接一切模型、知识库、搜索引擎、MCP服务器、A2A服务器；可以web端、桌面端、API等多种方式使用",
   "main": "main.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production electron .",
@@ -29,7 +29,8 @@
     "Multi-Agent",
     "Productivity",
     "Automation",
-    "MCP"
+    "MCP",
+    "A2A"
   ],
   "author": "heshengtao",
   "license": "AGPL-3.0",
