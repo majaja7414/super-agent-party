@@ -1,11 +1,12 @@
 const remoteMain = require('@electron/remote/main')
-const { app, BrowserWindow, ipcMain, screen, shell, dialog } = require('electron')
+const { app, BrowserWindow, ipcMain, screen, shell, dialog, Tray, Menu } = require('electron')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
 
 let mainWindow
 let loadingWindow
+let tray = null
 let backendProcess = null
 const HOST = '127.0.0.1'
 const PORT = 3456
@@ -182,6 +183,9 @@ app.whenReady().then(async () => {
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)
     mainWindow.show()
+    
+    // 创建系统托盘
+    createTray()
 
     // 窗口控制事件
     ipcMain.handle('window-action', (_, action) => {
@@ -204,6 +208,16 @@ app.whenReady().then(async () => {
     })
     mainWindow.on('unmaximize', () => {
       mainWindow.webContents.send('window-state', 'normal')
+    })
+    
+    // 窗口关闭事件处理 - 最小化到托盘而不是退出
+    mainWindow.on('close', (event) => {
+      if (!app.isQuitting) {
+        event.preventDefault()
+        mainWindow.hide()
+        return false
+      }
+      return true
     })
 
     // 其他IPC处理...
@@ -242,6 +256,7 @@ app.whenReady().then(async () => {
 
 // 应用退出处理
 app.on('before-quit', () => {
+  app.isQuitting = true
   if (backendProcess) {
     if (process.platform === 'win32') {
       spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t'])
@@ -273,5 +288,44 @@ process.on('uncaughtException', (err) => {
   dialog.showErrorBox('致命错误', `未捕获异常: ${err.message}`)
   app.quit()
 })
+
+// 创建系统托盘
+function createTray() {
+  const iconPath = path.join(__dirname, 'static/source/icon.png')
+  tray = new Tray(iconPath)
+  tray.setToolTip('Super Agent Party')
+  
+  // 创建托盘菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示窗口',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+        }
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.isQuitting = true
+        app.quit()
+      }
+    }
+  ])
+  
+  // 设置托盘菜单
+  tray.setContextMenu(contextMenu)
+  
+  // 点击托盘图标显示窗口
+  tray.on('click', () => {
+    if (mainWindow) {
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
 
 app.commandLine.appendSwitch('disable-http-cache')
