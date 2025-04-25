@@ -69,15 +69,20 @@ git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
 ```
 
-2. Install Dependencies (choose one):
-- Windows: Click `install.bat` script
-- MacOS/Linux: Click `install.sh` script
-- Or manually execute the following commands to install dependencies:
+2. Install Dependencies (Choose one of the following options):
+- Windows: Click on the `install.bat` script
+- MacOS/Linux: Click on the `install.sh` script
+- Or, use pip and npm to install dependencies:
 ```shell
 python -m venv .venv
-super\Scripts\activate # Windows
-# source super/bin/activate # MacOS/Linux
+.venv\Scripts\activate # For Windows
+# source .venv/bin/activate # For MacOS/Linux
 pip install -r requirements.txt
+npm install
+```
+- Or, use uv and npm to install dependencies:
+```shell
+uv sync
 npm install
 ```
 
