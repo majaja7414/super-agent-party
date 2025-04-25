@@ -16,6 +16,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## Features
 
+0. Switching from the sidebar to the method of invocation, you can view how to call Agent Party either through the Openai API approach or the web interface approach.
 1. Knowledge Base: Enables large models to answer based on information within the knowledge base. If there are multiple knowledge bases, the model will proactively query the relevant one based on the question.
 2. Internet Connectivity: Allows large models to proactively search for information online based on question requirements. Currently supports:
 - [duckduckgo](https://duckduckgo.com/) (completely free, not accessible in China's network environment)

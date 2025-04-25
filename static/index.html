@@ -1348,6 +1348,34 @@
                 </div>
               </div>
             </div>
+            <div class="tool-item">
+              <span>
+                <el-icon>
+                  <i class="fa-solid fa-globe"></i>
+                </el-icon>
+                {{ t('useWebmode') }}
+              </span>
+              <div class="browser-mode-btn-container">
+                <el-button
+                  class="browser-mode-btn"
+                  type="primary"
+                  @click="launchBrowserMode"
+                  :color="browserBtnColor"
+                  round
+                  size="large">
+                  <i class="fa-solid fa-globe" v-if="!isBrowserOpening"></i>
+                  <transition name="bounce">
+                    <span v-if="isBrowserOpening" class="ml-2">
+                      <el-icon class="is-loading"><loading /></el-icon>
+                      {{ t('launching') }}
+                    </span>
+                    <span v-else class="ml-2">
+                      {{ t('launchBrowserMode') }}
+                    </span>
+                  </transition>
+                </el-button>
+              </div>
+          </div>
           </el-form>
         </div>
 
@@ -1777,26 +1805,6 @@
                   </el-select>
                 </el-form-item>
               </div>
-            </div>
-            <div class="browser-mode-btn-container">
-              <el-button
-                class="browser-mode-btn"
-                type="primary"
-                @click="launchBrowserMode"
-                :color="browserBtnColor"
-                round
-                size="large">
-                <i class="fa-solid fa-globe" v-if="!isBrowserOpening"></i>
-                <transition name="bounce">
-                  <span v-if="isBrowserOpening" class="ml-2">
-                    <el-icon class="is-loading"><loading /></el-icon>
-                    {{ t('launching') }}
-                  </span>
-                  <span v-else class="ml-2">
-                    {{ t('launchBrowserMode') }}
-                  </span>
-                </transition>
-              </el-button>
             </div>
           </el-form>
         </div>

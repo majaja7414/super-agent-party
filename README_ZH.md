@@ -16,6 +16,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## 功能
 
+0. 从侧边栏切换到调用方法，可以查看怎么以Openai API的方式或web端方式调用Agent Party。
 1. 知识库，让大模型能够根据知识库中的信息进行回答。如果有多个知识库，模型会根据提问需求去主动查询对应的知识库。
 2. 联网功能，让大模型能够根据提问需求去主动联网查询信息。目前已支持：
 - [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）

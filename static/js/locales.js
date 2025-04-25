@@ -232,6 +232,7 @@ const translations = {
       'A2AUrl': 'A2A服务器地址',
       'preview': '预览',
       'mermaidError': 'Mermaid语法错误',
+      'useWebmode': '使用浏览器模式',
     },
     'en-US': {
       'chat': 'Chat',
@@ -465,6 +466,7 @@ const translations = {
       'A2AUrl': 'A2A URL',
       'preview': 'Preview',
       'mermaidError': 'Mermaid error',
+      'useWebmode': 'Use Web Mode',
     }
   };
   
