@@ -32,6 +32,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 The following updates have been merged into the main branch but have not yet been released to the release version:
 1. Support for the A2A service has been added, allowing the invocation of the A2A service.
 2. Support for previewing HTML and Mermaid formats has been added.
+3. Improve the tool intelligence agent, so that the intelligence agent built in the agent interface can be used as a tool. 
 
 ## Usage
 
