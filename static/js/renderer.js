@@ -427,7 +427,15 @@ main();`,
         }
       },
       immediate: true // 立即执行一次以应用初始值
-    }
+    },
+    'systemSettings.language': {
+      handler(newVal) {
+        if (this.isElectron) {
+          window.electronAPI.sendLanguage(newVal);
+        }
+      },
+      immediate: true
+    },
   },
   computed: {
     iconClass() {

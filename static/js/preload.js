@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath) => ipcRenderer.invoke('readFile', filePath),
   // 路径处理
   pathJoin: (...args) => path.join(...args),
-  
+  sendLanguage: (lang) => ipcRenderer.send('set-language', lang),
   // 环境检测
   isElectron: true
 });

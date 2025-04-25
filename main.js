@@ -11,6 +11,17 @@ let backendProcess = null
 const HOST = '127.0.0.1'
 const PORT = 3456
 const isDev = process.env.NODE_ENV === 'development'
+const locales = {
+  'zh-CN': {
+    show: '显示窗口',
+    exit: '退出'
+  },
+  'en-US': {
+    show: 'Show Window',
+    exit: 'Exit'
+  }
+};
+let currentLanguage = 'zh-CN';
 
 // 配置日志文件路径
 const logDir = path.join(app.getPath('userData'), 'logs')
@@ -183,7 +194,10 @@ app.whenReady().then(async () => {
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)
     mainWindow.show()
-    
+    ipcMain.on('set-language', (_, lang) => {
+      currentLanguage = lang;
+      updateTrayMenu();
+    });
     // 创建系统托盘
     createTray()
 
@@ -289,16 +303,18 @@ process.on('uncaughtException', (err) => {
   app.quit()
 })
 
-// 创建系统托盘
 function createTray() {
-  const iconPath = path.join(__dirname, 'static/source/icon.png')
-  tray = new Tray(iconPath)
-  tray.setToolTip('Super Agent Party')
-  
-  // 创建托盘菜单
+  const iconPath = path.join(__dirname, 'static/source/icon.png');
+  if (!tray) {
+    tray = new Tray(iconPath);
+    tray.setToolTip('Super Agent Party');
+  }
+  updateTrayMenu();
+}
+function updateTrayMenu() {
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: '显示窗口',
+      label: locales[currentLanguage].show,
       click: () => {
         if (mainWindow) {
           mainWindow.show()
@@ -308,7 +324,7 @@ function createTray() {
     },
     { type: 'separator' },
     {
-      label: '退出',
+      label: locales[currentLanguage].exit,
       click: () => {
         app.isQuitting = true
         app.quit()
@@ -316,16 +332,7 @@ function createTray() {
     }
   ])
   
-  // 设置托盘菜单
-  tray.setContextMenu(contextMenu)
-  
-  // 点击托盘图标显示窗口
-  tray.on('click', () => {
-    if (mainWindow) {
-      mainWindow.show()
-      mainWindow.focus()
-    }
-  })
+  tray.setContextMenu(contextMenu);
 }
 
 app.commandLine.appendSwitch('disable-http-cache')
