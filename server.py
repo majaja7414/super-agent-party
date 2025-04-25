@@ -16,7 +16,6 @@ import uuid
 import time
 import shutil
 from typing import List, Dict
-import aisuite as ai
 import shortuuid
 from py.mcp_clients import McpClient
 from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
@@ -1405,6 +1404,7 @@ async def fetch_provider_models(request: ProviderModelRequest):
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
+    import aisuite as ai
     if model == 'super-model':
         current_settings = load_settings()
         providerId = current_settings['selectedProvider'] 

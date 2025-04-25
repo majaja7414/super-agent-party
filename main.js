@@ -308,6 +308,16 @@ function createTray() {
   if (!tray) {
     tray = new Tray(iconPath);
     tray.setToolTip('Super Agent Party');
+    tray.on('click', () => {
+    if (mainWindow) {
+      if (mainWindow.isVisible()) {
+        if (mainWindow.isMinimized()) mainWindow.restore();
+          mainWindow.focus();
+        } else {
+          mainWindow.show();
+        }
+      }
+    });
   }
   updateTrayMenu();
 }
