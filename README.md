@@ -114,7 +114,7 @@ This open-source project and its contents (hereinafter referred to as the "Proje
 ## Support:
 
 ### Join Community
-If there are issues with the plugin or if you have other questions, feel free to join our community.
+If there are issues with the project or if you have other questions, feel free to join our community.
 
 1. QQ Group: `931057213`
 
