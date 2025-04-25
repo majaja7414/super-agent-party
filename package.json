@@ -7,7 +7,10 @@
     "start": "cross-env NODE_ENV=production electron .",
     "dev": "cross-env NODE_ENV=development electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder",
+    "build": "electron-builder -mwl",
+    "build:win": "electron-builder -w",
+    "build:mac": "electron-builder -m",
+    "build:linux": "electron-builder -l",
     "pack": "electron-builder --dir"
   },
   "dependencies": {
@@ -38,6 +41,11 @@
     "appId": "com.superagent.party",
     "productName": "Super Agent Party",
     "copyright": "Copyright © 2025 Heshengtao",
+    "publish": [{
+      "provider": "github",
+      "owner": "heshengtao",
+      "repo": "super-agent-party"
+    }],
     "compression": "maximum",
     "directories": {
       "output": "release"
@@ -63,6 +71,40 @@
         ]
       }
     ],
+    "linux": {
+      "icon": "static/source/icon.png",
+      "target": ["AppImage", "deb"],
+      "artifactName": "${productName}-${version}-Linux.${ext}",
+      "category": "Development"
+    },
+    "mac": {
+      "icon": "static/source/icon.png",
+      "target": ["dmg"],
+      "artifactName": "${productName}-${version}-Mac.${ext}",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "background": "static/source/icon.png",
+      "icon": "static/source/icon.png",
+      "iconSize": 100,
+      "contents": [
+        {
+          "x": 380,
+          "y": 180,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 180,
+          "type": "file"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 380
+      }
+    },
     "win": {
       "icon": "static/source/icon.png",
       "target": [
