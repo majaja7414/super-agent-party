@@ -91,6 +91,8 @@ npm install
 - MacOS/Linux: Click on the script `start_with_dev.sh`
 - Or manually execute the following command to start the service:
 ```shell
+.venv\Scripts\activate # windows
+# source .venv/bin/activate # macos/linux
 npm run dev
 ```
 
