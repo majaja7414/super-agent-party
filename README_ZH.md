@@ -34,6 +34,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 1. 支持了A2A服务，可以调用A2A服务。
 2. 支持了HTML以及mermaid格式的预览功能。
 3. 完善工具智能体，在智能体界面构建的智能体可以被当做工具使用。
+4. 可以查询对话历史记录了。
 
 ## 使用方法
 
