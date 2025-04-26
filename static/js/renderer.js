@@ -146,6 +146,8 @@ const app = Vue.createApp({
       userInput: '',
       isTyping: false,
       currentMessage: '',
+      conversationId: null, // 当前对话ID
+      conversations: [], // 对话历史记录
       models: [],
       modelsLoading: false,
       modelsError: null,
@@ -922,6 +924,9 @@ main();`,
             max_rounds: data.data.max_rounds || 0,
             selectedProvider: data.data.selectedProvider || '',
           };
+          this.system_prompt = data.data.system_prompt || '';
+          this.conversations = data.data.conversations || [];
+          this.conversationId = data.data.conversationId || null;
           this.agents = data.data.agents || {};
           this.mainAgent = data.data.mainAgent || 'super-model';
           this.toolsSettings = data.data.tools || {};
@@ -1183,6 +1188,9 @@ main();`,
         agents: this.agents,
         mainAgent: this.mainAgent,
         tools: this.toolsSettings,
+        system_prompt: this.system_prompt,
+        conversations: this.conversations,
+        conversationId: this.conversationId,
         reasoner: this.reasonerSettings,
         webSearch: this.webSearchSettings, 
         knowledgeBases: this.knowledgeBases,
