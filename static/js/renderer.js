@@ -525,6 +525,7 @@ main();`,
         this.showHistoryDialog = false;
       }
       this.scrollToBottom();
+      this.autoSaveSettings();
     },
     switchToagents() {
       this.activeMenu = 'agents';
@@ -974,6 +975,7 @@ main();`,
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.mcpServers = data.data.mcpServers || {};
           this.a2aServers = data.data.a2aServers || {};
+          this.loadConversation(this.conversationId);
         } 
         else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -1051,7 +1053,8 @@ main();`,
       }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n') || '';
       const fileLinks_list = Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
-      this.fileLinks = [...this.fileLinks, ...fileLinks_list];
+      // fileLinks_list添加到self.filelinks
+      this.fileLinks = this.fileLinks.concat(fileLinks_list)
       const escapedContent = this.escapeHtml(userInput.trim());
       // 添加系统消息
       if (this.system_prompt) {
@@ -1070,7 +1073,9 @@ main();`,
       // 添加用户消息
       this.messages.push({
         role: 'user',
-        content: escapedContent + fileLinks_content,
+        content: escapedContent,
+        fileLinks: fileLinks,
+        fileLinks_content: fileLinks_content
       });
       this.files = [];
       let max_rounds = this.settings.max_rounds || 0;
@@ -1084,13 +1089,13 @@ main();`,
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content + msg.fileLinks_content
         }));
       } else {
         // 准备发送的消息历史（保留最近 max_rounds 条消息）
         messages = this.messages.slice(-max_rounds).map(msg => ({
           role: msg.role,
-          content: msg.content
+          content: msg.content + msg.fileLinks_content
         }));
       }
 
@@ -1361,6 +1366,7 @@ main();`,
       this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
+      this.autoSaveSettings();
     },
     sendFiles() {
       this.showUploadDialog = true;
