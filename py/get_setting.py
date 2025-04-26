@@ -3,21 +3,35 @@ import os
 import sys
 
 def in_docker():
-    try:
-        with open('/proc/1/cgroup', 'rt') as ifh:
-            for line in ifh:
-                if 'docker' in line or 'container' in line:
-                    return True
-    except FileNotFoundError:
-        # 如果文件不存在，则很可能不在容器中
-        pass
-    return False
+    def check_cgroup():
+        try:
+            with open('/proc/1/cgroup', 'rt') as ifh:
+                for line in ifh:
+                    if 'docker' in line or 'container' in line:
+                        return True
+        except FileNotFoundError:
+            pass
+        return False
 
-if in_docker():
-    HOST = '0.0.0.0'
-else:
-    HOST = '127.0.0.1'
-PORT = 3456
+    def check_dockerenv():
+        try:
+            with open('/.dockerenv', 'rt') as ifh:
+                # 文件存在即表示是在Docker容器中
+                return True
+        except FileNotFoundError:
+            return False
+
+    def check_proc_self_status():
+        try:
+            with open('/proc/self/status', 'rt') as ifh:
+                for line in ifh:
+                    if line.startswith('Context') and 'container=docker' in line:
+                        return True
+        except FileNotFoundError:
+            pass
+        return False
+    
+    return any([check_cgroup(), check_dockerenv(), check_proc_self_status()])
 
 def get_base_path():
     """判断当前是开发环境还是打包环境，返回基础路径"""

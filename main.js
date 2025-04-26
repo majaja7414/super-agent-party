@@ -66,12 +66,9 @@ function startBackend() {
     // 开发模式使用Python启动
     const backendScript = path.join(__dirname, 'server.py')
     backendProcess = spawn('./.venv/Scripts/python.exe', [
-      '-m',
-      'uvicorn',
-      'server:app',
+      'server.py',
       '--port', PORT.toString(),
       '--host', HOST,
-      '--no-access-log'
     ], spawnOptions)
   } else {
     // 生产模式使用编译后的可执行文件

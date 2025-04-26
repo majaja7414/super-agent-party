@@ -18,8 +18,16 @@ import shutil
 from typing import List, Dict
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
+from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
+import argparse
+parser = argparse.ArgumentParser(description="Run the ASGI application server.")
+parser.add_argument("--host", default="0.0.0.0", help="Host for the ASGI server, default is 0.0.0.0")
+parser.add_argument("--port", type=int, default=3456, help="Port for the ASGI server, default is 3456")
+args = parser.parse_args()
+HOST = args.host
+PORT = args.port
+
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 local_timezone = None
 logger = None
