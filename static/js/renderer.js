@@ -1118,6 +1118,9 @@ main();`,
         const conv = this.conversations.find(conv => conv.id === this.conversationId);
         if (conv) {
           conv.messages = this.messages;
+          conv.mainAgent = this.mainAgent;
+          conv.timestamp = Date.now();
+          conv.title = this.generateConversationTitle(messages);
           conv.fileLinks = this.fileLinks;
         }
       }
@@ -1240,6 +1243,9 @@ main();`,
           const conv = this.conversations.find(conv => conv.id === this.conversationId);
           if (conv) {
             conv.messages = this.messages;
+            conv.mainAgent = this.mainAgent;
+            conv.timestamp = Date.now();
+            conv.title = this.generateConversationTitle(messages);
             conv.fileLinks = this.fileLinks;
           }
         }
@@ -2123,7 +2129,8 @@ main();`,
       this.autoSaveSettings();
     },
     formatDate(date) {
-      return date.toLocaleString('en-US', { hour12: false });
+      // 时间戳转日期
+      return new Date(date).toLocaleString();
     },
   }
 });

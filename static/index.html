@@ -335,29 +335,25 @@
           <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
-            width="600px">
-            <div class="history-dialog-content">
+            width="400px">
+            <div class="knowledge-dialog-content">
               <!-- 对话记录列表 -->
               <div v-for="conv in sortedConversations" 
                   :key="conv.id" 
-                  class="provider-card history-card"
+                  class="knowledge-item"
                   @click="loadConversation(conv.id)">
-                <div class="card-header">
-                  <div class="card-actions">
-                    <el-button 
-                      @click.stop="confirmDeleteConversation(conv.id)"
-                      type="danger" 
-                      circle 
-                      size="small">
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-                <div class="history-content">
-                  <h3 class="conversation-title">{{ conv.title || t('untitled') }}</h3>
-                  <div class="conversation-meta">
+                <el-button 
+                  @click.stop="confirmDeleteConversation(conv.id)"
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+                <div class="knowledge-info">
+                  <h3 class="knowledge-name">{{ conv.title || t('untitled') }}</h3>
+                  <div class="knowledge-desc">
                     <el-icon class="meta-icon"><i class="fa-solid fa-message"></i></el-icon>
-                    <span>{{ conv.messages?.length || 0 }} {{ t('messages') }}</span>
+                    <span>{{ conv.messages?.length || 0 }} {{ t('messages') }}</span><br>
                     <el-icon class="meta-icon"><i class="fa-solid fa-clock"></i></el-icon>
                     <span>{{ formatDate(conv.timestamp) }}</span>
                   </div>
