@@ -234,6 +234,12 @@ const translations = {
       'mermaidError': 'Mermaid语法错误',
       'useWebmode': '使用浏览器模式',
       'chatHistory': '聊天记录',
+      'newChat': '新建对话',
+      'messages': '条消息',
+      'untitled': '未命名对话',
+      'cannotDeleteActive': '不能删除当前对话',
+      'noChatHistory': '没有聊天记录',
+      'emptyConversationRemoved': '空对话已自动移除',
     },
     'en-US': {
       'chat': 'Chat',
@@ -469,6 +475,12 @@ const translations = {
       'mermaidError': 'Mermaid error',
       'useWebmode': 'Use Web Mode',
       'chatHistory': 'Chat History',
+      'newChat': 'New Chat',
+      'messages': 'Messages',
+      'untitled': 'Untitled',
+      'cannotDeleteActive': 'Cannot delete active chat',
+      'noChatHistory': 'No chat history',
+      'emptyConversationRemoved': 'Empty conversation removed'
     }
   };
   
