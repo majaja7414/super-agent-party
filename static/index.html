@@ -59,7 +59,7 @@
     <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
         <el-button 
-          v-if="!updateAvailable"
+          v-if="updateAvailable"
           @click="handleUpdate" 
           class="top-bar-btn update-btn"
           :class="{ 'success': updateSuccess }"
