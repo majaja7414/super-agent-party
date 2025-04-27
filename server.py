@@ -22,7 +22,7 @@ from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
 import argparse
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
-parser.add_argument("--host", default="0.0.0.0", help="Host for the ASGI server, default is 0.0.0.0")
+parser.add_argument("--host", default="127.0.0.1", help="Host for the ASGI server, default is 127.0.0.1")
 parser.add_argument("--port", type=int, default=3456, help="Port for the ASGI server, default is 3456")
 args = parser.parse_args()
 HOST = args.host
