@@ -60,13 +60,17 @@ def load_settings():
         if in_docker():
             settings['isdocker'] = True
         return settings
+
     except FileNotFoundError:
-        # 创建settings.json文件，并写入默认设置
+        # 首次运行，创建配置文件
+        settings = default_settings.copy()  # 重要！创建副本避免修改原默认配置
         with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(default_settings, f, ensure_ascii=False, indent=2)
-        if in_docker():
-            settings['isdocker'] = True
-        return default_settings
+            json.dump(settings, f, ensure_ascii=False, indent=2)
+    # 公共的后处理逻辑
+    if in_docker():
+        settings['isdocker'] = True
+    
+    return settings
     
 def save_settings(settings):
     with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
