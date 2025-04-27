@@ -2,6 +2,17 @@ import json
 import os
 import sys
 
+HOST = None
+PORT = None
+def configure_host_port(host, port):
+    global HOST, PORT
+    HOST = host
+    PORT = port
+def get_host():
+    return HOST or "127.0.0.1"  # 提供默认值
+def get_port():
+    return PORT or 3456
+
 def in_docker():
     def check_cgroup():
         try:

@@ -18,7 +18,6 @@ import shutil
 from typing import List, Dict
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path
 from contextlib import asynccontextmanager
 import argparse
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -36,6 +35,9 @@ client = None
 reasoner_client = None
 mcp_client_list = {}
 _TOOL_HOOKS = {}
+
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port
+configure_host_port(args.host, args.port)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
