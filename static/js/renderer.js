@@ -148,6 +148,8 @@ const app = Vue.createApp({
       currentMessage: '',
       conversationId: null, // 当前对话ID
       conversations: [], // 对话历史记录
+      showHistoryDialog: false,
+      deletingConversationId: null, // 正在被删除的对话ID
       models: [],
       modelsLoading: false,
       modelsError: null,
@@ -282,6 +284,7 @@ const app = Vue.createApp({
       isSending: false, // 是否正在发送
       showAddDialog: false,
       modelProviders: [],
+      fileLinks: [],
       vendorValues: [
         'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
         'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
@@ -441,6 +444,9 @@ main();`,
     },
   },
   computed: {
+    sortedConversations() {
+      return [...this.conversations].sort((a, b) => b.timestamp - a.timestamp);
+    },
     iconClass() {
       return this.isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
     },
@@ -490,6 +496,37 @@ main();`,
     
   },
   methods: {
+    generateConversationTitle(messages) {
+      const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      if (lastUserMessage) {
+        return lastUserMessage.content.substring(0, 30) + (lastUserMessage.content.length > 30 ? '...' : '');
+      }
+      return this.t('newChat');
+    },
+    async confirmDeleteConversation(convId) {
+      if (convId === this.conversationId) {
+        showNotification(this.t('cannotDeleteActive'), 'warning');
+        return;
+      }
+      
+      this.conversations = this.conversations.filter(c => c.id !== convId);
+      if (this.conversations.length > 0) {
+        this.loadConversation(this.conversations[0].id);
+      }
+      this.autoSaveSettings();
+    },
+    loadConversation(convId) {
+      const conversation = this.conversations.find(c => c.id === convId);
+      if (conversation) {
+        this.conversationId = convId;
+        this.messages = [...conversation.messages];
+        this.fileLinks = conversation.fileLinks;
+        this.mainAgent = conversation.mainAgent;
+        this.showHistoryDialog = false;
+      }
+      this.scrollToBottom();
+      this.autoSaveSettings();
+    },
     switchToagents() {
       this.activeMenu = 'agents';
     },
@@ -938,6 +975,7 @@ main();`,
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.mcpServers = data.data.mcpServers || {};
           this.a2aServers = data.data.a2aServers || {};
+          this.loadConversation(this.conversationId);
         } 
         else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -1013,16 +1051,23 @@ main();`,
             showNotification(this.t('file_upload_failed'), 'error');
         }
       }
-      const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n');
+      const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n') || '';
+      const fileLinks_list = Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
+      // fileLinks_list添加到self.filelinks
+      this.fileLinks = this.fileLinks.concat(fileLinks_list)
       const escapedContent = this.escapeHtml(userInput.trim());
       // 添加系统消息
       if (this.system_prompt) {
-        // 如果this.messages本身有system消息，则替换，否则添加
-        const systemMessage = this.messages.find(msg => msg.role === 'system');
-        if (systemMessage) {
+        // 如果this.messages开头是 system消息，则更新它
+        if (this.messages.length > 0 && this.messages[0].role === 'system') {
+          const systemMessage = this.messages[0];
           systemMessage.content = this.system_prompt;
-        } else {
-          this.messages.push({role: 'system', content: this.system_prompt});
+        }else {
+          // 添加到 messages 数组的开头
+          this.messages.unshift({
+            role: 'system',
+            content: this.system_prompt
+          });
         }
       }
       // 添加用户消息
@@ -1058,6 +1103,33 @@ main();`,
       this.userInput = '';
       this.isSending = true;
       this.abortController = new AbortController(); 
+      // 如果conversationId为null
+      if (this.conversationId === null) {
+        //创建一个新的对话
+        this.conversationId = uuid.v4();
+        const newConv = {
+          id: this.conversationId,
+          title: this.generateConversationTitle(messages),
+          mainAgent: this.mainAgent,
+          timestamp: Date.now(),
+          messages: this.messages,
+          fileLinks: this.fileLinks
+        };
+        this.conversations.unshift(newConv);
+      }
+      // 如果conversationId不为null
+      else {
+        // 更新现有对话
+        const conv = this.conversations.find(conv => conv.id === this.conversationId);
+        if (conv) {
+          conv.messages = this.messages;
+          conv.mainAgent = this.mainAgent;
+          conv.timestamp = Date.now();
+          conv.title = this.generateConversationTitle(messages);
+          conv.fileLinks = this.fileLinks;
+        }
+      }
+      this.autoSaveSettings();
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
@@ -1072,7 +1144,7 @@ main();`,
             model: this.mainAgent,
             messages: messages,
             stream: true,
-            fileLinks: Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
+            fileLinks: this.fileLinks,
           }),
           signal: this.abortController.signal
         });
@@ -1156,10 +1228,37 @@ main();`,
           showNotification(error.message, 'error');
         }
       } finally {
+        // 如果conversationId为null
+        if (this.conversationId === null) {
+          //创建一个新的对话
+          this.conversationId = uuid.v4();
+          const newConv = {
+            id: this.conversationId,
+            title: this.generateConversationTitle(messages),
+            mainAgent: this.mainAgent,
+            timestamp: Date.now(),
+            messages: this.messages,
+            fileLinks: this.fileLinks,
+          };
+          this.conversations.unshift(newConv);
+        }
+        // 如果conversationId不为null
+        else {
+          // 更新现有对话
+          const conv = this.conversations.find(conv => conv.id === this.conversationId);
+          if (conv) {
+            conv.messages = this.messages;
+            conv.mainAgent = this.mainAgent;
+            conv.timestamp = Date.now();
+            conv.title = this.generateConversationTitle(messages);
+            conv.fileLinks = this.fileLinks;
+          }
+        }
         this.isThinkOpen = false;
         this.isSending = false;
         this.isTyping = false;
         this.abortController = null;
+        this.autoSaveSettings();
       }
     },
     stopGenerate() {
@@ -1263,8 +1362,11 @@ main();`,
     clearMessages() {
       this.stopGenerate();
       this.messages = [];
+      this.conversationId = null;
+      this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
+      this.autoSaveSettings();
     },
     sendFiles() {
       this.showUploadDialog = true;
@@ -2031,6 +2133,10 @@ main();`,
     removeA2AServer(url) {
       this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== url));
       this.autoSaveSettings();
+    },
+    formatDate(date) {
+      // 时间戳转日期
+      return new Date(date).toLocaleString();
     },
   }
 });
