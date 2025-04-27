@@ -1757,6 +1757,7 @@ border: 1px solid var(--border-color) !important;
 .agent-prompt {
   display: -webkit-box;
   -webkit-line-clamp: 4;
+  line-clamp: 4;
   color: var(--el-color-info);
   -webkit-box-orient: vertical;
   overflow: hidden;
