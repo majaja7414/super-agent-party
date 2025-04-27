@@ -1,5 +1,6 @@
 const remoteMain = require('@electron/remote/main')
 const { app, BrowserWindow, ipcMain, screen, shell, dialog, Tray, Menu } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
@@ -7,6 +8,7 @@ const fs = require('fs')
 let mainWindow
 let loadingWindow
 let tray = null
+let updateAvailable = false
 let backendProcess = null
 const HOST = '127.0.0.1'
 const PORT = 3456
@@ -72,13 +74,38 @@ function startBackend() {
     ], spawnOptions)
   } else {
     // 生产模式使用编译后的可执行文件
+    let serverExecutable
+    switch (process.platform) {
+      case 'win32':
+        serverExecutable = 'server.exe'
+        break
+      case 'darwin':
+        serverExecutable = 'server'
+        break
+      case 'linux':
+        serverExecutable = 'server'
+        break
+      default:
+        throw new Error(`Unsupported platform: ${process.platform}`)
+    }
+
     const exePath = path.join(
       process.env.PORTABLE_EXECUTABLE_DIR || app.getAppPath(),
-      '../server/server.exe'
+      '../server/server',
+      serverExecutable
     ).replace('app.asar', 'app.asar.unpacked')
     
     spawnOptions.env.UV_THREADPOOL_SIZE = '4'
     spawnOptions.env.NODE_OPTIONS = '--max-old-space-size=4096'
+
+    // 设置可执行权限(仅在 Unix 系统)
+    if (process.platform !== 'win32') {
+      try {
+        fs.chmodSync(exePath, '755')
+      } catch (err) {
+        console.error('Failed to set executable permissions:', err)
+      }
+    }
     
     backendProcess = spawn(exePath, [], {
       ...spawnOptions,
@@ -147,6 +174,36 @@ async function waitForBackend() {
   throw new Error('Backend failed to start')
 }
 
+// 配置自动更新
+function setupAutoUpdater() {
+  // 检查更新出错
+  autoUpdater.on('error', (err) => {
+    mainWindow.webContents.send('update-error', err.message)
+  })
+
+  // 检查到新版本
+  autoUpdater.on('update-available', (info) => {
+    updateAvailable = true
+    mainWindow.webContents.send('update-available', info)
+  })
+
+  // 没有新版本
+  autoUpdater.on('update-not-available', () => {
+    updateAvailable = false
+    mainWindow.webContents.send('update-not-available')
+  })
+
+  // 下载进度
+  autoUpdater.on('download-progress', (progressObj) => {
+    mainWindow.webContents.send('download-progress', progressObj)
+  })
+
+  // 下载完成
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow.webContents.send('update-downloaded')
+  })
+}
+
 app.whenReady().then(async () => {
   try {
     createLoadingWindow()
@@ -187,7 +244,30 @@ app.whenReady().then(async () => {
     })
 
     remoteMain.enable(mainWindow.webContents)
-    
+    // 设置自动更新
+    setupAutoUpdater()
+
+    // 检查更新IPC
+    ipcMain.handle('check-for-updates', () => {
+      if (isDev) {
+        console.log('Auto updates are disabled in development mode.')
+        return
+      }
+      return autoUpdater.checkForUpdates()
+    })
+
+    // 下载更新IPC
+    ipcMain.handle('download-update', () => {
+      if (updateAvailable) {
+        return autoUpdater.downloadUpdate()
+      }
+    })
+
+    // 安装更新IPC
+    ipcMain.handle('quit-and-install', () => {
+      autoUpdater.quitAndInstall()
+    })
+            
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)
     mainWindow.show()

@@ -543,19 +543,19 @@ border: 1px solid var(--border-color) !important;
 }
 
 .top-bar-btn {
-  height: 24px !important;
-  width: 24px !important;
-  padding: 0 !important;
+  height: 24px;
+  width: 24px;
+  padding: 0;
   color: var(--el-color-white) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .top-bar-btn .el-icon {
-  font-size: 16px !important;
-  width: 16px !important;
-  height: 16px !important;
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
 }
 
 .top-bar-btn:hover {
@@ -1817,4 +1817,24 @@ border: 1px solid var(--border-color) !important;
 /* 隐藏原始代码内容 */
 .code-content[style*="display: none"] {
   display: none !important;
+}
+
+/* 更新按钮容器样式 */
+.top-bar-btn.update-btn {
+  /* 保持原有基本样式 */
+  width: auto;
+  padding: 4px 12px !important; /* 增加水平内边距 */
+  display: inline-flex; /* 确保按钮依据内容调整大小 */
+  white-space: nowrap; /* 防止文字换行 */
+  transition: all 0.2s ease;
+}
+/* 更新按钮图标样式 */
+.update-btn .el-icon {
+  margin-right: 8px !important; /* 增加图标右边距 */
+  flex-shrink: 0; /* 防止图标被压缩 */
+}
+/* 成功状态按钮 */
+.update-btn.success {
+  background-color: var(--el-color-success) !important;
+  padding: 4px 12px !important;
 }

@@ -240,6 +240,10 @@ const translations = {
       'cannotDeleteActive': '不能删除当前对话',
       'noChatHistory': '没有聊天记录',
       'emptyConversationRemoved': '空对话已自动移除',
+      'newVersion': '新版本可用',
+      'updateAvailable': '发现新版本',
+      'updateDownloaded': '新版本已下载完成',
+      'updateSuccess': '更新已完成',
     },
     'en-US': {
       'chat': 'Chat',
@@ -480,7 +484,10 @@ const translations = {
       'untitled': 'Untitled',
       'cannotDeleteActive': 'Cannot delete active chat',
       'noChatHistory': 'No chat history',
-      'emptyConversationRemoved': 'Empty conversation removed'
+      'emptyConversationRemoved': 'Empty conversation removed',
+      'newVersion': 'New Version Available',
+      'updateAvailable': 'New version found',
+      'updateDownloaded': 'New version downloaded',
+      'updateSuccess': 'Update successfully'
     }
   };
-  

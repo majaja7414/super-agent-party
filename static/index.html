@@ -58,6 +58,17 @@
     <!-- 顶部栏 -->
     <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
+        <el-button 
+          v-if="!updateAvailable"
+          @click="handleUpdate" 
+          class="top-bar-btn update-btn"
+          :class="{ 'success': updateSuccess }"
+          text>
+          <el-icon>
+            <i class="fa-solid fa-download"></i>
+          </el-icon>
+          {{ updateSuccess ? t('updateSuccess') : t('updateAvailable') }}
+        </el-button>
         <el-button @click="minimizeWindow" class="top-bar-btn" text>
           <el-icon>
             <i class="fa-solid fa-minus"></i>

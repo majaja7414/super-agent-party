@@ -95,3 +95,115 @@
 - 如果遇到权限相关错误，检查仓库的Actions权限设置
 - 构建过程会同时在Windows、macOS和Linux环境中进行，可能需要等待较长时间
 - Linux用户可以选择AppImage或DEB包进行安装
+
+
+# 手动打包发布指南
+
+本指南介绍如何在本地手动打包 Super Agent Party 应用。
+
+## 环境准备
+
+1. Node.js 环境 (v18+)
+2. Python 环境 (v3.10+)
+3. 安装依赖:
+   ```bash
+   # 安装 Node.js 依赖
+   npm install
+
+   # 安装 Python 依赖
+   pip install -r requirements.txt
+   pip install pyinstaller
+   ```
+
+## Python 后端打包
+
+### Windows
+```bash
+# 执行打包
+pyinstaller server.spec
+
+# 创建发布目录
+mkdir -p release/server
+
+# 移动打包文件
+mv dist/server/* release/server/
+```
+
+### macOS
+```bash
+# 执行打包
+pyinstaller server.spec
+
+# 创建发布目录
+mkdir -p release/server
+
+# 移动打包文件
+mv "dist/server.app" release/server/
+```
+
+### Linux
+```bash
+# 执行打包
+pyinstaller server.spec
+
+# 创建发布目录
+mkdir -p release/server
+
+# 移动打包文件并设置权限
+mv dist/server/* release/server/
+chmod +x release/server/server
+```
+
+## Electron 应用打包
+
+在完成 Python 后端打包后，执行 Electron 应用打包:
+
+```bash
+# 设置 GitHub Token (如果需要)
+# export GH_TOKEN=your_token_here
+
+# 执行打包
+npm run build
+```
+
+打包完成后，可以在 release 目录下找到对应平台的安装包:
+- Windows: `release/*.exe`
+- macOS: `release/*.dmg`
+- Linux: `release/*.AppImage` 和 `release/*.deb`
+
+## 验证打包
+
+1. 检查后端文件:
+   - Windows: 确保 `release/server/server.exe` 存在
+   - macOS: 确保 `release/server/server.app` 存在
+   - Linux: 确保 `release/server/server` 存在且有执行权限
+
+2. 检查前端安装包:
+   - 确保安装包大小正常（通常在 100MB 以上）
+   - 安装并运行应用，验证功能是否正常
+
+## 常见问题
+
+1. pyinstaller 打包失败
+   - 检查 Python 依赖是否完整安装
+   - 检查 server.spec 文件配置是否正确
+   - 查看错误日志，确保所有必要的文件都被正确包含
+
+2. Electron 打包失败
+   - 检查 Node.js 依赖是否完整安装
+   - 确保 GitHub Token 配置正确（如果需要）
+   - 检查 package.json 中的构建配置
+
+3. 运行时错误
+   - 检查后端可执行文件权限
+   - 验证文件路径是否正确
+   - 查看应用日志获取详细错误信息
+
+## 发布检查清单
+
+- [ ] Python 后端打包成功
+- [ ] 后端可执行文件位置正确
+- [ ] Electron 应用打包成功
+- [ ] 安装包可以正常安装
+- [ ] 应用可以正常启动和运行
+- [ ] 基本功能测试通过
