@@ -32,4 +32,4 @@ EXPOSE 3456
 ENV HOST=0.0.0.0 PORT=3456 PYTHONUNBUFFERED=1
 
 # 启动命令
-CMD ["python", "server.py"]
+CMD ["sh", "-c", "python server.py --host $HOST --port $PORT"]

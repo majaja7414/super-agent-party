@@ -30,7 +30,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 6. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
 
 ## Recent Updates
-The following updates have been merged into the main branch but have not yet been released to the release version:
+Here is the update that has been synchronized to the main branch (the Docker image will also be updated accordingly), but has not yet been officially released in a new version:
 1. Support for the A2A service has been added, allowing the invocation of the A2A service.
 2. Support for previewing HTML and Mermaid formats has been added.
 3. Improve the tool intelligence agent, so that the intelligence agent built in the agent interface can be used as a tool. 
@@ -99,7 +99,7 @@ npm run dev
 
 ## Configuration
 
-1. Click on the System Settings in the left sidebar to set language options, system themes, and open this application in web mode.
+1. Click on the System Settings in the left sidebar to set language options, system themes.
 2. Navigate to the Tools interface in the left sidebar to configure various utilities including current time, in-depth research, and pseudo-reasoning capabilities. If you wish to fix the language used by the agent, you can configure it here.
 3. Access the Model Services interface from the left sidebar to configure your preferred cloud service providers such as OpenAI, DeepSeek, etc. Select your model service provider and enter the corresponding API key. Then click the magnifying glass button at the top right corner to fetch the list of models available from that provider, select the desired model to complete the setup.
 4. Go to the Agents interface in the left sidebar to configure the system prompt for intelligent agents. The system prompt dictates the behavior of the agent and can be customized according to your needs. When creating an agent, it will snapshot all current configurations including model services, knowledge base, internet access features, MCP services, tools, system prompts, etc.

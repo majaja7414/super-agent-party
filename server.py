@@ -18,8 +18,15 @@ import shutil
 from typing import List, Dict
 import shortuuid
 from py.mcp_clients import McpClient
-from py.get_setting import load_settings,save_settings,base_path,HOST,PORT
 from contextlib import asynccontextmanager
+import argparse
+parser = argparse.ArgumentParser(description="Run the ASGI application server.")
+parser.add_argument("--host", default="127.0.0.1", help="Host for the ASGI server, default is 127.0.0.1")
+parser.add_argument("--port", type=int, default=3456, help="Port for the ASGI server, default is 3456")
+args = parser.parse_args()
+HOST = args.host
+PORT = args.port
+
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 local_timezone = None
 logger = None
@@ -28,6 +35,9 @@ client = None
 reasoner_client = None
 mcp_client_list = {}
 _TOOL_HOOKS = {}
+
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port
+configure_host_port(args.host, args.port)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 

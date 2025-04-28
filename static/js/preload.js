@@ -21,5 +21,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   pathJoin: (...args) => path.join(...args),
   sendLanguage: (lang) => ipcRenderer.send('set-language', lang),
   // 环境检测
-  isElectron: true
+  isElectron: true,
+
+  // 自动更新
+  checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  downloadUpdate: () => ipcRenderer.invoke('download-update'),
+  quitAndInstall: () => ipcRenderer.invoke('quit-and-install'),
+  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
+  onUpdateNotAvailable: (callback) => ipcRenderer.on('update-not-available', callback),
+  onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
+  onDownloadProgress: (callback) => ipcRenderer.on('download-progress', callback),
+  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback)
 });

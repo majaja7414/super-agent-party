@@ -18,3 +18,7 @@ agents/
 config/settings.json
 test/
 .venv/
+agents/
+server.build/
+server.dist/
+doc/

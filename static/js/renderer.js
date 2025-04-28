@@ -124,6 +124,8 @@ const app = Vue.createApp({
       isCollapse: true,
       activeMenu: 'home',
       isMaximized: false,
+      hasUpdate: false,
+      updateSuccess: false,
       settings: {
         model: '',
         base_url: '',
@@ -284,6 +286,11 @@ const app = Vue.createApp({
       isSending: false, // 是否正在发送
       showAddDialog: false,
       modelProviders: [],
+      // 更新相关
+      updateAvailable: false,
+      updateInfo: null,
+      updateDownloaded: false,
+      downloadProgress: 0,
       fileLinks: [],
       vendorValues: [
         'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
@@ -380,6 +387,30 @@ main();`,
   mounted() {
     this.initWebSocket();
     this.highlightCode();
+    if (isElectron) {
+      // 检查更新
+      this.checkForUpdates();
+      // 监听更新事件
+      window.electronAPI.onUpdateAvailable((_, info) => {
+        this.updateAvailable = true;
+        this.updateInfo = info;
+        showNotification(this.t('updateAvailable'), 'info');
+      });
+      window.electronAPI.onUpdateNotAvailable(() => {
+        this.updateAvailable = false;
+        this.updateInfo = null;
+      });
+      window.electronAPI.onUpdateError((_, err) => {
+        showNotification(err, 'error');
+      });
+      window.electronAPI.onDownloadProgress((_, progressObj) => {
+        this.downloadProgress = progressObj.percent;
+      });
+      window.electronAPI.onUpdateDownloaded(() => {
+        this.updateDownloaded = true;
+        showNotification(this.t('updateDownloaded'), 'success');
+      });
+    }
     this.$nextTick(() => {
       this.initPreviewButtons();
     });
@@ -496,6 +527,52 @@ main();`,
     
   },
   methods: {
+    // 检查更新
+    async checkForUpdates() {
+      if (isElectron) {
+        try {
+          await window.electronAPI.checkForUpdates();
+        } catch (err) {
+          showNotification(err.message, 'error');
+        }
+      }
+    },
+
+    // 下载更新
+    async downloadUpdate() {
+      if (isElectron && this.updateAvailable) {
+        try {
+          await window.electronAPI.downloadUpdate();
+        } catch (err) {
+          showNotification(err.message, 'error');
+        }
+      }
+    },
+
+    // 安装更新
+    async installUpdate() {
+      if (isElectron && this.updateDownloaded) {
+        await window.electronAPI.quitAndInstall();
+      }
+    },
+
+    // 处理更新按钮点击
+    async handleUpdate() {
+      if (!this.updateSuccess) {
+        try {
+          await this.downloadUpdate();
+          this.updateSuccess = true;
+          setTimeout(() => {
+            this.installUpdate();
+          }, 1000);
+        } catch (err) {
+          showNotification(err.message, 'error');
+        }
+      } else {
+        await this.installUpdate();
+      }
+    },
+
     generateConversationTitle(messages) {
       const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
       if (lastUserMessage) {
