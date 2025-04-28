@@ -20,7 +20,13 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['Electron.app'],
+    excludes=[
+        'node_modules/electron/**',
+        'node_modules/electron-builder/**',
+        'node_modules/electron-publish/**',
+        'node_modules/electron-builder-squirrel-windows/**',
+        'node_modules/electron-updater/**'
+    ],
     noarchive=False,
     optimize=0,
 )
