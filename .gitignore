@@ -180,5 +180,4 @@ dist/
 release/
 server.build/
 server.dist/
-tiktoken_cache/
 agents/
