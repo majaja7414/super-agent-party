@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ### Windows Desktop Installation
 
-If you are using a Windows system, you can directly [click here to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.0/Super.Agent.Party-Setup-0.1.0.exe) the Windows desktop version and follow the prompts to install.
+If you are using a Windows system, you can directly [click here to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe) the Windows desktop version and follow the prompts to install.
 
 ### Docker Deployment
 

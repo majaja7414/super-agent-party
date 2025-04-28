@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ### windows桌面版安装
 
-如果你是windows系统，可以直接[点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.0/Super.Agent.Party-Setup-0.1.0.exe)windows桌面版，然后按照提示进行安装。
+如果你是windows系统，可以直接[点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe)windows桌面版，然后按照提示进行安装。
 
 ### docker部署
 
