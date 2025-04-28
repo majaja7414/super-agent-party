@@ -178,7 +178,6 @@ test/
 uploaded_files/
 kb/
 dist/
-build_python.spec
 release/
 server.build/
 server.dist/
