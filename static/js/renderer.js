@@ -1,8 +1,9 @@
-const HOST = '127.0.0.1'
-const PORT = 3456
+
 const isElectron = window.electronAPI ? true : false;
 // 事件监听改造
 if (isElectron) {
+  HOST = "127.0.0.1"
+  PORT = 3456
   document.addEventListener('click', async (event) => {
     const link = event.target.closest('a[href]');
     if (!link) return;
@@ -38,6 +39,10 @@ if (isElectron) {
       window.location.href = href;
     }
   });
+}
+else {
+  HOST = window.location.hostname
+  PORT = window.location.port
 }
 
 const md = window.markdownit({
