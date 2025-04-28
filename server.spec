@@ -17,11 +17,10 @@ a = Analysis(
         'tiktoken_ext',
         'tiktoken_ext.openai_public'
     ],
-    excludes=['Electron.app'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['Electron.app'],
     noarchive=False,
     optimize=0,
 )
