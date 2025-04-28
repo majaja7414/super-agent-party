@@ -29,18 +29,11 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 5. Deep Thinking: Transplants the reasoning capabilities of reasoning models into tool-invoking or multimodal models so that large models can use reasoning models for analysis before invoking tools. For example, if deepseek-V3 can invoke tools but the reasoning model deepseek-R1 cannot, the reasoning capability of deepseek-R1 can be transplanted into deepseek-V3 to allow it to reason using deepseek-R1 before invoking tools.
 6. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
 
-## Recent Updates
-Here is the update that has been synchronized to the main branch (the Docker image will also be updated accordingly), but has not yet been officially released in a new version:
-1. Support for the A2A service has been added, allowing the invocation of the A2A service.
-2. Support for previewing HTML and Mermaid formats has been added.
-3. Improve the tool intelligence agent, so that the intelligence agent built in the agent interface can be used as a tool. 
-4. You can now query the chat history.
-
 ## Usage
 
 ### Windows Desktop Installation
 
-If you are using a Windows system, you can directly [click here to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.0/Super.Agent.Party-Setup-0.1.0.exe) the Windows desktop version and follow the prompts to install.
+If you are using a Windows system, you can directly [click here to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe) the Windows desktop version and follow the prompts to install.
 
 ### Docker Deployment
 
