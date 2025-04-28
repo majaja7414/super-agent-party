@@ -13,7 +13,6 @@ kb/
 build_python.spec
 server.build/
 server.dist/
-tiktoken_cache/
 agents/
 config/settings.json
 test/
