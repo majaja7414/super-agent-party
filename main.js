@@ -204,6 +204,26 @@ function setupAutoUpdater() {
   })
 }
 
+// 确保只运行一个实例
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // 当运行第二个实例时，显示主窗口
+    if (mainWindow) {
+      if (!mainWindow.isVisible()) {
+        mainWindow.show()
+      }
+      if (mainWindow.isMinimized()) {
+        mainWindow.restore()
+      }
+      mainWindow.focus()
+    }
+  })
+}
+
 app.whenReady().then(async () => {
   try {
     createLoadingWindow()
