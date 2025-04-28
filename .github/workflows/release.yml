@@ -21,6 +21,9 @@ jobs:
         with:
           node-version: 20
 
+      - name: Npm Install
+        run: npm install
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
