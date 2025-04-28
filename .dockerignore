@@ -21,3 +21,5 @@ agents/
 server.build/
 server.dist/
 doc/
+*.spec
+tiktoken_cache/

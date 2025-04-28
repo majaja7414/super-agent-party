@@ -91,7 +91,7 @@ function startBackend() {
 
     const exePath = path.join(
       process.env.PORTABLE_EXECUTABLE_DIR || app.getAppPath(),
-      '../server/server',
+      '../server',
       serverExecutable
     ).replace('app.asar', 'app.asar.unpacked')
     
