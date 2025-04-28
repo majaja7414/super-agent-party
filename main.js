@@ -208,22 +208,29 @@ function setupAutoUpdater() {
 const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {
-  app.quit()
-} else {
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
-    // 当运行第二个实例时，显示主窗口
-    if (mainWindow) {
-      if (!mainWindow.isVisible()) {
-        mainWindow.show()
-      }
-      if (mainWindow.isMinimized()) {
-        mainWindow.restore()
-      }
-      mainWindow.focus()
-    }
-  })
+  // 如果无法获得锁（说明已经有一个实例在运行），我们不应该显示错误
+  // 因为第一个实例会处理显示窗口
+  setTimeout(() => {
+    app.quit()
+  }, 0)
+  return
 }
 
+// 监听第二个实例的启动
+app.on('second-instance', (event, commandLine, workingDirectory) => {
+  // 当运行第二个实例时，显示主窗口
+  if (mainWindow) {
+    if (!mainWindow.isVisible()) {
+      mainWindow.show()
+    }
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore()
+    }
+    mainWindow.focus()
+  }
+})
+
+// 只有在获得锁（第一个实例）时才执行初始化
 app.whenReady().then(async () => {
   try {
     createLoadingWindow()
