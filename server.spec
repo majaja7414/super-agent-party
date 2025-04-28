@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 import platform
-from PyInstaller.utils.hooks import Tree
+
+
 a = Analysis(
     ['server.py'],
     pathex=[],
@@ -8,7 +9,7 @@ a = Analysis(
     datas=[
         ('config/settings_template.json', 'config'),
         ('static', 'static'),
-        Tree('node_modules', prefix='node_modules', excludes=['**/Electron.app/**']),
+        ('node_modules', 'node_modules'),
         ('tiktoken_cache', 'tiktoken_cache')
     ],
     hiddenimports=[
@@ -16,6 +17,7 @@ a = Analysis(
         'tiktoken_ext',
         'tiktoken_ext.openai_public'
     ],
+    excludes=['Electron.app'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -23,9 +25,8 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
-# 强制过滤Electron二进制
-a.binaries = [x for x in a.binaries if 'Electron.app' not in x[0]]
 pyz = PYZ(a.pure)
+
 if platform.system() == 'Darwin':
     exe = EXE(
         pyz,
@@ -37,9 +38,9 @@ if platform.system() == 'Darwin':
         bootloader_ignore_signals=False,
         strip=False,
         upx=True,
-        console=False,
+        console=False,  # macOS 使用 GUI 模式
         disable_windowed_traceback=False,
-        argv_emulation=True,
+        argv_emulation=True,  # macOS 需要
         target_arch=None,
         codesign_identity=None,
         entitlements_file=None,
@@ -54,6 +55,7 @@ if platform.system() == 'Darwin':
         upx_exclude=[],
         name='server',
     )
+    # 创建 .app bundle
     app = BUNDLE(
         coll,
         name='server.app',
@@ -61,7 +63,7 @@ if platform.system() == 'Darwin':
         bundle_identifier='com.superagent.party',
         info_plist={
             'NSHighResolutionCapable': 'True',
-            'LSBackgroundOnly': 'True',
+            'LSBackgroundOnly': 'True',  # 后台运行
         },
     )
 else:
