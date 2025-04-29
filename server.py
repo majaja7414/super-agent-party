@@ -1476,7 +1476,7 @@ async def chat_endpoint(request: ChatRequest):
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
         if agentSettings['config_path']:
-            with open(agentSettings['config_path'], 'r') as f:
+            with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
                 agent_settings = json.load(f)
             # 将"system_prompt"插入到request.messages[0].content中
             if agentSettings['system_prompt']:
@@ -1652,7 +1652,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 保存上传的文件
-                with open(destination, "wb") as buffer:
+                with open(destination, "wb",encoding='utf-8') as buffer:
                     content = await file.read()
                     buffer.write(content)
                 
@@ -1681,7 +1681,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 复制文件到上传目录
-                with open(file_path, "rb") as src, open(destination, "wb") as dst:
+                with open(file_path, "rb" ,encoding='utf-8') as src, open(destination, "wb") as dst:
                     dst.write(src.read())
                 
                 file_link = {
@@ -1753,7 +1753,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 os.makedirs('agents', exist_ok=True)
                 config_path = os.path.join('agents', f"{agent_id}.json")
                 
-                with open(config_path, 'w') as f:
+                with open(config_path, 'w', encoding='utf-8') as f:
                     json.dump(current_settings, f, indent=4, ensure_ascii=False)
                 
                 # 更新主配置

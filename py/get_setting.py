@@ -16,7 +16,7 @@ def get_port():
 def in_docker():
     def check_cgroup():
         try:
-            with open('/proc/1/cgroup', 'rt') as ifh:
+            with open('/proc/1/cgroup', 'rt',encoding='utf-8') as ifh:
                 for line in ifh:
                     if 'docker' in line or 'container' in line:
                         return True
@@ -26,7 +26,7 @@ def in_docker():
 
     def check_dockerenv():
         try:
-            with open('/.dockerenv', 'rt') as ifh:
+            with open('/.dockerenv', 'rt',encoding='utf-8') as ifh:
                 # 文件存在即表示是在Docker容器中
                 return True
         except FileNotFoundError:
@@ -34,7 +34,7 @@ def in_docker():
 
     def check_proc_self_status():
         try:
-            with open('/proc/self/status', 'rt') as ifh:
+            with open('/proc/self/status', 'rt',encoding='utf-8') as ifh:
                 for line in ifh:
                     if line.startswith('Context') and 'container=docker' in line:
                         return True
