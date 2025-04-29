@@ -1339,12 +1339,12 @@ async def get_models():
         # 构造符合 OpenAI 格式的 Model 对象
         model_data = [
             Model(
-                id=agent["id"],  # 假设 agent 字典中有 id 字段
-                created=0,  # 正确的时间戳格式
+                id=agent["id"],  
+                created=0,  
                 object="model",
                 owned_by="super-agent-party"  # 非空字符串
             )
-            for agent in agents.values()  # 确保遍历的是字典的值
+            for agent in agents.values()  
         ]
         # 构造完整 SyncPage 响应
         response = SyncPage[Model](
