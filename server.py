@@ -265,7 +265,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
-                deepsearch_messages[-1]['content'] += "\n\n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
+                deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
                 response = await client.chat.completions.create(
                     model=model,
@@ -286,6 +286,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = copy.deepcopy(request.messages)
+                if settings['tools']['deepsearch']['enabled']: 
+                    reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
                 if settings['tools']['language']['enabled']:
                     reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
                 if tools:
@@ -320,6 +322,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             open_tag = "<think>"
             close_tag = "</think>"
+            if settings['tools']['deepsearch']['enabled']: 
+                request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
             if tools:
@@ -1021,7 +1025,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 
             deepsearch_messages = copy.deepcopy(request.messages)
-            deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
+            deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
                 model=model,
                 messages=deepsearch_messages,
@@ -1032,6 +1036,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
         if settings['reasoner']['enabled']:
             reasoner_messages = copy.deepcopy(request.messages)
+            if settings['tools']['deepsearch']['enabled']: 
+                reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
             if tools:
@@ -1044,6 +1050,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=settings['reasoner']['temperature']
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+        if settings['tools']['deepsearch']['enabled']: 
+            request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         if tools:
