@@ -1330,45 +1330,30 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 # 在现有路由后添加以下代码
 @app.get("/v1/models")
 async def get_models():
-    global client, settings,reasoner_client
-    
+    from openai.types import Model
+    from openai.pagination import SyncPage
     try:
         # 重新加载最新设置
         current_settings = load_settings()
-        
-        # 验证API密钥
-        if not current_settings.get("api_key"):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "error": {
-                        "message": "API key not configured",
-                        "type": "invalid_request_error",
-                        "code": "api_key_missing"
-                    }
-                }
+        agents = current_settings['agents']
+        # 构造符合 OpenAI 格式的 Model 对象
+        model_data = [
+            Model(
+                id=agent["id"],  
+                created=0,  
+                object="model",
+                owned_by="super-agent-party"  # 非空字符串
             )
-        
-        # 动态更新客户端配置
-        if (current_settings['api_key'] != settings['api_key'] 
-            or current_settings['base_url'] != settings['base_url']):
-            client = AsyncOpenAI(
-                api_key=current_settings['api_key'],
-                base_url=current_settings['base_url'] or "https://api.openai.com/v1",
-            )
-            settings = current_settings
-        if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
-            or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
-            reasoner_client = AsyncOpenAI(
-                api_key=current_settings['reasoner']['api_key'],
-                base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-            )
-            settings = current_settings
-        # 获取模型列表
-        model_list = await client.models.list()
-        
-        # 转换响应格式与官方API一致
-        return JSONResponse(content=model_list.model_dump_json())
+            for agent in agents.values()  
+        ]
+        # 构造完整 SyncPage 响应
+        response = SyncPage[Model](
+            object="list",
+            data=model_data,
+            has_more=False  # 添加分页标记
+        )
+        # 直接返回模型字典，由 FastAPI 自动序列化为 JSON
+        return response.model_dump()  
         
     except APIStatusError as e:
         return JSONResponse(
@@ -1476,7 +1461,7 @@ async def chat_endpoint(request: ChatRequest):
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
         if agentSettings['config_path']:
-            with open(agentSettings['config_path'], 'r') as f:
+            with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
                 agent_settings = json.load(f)
             # 将"system_prompt"插入到request.messages[0].content中
             if agentSettings['system_prompt']:
@@ -1652,7 +1637,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 保存上传的文件
-                with open(destination, "wb") as buffer:
+                with open(destination, "wb",encoding='utf-8') as buffer:
                     content = await file.read()
                     buffer.write(content)
                 
@@ -1681,7 +1666,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 复制文件到上传目录
-                with open(file_path, "rb") as src, open(destination, "wb") as dst:
+                with open(file_path, "rb" ,encoding='utf-8') as src, open(destination, "wb") as dst:
                     dst.write(src.read())
                 
                 file_link = {
@@ -1753,7 +1738,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 os.makedirs('agents', exist_ok=True)
                 config_path = os.path.join('agents', f"{agent_id}.json")
                 
-                with open(config_path, 'w') as f:
+                with open(config_path, 'w', encoding='utf-8') as f:
                     json.dump(current_settings, f, indent=4, ensure_ascii=False)
                 
                 # 更新主配置

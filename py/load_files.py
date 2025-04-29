@@ -67,7 +67,7 @@ async def handle_local_file(file_path):
 
 def _read_file(file_path):
     """同步读取文件内容"""
-    with open(file_path, 'rb') as f:
+    with open(file_path, 'rb',encoding='utf-8') as f:
         return f.read()
 
 async def get_content(input_str):
