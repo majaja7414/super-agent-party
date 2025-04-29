@@ -244,6 +244,17 @@ const translations = {
       'updateAvailable': '发现新版本',
       'updateDownloaded': '新版本已下载完成',
       'updateSuccess': '更新已完成',
+      'llmTool': 'LLM API转工具',
+      'addLLMTool': '添加LLM工具',
+      'toolName': '工具名称',
+      'interfaceType': '接口类型',
+      'description': '功能描述',
+      'modelName': '模型名称',
+      'toolNamePlaceholder': '例如：comfyui LLM party智能体',
+      'selectInterfaceType': '选择接口类型',
+      'descriptionPlaceholder': '用于智能体选择工具时参考...',
+      'apiKeyPlaceholder': '留空则使用全局设置',
+      'modelPlaceholder': '输入或选择模型'
     },
     'en-US': {
       'chat': 'Chat',
@@ -488,6 +499,17 @@ const translations = {
       'newVersion': 'New Version Available',
       'updateAvailable': 'New version found',
       'updateDownloaded': 'New version downloaded',
-      'updateSuccess': 'Update successfully'
+      'updateSuccess': 'Update successfully',
+      'llmTool': 'LLM API to Tools',
+      'addLLMTool': 'Add LLM Tool',
+      'toolName': 'Tool Name',
+      'interfaceType': 'Interface Type', 
+      'description': 'Description',
+      'modelName': 'Model Name',
+      'toolNamePlaceholder': 'e.g. comfyui LLM party agent',
+      'selectInterfaceType': 'Select Interface Type',
+      'descriptionPlaceholder': 'For agent tool selection reference...',
+      'apiKeyPlaceholder': 'Leave blank to use global settings',
+      'modelPlaceholder': 'Input or select model'
     }
   };

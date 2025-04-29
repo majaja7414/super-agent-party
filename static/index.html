@@ -138,6 +138,12 @@
             </el-icon>
             <template #title>{{ t('knowledgeBase') }}</template>
           </el-menu-item>
+          <el-menu-item index="llmTool">
+            <el-icon>
+              <i class="fa-solid fa-network-wired"></i>
+            </el-icon>
+            <template #title>{{ t('llmTool') }}</template>
+          </el-menu-item>
           <el-menu-item index="mcp">
             <el-icon>
               <i class="fa-solid fa-server"></i>
@@ -659,6 +665,105 @@
                   @click="saveAgent"
                   :disabled="!newAgent.name || !newAgent.system_prompt">
                   {{ t('createAgent') }}
+                </el-button>
+              </template>
+            </el-dialog>
+          </div>
+        </div>
+        <!-- llm tool 页面 -->
+        <div v-show="activeMenu === 'llmTool'" class="page llm-tool-container">
+          <div class="keybox-container">
+            <!-- 磁贴网格 -->
+            <div class="provider-grid">
+              <!-- 已有LLM工具配置 -->
+              <div class="provider-card llm-card" v-for="(tool, id) in llmTools" :key="id">
+                <div class="card-header">
+                  <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                  <div class="card-actions">
+                    <el-button @click="removeLLMTool(id)" type="danger" circle size="small">
+                      <i class="fa-solid fa-trash"></i>
+                    </el-button>
+                  </div>
+                </div>
+                <div class="llm-content">
+                  <h3 class="llm-name">{{ tool.name }}</h3>
+                  <el-tag type="info" size="small">{{ toolTypeLabel(tool.type) }}</el-tag>
+                  <p class="llm-desc">{{ tool.description || t('noDescription') }}</p>
+                  <div class="llm-meta">
+                    <el-icon><i class="fa-solid fa-link"></i></el-icon>
+                    <span class="meta-text">{{ tool.base_url }}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 添加新LLM工具 -->
+              <div class="provider-card add-tile" @click="showLLMForm = true">
+                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                <div style="color: #606266; margin-top: 10px;">{{ t('addLLMTool') }}</div>
+              </div>
+            </div>
+
+            <!-- 添加/编辑LLM工具对话框 -->
+            <el-dialog v-model="showLLMForm" :title="editingLLM ? t('editLLMTool') : t('addLLMTool')" width="600px">
+              <el-form label-position="top">
+                <el-form-item :label="t('toolName')" required>
+                  <el-input v-model="newLLMTool.name" :placeholder="t('toolNamePlaceholder')"/>
+                </el-form-item>
+
+                <el-form-item :label="t('interfaceType')" required>
+                  <el-select 
+                    v-model="newLLMTool.type" 
+                    @change="handleTypeChange"
+                    filterable
+                    allow-create
+                    :placeholder="t('selectInterfaceType')">
+                    <el-option
+                      v-for="type in llmInterfaceTypes"
+                      :key="type.value"
+                      :label="type.label"
+                      :value="type.value"
+                    />
+                  </el-select>
+                </el-form-item>
+
+                <el-form-item :label="t('description')" required>
+                  <el-input
+                    v-model="newLLMTool.description"
+                    type="textarea"
+                    :rows="3"
+                    :placeholder="t('descriptionPlaceholder')"
+                  />
+                </el-form-item>
+
+                <el-form-item :label="t('baseURL')" required>
+                  <el-input
+                    v-model="newLLMTool.base_url"
+                    :placeholder="defaultBaseURL"
+                  />
+                </el-form-item>
+
+                <el-form-item :label="t('apiKey')" required>
+                  <el-input
+                    v-model="newLLMTool.api_key"
+                    show-password
+                  />
+                </el-form-item>
+
+                <el-form-item :label="t('modelName')" required>
+                  <el-input
+                    v-model="newLLMTool.model"
+                  >
+                  </el-input>
+                </el-form-item>
+              </el-form>
+
+              <template #footer>
+                <el-button @click="cancelLLMTool">{{ t('cancel') }}</el-button>
+                <el-button 
+                  type="primary" 
+                  @click="saveLLMTool"
+                  :disabled="!formValid">
+                  {{ editingLLM ? t('save') : t('createImmediately') }}
                 </el-button>
               </template>
             </el-dialog>
@@ -1505,7 +1610,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-mug-saucer"></i>
+                      <i class="fa-solid fa-chevron-right"></i>
                     </el-icon>
                     {{ t('advancedConfiguration') }}
                   </span>
@@ -1706,7 +1811,7 @@
                     <template #title>
                       <div class="collapse-title">
                         <el-icon class="mr-2">
-                          <i class="fa-solid fa-mug-saucer"></i>
+                          <i class="fa-solid fa-chevron-right"></i>
                         </el-icon>
                         <span class="font-medium">{{ t('advancedSettings') }}</span>
                       </div>
@@ -1931,7 +2036,7 @@
                 <div class="header-left">
                   <span>
                     <el-icon>
-                      <i class="fa-solid fa-mug-saucer"></i>
+                      <i class="fa-solid fa-chevron-right"></i>
                     </el-icon>
                     {{ t('advancedConfiguration') }}
                   </span>

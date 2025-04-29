@@ -387,6 +387,23 @@ main();`,
     ]
   }'`
       },  
+      llmTools: [],
+      showLLMForm: false,
+      editingLLM: null,
+      newLLMTool: {
+        name: '',
+        type: 'openai',
+        description: '',
+        base_url: '',
+        api_key: '',
+        model: '',
+        enabled: true
+      },
+      llmInterfaceTypes: [
+        { value: 'openai', label: 'OpenAI' },
+        { value: 'ollama', label: 'Ollama' }
+      ],
+      modelOptions: []
     };
   },
   mounted() {
@@ -500,6 +517,29 @@ main();`,
     hasFiles() {
       return this.files.length > 0
     },
+    formValid() {
+      return !!this.newLLMTool.name && !!this.newLLMTool.type
+    },
+    defaultBaseURL() {
+      switch(this.newLLMTool.type) {
+        case 'openai': 
+          return 'https://api.openai.com/v1'
+        case 'ollama':
+          return this.isdocker ? 
+            'http://host.docker.internal:11434' : 
+            'http://127.0.0.1:11434'
+        default:
+          return ''
+      }
+    },
+    defaultApikey() {
+      switch(this.newLLMTool.type) {
+        case 'ollama':
+          return 'ollama'
+        default:
+          return ''
+      }
+    },
     validProvider() {
       if (!this.newProviderTemp.vendor) return false
       if (this.newProviderTemp.vendor === 'custom') {
@@ -532,6 +572,71 @@ main();`,
     
   },
   methods: {
+    cancelLLMTool() {
+      this.showLLMForm = false
+      this.resetForm()
+    },
+    handleTypeChange(val) {
+      this.newLLMTool.base_url = this.defaultBaseURL
+      this.newLLMTool.api_key = this.defaultApikey
+      this.fetchModelsForType(val)
+    },
+    // 获取模型列表
+    async fetchModelsForType(type) {
+      try {
+        const response = await fetch(`http://${HOST}:${PORT}/llm_models`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type,
+            base_url: this.newLLMTool.base_url,
+            api_key: this.newLLMTool.api_key
+          })
+        })
+        
+        const { data } = await response.json()
+        this.modelOptions = data.models || []
+      } catch (error) {
+        console.error('Failed to fetch models:', error)
+      }
+    },
+    // 保存工具
+    saveLLMTool() {
+      const tool = { ...this.newLLMTool }
+      // 添加工具ID
+      tool.id = uuid.v4();
+      if (this.editingLLM) {
+        this.llmTools[this.editingLLM] = tool
+      } else {
+        this.llmTools.push(tool)
+      }
+      this.showLLMForm = false
+      this.resetForm()
+      this.autoSaveSettings()
+    },
+    // 删除工具
+    removeLLMTool(index) {
+      this.llmTools.splice(index, 1)
+      this.autoSaveSettings()
+    },
+    // 重置表单
+    resetForm() {
+      this.newLLMTool = {
+        name: '',
+        type: 'openai',
+        description: '',
+        base_url: '',
+        api_key: '',
+        model: '',
+        enabled: true
+      }
+      this.editingLLM = null
+    },
+    // 类型标签转换
+    toolTypeLabel(type) {
+      const found = this.llmInterfaceTypes.find(t => t.value === type)
+      return found ? found.label : type
+    },
     // 检查更新
     async checkForUpdates() {
       if (isElectron) {
@@ -1049,6 +1154,7 @@ main();`,
           this.agents = data.data.agents || {};
           this.mainAgent = data.data.mainAgent || 'super-model';
           this.toolsSettings = data.data.tools || {};
+          this.llmTools = data.data.llmTools || [];
           this.reasonerSettings = data.data.reasoner || {};
           this.webSearchSettings = data.data.webSearch || {};
           this.knowledgeBases = data.data.knowledgeBases || [];
@@ -1369,6 +1475,7 @@ main();`,
         agents: this.agents,
         mainAgent: this.mainAgent,
         tools: this.toolsSettings,
+        llmTools: this.llmTools,
         system_prompt: this.system_prompt,
         conversations: this.conversations,
         conversationId: this.conversationId,
