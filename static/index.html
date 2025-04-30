@@ -1690,6 +1690,15 @@
                     @input="autoSaveSettings"
                   />
                 </el-form-item>
+                <el-form-item :label="'top_p'" class="form-item-align">
+                  <el-slider
+                    v-model="settings.top_p"
+                    :min="0"
+                    :max="1"
+                    :step="0.1"
+                    @input="autoSaveSettings"
+                  />
+                </el-form-item>
                 <el-form-item :label="t('outputLength')" class="form-item-align">
                   <el-slider
                     v-model="settings.max_tokens"

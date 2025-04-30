@@ -139,6 +139,7 @@ const app = Vue.createApp({
         max_tokens: 4096,    // 默认最大输出长度
         max_rounds: 0,    // 默认最大轮数
         selectedProvider: null,
+        top_p: 1,
       },
       reasonerSettings: {
         enabled: false, // 默认不启用
@@ -1150,6 +1151,7 @@ main();`,
             max_tokens: data.data.max_tokens || 4096,
             max_rounds: data.data.max_rounds || 0,
             selectedProvider: data.data.selectedProvider || '',
+            top_p: data.data.top_p || 1,
           };
           this.system_prompt = data.data.system_prompt || '';
           this.conversations = data.data.conversations || [];
