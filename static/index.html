@@ -686,13 +686,9 @@
                   </div>
                 </div>
                 <div class="llm-content">
-                  <h3 class="llm-name">{{ tool.name }}</h3>
+                  <h3 class="knowledge-info">{{ tool.name }}</h3>
                   <el-tag type="info" size="small">{{ toolTypeLabel(tool.type) }}</el-tag>
-                  <p class="llm-desc">{{ tool.description || t('noDescription') }}</p>
-                  <div class="llm-meta">
-                    <el-icon><i class="fa-solid fa-link"></i></el-icon>
-                    <span class="meta-text">{{ tool.base_url }}</span>
-                  </div>
+                  <p class="knowledge-desc">{{ tool.description || t('noDescription') }}</p>
                 </div>
               </div>
               

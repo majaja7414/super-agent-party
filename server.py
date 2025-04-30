@@ -87,6 +87,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.know_base import query_knowledge_base
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
+    from py.llm_tool import llm_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -96,6 +97,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
         "agent_tool_call": agent_tool_call,
         "a2a_tool_call": a2a_tool_call,
+        "llm_tool_call": llm_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -156,6 +158,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.know_base import kb_tool
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
+    from py.llm_tool import get_llm_tool
     try:
         tools = request.tools or []
         if mcp_client_list:
@@ -167,6 +170,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
+        get_llm_tool_fuction = await get_llm_tool(settings)
+        if get_llm_tool_fuction:
+            tools.append(get_llm_tool_fuction)
         get_agent_tool_fuction = await get_agent_tool(settings)
         if get_agent_tool_fuction:
             tools.append(get_agent_tool_fuction)
@@ -947,6 +953,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.know_base import kb_tool
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
+    from py.llm_tool import get_llm_tool
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
@@ -961,6 +968,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     function = await mcp_client.get_openai_functions()
                     if function:
                         tools.extend(function)
+    get_llm_tool_fuction = await get_llm_tool(settings)
+    if get_llm_tool_fuction:
+        tools.append(get_llm_tool_fuction)
     get_agent_tool_fuction = await get_agent_tool(settings)
     if get_agent_tool_fuction:
         tools.append(get_agent_tool_fuction)
