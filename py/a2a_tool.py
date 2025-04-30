@@ -25,7 +25,7 @@ async def get_a2a_tool(settings):
                             "description": "需要向A2A智能体发送的问题",
                         }
                     },
-                    "required": ["agent_id", "query"]
+                    "required": ["agent_url", "query"]
                 }
             }
         }
