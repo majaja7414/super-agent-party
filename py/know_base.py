@@ -202,7 +202,7 @@ def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
 async def process_knowledge_base(kb_id: int):
     """异步处理知识库的完整流程"""
     # 加载配置
-    settings = load_settings()
+    settings = await load_settings()
     
     # 查找对应知识库配置
     cur_kb = None
@@ -233,7 +233,7 @@ async def process_knowledge_base(kb_id: int):
 async def query_knowledge_base(kb_id: int, query: str):
     """查询知识库"""
     # 加载配置
-    settings = load_settings()
+    settings = await load_settings()
 
     # 查找对应知识库配置
     cur_kb = None

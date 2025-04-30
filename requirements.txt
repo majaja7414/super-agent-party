@@ -25,3 +25,6 @@ shortuuid
 aisuite[all]
 docstring_parser
 python-a2a[all]==0.3.0
+ollama
+aiofiles
+portalocker

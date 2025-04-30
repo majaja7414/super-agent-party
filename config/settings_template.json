@@ -16,6 +16,7 @@
     },
     "mainAgent":"super-model",
     "mcpServers": {},
+    "llmTools": [],
     "tools": {
       "time": {
         "enabled": false

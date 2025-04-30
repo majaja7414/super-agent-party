@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     from tzlocal import get_localzone
     local_timezone = get_localzone()
     logger = logging.getLogger(__name__)
-    settings = load_settings()
+    settings = await load_settings()
     if settings:
         client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
         reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
                 logger.error(f"Failed to initialize MCP client for {server_name} in 5 seconds")
                 mcp_client_list[server_name].disabled = True
                 del settings['mcpServers'][server_name]
-        save_settings(settings)
+        await save_settings(settings)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -87,6 +87,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.know_base import query_knowledge_base
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
+    from py.llm_tool import llm_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -96,6 +97,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
         "agent_tool_call": agent_tool_call,
         "a2a_tool_call": a2a_tool_call,
+        "llm_tool_call": llm_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -156,6 +158,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.know_base import kb_tool
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
+    from py.llm_tool import get_llm_tool
     try:
         tools = request.tools or []
         if mcp_client_list:
@@ -167,6 +170,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
+        get_llm_tool_fuction = await get_llm_tool(settings)
+        if get_llm_tool_fuction:
+            tools.append(get_llm_tool_fuction)
         get_agent_tool_fuction = await get_agent_tool(settings)
         if get_agent_tool_fuction:
             tools.append(get_agent_tool_fuction)
@@ -265,7 +271,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
-                deepsearch_messages[-1]['content'] += "\n\n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
+                deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
                 response = await client.chat.completions.create(
                     model=model,
@@ -286,6 +292,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             # 如果启用推理模型
             if settings['reasoner']['enabled']:
                 reasoner_messages = copy.deepcopy(request.messages)
+                if settings['tools']['deepsearch']['enabled']: 
+                    reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
                 if settings['tools']['language']['enabled']:
                     reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
                 if tools:
@@ -320,6 +328,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             open_tag = "<think>"
             close_tag = "</think>"
+            if settings['tools']['deepsearch']['enabled']: 
+                request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
             if tools:
@@ -943,6 +953,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.know_base import kb_tool
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
+    from py.llm_tool import get_llm_tool
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
@@ -957,6 +968,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     function = await mcp_client.get_openai_functions()
                     if function:
                         tools.extend(function)
+    get_llm_tool_fuction = await get_llm_tool(settings)
+    if get_llm_tool_fuction:
+        tools.append(get_llm_tool_fuction)
     get_agent_tool_fuction = await get_agent_tool(settings)
     if get_agent_tool_fuction:
         tools.append(get_agent_tool_fuction)
@@ -1021,7 +1035,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 
             deepsearch_messages = copy.deepcopy(request.messages)
-            deepsearch_messages[-1]['content'] += "/n/n总结概括一下用户的问题或给出的当前任务，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。"
+            deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
                 model=model,
                 messages=deepsearch_messages,
@@ -1032,6 +1046,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
         if settings['reasoner']['enabled']:
             reasoner_messages = copy.deepcopy(request.messages)
+            if settings['tools']['deepsearch']['enabled']: 
+                reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
             if tools:
@@ -1044,6 +1060,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=settings['reasoner']['temperature']
             )
             request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+        if settings['tools']['deepsearch']['enabled']: 
+            request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         if tools:
@@ -1334,7 +1352,7 @@ async def get_models():
     from openai.pagination import SyncPage
     try:
         # 重新加载最新设置
-        current_settings = load_settings()
+        current_settings = await load_settings()
         agents = current_settings['agents']
         # 构造符合 OpenAI 格式的 Model 对象
         model_data = [
@@ -1401,7 +1419,7 @@ async def chat_endpoint(request: ChatRequest):
     model = request.model or 'super-model' # 默认使用 'super-model'
     import aisuite as ai
     if model == 'super-model':
-        current_settings = load_settings()
+        current_settings = await load_settings()
         providerId = current_settings['selectedProvider'] 
         reasoner_providerId = current_settings['reasoner']['selectedProvider']
         vendor = None
@@ -1456,7 +1474,7 @@ async def chat_endpoint(request: ChatRequest):
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
     else:
-        current_settings = load_settings()
+        current_settings = await load_settings()
         agentSettings = current_settings['agents'].get(model, {})
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
@@ -1540,7 +1558,7 @@ async def process_mcp(mcp_id: str):
     mcp_status[mcp_id] = "initializing"
     try:
         # 获取对应服务器的配置
-        cur_settings = load_settings()
+        cur_settings = await load_settings()
         server_config = cur_settings['mcpServers'][mcp_id]
         
         # 执行初始化逻辑
@@ -1556,7 +1574,7 @@ async def process_mcp(mcp_id: str):
         mcp_status[mcp_id] = f"failed: {str(e)}"
         # 清理失败配置
         cur_settings['mcpServers'].pop(mcp_id, None)
-        save_settings(cur_settings)
+        await save_settings(cur_settings)
 
 @app.post("/api/remove_mcp")
 async def remove_mcp_server(request: Request):
@@ -1569,10 +1587,10 @@ async def remove_mcp_server(request: Request):
             raise HTTPException(status_code=400, detail="No server names provided")
 
         # 移除指定的MCP服务器
-        current_settings = load_settings()
+        current_settings = await load_settings()
         if server_name in current_settings['mcpServers']:
             del current_settings['mcpServers'][server_name]
-            save_settings(current_settings)
+            await save_settings(current_settings)
             settings = current_settings
 
             # 从mcp_client_list中移除
@@ -1718,20 +1736,20 @@ async def process_kb(kb_id: int):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    current_settings = load_settings()
+    current_settings = await load_settings()
     await websocket.send_json({"type": "settings", "data": current_settings})
     
     try:
         while True:
             data = await websocket.receive_json()
             if data.get("type") == "save_settings":
-                save_settings(data.get("data", {}))
+                await save_settings(data.get("data", {}))
                 await websocket.send_json({"type": "settings_saved", "success": True})
             elif data.get("type") == "get_settings":
-                settings = load_settings()
+                settings = await load_settings()
                 await websocket.send_json({"type": "settings", "data": settings})
             elif data.get("type") == "save_agent":
-                current_settings = load_settings()
+                current_settings = await load_settings()
                 
                 # 生成智能体ID和配置路径
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
@@ -1749,7 +1767,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "config_path": config_path,
                     "enabled": False,
                 }
-                save_settings(current_settings)
+                await save_settings(current_settings)
                 
                 # 广播更新后的配置
                 await websocket.send_json({
