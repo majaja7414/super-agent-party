@@ -65,36 +65,30 @@ with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
 
 async def load_settings():
-    try:
-        async with aiofiles.open(SETTINGS_FILE, mode='r', encoding='utf-8') as f:
-            contents = await f.read()
-            settings = json.loads(contents)
-
-        # 补充缺失的字段（包括嵌套字段）
-        def merge_defaults(default, target):
-            for key, value in default.items():
-                if key not in target:
-                    target[key] = value
-                elif isinstance(value, dict):
-                    merge_defaults(value, target[key])
-
-        merge_defaults(default_settings, settings)
-
-        # 设置 isdocker 字段
-        if in_docker():
-            settings['isdocker'] = True
-
-        return settings
-
-    except FileNotFoundError:
-        # 首次运行，创建配置文件
-        settings = default_settings.copy()
-
-        if in_docker():
-            settings['isdocker'] = True
-
-        await save_settings(settings)
-        return settings
+    async with _save_lock:  # 等待所有写入操作完成
+        try:
+            async with aiofiles.open(SETTINGS_FILE, mode='r', encoding='utf-8') as f:
+                contents = await f.read()
+                settings = json.loads(contents)
+            # 补充缺失的字段（包括嵌套字段）
+            def merge_defaults(default, target):
+                for key, value in default.items():
+                    if key not in target:
+                        target[key] = value
+                    elif isinstance(value, dict):
+                        merge_defaults(value, target[key])
+            merge_defaults(default_settings, settings)
+            # 设置 isdocker 字段
+            if in_docker():
+                settings['isdocker'] = True
+            return settings
+        except FileNotFoundError:
+            # 首次运行，创建配置文件
+            settings = default_settings.copy()
+            if in_docker():
+                settings['isdocker'] = True
+            await save_settings(settings)
+            return settings
 
 
 async def save_settings(settings):

@@ -703,9 +703,6 @@ main();`,
       }
       
       this.conversations = this.conversations.filter(c => c.id !== convId);
-      if (this.conversations.length > 0) {
-        this.loadConversation(this.conversations[0].id);
-      }
       this.autoSaveSettings();
     },
     loadConversation(convId) {
