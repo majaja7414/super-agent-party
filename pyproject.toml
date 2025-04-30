@@ -21,6 +21,7 @@ dependencies = [
     "odfpy>=1.4.1",
     "openai>=1.76.0",
     "openpyxl>=3.1.5",
+    "portalocker>=3.1.1",
     "pyinstaller>=6.13.0",
     "pypdf2>=3.0.1",
     "python-a2a[all]==0.3.0",

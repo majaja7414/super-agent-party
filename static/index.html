@@ -1482,6 +1482,13 @@
                   </span>
               </div>
               <div class="tool-content" v-show="expandedSections.superapi">
+                <el-alert
+                  type="info"
+                  :closable="false"
+                  class="mb-2"
+                >
+                  {{ t('superAPIInstructions') }}
+                </el-alert>
                 <!-- 模型名称 -->
                 <el-form-item :label="t('modelName')" class="form-item-align">
                   <el-input

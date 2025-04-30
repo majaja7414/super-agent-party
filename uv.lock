@@ -1276,6 +1276,18 @@ wheels = [
 ]
 
 [[package]]
+name = "portalocker"
+version = "3.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pywin32", marker = "platform_system == 'Windows'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/91/8bfe23e1f7f630f2061ef38b5225d9fda9068d6a30fcbc187951e678e630/portalocker-3.1.1.tar.gz", hash = "sha256:ec20f6dda2ad9ce89fa399a5f31f4f1495f515958f0cb7ca6543cef7bb5a749e", size = 43708 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f7/60/1974cfdd5bb770568ddc6f89f3e0df4cfdd1acffd5a609dff5e95f48c6e2/portalocker-3.1.1-py3-none-any.whl", hash = "sha256:80e984e24de292ff258a5bea0e4f3f778fff84c0ae1275dbaebc4658de4aacb3", size = 19661 },
+]
+
+[[package]]
 name = "primp"
 version = "0.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1780,6 +1792,7 @@ dependencies = [
     { name = "odfpy" },
     { name = "openai" },
     { name = "openpyxl" },
+    { name = "portalocker" },
     { name = "pyinstaller" },
     { name = "pypdf2" },
     { name = "python-a2a", extra = ["all"] },
@@ -1813,6 +1826,7 @@ requires-dist = [
     { name = "odfpy", specifier = ">=1.4.1" },
     { name = "openai", specifier = ">=1.76.0" },
     { name = "openpyxl", specifier = ">=3.1.5" },
+    { name = "portalocker", specifier = ">=3.1.1" },
     { name = "pyinstaller", specifier = ">=6.13.0" },
     { name = "pypdf2", specifier = ">=3.0.1" },
     { name = "python-a2a", extras = ["all"], specifier = "==0.3.0" },

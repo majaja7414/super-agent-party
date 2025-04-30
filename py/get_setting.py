@@ -1,10 +1,13 @@
+import asyncio
 import json
 import os
 import sys
 import aiofiles
+import portalocker
 
 HOST = None
 PORT = None
+_save_lock = asyncio.Lock()
 def configure_host_port(host, port):
     global HOST, PORT
     HOST = host
@@ -95,5 +98,22 @@ async def load_settings():
 
 
 async def save_settings(settings):
-    async with aiofiles.open(SETTINGS_FILE, mode='w', encoding='utf-8') as f:
-        await f.write(json.dumps(settings, ensure_ascii=False, indent=2))
+    async with _save_lock:
+        loop = asyncio.get_event_loop()
+        async with aiofiles.open(SETTINGS_FILE, mode='w', encoding='utf-8') as af:
+            # 获取底层文件描述符
+            raw_file = af._file.buffer.raw  # 访问aiofiles内部原始文件对象
+            fd = raw_file.fileno()
+            
+            # 使用文件描述符加锁
+            await loop.run_in_executor(
+                None, 
+                lambda: portalocker.lock(raw_file, portalocker.LOCK_EX)
+            )
+            try:
+                await af.write(json.dumps(settings, ensure_ascii=False, indent=2))
+            finally:
+                await loop.run_in_executor(
+                    None, 
+                    lambda: portalocker.unlock(raw_file)
+                )
