@@ -21,7 +21,7 @@ async def get_llm_tool(settings):
             "type": "function",
             "function": {
                 "name": "llm_tool_call",
-                "description": f"调用自定义的LLM工具，以下是工具列表：\n{llm_list}",
+                "description": f"调用自定义的LLM工具，以下是工具列表：\n{llm_list}\n\n如果LLM工具返回的内容包含图片，则返回的图片URL或本地路径，请直接写成：![image](图片URL)格式发给用户，用户就能看到图片了",
                 "parameters": {
                     "type": "object",
                     "properties": {
