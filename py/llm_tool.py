@@ -54,6 +54,28 @@ async def get_image_base64(image_url: str) -> str:
                 raise ValueError(f"Failed to download image from {image_url}")
             image_data = await response.read()
             return base64.b64encode(image_data).decode('utf-8')
+        
+async def get_image_media_type(image_url: str) -> str:
+    # 根据image_url类型调整
+    if image_url.endswith('.png'):
+        media_type = 'image/png'
+    elif image_url.endswith('.jpg') or image_url.endswith('.jpeg'):
+        media_type = 'image/jpeg'
+    elif image_url.endswith('.webp'):
+        media_type = 'image/webp'
+    elif image_url.endswith('.gif'):
+        media_type = 'image/gif'
+    elif image_url.endswith('.bmp'):
+        media_type = 'image/bmp'
+    elif image_url.endswith('.tiff'):
+        media_type = 'image/tiff'
+    elif image_url.endswith('.ico'):
+        media_type = 'image/x-icon'
+    elif image_url.endswith('.svg'):
+        media_type = 'image/svg+xml'
+    else:
+        media_type = 'image/png'
+    return media_type
 
 async def llm_tool_call(name, query, image_url=None):
     print(f"调用LLM工具：{name}")
@@ -69,7 +91,7 @@ async def llm_tool_call(name, query, image_url=None):
                     # 处理图片输入
                     if image_url:
                         base64_image = await get_image_base64(image_url)
-                        media_type = 'image/jpeg'  # 根据实际图片类型调整
+                        media_type = await get_image_media_type(image_url)
                         content = [
                             {"type": "text", "text": query},
                             {
@@ -95,10 +117,12 @@ async def llm_tool_call(name, query, image_url=None):
                 try:
                     if image_url:
                         base64_image = await get_image_base64(image_url)
+                        # 根据image_url类型调整
+                        media_type = await get_image_media_type(image_url)
                         prompt = [
                             {
                                 "type": "image",
-                                "image_url": base64_image
+                                "image_url": f"data:{media_type};base64,{base64_image}",
                             },
                             {
                                 "type": "text",
