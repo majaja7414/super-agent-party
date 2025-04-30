@@ -156,6 +156,7 @@ const app = Vue.createApp({
       conversationId: null, // 当前对话ID
       conversations: [], // 对话历史记录
       showHistoryDialog: false,
+      showLLMToolsDialog: false,
       deletingConversationId: null, // 正在被删除的对话ID
       models: [],
       modelsLoading: false,
@@ -506,7 +507,9 @@ main();`,
     hasEnabledA2AServers() {
       return Object.values(this.a2aServers).some(server => server.enabled);
     },
-
+    hasEnabledLLMTools() {
+      return this.llmTools.some(tool => tool.enabled);
+    },
     hasEnabledKnowledgeBases() {
       return this.knowledgeBases.some(kb => kb.enabled)
     },
@@ -572,6 +575,9 @@ main();`,
     
   },
   methods: {
+    switchTollmTools() {
+      this.activeMenu = 'llmTool'
+    },
     cancelLLMTool() {
       this.showLLMForm = false
       this.resetForm()

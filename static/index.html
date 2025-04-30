@@ -344,6 +344,32 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showLLMToolsDialog"
+            :title="t('llmToolsManagement')"
+            width="400px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(tool, index) in llmTools" :key="index" class="knowledge-item">
+                <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ tool.name }}</div>
+                  <div class="knowledge-desc">{{ tool.description || t('noDescription') }}</div>
+                </div>
+                <el-button 
+                  @click="removeLLMTool(index)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="llmTools.length === 0" class="empty-tip">
+                {{ t('noLLMTools') }}
+                <a href="#" @click.stop.prevent="switchTollmTools">{{ t('gollmTools') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
             width="400px">
@@ -454,6 +480,16 @@
                 :type="hasAgentChanges ? 'primary' : 'default'"
                 circle>
                 <i class="fa-solid fa-robot"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('llmTools')" placement="top">
+              <el-button
+                @click="showLLMToolsDialog = true"
+                class="icon-btn llm-tool-btn"
+                :type="hasEnabledLLMTools ? 'primary' : 'default'"
+                circle>
+                <i class="fa-solid fa-network-wired"></i>
               </el-button>
             </el-tooltip>
 

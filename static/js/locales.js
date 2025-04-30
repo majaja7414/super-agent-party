@@ -244,7 +244,7 @@ const translations = {
       'updateAvailable': '发现新版本',
       'updateDownloaded': '新版本已下载完成',
       'updateSuccess': '更新已完成',
-      'llmTool': 'LLM API转工具',
+      'llmTool': 'LLM 工具',
       'addLLMTool': '添加LLM工具',
       'toolName': '工具名称',
       'interfaceType': '接口类型',
@@ -254,7 +254,11 @@ const translations = {
       'selectInterfaceType': '选择接口类型',
       'descriptionPlaceholder': '用于智能体选择工具时参考...',
       'apiKeyPlaceholder': '留空则使用全局设置',
-      'modelPlaceholder': '输入或选择模型'
+      'modelPlaceholder': '输入或选择模型',
+      'llmTools': 'LLM 工具',
+      'llmToolsManagement': 'LLM 工具管理',
+      'noLLMTools': '未配置 LLM 工具',
+      'gollmTools': '去添加 LLM 工具界面',
     },
     'en-US': {
       'chat': 'Chat',
@@ -500,7 +504,7 @@ const translations = {
       'updateAvailable': 'New version found',
       'updateDownloaded': 'New version downloaded',
       'updateSuccess': 'Update successfully',
-      'llmTool': 'LLM API to Tools',
+      'llmTool': 'LLM Tools',
       'addLLMTool': 'Add LLM Tool',
       'toolName': 'Tool Name',
       'interfaceType': 'Interface Type', 
@@ -510,6 +514,10 @@ const translations = {
       'selectInterfaceType': 'Select Interface Type',
       'descriptionPlaceholder': 'For agent tool selection reference...',
       'apiKeyPlaceholder': 'Leave blank to use global settings',
-      'modelPlaceholder': 'Input or select model'
+      'modelPlaceholder': 'Input or select model',
+      'llmTools': 'LLM Tools',
+      'llmToolsManagement': 'LLM Tools Management',
+      'noLLMTools': 'No LLM Tools Configured',
+      'gollmTools': 'Go to LLM Tools page'
     }
   };
