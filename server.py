@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     from tzlocal import get_localzone
     local_timezone = get_localzone()
     logger = logging.getLogger(__name__)
-    settings = load_settings()
+    settings = await load_settings()
     if settings:
         client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
         reasoner_client = AsyncOpenAI(api_key=settings['reasoner']['api_key'],base_url=settings['reasoner']['base_url'])
@@ -62,7 +62,7 @@ async def lifespan(app: FastAPI):
                 logger.error(f"Failed to initialize MCP client for {server_name} in 5 seconds")
                 mcp_client_list[server_name].disabled = True
                 del settings['mcpServers'][server_name]
-        save_settings(settings)
+        await save_settings(settings)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -1352,7 +1352,7 @@ async def get_models():
     from openai.pagination import SyncPage
     try:
         # 重新加载最新设置
-        current_settings = load_settings()
+        current_settings = await load_settings()
         agents = current_settings['agents']
         # 构造符合 OpenAI 格式的 Model 对象
         model_data = [
@@ -1419,7 +1419,7 @@ async def chat_endpoint(request: ChatRequest):
     model = request.model or 'super-model' # 默认使用 'super-model'
     import aisuite as ai
     if model == 'super-model':
-        current_settings = load_settings()
+        current_settings = await load_settings()
         providerId = current_settings['selectedProvider'] 
         reasoner_providerId = current_settings['reasoner']['selectedProvider']
         vendor = None
@@ -1474,7 +1474,7 @@ async def chat_endpoint(request: ChatRequest):
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
     else:
-        current_settings = load_settings()
+        current_settings = await load_settings()
         agentSettings = current_settings['agents'].get(model, {})
         if not agentSettings:
             raise HTTPException(status_code=400, detail="Agent not found")
@@ -1558,7 +1558,7 @@ async def process_mcp(mcp_id: str):
     mcp_status[mcp_id] = "initializing"
     try:
         # 获取对应服务器的配置
-        cur_settings = load_settings()
+        cur_settings = await load_settings()
         server_config = cur_settings['mcpServers'][mcp_id]
         
         # 执行初始化逻辑
@@ -1574,7 +1574,7 @@ async def process_mcp(mcp_id: str):
         mcp_status[mcp_id] = f"failed: {str(e)}"
         # 清理失败配置
         cur_settings['mcpServers'].pop(mcp_id, None)
-        save_settings(cur_settings)
+        await save_settings(cur_settings)
 
 @app.post("/api/remove_mcp")
 async def remove_mcp_server(request: Request):
@@ -1587,10 +1587,10 @@ async def remove_mcp_server(request: Request):
             raise HTTPException(status_code=400, detail="No server names provided")
 
         # 移除指定的MCP服务器
-        current_settings = load_settings()
+        current_settings = await load_settings()
         if server_name in current_settings['mcpServers']:
             del current_settings['mcpServers'][server_name]
-            save_settings(current_settings)
+            await save_settings(current_settings)
             settings = current_settings
 
             # 从mcp_client_list中移除
@@ -1736,20 +1736,20 @@ async def process_kb(kb_id: int):
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    current_settings = load_settings()
+    current_settings = await load_settings()
     await websocket.send_json({"type": "settings", "data": current_settings})
     
     try:
         while True:
             data = await websocket.receive_json()
             if data.get("type") == "save_settings":
-                save_settings(data.get("data", {}))
+                await save_settings(data.get("data", {}))
                 await websocket.send_json({"type": "settings_saved", "success": True})
             elif data.get("type") == "get_settings":
-                settings = load_settings()
+                settings = await load_settings()
                 await websocket.send_json({"type": "settings", "data": settings})
             elif data.get("type") == "save_agent":
-                current_settings = load_settings()
+                current_settings = await load_settings()
                 
                 # 生成智能体ID和配置路径
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
@@ -1767,7 +1767,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     "config_path": config_path,
                     "enabled": False,
                 }
-                save_settings(current_settings)
+                await save_settings(current_settings)
                 
                 # 广播更新后的配置
                 await websocket.send_json({

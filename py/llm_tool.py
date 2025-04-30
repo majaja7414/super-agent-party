@@ -79,7 +79,7 @@ async def get_image_media_type(image_url: str) -> str:
 
 async def llm_tool_call(name, query, image_url=None):
     print(f"调用LLM工具：{name}")
-    settings = load_settings()
+    settings = await load_settings()
     llmTools = settings['llmTools']
     for llmTool in llmTools:
         if llmTool['enabled'] and llmTool['name'] == name:

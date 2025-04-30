@@ -9,8 +9,8 @@ from tavily import TavilyClient
 from py.get_setting import load_settings
 
 async def DDGsearch_async(query):
+    settings = await load_settings()
     def sync_search():
-        settings = load_settings()
         max_results = settings['webSearch']['duckduckgo_max_results'] or 10
         try:
             with DDGS() as ddg:
@@ -47,8 +47,8 @@ duckduckgo_tool = {
 }
 
 async def searxng_async(query):
+    settings = await load_settings()
     def sync_search(query):
-        settings = load_settings()
         max_results = settings['webSearch']['searxng_max_results'] or 10
         api_url = settings['webSearch']['searxng_url'] or "http://127.0.0.1:8080"
         headers = {"User-Agent": "Mozilla/5.0"}
@@ -105,8 +105,8 @@ searxng_tool = {
 
 
 async def Tavily_search_async(query):
+    settings = await load_settings()
     def sync_search():
-        settings = load_settings()
         max_results = settings['webSearch']['tavily_max_results'] or 10
         try:
             api_key = settings['webSearch'].get('tavily_api_key', "")
@@ -146,10 +146,10 @@ tavily_tool = {
 }
 
 async def jina_crawler_async(original_url):
+    settings = await load_settings()
     def sync_crawler():
         detail_url = "https://r.jina.ai/"
         url = f"{detail_url}{original_url}"
-        settings = load_settings()
         try:
             jina_api_key = settings['webSearch'].get('jina_api_key', "")
             if jina_api_key:
@@ -216,8 +216,8 @@ class Crawl4AiTester:
             time.sleep(2)
 
 async def Crawl4Ai_search_async(original_url):
+    settings = await load_settings()
     def sync_search():
-        settings = load_settings()
         try:
             tester = Crawl4AiTester()
             api_key = settings['webSearch'].get('Crawl4Ai_api_key', "test_api_code")

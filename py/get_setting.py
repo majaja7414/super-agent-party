@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import aiofiles
 
 HOST = None
 PORT = None
@@ -59,30 +60,40 @@ SETTINGS_FILE = os.path.join(CONFIG_BASE_PATH, 'settings.json')
 SETTINGS_TEMPLATE_FILE = os.path.join(CONFIG_BASE_PATH, 'settings_template.json')
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
-def load_settings():
+
+async def load_settings():
     try:
-        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
-            settings = json.load(f)
-        # 与default_settings比较，如果缺少字段或者二级字段，则添加默认值
-        for key, value in default_settings.items():
-            if key not in settings:
-                settings[key] = value
-        # 如果运行在docker内部
+        async with aiofiles.open(SETTINGS_FILE, mode='r', encoding='utf-8') as f:
+            contents = await f.read()
+            settings = json.loads(contents)
+
+        # 补充缺失的字段（包括嵌套字段）
+        def merge_defaults(default, target):
+            for key, value in default.items():
+                if key not in target:
+                    target[key] = value
+                elif isinstance(value, dict):
+                    merge_defaults(value, target[key])
+
+        merge_defaults(default_settings, settings)
+
+        # 设置 isdocker 字段
         if in_docker():
             settings['isdocker'] = True
+
         return settings
 
     except FileNotFoundError:
         # 首次运行，创建配置文件
-        settings = default_settings.copy()  # 重要！创建副本避免修改原默认配置
-        with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(settings, f, ensure_ascii=False, indent=2)
-    # 公共的后处理逻辑
-    if in_docker():
-        settings['isdocker'] = True
-    
-    return settings
-    
-def save_settings(settings):
-    with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(settings, f, ensure_ascii=False, indent=2)
+        settings = default_settings.copy()
+
+        if in_docker():
+            settings['isdocker'] = True
+
+        await save_settings(settings)
+        return settings
+
+
+async def save_settings(settings):
+    async with aiofiles.open(SETTINGS_FILE, mode='w', encoding='utf-8') as f:
+        await f.write(json.dumps(settings, ensure_ascii=False, indent=2))
