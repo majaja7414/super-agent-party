@@ -35,7 +35,7 @@ async def get_llm_tool(settings):
                         },
                         "image_url": {
                             "type": "string",
-                            "description": "需要向工具发送的图片URL，可选",
+                            "description": "需要向工具发送的图片URL，可选，来自本地服务器上的图片URL也可以填入（例如：http://127.0.0.1:3456/xxx.jpg），会被自动处理为base64编码发送",
                         }
                     },
                     "required": ["name","query"]
@@ -94,10 +94,11 @@ async def llm_tool_call(name, query, image_url=None):
                 client = AsyncOpenAI(api_key=llmTool['api_key'],base_url=llmTool['base_url'])
                 try:
                     if image_url:
+                        base64_image = await get_image_base64(image_url)
                         prompt = [
                             {
                                 "type": "image",
-                                "image_url": image_url
+                                "image_url": base64_image
                             },
                             {
                                 "type": "text",
