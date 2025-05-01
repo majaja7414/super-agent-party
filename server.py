@@ -179,7 +179,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_a2a_tool_fuction = await get_a2a_tool(settings)
         if get_a2a_tool_fuction:
             tools.append(get_a2a_tool_fuction)
-        print(tools)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -212,6 +211,16 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
         model = settings['model']
+        extra_params = settings['extra_params']
+        # 移除extra_params这个list中"name"不包含非空白符的键值对
+        if extra_params:
+            for extra_param in extra_params:
+                if not extra_param['name'].strip():
+                    extra_params.remove(extra_param)
+            # 列表转换为字典
+            extra_params = {item['name']: item['value'] for item in extra_params}
+        else:
+            extra_params = {}
         async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -343,6 +352,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    **extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -354,6 +364,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    **extra_params, # 其他参数
                 )
             tool_calls = []
             full_content = ""
@@ -725,6 +736,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
+                        **extra_params, # 其他参数
                     )
                 else:
                     response = await client.chat.completions.create(
@@ -736,6 +748,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
+                        **extra_params, # 其他参数
                     )
                 tool_calls = []
                 async for chunk in response:
@@ -981,6 +994,16 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     search_task = ""
     try:
         model = settings['model']
+        extra_params = settings['extra_params']
+        # 移除extra_params这个list中"name"不包含非空白符的键值对
+        if extra_params:
+            for extra_param in extra_params:
+                if not extra_param['name'].strip():
+                    extra_params.remove(extra_param)
+            # 列表转换为字典
+            extra_params = {item['name']: item['value'] for item in extra_params}
+        else:
+            extra_params = {}
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -1075,6 +1098,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
+                **extra_params, # 其他参数
             )
         else:
             response = await client.chat.completions.create(
@@ -1086,6 +1110,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
+                **extra_params, # 其他参数
             )
         if response.choices[0].message.tool_calls:
             pass
@@ -1244,6 +1269,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    **extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -1255,6 +1281,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    **extra_params, # 其他参数
                 )
             print(response)
             if response.choices[0].message.tool_calls:

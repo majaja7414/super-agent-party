@@ -1839,3 +1839,57 @@ border: 1px solid var(--border-color) !important;
   background-color: var(--el-color-success) !important;
   padding: 4px 12px !important;
 }
+
+.extra-params {
+  .param-row {
+    display: flex;
+    align-items: center; /* Vertically center content */
+    gap: 10px;        /* Space between elements */
+    margin-bottom: 10px; /* Space between rows */
+
+    .param-input,
+    .type-select,
+    .value-input,
+    .remove-btn {
+      flex: 1; /* Equal distribution of space */
+      min-width: 0;  /* Important for flexbox to shrink items */
+    }
+
+    .value-input {
+      align-items: center; /* 保持垂直居中 */
+      justify-content: center; /* 水平居中 */
+
+      > * { 
+        flex: 1; 
+        min-width: 0; 
+      }
+
+      .el-input-number {
+        width: auto;
+      }
+
+      .el-switch {
+        /* 水平居中 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+    }
+
+    .remove-btn {
+      flex: 0 0 auto; /* Don't grow, don't shrink, automatic width */
+      width: auto;     /* Let the button's content determine its width */
+    }
+  }
+}
+.remove-btn {
+  margin-left: auto;
+}
+.param-header {
+  display: flex;
+  justify-content: space-between; /* Align items to ends */
+  align-items: center;          /* Vertically center */
+  margin-bottom: 10px;         /* Add spacing below the header */
+  padding: 0px;             /* Add some padding */
+}

@@ -259,7 +259,15 @@ const translations = {
       'llmToolsManagement': 'LLM 工具管理',
       'noLLMTools': '未配置 LLM 工具',
       'gollmTools': '去添加 LLM 工具界面',
-      'superAPIInstructions':'模型名称默认为super-model，此时调用的是当前配置中的智能体。如果需要调用其他智能体，请输入对应的智能体ID，可以在智能体界面配置并查看智能体ID。'
+      'superAPIInstructions':'模型名称默认为super-model，此时调用的是当前配置中的智能体。如果需要调用其他智能体，请输入对应的智能体ID，可以在智能体界面配置并查看智能体ID。',
+      'extraParams': "额外参数",
+      'paramName': "参数名",
+      'paramType': "类型",
+      'paramValue': "值",
+      'string': "字符串",
+      'integer': "整数", 
+      'float': "浮点数",
+      'boolean': "布尔值",
     },
     'en-US': {
       'chat': 'Chat',
@@ -521,5 +529,13 @@ const translations = {
       'noLLMTools': 'No LLM Tools Configured',
       'gollmTools': 'Go to LLM Tools page',
       'superAPIInstructions': 'The model name defaults to super-model, and the agent in the current configuration is called. If you need to call another agent, please enter the corresponding agent ID, you can configure and view the agent ID on the agent interface.',
+      'extraParams': "Extra Parameters",
+      'paramName': "Param Name",
+      'paramType': "Param Type",
+      'paramValue': "Param Value",
+      'string': "String",
+      'integer': "Integer", 
+      'float': "Float",
+      'boolean': "Boolean",
     }
   };
