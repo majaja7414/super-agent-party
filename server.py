@@ -352,7 +352,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
-                    **extra_params, # 其他参数
+                    extra_body = extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -364,7 +364,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
-                    **extra_params, # 其他参数
+                    extra_body = extra_params, # 其他参数
                 )
             tool_calls = []
             full_content = ""
@@ -736,7 +736,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
-                        **extra_params, # 其他参数
+                        extra_body = extra_params, # 其他参数
                     )
                 else:
                     response = await client.chat.completions.create(
@@ -748,7 +748,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
-                        **extra_params, # 其他参数
+                        extra_body = extra_params, # 其他参数
                     )
                 tool_calls = []
                 async for chunk in response:
@@ -1098,7 +1098,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
-                **extra_params, # 其他参数
+                extra_body = extra_params, # 其他参数
             )
         else:
             response = await client.chat.completions.create(
@@ -1110,7 +1110,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
-                **extra_params, # 其他参数
+                extra_body = extra_params, # 其他参数
             )
         if response.choices[0].message.tool_calls:
             pass
@@ -1269,7 +1269,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
-                    **extra_params, # 其他参数
+                    extra_body = extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -1281,7 +1281,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
-                    **extra_params, # 其他参数
+                    extra_body = extra_params, # 其他参数
                 )
             print(response)
             if response.choices[0].message.tool_calls:
