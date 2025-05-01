@@ -735,8 +735,7 @@ main();`,
     },
     async confirmDeleteConversation(convId) {
       if (convId === this.conversationId) {
-        showNotification(this.t('cannotDeleteActive'), 'warning');
-        return;
+        this.messages = [];
       }
       
       this.conversations = this.conversations.filter(c => c.id !== convId);
