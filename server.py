@@ -8,7 +8,7 @@ from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, W
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from openai import AsyncOpenAI, APIStatusError
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -944,7 +944,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 "Connection": "keep-alive",
             }
         )
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
@@ -1366,7 +1366,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         if settings['reasoner']['enabled']:
             response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         return JSONResponse(content=response_dict)
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
@@ -1400,7 +1400,7 @@ async def get_models():
         # 直接返回模型字典，由 FastAPI 自动序列化为 JSON
         return response.model_dump()  
         
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={
