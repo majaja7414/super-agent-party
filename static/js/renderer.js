@@ -139,6 +139,8 @@ const app = Vue.createApp({
         max_tokens: 4096,    // 默认最大输出长度
         max_rounds: 0,    // 默认最大轮数
         selectedProvider: null,
+        top_p: 1,
+        extra_params: [], // 额外参数
       },
       reasonerSettings: {
         enabled: false, // 默认不启用
@@ -148,6 +150,12 @@ const app = Vue.createApp({
         selectedProvider: null,
         temperature: 0.7,  // 默认温度值
       },
+      paramTypes: [
+        { value: 'string', label: 'string' },
+        { value: 'integer', label: 'integer' },
+        { value: 'float', label: 'float' },
+        { value: 'boolean', label: 'boolean' }
+      ],
       ws: null,
       messages: [],
       userInput: '',
@@ -575,6 +583,35 @@ main();`,
     
   },
   methods: {
+    addParam() {
+      this.settings.extra_params.push({
+        name: '',
+        type: 'string',  // 默认类型
+        value: ''        // 根据类型自动初始化
+      });
+      this.autoSaveSettings();
+    },
+    
+    updateParamType(index) {
+      const param = this.settings.extra_params[index];
+      // 根据类型初始化值
+      switch(param.type) {
+        case 'boolean':
+          param.value = false;
+          break;
+        case 'integer':
+        case 'float':
+          param.value = 0;
+          break;
+        default:
+          param.value = '';
+      }
+      this.autoSaveSettings();
+    },
+    removeParam(index) {
+      this.settings.extra_params.splice(index, 1);
+      this.autoSaveSettings();
+    },
     switchTollmTools() {
       this.activeMenu = 'llmTool'
     },
@@ -1150,6 +1187,8 @@ main();`,
             max_tokens: data.data.max_tokens || 4096,
             max_rounds: data.data.max_rounds || 0,
             selectedProvider: data.data.selectedProvider || '',
+            top_p: data.data.top_p || 1,
+            extra_params: data.data.extra_params || [],
           };
           this.system_prompt = data.data.system_prompt || '';
           this.conversations = data.data.conversations || [];
@@ -1752,7 +1791,7 @@ main();`,
         'minimax': 'https://api.minimax.chat/v1',
         'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
-        'Gemini': 'https://generativelanguage.googleapis.com/v1beta',
+        'Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
         'Anthropic': 'https://api.anthropic.com/v1',
         'Grok': 'https://api.groq.com/openai/v1',
         'mistral': 'https://api.mistral.ai/v1',

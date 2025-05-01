@@ -8,7 +8,7 @@ from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, W
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from openai import AsyncOpenAI, APIStatusError
+from openai import AsyncOpenAI
 from pydantic import BaseModel
 from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -179,7 +179,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_a2a_tool_fuction = await get_a2a_tool(settings)
         if get_a2a_tool_fuction:
             tools.append(get_a2a_tool_fuction)
-        print(tools)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -212,6 +211,16 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         user_prompt = request.messages[-1]['content']
         request = tools_change_messages(request, settings)
         model = settings['model']
+        extra_params = settings['extra_params']
+        # 移除extra_params这个list中"name"不包含非空白符的键值对
+        if extra_params:
+            for extra_param in extra_params:
+                if not extra_param['name'].strip():
+                    extra_params.remove(extra_param)
+            # 列表转换为字典
+            extra_params = {item['name']: item['value'] for item in extra_params}
+        else:
+            extra_params = {}
         async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -340,9 +349,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     tools=tools,
                     stream=True,
                     max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p,
+                    top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    extra_body = extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -351,9 +361,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     temperature=request.temperature,
                     stream=True,
                     max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p,
+                    top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    extra_body = extra_params, # 其他参数
                 )
             tool_calls = []
             full_content = ""
@@ -722,9 +733,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools=tools,
                         stream=True,
                         max_tokens=request.max_tokens or settings['max_tokens'],
-                        top_p=request.top_p,
+                        top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
+                        extra_body = extra_params, # 其他参数
                     )
                 else:
                     response = await client.chat.completions.create(
@@ -733,9 +745,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         temperature=request.temperature,
                         stream=True,
                         max_tokens=request.max_tokens or settings['max_tokens'],
-                        top_p=request.top_p,
+                        top_p=request.top_p or settings['top_p'],
                         frequency_penalty=request.frequency_penalty,
                         presence_penalty=request.presence_penalty,
+                        extra_body = extra_params, # 其他参数
                     )
                 tool_calls = []
                 async for chunk in response:
@@ -931,7 +944,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 "Connection": "keep-alive",
             }
         )
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
@@ -981,6 +994,16 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     search_task = ""
     try:
         model = settings['model']
+        extra_params = settings['extra_params']
+        # 移除extra_params这个list中"name"不包含非空白符的键值对
+        if extra_params:
+            for extra_param in extra_params:
+                if not extra_param['name'].strip():
+                    extra_params.remove(extra_param)
+            # 列表转换为字典
+            extra_params = {item['name']: item['value'] for item in extra_params}
+        else:
+            extra_params = {}
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -1072,9 +1095,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 tools=tools,
                 stream=False,
                 max_tokens=request.max_tokens or settings['max_tokens'],
-                top_p=request.top_p,
+                top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
+                extra_body = extra_params, # 其他参数
             )
         else:
             response = await client.chat.completions.create(
@@ -1083,9 +1107,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=request.temperature,
                 stream=False,
                 max_tokens=request.max_tokens or settings['max_tokens'],
-                top_p=request.top_p,
+                top_p=request.top_p or settings['top_p'],
                 frequency_penalty=request.frequency_penalty,
                 presence_penalty=request.presence_penalty,
+                extra_body = extra_params, # 其他参数
             )
         if response.choices[0].message.tool_calls:
             pass
@@ -1241,9 +1266,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools=tools,
                     stream=False,
                     max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p,
+                    top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    extra_body = extra_params, # 其他参数
                 )
             else:
                 response = await client.chat.completions.create(
@@ -1252,9 +1278,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=request.temperature,
                     stream=False,
                     max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p,
+                    top_p=request.top_p or settings['top_p'],
                     frequency_penalty=request.frequency_penalty,
                     presence_penalty=request.presence_penalty,
+                    extra_body = extra_params, # 其他参数
                 )
             print(response)
             if response.choices[0].message.tool_calls:
@@ -1339,7 +1366,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         if settings['reasoner']['enabled']:
             response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         return JSONResponse(content=response_dict)
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
@@ -1373,7 +1400,7 @@ async def get_models():
         # 直接返回模型字典，由 FastAPI 自动序列化为 JSON
         return response.model_dump()  
         
-    except APIStatusError as e:
+    except Exception as e:
         return JSONResponse(
             status_code=e.status_code,
             content={
@@ -1417,47 +1444,21 @@ async def fetch_provider_models(request: ProviderModelRequest):
 async def chat_endpoint(request: ChatRequest):
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
-    import aisuite as ai
     if model == 'super-model':
         current_settings = await load_settings()
-        providerId = current_settings['selectedProvider'] 
-        reasoner_providerId = current_settings['reasoner']['selectedProvider']
-        vendor = None
-        reasoner_vendor = None
-        for provider in current_settings["modelProviders"]:
-            if provider["id"] == providerId:
-                vendor = provider["vendor"]
-            if provider["id"] == reasoner_providerId:
-                reasoner_vendor = provider["vendor"]
-            if vendor is not None and reasoner_vendor is not None:
-                break
         # 动态更新客户端配置
         if (current_settings['api_key'] != settings['api_key'] 
             or current_settings['base_url'] != settings['base_url']):
-            if vendor == 'Anthropic':
-                provider_configs ={
-                    "api_key": current_settings['api_key'],
-                    "base_url": current_settings['base_url'] or "https://api.anthropic.com/v1"
-                }
-                client = ai.Client(provider_configs)
-            else:
-                client = AsyncOpenAI(
-                    api_key=current_settings['api_key'],
-                    base_url=current_settings['base_url'] or "https://api.openai.com/v1",
-                )
+            client = AsyncOpenAI(
+                api_key=current_settings['api_key'],
+                base_url=current_settings['base_url'] or "https://api.openai.com/v1",
+            )
         if (current_settings['reasoner']['api_key'] != settings['reasoner']['api_key'] 
             or current_settings['reasoner']['base_url'] != settings['reasoner']['base_url']):
-            if reasoner_vendor == 'Anthropic':
-                reasoner_provider_configs ={
-                    "api_key": current_settings['reasoner']['api_key'],
-                    "base_url": current_settings['reasoner']['base_url'] or "https://api.anthropic.com/v1"
-                }
-                client = ai.Client(reasoner_provider_configs)
-            else:
-                reasoner_client = AsyncOpenAI(
-                    api_key=current_settings['reasoner']['api_key'],
-                    base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-                )
+            reasoner_client = AsyncOpenAI(
+                api_key=current_settings['reasoner']['api_key'],
+                base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+            )
         if current_settings != settings:
             settings = current_settings
         try:
@@ -1487,39 +1488,14 @@ async def chat_endpoint(request: ChatRequest):
                     request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
-        providerId = agent_settings['selectedProvider'] 
-        reasoner_providerId = agent_settings['reasoner']['selectedProvider']
-        vendor = None
-        reasoner_vendor = None
-        for provider in agent_settings["modelProviders"]:
-            if provider["id"] == providerId:
-                vendor = provider["vendor"]
-            if provider["id"] == reasoner_providerId:
-                reasoner_vendor = provider["vendor"]
-            if vendor is not None and reasoner_vendor is not None:
-                break
-        if vendor == 'Anthropic':
-            provider_configs ={
-                "api_key": agent_settings['api_key'],
-                "base_url": agent_settings['base_url'] or "https://api.anthropic.com/v1"
-            }
-            client = ai.Client(provider_configs)
-        else:
-            agent_client = AsyncOpenAI(
-                api_key=agent_settings['api_key'],
-                base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
-            )
-        if reasoner_vendor == 'Anthropic':
-            reasoner_provider_configs ={
-                "api_key": agent_settings['reasoner']['api_key'],
-                "base_url": agent_settings['reasoner']['base_url'] or "https://api.anthropic.com/v1"
-            }
-            client = ai.Client(reasoner_provider_configs)
-        else:
-            agent_reasoner_client = AsyncOpenAI(
-                api_key=agent_settings['reasoner']['api_key'],
-                base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
-            )
+        agent_client = AsyncOpenAI(
+            api_key=agent_settings['api_key'],
+            base_url=agent_settings['base_url'] or "https://api.openai.com/v1",
+        )
+        agent_reasoner_client = AsyncOpenAI(
+            api_key=agent_settings['reasoner']['api_key'],
+            base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
+        )
 
         try:
             if request.stream:

@@ -10,6 +10,8 @@
     "max_tokens": 4096,
     "max_rounds": 0,
     "selectedProvider": null,
+    "top_p": 1,
+    "extra_params":[],
     "systemSettings": {
       "language": "zh-CN",
       "theme": "dark"
