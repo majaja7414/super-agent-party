@@ -2,6 +2,18 @@
 const isElectron = window.electronAPI ? true : false;
 // 事件监听改造
 if (isElectron) {
+  document.addEventListener('contextmenu', ev => {
+    // 阻止默认行为
+    ev.preventDefault();
+    // 获取鼠标位置
+    const client = {
+      x: ev.clientX,
+      y: ev.clientY
+    };
+    // 把鼠标位置发送到主进程
+    window.electronAPI.showContextMenu(client);
+  });
+
   HOST = "127.0.0.1"
   PORT = 3456
   document.addEventListener('click', async (event) => {

@@ -4,7 +4,6 @@ const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
-
 let mainWindow
 let loadingWindow
 let tray = null
@@ -16,14 +15,23 @@ const isDev = process.env.NODE_ENV === 'development'
 const locales = {
   'zh-CN': {
     show: '显示窗口',
-    exit: '退出'
+    exit: '退出',
+    cut: '剪切',
+    copy: '复制',
+    paste: '粘贴',
   },
   'en-US': {
     show: 'Show Window',
-    exit: 'Exit'
+    exit: 'Exit',
+    cut: 'Cut',
+    copy: 'Copy',
+    paste: 'Paste',
   }
 };
 let currentLanguage = 'zh-CN';
+
+// 构建菜单项
+let menu;
 
 // 配置日志文件路径
 const logDir = path.join(app.getPath('userData'), 'logs')
@@ -301,10 +309,11 @@ app.whenReady().then(async () => {
     ipcMain.on('set-language', (_, lang) => {
       currentLanguage = lang;
       updateTrayMenu();
+      updatecontextMenu();
     });
     // 创建系统托盘
-    createTray()
-
+    createTray();
+    updatecontextMenu();
     // 窗口控制事件
     ipcMain.handle('window-action', (_, action) => {
       switch (action) {
@@ -337,7 +346,13 @@ app.whenReady().then(async () => {
       }
       return true
     })
-
+    ipcMain.handle('show-context-menu', (event, arg) => {
+      // 弹出上下文菜单
+      menu.popup({
+        x: arg.x,
+        y: arg.y
+      });
+    });
     // 其他IPC处理...
     ipcMain.on('open-external', (event, url) => {
       shell.openExternal(url)
@@ -447,6 +462,23 @@ function updateTrayMenu() {
   ])
   
   tray.setContextMenu(contextMenu);
+}
+
+function updatecontextMenu() {
+  menu = Menu.buildFromTemplate([
+    {
+      label: locales[currentLanguage].cut,
+      role: 'cut'
+    },
+    {
+      label: locales[currentLanguage].copy,
+      role: 'copy'
+    },
+    {
+      label: locales[currentLanguage].paste,
+      role: 'paste'
+    }
+  ]);
 }
 
 app.commandLine.appendSwitch('disable-http-cache')
