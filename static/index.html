@@ -590,6 +590,14 @@
                 <div class="agent-content">
                   <div class="agent-header">
                     <span class="agent-name">{{ agent.name }}</span>
+                    <!-- 添加复制功能 -->
+                    <el-botton
+                      size="mini"
+                      type="info"
+                      @click="copyAgentName(agent.name)"
+                    >
+                      <i class="fa-regular fa-copy"></i>
+                    </el-botton>
                   </div>
                   <!-- 带复制功能的ID展示 -->
                   <el-tag 

@@ -2334,7 +2334,11 @@ main();`,
     },
     copyAgentId(id) {
       navigator.clipboard.writeText(id)
-      showNotification(`Agent ${id} copyed`, 'success');
+      showNotification(`Agent ID: ${id} copyed`, 'success');
+    },
+    copyAgentName(name) {
+      navigator.clipboard.writeText(name)
+      showNotification(`Agent Name: ${name} copyed`, 'success');
     },
     removeAgent(id) {
       if (this.agents.hasOwnProperty(id)) {
