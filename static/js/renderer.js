@@ -304,8 +304,8 @@ const app = Vue.createApp({
         tavilyConfig: true,
         jinaConfig: true,
         Crawl4AiConfig: true,
-        settingsAdvanced: false,
-        reasonerAdvanced: false,
+        settingsAdvanced: true,
+        reasonerAdvanced: true,
         knowledgeAdvanced: false,
       },
       abortController: null, // 用于中断请求的控制器

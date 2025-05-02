@@ -221,6 +221,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
+        extra_params['enable_thinking'] = False
         async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -1004,6 +1005,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
+        extra_params['enable_thinking'] = False
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
