@@ -213,20 +213,26 @@
                   <div v-html="message.content"></div>
                   <!-- 文件链接展示 -->
                   <div v-if="message.fileLinks?.length" class="file-links">
-                    <a
-                      v-for="(link, linkIndex) in message.fileLinks"
-                      :key="linkIndex"
-                      :href="link.path"
-                      target="_blank"
-                      class="file-link"
-                    >
+                    <a v-for="(link, linkIndex) in message.fileLinks" :key="linkIndex" :href="link.path" target="_blank" class="file-link">
                       @{{ link.name }}
                     </a>
                   </div>
                 </div>
                 <!-- AI回复内容 -->
                 <div v-else class="markdown-body" v-html="formatMessage(message.content)"></div>
-
+              </div>
+              <!-- 添加复制按钮 -->
+              <div class="message-actions">
+                <el-tooltip :content="t('copy')" placement="left">
+                  <el-button 
+                    class="copy-btn" 
+                    @click="copyMessageContent(message)"
+                    type="primary"
+                    circle 
+                    size="small">
+                    <i class="fa-regular fa-copy"></i>
+                  </el-button>
+                </el-tooltip>
               </div>
             </div>
           </div>

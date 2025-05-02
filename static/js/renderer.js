@@ -891,7 +891,19 @@ main();`,
     
       return rendered;
     },
-
+    copyMessageContent(message) {
+      // 获取原始内容（用户消息直接复制，AI消息复制原始markdown）
+      let content = message.role === 'user' 
+        ? message.content 
+        : message.rawContent || message.content;
+      // 处理文件链接
+      if (message.fileLinks?.length) {
+        content += '\n\n' + message.fileLinks.map(link => `[${link.name}](${link.path})`).join('\n');
+      }
+      navigator.clipboard.writeText(content)
+        .then(() => showNotification(this.t('copy_success')))
+        .catch(() => showNotification(this.t('copy_failed'), 'error'));
+    },
     initPreviewButtons() {
       // 清理旧事件监听器
       if (this._previewEventHandler) {

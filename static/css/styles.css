@@ -1893,3 +1893,21 @@ border: 1px solid var(--border-color) !important;
   margin-bottom: 10px;         /* Add spacing below the header */
   padding: 0px;             /* Add some padding */
 }
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.message:hover .message-actions {
+  opacity: 1;
+}
+.copy-btn {
+  padding: 4px !important;
+  font-size: 12px !important;
+}
+.copy-btn i {
+  font-size: 12px;
+}
