@@ -1639,7 +1639,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
@@ -1937,7 +1937,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
@@ -2156,7 +2156,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
