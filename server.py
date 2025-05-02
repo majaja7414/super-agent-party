@@ -1384,7 +1384,7 @@ async def get_models():
         # 构造符合 OpenAI 格式的 Model 对象
         model_data = [
             Model(
-                id=agent["id"],  
+                id=agent["name"],  
                 created=0,  
                 object="model",
                 owned_by="super-agent-party"  # 非空字符串
@@ -1478,14 +1478,22 @@ async def chat_endpoint(request: ChatRequest):
         current_settings = await load_settings()
         agentSettings = current_settings['agents'].get(model, {})
         if not agentSettings:
-            raise HTTPException(status_code=400, detail="Agent not found")
+            for agentId , agentConfig in current_settings['agents'].items():
+                if current_settings['agents'][agentId]['name'] == model:
+                    agentSettings = current_settings['agents'][agentId]
+                    break
+        if not agentSettings:
+            return JSONResponse(
+                status_code=404,
+                content={"error": {"message": f"Agent {model} not found", "type": "not_found", "code": 404}}
+            )
         if agentSettings['config_path']:
             with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
                 agent_settings = json.load(f)
             # 将"system_prompt"插入到request.messages[0].content中
             if agentSettings['system_prompt']:
                 if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
+                    request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0]['content']
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
         agent_client = AsyncOpenAI(
