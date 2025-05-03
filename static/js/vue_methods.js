@@ -661,7 +661,17 @@ let vue_methods = {
         }
       });
     },
-
+    changeMainAgent(agent) {
+      this.mainAgent = agent;
+      if (agent === 'super-model') {
+        this.system_prompt = null;
+      }
+      else {
+        this.system_prompt = this.agents[agent].system_prompt;
+      }
+      syncSystemPromptToMessages(this.system_prompt);
+      this.saveSettings();
+    },
     // WebSocket相关
     initWebSocket() {
       this.ws = new WebSocket(`ws://${HOST}:${PORT}/ws`);
@@ -751,8 +761,8 @@ let vue_methods = {
   
       // 情况 2: 已有系统消息
       if (this.messages[0]?.role === 'system') {
-        // 使用 Vue.set 确保响应式更新
-        this.$set(this.messages[0], 'content', newPrompt);
+        // 更新系统消息内容
+        this.messages[0].content = newPrompt;
         return;
       }
   
@@ -761,6 +771,8 @@ let vue_methods = {
         role: 'system',
         content: newPrompt
       });
+
+      this.autoSaveSettings();
     },
     // 发送消息
     async sendMessage() { 

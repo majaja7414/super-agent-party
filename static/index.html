@@ -288,7 +288,7 @@
                 <h3>{{ t('mainAgent') }}</h3>
                 <el-select 
                   v-model="mainAgent"
-                  @change="autoSaveSettings">
+                  @change="changeMainAgent">
                   <el-option
                     :label="t('defaultAgent')"
                     value="super-model"

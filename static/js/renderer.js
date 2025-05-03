@@ -41,12 +41,6 @@ const app = Vue.createApp({
     }
   },
   watch: {
-    system_prompt: {
-      handler(newVal) {
-        this.syncSystemPromptToMessages(newVal);
-      },
-      immediate: true // 初始化时立即执行
-    },
     selectedCodeLang() {
       this.highlightCode();
     },
