@@ -655,6 +655,14 @@ border: 1px solid var(--border-color) !important;
   border-radius: 12px 12px 0 12px;
 }
 
+.system .message-content {
+  background-color: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-light);
+  color: var(--el-color-info) !important; /* 增加文字颜色定义 */
+  border-radius: 12px;
+  padding: 5px;
+}
+
 .assistant .message-content {
   background-color: var(--el-bg-color-page);
   border: 1px solid var(--el-border-color-light);
