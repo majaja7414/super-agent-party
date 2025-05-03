@@ -222,7 +222,7 @@
                 <div v-else-if="message.role === 'assistant'"  class="markdown-body" v-html="formatMessage(message.content)"></div>
                 <!-- 系统消息内容 -->
                 <div v-else class="user-message-content" data-mjx-disabled="true">
-                  <div v-html="message.content"></div>
+                  <div v-html="t('system_prompt') + message.content"></div>
                 </div>
               </div>
               <!-- 添加复制按钮 -->
