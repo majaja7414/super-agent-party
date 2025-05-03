@@ -17,7 +17,7 @@ Thank you for your interest in contributing to super agent party (the "Project")
 
 
 4. **Future License Adjustments**:
-   You agree that the heshengtao can adjust the open-source agreement to be more strict or relaxed as deemed necessary, provided that such adjustments do not conflict with the core principles of the AGPL license.
+   You agree that the heshengtao can adjust the open-source agreement to be more strict or relaxed as deemed necessary.
 
 
 5. **Representations and Warranties**:
@@ -31,6 +31,13 @@ Thank you for your interest in contributing to super agent party (the "Project")
 7. **CLA Acceptance**:
    By submitting a pull request or otherwise contributing to the Project, you indicate your acceptance of this CLA.
 
+8. **Dual Licensing Authority**:
+   You acknowledge and agree that the Project may be distributed under multiple licensing schemes, including but not limited to:
+
+   - a. GNU Affero General Public License version 3 (AGPLv3);
+   - b. Commercial license(s) as determined by heshengtao.
+
+   You grant the Project the necessary rights to permit such dual licensing.
 
 If you have any questions or need further assistance, please contact us at hst97@qq.com.
 
