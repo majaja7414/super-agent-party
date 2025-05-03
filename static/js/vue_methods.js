@@ -239,6 +239,7 @@ let vue_methods = {
         this.fileLinks = conversation.fileLinks;
         this.mainAgent = conversation.mainAgent;
         this.showHistoryDialog = false;
+        this.system_prompt = conversation.system_prompt;
       }
       this.scrollToBottom();
       this.autoSaveSettings();
@@ -691,7 +692,6 @@ let vue_methods = {
             top_p: data.data.top_p || 1,
             extra_params: data.data.extra_params || [],
           };
-          this.system_prompt = data.data.system_prompt || '';
           this.conversations = data.data.conversations || [];
           this.conversationId = data.data.conversationId || null;
           this.agents = data.data.agents || {};
@@ -740,6 +740,28 @@ let vue_methods = {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     },  
+    syncSystemPromptToMessages(newPrompt) {
+      // 情况 1: 新提示词为空
+      if (!newPrompt) {
+        if (this.messages.length > 0 && this.messages[0].role === 'system') {
+          this.messages.splice(0, 1); // 删除系统消息
+        }
+        return;
+      }
+  
+      // 情况 2: 已有系统消息
+      if (this.messages[0]?.role === 'system') {
+        // 使用 Vue.set 确保响应式更新
+        this.$set(this.messages[0], 'content', newPrompt);
+        return;
+      }
+  
+      // 情况 3: 没有系统消息
+      this.messages.unshift({
+        role: 'system',
+        content: newPrompt
+      });
+    },
     // 发送消息
     async sendMessage() { 
       if (!this.userInput.trim() || this.isTyping) return;
@@ -788,19 +810,7 @@ let vue_methods = {
       this.fileLinks = this.fileLinks.concat(fileLinks_list)
       const escapedContent = this.escapeHtml(userInput.trim());
       // 添加系统消息
-      if (this.system_prompt) {
-        // 如果this.messages开头是 system消息，则更新它
-        if (this.messages.length > 0 && this.messages[0].role === 'system') {
-          const systemMessage = this.messages[0];
-          systemMessage.content = this.system_prompt;
-        }else {
-          // 添加到 messages 数组的开头
-          this.messages.unshift({
-            role: 'system',
-            content: this.system_prompt
-          });
-        }
-      }
+      this.syncSystemPromptToMessages(this.system_prompt);
       // 添加用户消息
       this.messages.push({
         role: 'user',
@@ -844,7 +854,8 @@ let vue_methods = {
           mainAgent: this.mainAgent,
           timestamp: Date.now(),
           messages: this.messages,
-          fileLinks: this.fileLinks
+          fileLinks: this.fileLinks,
+          system_prompt: this.system_prompt,
         };
         this.conversations.unshift(newConv);
       }
@@ -858,6 +869,7 @@ let vue_methods = {
           conv.timestamp = Date.now();
           conv.title = this.generateConversationTitle(messages);
           conv.fileLinks = this.fileLinks;
+          conv.system_prompt = this.system_prompt;
         }
       }
       this.autoSaveSettings();
@@ -970,6 +982,7 @@ let vue_methods = {
             timestamp: Date.now(),
             messages: this.messages,
             fileLinks: this.fileLinks,
+            system_prompt: this.system_prompt,
           };
           this.conversations.unshift(newConv);
         }
@@ -983,6 +996,7 @@ let vue_methods = {
             conv.timestamp = Date.now();
             conv.title = this.generateConversationTitle(messages);
             conv.fileLinks = this.fileLinks;
+            conv.system_prompt = this.system_prompt;
           }
         }
         this.isThinkOpen = false;
@@ -1019,7 +1033,6 @@ let vue_methods = {
         mainAgent: this.mainAgent,
         tools: this.toolsSettings,
         llmTools: this.llmTools,
-        system_prompt: this.system_prompt,
         conversations: this.conversations,
         conversationId: this.conversationId,
         reasoner: this.reasonerSettings,
