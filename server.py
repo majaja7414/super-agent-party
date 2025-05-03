@@ -87,7 +87,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.know_base import query_knowledge_base
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
-    from py.llm_tool import llm_tool_call
+    from py.llm_tool import custom_llm_tool
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -97,7 +97,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
         "agent_tool_call": agent_tool_call,
         "a2a_tool_call": a2a_tool_call,
-        "llm_tool_call": llm_tool_call,
+        "custom_llm_tool": custom_llm_tool,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")

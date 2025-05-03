@@ -20,8 +20,8 @@ async def get_llm_tool(settings):
         llm_tool = {
             "type": "function",
             "function": {
-                "name": "llm_tool_call",
-                "description": f"调用自定义的LLM工具，以下是工具列表：\n{llm_list}\n\n如果LLM工具返回的内容包含图片，则返回的图片URL或本地路径，请直接写成：![image](图片URL)格式发给用户，用户就能看到图片了",
+                "name": "custom_llm_tool",
+                "description": f"custom_llm_tool工具可以调用工具列表中的通用工具。请不要混淆custom_llm_tool和tool_name字段要填入的工具名称。以下是工具列表：\n{llm_list}\n\n如果LLM工具返回的内容包含图片，则返回的图片URL或本地路径，请直接写成：![image](图片URL)格式发给用户，用户就能看到图片了",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -77,7 +77,7 @@ async def get_image_media_type(image_url: str) -> str:
         media_type = 'image/png'
     return media_type
 
-async def llm_tool_call(tool_name, query, image_url=None):
+async def custom_llm_tool(tool_name, query, image_url=None):
     print(f"调用LLM工具：{tool_name}")
     settings = await load_settings()
     llmTools = settings['llmTools']
