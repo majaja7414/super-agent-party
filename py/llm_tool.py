@@ -25,7 +25,7 @@ async def get_llm_tool(settings):
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "name": {
+                        "tool_name": {
                             "type": "string",
                             "description": "需要调用的工具名称",
                         },
@@ -38,7 +38,7 @@ async def get_llm_tool(settings):
                             "description": "需要向工具发送的图片URL，可选，来自本地服务器上的图片URL也可以填入（例如：http://127.0.0.1:3456/xxx.jpg），会被自动处理为base64编码发送",
                         }
                     },
-                    "required": ["name","query"]
+                    "required": ["tool_name","query"]
                 }
             }
         }
@@ -77,12 +77,12 @@ async def get_image_media_type(image_url: str) -> str:
         media_type = 'image/png'
     return media_type
 
-async def llm_tool_call(name, query, image_url=None):
-    print(f"调用LLM工具：{name}")
+async def llm_tool_call(tool_name, query, image_url=None):
+    print(f"调用LLM工具：{tool_name}")
     settings = await load_settings()
     llmTools = settings['llmTools']
     for llmTool in llmTools:
-        if llmTool['enabled'] and llmTool['name'] == name:
+        if llmTool['enabled'] and llmTool['name'] == tool_name:
             if llmTool['type'] == 'ollama':
                 client = OllamaClient(host=llmTool['base_url'])
                 try:
