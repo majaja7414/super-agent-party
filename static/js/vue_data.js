@@ -105,6 +105,10 @@ let vue_data = {
     modelsLoading: false,
     modelsError: null,
     isThinkOpen: false,
+    showEditDialog: false,
+    editContent: '',
+    editType: 'system', // 或 'message'
+    editIndex: null,
     toolsSettings: {
       time: {
         enabled: false,

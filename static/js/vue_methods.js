@@ -73,6 +73,22 @@ const MIME_WHITELIST = [
 ]
 
 let vue_methods = {
+  openEditDialog(type, content, index = null) {
+    this.editType = type;
+    this.editContent = content;
+    this.editIndex = index;
+    this.showEditDialog = true;
+  },
+  saveEdit() {
+    if (this.editType === 'system') {
+      this.system_prompt = this.editContent;
+    }
+    if (this.editIndex !== null) {
+      this.messages[this.editIndex].content = this.editContent;
+    }
+    this.autoSaveSettings();
+    this.showEditDialog = false;
+  },
     addParam() {
       this.settings.extra_params.push({
         name: '',
@@ -427,7 +443,7 @@ let vue_methods = {
       };
       // 绑定事件监听
       document.body.addEventListener('click', this._previewEventHandler);
-      console.log('🔧 预览按钮事件监听已初始化');
+      //console.log('🔧 预览按钮事件监听已初始化');
     },
     // 展开预览面板
     expandPreview({ previewContainer, button, lang, codeContent }) {
@@ -668,9 +684,9 @@ let vue_methods = {
       }
       else {
         this.system_prompt = this.agents[agent].system_prompt;
+        console.log(this.system_prompt);
       }
-      syncSystemPromptToMessages(this.system_prompt);
-      this.saveSettings();
+      this.syncSystemPromptToMessages(this.system_prompt);
     },
     // WebSocket相关
     initWebSocket() {
@@ -763,6 +779,7 @@ let vue_methods = {
       if (this.messages[0]?.role === 'system') {
         // 更新系统消息内容
         this.messages[0].content = newPrompt;
+        console.log('Updated system message:', this.messages[0]);
         return;
       }
   
@@ -771,7 +788,7 @@ let vue_methods = {
         role: 'system',
         content: newPrompt
       });
-
+      console.log('Added system message:', this.messages[0]);
       this.autoSaveSettings();
     },
     // 发送消息
@@ -821,8 +838,6 @@ let vue_methods = {
       // fileLinks_list添加到self.filelinks
       this.fileLinks = this.fileLinks.concat(fileLinks_list)
       const escapedContent = this.escapeHtml(userInput.trim());
-      // 添加系统消息
-      this.syncSystemPromptToMessages(this.system_prompt);
       // 添加用户消息
       this.messages.push({
         role: 'user',

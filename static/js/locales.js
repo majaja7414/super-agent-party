@@ -267,6 +267,11 @@ const translations = {
       'integer': "整数", 
       'float': "浮点数",
       'boolean': "布尔值",
+      'save': "保存",
+      'editSystemPrompt': '编辑系统提示词',
+      'editMessage': '编辑消息',
+      'enterContent': '请输入内容',
+      'edit': '编辑',
     },
     'en-US': {
       'chat': 'Chat',
@@ -535,5 +540,10 @@ const translations = {
       'integer': "Integer", 
       'float': "Float",
       'boolean': "Boolean",
+      'save': 'Save',
+      'editSystemPrompt': 'Edit System Prompt',
+      'editMessage': 'Edit Message', 
+      'enterContent': 'Please enter content',
+      'edit': 'Edit',
     }
   };

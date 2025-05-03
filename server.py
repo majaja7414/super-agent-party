@@ -281,7 +281,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
-                deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
+                deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
                 response = await client.chat.completions.create(
                     model=model,
@@ -1060,7 +1060,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 
             deepsearch_messages = copy.deepcopy(request.messages)
-            deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
+            deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
                 model=model,
                 messages=deepsearch_messages,
@@ -1506,7 +1506,6 @@ async def chat_endpoint(request: ChatRequest):
             api_key=agent_settings['reasoner']['api_key'],
             base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
         )
-
         try:
             if request.stream:
                 return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings)

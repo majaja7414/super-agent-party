@@ -220,12 +220,18 @@
                 </div>
                 <!-- AI回复内容 -->
                 <div v-else-if="message.role === 'assistant'"  class="markdown-body" v-html="formatMessage(message.content)"></div>
+                <!-- 系统消息内容 -->
                 <div v-else class="user-message-content" data-mjx-disabled="true">
                   <div v-html="message.content"></div>
                 </div>
               </div>
               <!-- 添加复制按钮 -->
               <div class="message-actions">
+                <el-tooltip v-if="mainAgent === 'super-model' || message.role !== 'system'" :content="t('edit')" placement="left">
+                  <el-button @click="openEditDialog(message.role, message.content,index)" type="primary" circle size="small">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                  </el-button>
+                </el-tooltip>
                 <el-tooltip :content="t('copy')" placement="left">
                   <el-button 
                     class="copy-btn" 
@@ -239,6 +245,21 @@
               </div>
             </div>
           </div>
+          <el-dialog
+            v-model="showEditDialog"
+            :title="editType === 'system' ? t('editSystemPrompt') : t('editMessage')"
+            width="600px">
+            <el-input
+              v-model="editContent"
+              type="textarea"
+              :rows="6"
+              :placeholder="t('enterContent')"
+            ></el-input>
+            <template #footer>
+              <el-button @click="showEditDialog = false">{{ t('cancel') }}</el-button>
+              <el-button type="primary" @click="saveEdit">{{ t('save') }}</el-button>
+            </template>
+          </el-dialog>
             <!-- 文件上传对话框 -->
             <el-dialog
               v-model="showUploadDialog"
