@@ -57,7 +57,7 @@ if (isElectron) {
   }
 
 let vue_data = {
-    system_prompt: '',
+    system_prompt: ' ',
     isdocker: false,
     isExpanded: true,
     isElectron: isElectron,

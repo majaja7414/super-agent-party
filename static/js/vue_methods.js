@@ -257,6 +257,10 @@ let vue_methods = {
         this.showHistoryDialog = false;
         this.system_prompt = conversation.system_prompt;
       }
+      else {
+        this.system_prompt = this.t('defaultSystemPrompt');
+        this.messages = [{ role: 'system', content: this.system_prompt }];
+      }
       this.scrollToBottom();
       this.autoSaveSettings();
     },
@@ -680,7 +684,7 @@ let vue_methods = {
     changeMainAgent(agent) {
       this.mainAgent = agent;
       if (agent === 'super-model') {
-        this.system_prompt = null;
+        this.system_prompt = this.t('defaultSystemPrompt')
       }
       else {
         this.system_prompt = this.agents[agent].system_prompt;
@@ -857,15 +861,18 @@ let vue_methods = {
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
           role: msg.role,
-          content: msg.content + msg.fileLinks_content
+          content: msg.content + (msg.fileLinks_content ?? '')
         }));
       } else {
         // 准备发送的消息历史（保留最近 max_rounds 条消息）
-        messages = this.messages.slice(-max_rounds).map(msg => ({
-          role: msg.role,
-          content: msg.content + msg.fileLinks_content
-        }));
+        messages = this.messages
+          .slice(-max_rounds)
+          .map(msg => ({
+            role: msg.role,
+            content: msg.content + (msg.fileLinks_content ?? '')
+          }));
       }
+      
 
       
       this.userInput = '';
@@ -1133,7 +1140,7 @@ let vue_methods = {
     },
     clearMessages() {
       this.stopGenerate();
-      this.messages = [];
+      this.messages = [{ role: 'system', content: this.system_prompt }];
       this.conversationId = null;
       this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态

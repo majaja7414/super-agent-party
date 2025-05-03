@@ -272,6 +272,7 @@ const translations = {
       'editMessage': '编辑消息',
       'enterContent': '请输入内容',
       'edit': '编辑',
+      'defaultSystemPrompt': '你是一个智能助手。',
     },
     'en-US': {
       'chat': 'Chat',
@@ -545,5 +546,6 @@ const translations = {
       'editMessage': 'Edit Message', 
       'enterContent': 'Please enter content',
       'edit': 'Edit',
+      'defaultSystemPrompt': 'You are a helpful assistant.',
     }
   };
