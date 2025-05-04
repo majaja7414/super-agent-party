@@ -990,19 +990,12 @@
 
                   <div class="input-item">
                     <label>{{ t('modelId') }}</label>
-                    <el-input
-                      v-model="provider.modelId"
-                      :placeholder="t('modelIdPlaceholder')"
-                      @change="autoSaveSettings"
-                    />
-                  </div>
-                  <div class="model-container">
                     <el-select
                       v-model="provider.modelId"
-                      :placeholder="t('selectModel')"
-                      v-if="provider.models?.length"
+                      filterable
+                      allow-create
+                      :placeholder="provider.models?.length ? t('selectOrTypeModel') : t('modelIdPlaceholder')"
                       class="model-select"
-                      :placeholder="t('modelList')"
                       @change="autoSaveSettings"
                     >
                       <el-option
