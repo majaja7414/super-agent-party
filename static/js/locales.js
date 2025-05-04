@@ -274,6 +274,8 @@ const translations = {
       'edit': '编辑',
       'defaultSystemPrompt': '你是一个智能助手。',
       'system_prompt': '系统提示词：',
+      'expand': '展开',
+      'collapse': '收起',
     },
     'en-US': {
       'chat': 'Chat',
@@ -549,5 +551,7 @@ const translations = {
       'edit': 'Edit',
       'defaultSystemPrompt': 'You are a helpful assistant.',
       'system_prompt': 'System Prompt:',
+      'expand': 'Expand',
+      'collapse': 'Collapse',
     }
   };

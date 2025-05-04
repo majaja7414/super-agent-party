@@ -1632,7 +1632,7 @@ border: 1px solid var(--border-color) !important;
   height: 48px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
   background-color: var(--el-bg-color);
 }
 

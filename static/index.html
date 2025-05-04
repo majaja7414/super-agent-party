@@ -464,6 +464,7 @@
                 @click="showHistoryDialog = true"
                 class="icon-btn history-btn"
                 :type="hasFiles ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-clock-rotate-left"></i>
               </el-button>
@@ -474,6 +475,7 @@
                 @click="sendFiles"
                 class="icon-btn file-btn"
                 :type="hasFiles ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-paperclip"></i>
               </el-button>
@@ -484,6 +486,7 @@
                 @click="showKnowledgeDialog = true"
                 class="icon-btn knowledge-base-btn"
                 :type="hasEnabledKnowledgeBases ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-book"></i>
               </el-button>
@@ -494,6 +497,7 @@
                 @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
                 class="icon-btn deep-think-btn"
                 :type="reasonerSettings.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-atom"></i>
               </el-button>
@@ -504,6 +508,7 @@
                 @click="toolsSettings.deepsearch.enabled = !toolsSettings.deepsearch.enabled; autoSaveSettings()"
                 class="icon-btn deep-search-btn"
                 :type="toolsSettings.deepsearch.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-flask"></i>
               </el-button>
@@ -514,6 +519,7 @@
                 @click="webSearchSettings.enabled = !webSearchSettings.enabled; autoSaveSettings()"
                 class="icon-btn web-search-btn"
                 :type="webSearchSettings.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-globe"></i>
               </el-button>
@@ -524,6 +530,7 @@
                 @click="showAgentDialog = true"
                 class="icon-btn agent-btn"
                 :type="hasAgentChanges ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-robot"></i>
               </el-button>
@@ -534,6 +541,7 @@
                 @click="showLLMToolsDialog = true"
                 class="icon-btn llm-tool-btn"
                 :type="hasEnabledLLMTools ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-network-wired"></i>
               </el-button>
@@ -544,6 +552,7 @@
                 @click="showMCPServerDialog = true"
                 class="icon-btn mcp-btn"
                 :type="hasEnabledMCPServers ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-server"></i>
               </el-button>
@@ -554,6 +563,7 @@
                 @click="this.showA2AServerDialog = true"
                 class="icon-btn a2a-btn"
                 :type="hasEnabledA2AServers ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-plug"></i>
               </el-button>
@@ -566,6 +576,12 @@
                 class="icon-btn send-btn"
                 circle>
                 <i :class="isSending ? 'fa-solid fa-stop' : 'fa-solid fa-paper-plane'" aria-hidden="true"></i>
+              </el-button>
+            </el-tooltip>
+            <!--展开收起按钮-->
+            <el-tooltip :content="isBtnCollapse ? t('expand') : t('collapse')" placement="top">
+              <el-button @click="isBtnCollapse=!isBtnCollapse" class="icon-btn collapse-btn" circle>
+                <i :class="isBtnCollapse ? 'fa-solid fa-angle-right' : 'fa-solid fa-angle-left'"></i>
               </el-button>
             </el-tooltip>
           </div>
