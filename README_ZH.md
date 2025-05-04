@@ -37,6 +37,25 @@ docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
 
 ### 源码部署
 
+- windows ：
+```shell
+git clone https://github.com/heshengtao/super-agent-party.git
+cd super-agent-party
+uv sync
+npm install
+start_with_dev.bat
+```
+
+- linux or mac ：
+```shell
+git clone https://github.com/heshengtao/super-agent-party.git
+cd super-agent-party
+uv sync
+npm install
+chmod +x start_with_dev.sh
+./start_with_dev.sh
+```
+
 详细部署方法请参考[部署和使用文档](doc/install_config_ZH.md)
 
 ## 使用方法

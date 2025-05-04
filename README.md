@@ -1,7 +1,7 @@
 ![image](static/source/agent_party.png)
 
 <div align="center">
-  <a href="./README_ZH.md"><img src="https://img.shields.io/badge/Simplified Chinese-d9d9d9"></a>
+  <a href="./README_ZH.md"><img src="https://img.shields.io/badge/简体中文-d9d9d9"></a>
   <a href="./README.md"><img src="https://img.shields.io/badge/English-d9d9d9"></a>
 </div>
 
@@ -36,6 +36,25 @@ docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
 - Out-of-the-box experience: Access http://localhost:3456/
 
 ### Source Code Deployment
+
+- windows :
+```shell
+git clone https://github.com/heshengtao/super-agent-party.git
+cd super-agent-party
+uv sync
+npm install
+start_with_dev.bat
+```
+
+- linux or mac :
+```shell
+git clone https://github.com/heshengtao/super-agent-party.git
+cd super-agent-party
+uv sync
+npm install
+chmod +x start_with_dev.sh
+./start_with_dev.sh
+```
 
 For detailed deployment methods, please refer to the [Deployment and Usage Documentation](doc/install_config.md)
 
