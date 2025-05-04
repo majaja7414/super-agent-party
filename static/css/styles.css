@@ -655,6 +655,14 @@ border: 1px solid var(--border-color) !important;
   border-radius: 12px 12px 0 12px;
 }
 
+.system .message-content {
+  background-color: var(--el-bg-color-page);
+  border: 1px solid var(--el-border-color-light);
+  color: var(--el-color-info) !important; /* 增加文字颜色定义 */
+  border-radius: 12px;
+  padding: 5px;
+}
+
 .assistant .message-content {
   background-color: var(--el-bg-color-page);
   border: 1px solid var(--el-border-color-light);
@@ -1892,4 +1900,22 @@ border: 1px solid var(--border-color) !important;
   align-items: center;          /* Vertically center */
   margin-bottom: 10px;         /* Add spacing below the header */
   padding: 0px;             /* Add some padding */
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+.message:hover .message-actions {
+  opacity: 1;
+}
+.copy-btn {
+  padding: 4px !important;
+  font-size: 12px !important;
+}
+.copy-btn i {
+  font-size: 12px;
 }

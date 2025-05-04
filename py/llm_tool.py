@@ -20,12 +20,12 @@ async def get_llm_tool(settings):
         llm_tool = {
             "type": "function",
             "function": {
-                "name": "llm_tool_call",
-                "description": f"调用自定义的LLM工具，以下是工具列表：\n{llm_list}\n\n如果LLM工具返回的内容包含图片，则返回的图片URL或本地路径，请直接写成：![image](图片URL)格式发给用户，用户就能看到图片了",
+                "name": "custom_llm_tool",
+                "description": f"custom_llm_tool工具可以调用工具列表中的通用工具。请不要混淆custom_llm_tool和tool_name字段要填入的工具名称。以下是工具列表：\n{llm_list}\n\n如果LLM工具返回的内容包含图片，则返回的图片URL或本地路径，请直接写成：![image](图片URL)格式发给用户，用户就能看到图片了",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "name": {
+                        "tool_name": {
                             "type": "string",
                             "description": "需要调用的工具名称",
                         },
@@ -38,7 +38,7 @@ async def get_llm_tool(settings):
                             "description": "需要向工具发送的图片URL，可选，来自本地服务器上的图片URL也可以填入（例如：http://127.0.0.1:3456/xxx.jpg），会被自动处理为base64编码发送",
                         }
                     },
-                    "required": ["name","query"]
+                    "required": ["tool_name","query"]
                 }
             }
         }
@@ -77,12 +77,12 @@ async def get_image_media_type(image_url: str) -> str:
         media_type = 'image/png'
     return media_type
 
-async def llm_tool_call(name, query, image_url=None):
-    print(f"调用LLM工具：{name}")
+async def custom_llm_tool(tool_name, query, image_url=None):
+    print(f"调用LLM工具：{tool_name}")
     settings = await load_settings()
     llmTools = settings['llmTools']
     for llmTool in llmTools:
-        if llmTool['enabled'] and llmTool['name'] == name:
+        if llmTool['enabled'] and llmTool['name'] == tool_name:
             if llmTool['type'] == 'ollama':
                 client = OllamaClient(host=llmTool['base_url'])
                 try:

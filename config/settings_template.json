@@ -1,5 +1,4 @@
 {
-    "system_prompt": "",
     "conversations": [],
     "conversationId": null,
     "isdocker": false,
@@ -48,7 +47,7 @@
     },
     "webSearch": {
       "enabled": false,
-      "engine": "tavily",
+      "engine": "duckduckgo",
       "crawler": "jina",
       "when": "after_thinking",
       "duckduckgo_max_results": 10,

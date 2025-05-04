@@ -87,7 +87,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.know_base import query_knowledge_base
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
-    from py.llm_tool import llm_tool_call
+    from py.llm_tool import custom_llm_tool
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -97,7 +97,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "Crawl4Ai_search_async": Crawl4Ai_search_async,
         "agent_tool_call": agent_tool_call,
         "a2a_tool_call": a2a_tool_call,
-        "llm_tool_call": llm_tool_call,
+        "custom_llm_tool": custom_llm_tool,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -221,6 +221,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
+        extra_params['enable_thinking'] = False
         async def stream_generator(user_prompt):
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -280,7 +281,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 tools.append(kb_tool)
             if settings['tools']['deepsearch']['enabled']: 
                 deepsearch_messages = copy.deepcopy(request.messages)
-                deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
+                deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
                 response = await client.chat.completions.create(
                     model=model,
@@ -1004,6 +1005,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
+        extra_params['enable_thinking'] = False
         if request.fileLinks:
             # 遍历文件链接列表
             for file_link in request.fileLinks:
@@ -1058,7 +1060,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             tools.append(kb_tool)
         if settings['tools']['deepsearch']['enabled']: 
             deepsearch_messages = copy.deepcopy(request.messages)
-            deepsearch_messages[-1]['content'] += "/n/n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
+            deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
                 model=model,
                 messages=deepsearch_messages,
@@ -1384,7 +1386,7 @@ async def get_models():
         # 构造符合 OpenAI 格式的 Model 对象
         model_data = [
             Model(
-                id=agent["id"],  
+                id=agent["name"],  
                 created=0,  
                 object="model",
                 owned_by="super-agent-party"  # 非空字符串
@@ -1478,14 +1480,22 @@ async def chat_endpoint(request: ChatRequest):
         current_settings = await load_settings()
         agentSettings = current_settings['agents'].get(model, {})
         if not agentSettings:
-            raise HTTPException(status_code=400, detail="Agent not found")
+            for agentId , agentConfig in current_settings['agents'].items():
+                if current_settings['agents'][agentId]['name'] == model:
+                    agentSettings = current_settings['agents'][agentId]
+                    break
+        if not agentSettings:
+            return JSONResponse(
+                status_code=404,
+                content={"error": {"message": f"Agent {model} not found", "type": "not_found", "code": 404}}
+            )
         if agentSettings['config_path']:
             with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
                 agent_settings = json.load(f)
             # 将"system_prompt"插入到request.messages[0].content中
             if agentSettings['system_prompt']:
                 if request.messages[0]['role'] == 'system':
-                    request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0].content
+                    request.messages[0]['content'] = agentSettings['system_prompt'] + "\n\n" + request.messages[0]['content']
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': agentSettings['system_prompt']})
         agent_client = AsyncOpenAI(
@@ -1496,7 +1506,6 @@ async def chat_endpoint(request: ChatRequest):
             api_key=agent_settings['reasoner']['api_key'],
             base_url=agent_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
         )
-
         try:
             if request.stream:
                 return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings)

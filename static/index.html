@@ -119,29 +119,29 @@
             </el-icon>
             <template #title>{{ t('chat') }}</template>
           </el-menu-item>
+          <el-menu-item index="api-box">
+            <el-icon>
+              <i class="fa-solid fa-cloud"></i>
+            </el-icon>
+              <template #title>{{ t('modelService') }}</template>
+          </el-menu-item>
           <el-menu-item index="settings">
             <el-icon>
               <i class="fa-solid fa-microchip"></i>
             </el-icon>
             <template #title>{{ t('mainModel') }}</template>
           </el-menu-item>
-          <el-menu-item index="agents">
+          <el-menu-item index="reasoner">
             <el-icon>
-              <i class="fa-solid fa-robot"></i>
+              <i class="fa-solid fa-atom"></i>
             </el-icon>
-            <template #title>{{ t('agents') }}</template>
+            <template #title>{{ t('reasoner') }}</template>
           </el-menu-item>
           <el-menu-item index="tools">
             <el-icon>
               <i class="fa-solid fa-screwdriver-wrench"></i>
             </el-icon>
             <template #title>{{ t('tools') }}</template>
-          </el-menu-item>
-          <el-menu-item index="reasoner">
-            <el-icon>
-              <i class="fa-solid fa-atom"></i>
-            </el-icon>
-            <template #title>{{ t('reasoner') }}</template>
           </el-menu-item>
           <el-menu-item index="websearch">
             <el-icon>
@@ -154,6 +154,12 @@
               <i class="fa-solid fa-book"></i>
             </el-icon>
             <template #title>{{ t('knowledgeBase') }}</template>
+          </el-menu-item>
+          <el-menu-item index="agents">
+            <el-icon>
+              <i class="fa-solid fa-robot"></i>
+            </el-icon>
+            <template #title>{{ t('agents') }}</template>
           </el-menu-item>
           <el-menu-item index="llmTool">
             <el-icon>
@@ -172,12 +178,6 @@
               <i class="fa-solid fa-plug"></i>
             </el-icon>
             <template #title>{{ t('a2aServers') }}</template>
-          </el-menu-item>
-          <el-menu-item index="api-box">
-            <el-icon>
-              <i class="fa-solid fa-cloud"></i>
-            </el-icon>
-              <template #title>{{ t('modelService') }}</template>
           </el-menu-item>
           <el-menu-item index="api">
             <el-icon>
@@ -213,23 +213,53 @@
                   <div v-html="message.content"></div>
                   <!-- 文件链接展示 -->
                   <div v-if="message.fileLinks?.length" class="file-links">
-                    <a
-                      v-for="(link, linkIndex) in message.fileLinks"
-                      :key="linkIndex"
-                      :href="link.path"
-                      target="_blank"
-                      class="file-link"
-                    >
+                    <a v-for="(link, linkIndex) in message.fileLinks" :key="linkIndex" :href="link.path" target="_blank" class="file-link">
                       @{{ link.name }}
                     </a>
                   </div>
                 </div>
                 <!-- AI回复内容 -->
-                <div v-else class="markdown-body" v-html="formatMessage(message.content)"></div>
-
+                <div v-else-if="message.role === 'assistant'"  class="markdown-body" v-html="formatMessage(message.content)"></div>
+                <!-- 系统消息内容 -->
+                <div v-else class="user-message-content" data-mjx-disabled="true">
+                  <div v-html="t('system_prompt') + message.content"></div>
+                </div>
+              </div>
+              <!-- 添加复制按钮 -->
+              <div class="message-actions">
+                <el-tooltip v-if="mainAgent === 'super-model' || message.role !== 'system'" :content="t('edit')" placement="bottom">
+                  <el-button @click="openEditDialog(message.role, message.content,index)" type="primary" circle size="small">
+                    <i class="fa-regular fa-pen-to-square"></i>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip :content="t('copy')" placement="bottom">
+                  <el-button 
+                    class="copy-btn" 
+                    @click="copyMessageContent(message)"
+                    type="primary"
+                    circle 
+                    size="small">
+                    <i class="fa-regular fa-copy"></i>
+                  </el-button>
+                </el-tooltip>
               </div>
             </div>
           </div>
+          <el-dialog
+            v-model="showEditDialog"
+            :title="editType === 'system' ? t('editSystemPrompt') : t('editMessage')"
+            width="600px">
+            <el-input
+              v-model="editContent"
+              type="textarea"
+              :rows="6"
+              :placeholder="t('enterContent')"
+            ></el-input>
+            <template #footer>
+              <el-button @click="showEditDialog = false">{{ t('cancel') }}</el-button>
+              <el-button type="primary" @click="saveEdit">{{ t('save') }}</el-button>
+            </template>
+          </el-dialog>
             <!-- 文件上传对话框 -->
             <el-dialog
               v-model="showUploadDialog"
@@ -279,7 +309,7 @@
                 <h3>{{ t('mainAgent') }}</h3>
                 <el-select 
                   v-model="mainAgent"
-                  @change="autoSaveSettings">
+                  @change="changeMainAgent">
                   <el-option
                     :label="t('defaultAgent')"
                     value="super-model"
@@ -584,11 +614,19 @@
                 <div class="agent-content">
                   <div class="agent-header">
                     <span class="agent-name">{{ agent.name }}</span>
+                    <!-- 添加复制功能 -->
+                    <el-botton
+                      size="small"
+                      type="info"
+                      @click="copyAgentName(agent.name)"
+                    >
+                      <i class="fa-regular fa-copy"></i>
+                    </el-botton>
                   </div>
                   <!-- 带复制功能的ID展示 -->
                   <el-tag 
                     type="info" 
-                    size="mini" 
+                    size="small" 
                     class="agent-id clickable"
                     @click="copyAgentId(agent.id)"
                   >
@@ -1625,7 +1663,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
@@ -1740,7 +1778,7 @@
                     @click="addParam"
                     type="primary"
                     circle
-                    size="mini"
+                    size="small"
                     class="header-add-btn"
                   >
                     <i class="fa-solid fa-plus"></i>
@@ -1923,7 +1961,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
@@ -2142,7 +2180,7 @@
                     <el-option
                       v-for="provider in modelProviders"
                       :key="provider.id"
-                      :label="provider.vendor"
+                      :label="provider.vendor+' - '+provider.modelId"
                       :value="provider.id"
                     >
                       <div class="provider-option">
@@ -2235,6 +2273,8 @@
   <script src="node_modules/vue/dist/vue.global.js"></script>
   <script src="node_modules/element-plus/dist/index.full.js"></script>
   <script src="node_modules/@element-plus/icons-vue/dist/index.iife.min.js"></script>
+  <script src="js/vue_data.js"></script>
+  <script src="js/vue_methods.js"></script>
   <script src="js/renderer.js"></script>
 </body>
 </html>
