@@ -228,7 +228,7 @@
               <!-- 添加复制按钮 -->
               <div class="message-actions">
                 <el-tooltip v-if="mainAgent === 'super-model' || message.role !== 'system'" :content="t('edit')" placement="bottom">
-                  <el-button @click="openEditDialog(message.role, message.content,index)" type="primary" circle size="small">
+                  <el-button @click="openEditDialog(message.role, message.content,index)" circle size="small">
                     <i class="fa-regular fa-pen-to-square"></i>
                   </el-button>
                 </el-tooltip>
@@ -236,7 +236,6 @@
                   <el-button 
                     class="copy-btn" 
                     @click="copyMessageContent(message)"
-                    type="primary"
                     circle 
                     size="small">
                     <i class="fa-regular fa-copy"></i>
@@ -252,7 +251,7 @@
             <el-input
               v-model="editContent"
               type="textarea"
-              :rows="6"
+              :rows="18"
               :placeholder="t('enterContent')"
             ></el-input>
             <template #footer>
