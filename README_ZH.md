@@ -16,14 +16,14 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## 为什么选择我们？
 - ✅无需重构：保留现有调用方式，功能升级透明无感成本最优解
-- ✅避免为单一功能重复对接多个服务商开箱即用：预置主流LLM厂商适配器，兼容OpenAI/Ollama等，即刻体验下一代LLM中间件
-- ✅调用时自动触发知识库、实时联网、MCP服务器等各类高级智能体功能！
+- ✅避免为单一功能重复对接多个服务商开箱即用：预置主流LLM厂商/智能体协议适配器，兼容OpenAI/Ollama/MCP/A2A等，即刻体验下一代LLM中间件
+- ✅调用时自动触发知识库、实时联网、深度思考控制、深度研究等各类高级智能体功能！
 
 ## 安装方法
 
 ### windows桌面版安装
 
-如果你是windows系统，可以直接[点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe)windows桌面版，然后按照提示进行安装。
+如果你是windows系统，可以直接[一键下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe)windows桌面版，然后按照提示进行安装。
 
 ### docker部署（推荐）
 
@@ -37,13 +37,14 @@ docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
 
 ### 源码部署
 
-详细部署方法请参考[部署文档](doc/install_config_ZH.md)
+详细部署方法请参考[部署和使用文档](doc/install_config_ZH.md)
 
 ## 使用方法
 
 - 桌面端：点击桌面端图标即可开箱即用。
 
 - API调用：开发者友好，完美兼容openai格式，可以流式输出，完全不影响原有API的反应速度，无需修改调用的代码：
+
 ```python
 from openai import OpenAI
 client = OpenAI(

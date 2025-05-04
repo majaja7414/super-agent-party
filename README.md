@@ -1,116 +1,88 @@
 ![image](static/source/agent_party.png)
 
 <div align="center">
-  <a href="./README_ZH.md"><img src="https://img.shields.io/badge/简体中文-d9d9d9"></a>
+  <a href="./README_ZH.md"><img src="https://img.shields.io/badge/Simplified Chinese-d9d9d9"></a>
   <a href="./README.md"><img src="https://img.shields.io/badge/English-d9d9d9"></a>
 </div>
 
 ## Introduction
 
-If you want to transform a large model into an intelligent agent that can access knowledge bases, connect to the internet, utilize MCP services,A2A services, perform deep thinking and in-depth research, and also be usable via OpenAI API calls or directly through web and desktop applications, then this project is for you.
+🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.
 
 ![image](static/source/image.png)
 
 ## Demo
 https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
-## Features
+## Why Choose Us?
+- ✅ No refactoring required: Preserve the existing calling method, with transparent and cost-effective functional upgrades
+- ✅ Avoid repeated connections to multiple service providers: Pre-configured adapters for mainstream LLM manufacturers/intelligent body protocols, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware immediately
+- ✅ Automatically trigger knowledge bases, real-time internet access, deep thinking control, in-depth research, and other high-level intelligent body functions when calling!
 
-0. Switching from the sidebar to the method of invocation, you can view how to call Agent Party either through the Openai API approach or the web interface approach.
-1. Knowledge Base: Enables large models to answer based on information within the knowledge base. If there are multiple knowledge bases, the model will proactively query the relevant one based on the question.
-2. Internet Connectivity: Allows large models to proactively search for information online based on question requirements. Currently supports:
-- [duckduckgo](https://duckduckgo.com/) (completely free, not accessible in China's network environment)
-- [searxng](https://github.com/searxng/searxng) (can be deployed locally with Docker)
-- [tavily](https://tavily.com/) (requires applying for an API key)
-- [jina](https://github.com/jina-ai/jina) (can be used without an API key for web scraping)
-- [crawl4ai](https://github.com/unclecode/crawl4ai) (can be deployed locally with Docker for web scraping).
-3. [MCP](https://modelcontextprotocol.io/introduction) Service, enabling large models to proactively invoke MCP services based on questioning needs. Currently, it supports three invocation methods: standard input/output, Server-Sent Events (SSE), and websocket.
-4. [A2A](https://github.com/google/A2A) Service, enabling large models to proactively invoke A2A services based on questioning needs.
-5. Deep Thinking: Transplants the reasoning capabilities of reasoning models into tool-invoking or multimodal models so that large models can use reasoning models for analysis before invoking tools. For example, if deepseek-V3 can invoke tools but the reasoning model deepseek-R1 cannot, the reasoning capability of deepseek-R1 can be transplanted into deepseek-V3 to allow it to reason using deepseek-R1 before invoking tools.
-6. In-depth Research: Converts user questions into tasks, gradually analyzes and reasons, invokes tools, checks the output results, and continues analyzing and invoking tools until the task is completed.
-
-## Usage
+## Installation Method
 
 ### Windows Desktop Installation
 
-If you are using a Windows system, you can directly [click here to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe) the Windows desktop version and follow the prompts to install.
+If you are using a Windows system, you can directly download the [one-click installation package](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.1/Super.Agent.Party-Setup-0.1.1.exe) for Windows desktop, and then follow the prompts to install.
 
-### Docker Deployment
+### Docker Deployment (Recommended)
 
-1. Obtain Docker Image (choose one):
-- Pull the official image from DockerHub:
+- Install this project with two commands:
 ```shell
 docker pull ailm32442/super-agent-party:latest
 docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
 ```
 
-- Generate image from source code:
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
-docker pull python:3.12-slim 
-docker build -t super-agent-party . 
-docker run -d -p 3456:3456 super-agent-party:latest
-```
-
-2. Access at http://localhost:3456/
+- Out-of-the-box experience: Access http://localhost:3456/
 
 ### Source Code Deployment
 
-1. Download Repository:
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
+For detailed deployment methods, please refer to the [Deployment and Usage Documentation](doc/install_config.md)
+
+## Usage
+
+- Desktop: Click the desktop icon to use it out-of-the-box.
+- API Call: Developer-friendly, perfectly compatible with OpenAI format, can output streams, and does not affect the original API's response speed. No need to modify the calling code:
+```python
+from openai import OpenAI
+client = OpenAI(
+  api_key="super-secret-key",
+  base_url="http://localhost:3456/v1"
+)
+response = client.chat.completions.create(
+  model="super-model",
+  messages=[
+      {"role": "user", "content": "What is Super Agent Party?"}
+  ]
+)
+print(response.choices[0].message.content)
 ```
 
-2. Install Dependencies (Choose one of the following options):
-- Windows: Click on the `install.bat` script
-- MacOS/Linux: Click on the `install.sh` script
-- Or, use pip and npm to install dependencies:
-```shell
-python -m venv .venv
-.venv\Scripts\activate # For Windows
-# source .venv/bin/activate # For MacOS/Linux
-pip install -r requirements.txt
-npm install
-```
-- Or, use uv and npm to install dependencies:
-```shell
-uv sync
-npm install
-```
+- Web: Access http://localhost:3456/ after startup
 
-3. Start the service (choose one of the three options):
-- Windows: Click on the script `start_with_dev.bat`
-- MacOS/Linux: Click on the script `start_with_dev.sh`
-- Or manually execute the following command to start the service:
-```shell
-.venv\Scripts\activate # windows
-# source .venv/bin/activate # macos/linux
-npm run dev
-```
+## Function Introduction
 
-## Configuration
-
-1. Click on the System Settings in the left sidebar to set language options, system themes.
-2. Navigate to the Tools interface in the left sidebar to configure various utilities including current time, in-depth research, and pseudo-reasoning capabilities. If you wish to fix the language used by the agent, you can configure it here.
-3. Access the Model Services interface from the left sidebar to configure your preferred cloud service providers such as OpenAI, DeepSeek, etc. Select your model service provider and enter the corresponding API key. Then click the magnifying glass button at the top right corner to fetch the list of models available from that provider, select the desired model to complete the setup.
-4. Go to the Agents interface in the left sidebar to configure the system prompt for intelligent agents. The system prompt dictates the behavior of the agent and can be customized according to your needs. When creating an agent, it will snapshot all current configurations including model services, knowledge base, internet access features, MCP services, tools, system prompts, etc.
-5. By clicking on the Primary Model and Inference Model interfaces in the left sidebar, you can configure your models more precisely. By default, the first model from the model service provider is selected, but you can choose others. Note! The primary model should have tool invocation capabilities (most inference models do not have these capabilities), while inference models need to have reasoning capabilities.
-6. Enter the MCP Services interface from the left sidebar to configure MCP services. Currently, two calling methods are supported: standard input/output and Server-Sent Events (SSE). The standard input/output method requires configuring various parameters of the MCP server; if errors occur, ensure that the local environment has the necessary package managers installed (e.g., uv, npm, etc.). The SSE method requires setting up the MCP server's address.
-7. Use the Internet Access Features interface in the left sidebar to configure internet search engines and webpage-to-markdown tools. It currently supports three search engines—DuckDuckGo, SearxNG, Tavily—and two webpage-to-markdown tools—Jina, Crawl4AI. DuckDuckGo requires no configuration, SearxNG requires a Docker image URL, Tavily needs an API key, Jina requires no setup, and Crawl4AI necessitates a Docker image URL.
-8. Access the Knowledge Base interface from the left sidebar to configure the knowledge base. Before configuring the knowledge base, you need to complete the configuration of the word embedding model in the Model Services interface on the left sidebar. 
-9. Click on the Invocation Methods interface in the left sidebar, you can use the OpenAI format to invoke intelligent agents created within this application. If the model name is `super-model`, it will invoke the currently configured intelligent agent. If the model name corresponds to an Agent ID created in the Agents interface, then it will invoke the specific intelligent agent that you have created. 
-10. Click on the "A2A Service" option in the left sidebar to access the A2A service configuration interface. After configuring the A2A server address, the service will be ready for use.
-11. Click on the "LLM Tools" option in the left sidebar. Currently, it supports custom agents in ollama format or OpenAI format, which can be connected and utilized as tools.
+0. Switch to the calling method from the sidebar to view how to call Agent Party in OpenAI API or web mode.
+1. Knowledge base, allowing large models to answer based on information in the knowledge base. If there are multiple knowledge bases, the model will actively query the corresponding knowledge base according to the question.
+2. Internet access function, allowing large models to actively query information on the internet according to the question. Currently supported:
+- [duckduckgo](https://duckduckgo.com/) (completely free, inaccessible in Chinese network environment)
+- [searxng](https://github.com/searxng/searxng) (can be deployed locally with Docker)
+- [tavily](https://tavily.com/) (requires applying for an API key)
+- [jina](https://github.com/jina-ai/jina) (can be used without an API key for web scraping)
+- [crawl4ai](https://github.com/unclecode/crawl4ai) (can be deployed locally with Docker for web scraping).
+3. [MCP](https://modelcontextprotocol.io/introduction) service, allowing large models to actively call MCP services according to the question. Currently supports three calling methods: standard input/output, server-sent events (SSE), and WebSocket.
+4. [A2A](https://github.com/google/A2A) service, allowing large models to actively call A2A services according to the question.
+5. Deep thinking, which can transplant the reasoning ability of reasoning models to tool calls or multimodal models, allowing large models to use reasoning models for reasoning analysis before tool calls. For example, deepseek-V3 can be called by tools, but the reasoning model deepseek-R1 cannot be called by tools. Therefore, the reasoning ability of deepseek-R1 can be transplanted to deepseek-V3, allowing deepseek-V3 to use deepseek-R1 for reasoning analysis before tool calls.
+6. In-depth research, which converts user questions into tasks, analyzes and reasons step by step, calls tools, and outputs results. If the task is not completed, it will continue to analyze and reason, and call tools until the task is completed.
+7. Custom tools, any project that adapts to Ollama format or OpenAI interface can be used as a tool.
 
 ## Disclaimer:
-This open-source project and its contents (hereinafter referred to as the "Project") are provided for reference only and do not imply any explicit or implicit warranty. Project contributors are not responsible for the completeness, accuracy, reliability, or applicability of the Project. Any reliance on the content of the Project is undertaken at your own risk. Under no circumstances will the project contributors be liable for any indirect, special, or consequential damages arising out of the use of the Project content.
+This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.
 
 ## Support:
 
-### Join Community
-If there are issues with the project or if you have other questions, feel free to join our community.
+### Join the Community
+If you have any questions or issues with the project, you are welcome to join our community.
 
 1. QQ Group: `931057213`
 
@@ -118,16 +90,16 @@ If there are issues with the project or if you have other questions, feel free t
     <img src="doc/image/Q群.jpg" style="width: 48%;" />
 </div>
 
-2. WeChat Group: `we_glm` (Join the group after adding the assistant's WeChat)
+2. WeChat Group: `we_glm` (add the assistant's WeChat and join the group)
 
-3. Discord:[Discord Link](https://discord.gg/f2dsAKKr2V)
+3. Discord: [Discord link](https://discord.gg/f2dsAKKr2V)
 
 ### Follow Us
-1. To stay updated with the latest features of this project, follow the Bilibili account: [派酱](https://space.bilibili.com/26978344)
+1. If you want to keep up with the latest features of this project, please follow the Bilibili account: [Pai Jiang](https://space.bilibili.com/26978344)
 
-### Donate Support
-If my work has brought you value, please consider buying me a coffee! Your support not only energizes the project but also warms the creator's heart.☕💖 Every cup counts!
+### Donate
+If my work has brought value to you, please consider buying me a cup of coffee! Your support not only injects vitality into the project but also warms the creator's heart. ☕💖 Every cup counts!
 <div style="display:flex; justify-content:space-between;">
     <img src="doc/image/zhifubao.jpg" style="width: 48%;" />
     <img src="doc/image/wechat.jpg" style="width: 48%;" />
-</div> 
+</div>
