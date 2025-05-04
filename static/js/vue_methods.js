@@ -73,6 +73,15 @@ const MIME_WHITELIST = [
 ]
 
 let vue_methods = {
+  resetMessage(index) {
+    this.messages[index].content = this.t('defaultSystemPrompt');
+  },
+
+  deleteMessage(index) {
+    this.messages.splice(index, 1);
+    this.autoSaveSettings();
+  },
+
   openEditDialog(type, content, index = null) {
     this.editType = type;
     this.editContent = content;

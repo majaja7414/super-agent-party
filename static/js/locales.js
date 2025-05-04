@@ -276,6 +276,8 @@ const translations = {
       'system_prompt': '系统提示词：',
       'expand': '展开',
       'collapse': '收起',
+      'delete': '删除',
+      'reset': '重置',
     },
     'en-US': {
       'chat': 'Chat',
@@ -553,5 +555,7 @@ const translations = {
       'system_prompt': 'System Prompt:',
       'expand': 'Expand',
       'collapse': 'Collapse',
+      'delete': 'Delete',
+      'reset': 'Reset',
     }
   };
