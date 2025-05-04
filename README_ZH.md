@@ -85,7 +85,7 @@ print(response.choices[0].message.content)
 
 本项目采用双许可证授权模式：
 1. 默认情况下，本项目遵循 **GNU Affero General Public License v3.0 (AGPLv3)** 授权协议
-2. 若需将本项目用于闭源的商业用途，必须通过项目贡献者获取商业授权许可
+2. 若需将本项目用于闭源的商业用途，必须通过项目管理员获取商业授权许可
 
 未经书面授权擅自进行闭源商业使用的，视为违反本协议约定。AGPLv3 完整文本可在项目根目录的 LICENSE 文件或 [gnu.org/licenses](https://www.gnu.org/licenses/agpl-3.0.html) 查阅。
 

@@ -81,9 +81,9 @@ This open-source project and its content (hereinafter referred to as the "projec
 
 ## License Agreement
 
-This project adopts a dual-license authorization mode:
-1. By default, this project follows the **GNU Affero General Public License v3.0 (AGPLv3)** authorization protocol
-2. If you need to use this project for closed-source commercial purposes, you must obtain a commercial license permit from the project contributor
+This project uses a dual licensing model:
+1. By default, this project follows the **GNU Affero General Public License v3.0 (AGPLv3)** license agreement
+2. If you need to use this project for closed-source commercial purposes, you must obtain a commercial license from the project administrator
 
 Using this project for closed-source commercial purposes without written authorization is considered a violation of this agreement. The complete text of AGPLv3 can be found in the LICENSE file in the project root directory or at [gnu.org/licenses](https://www.gnu.org/licenses/agpl-3.0.html).
 
