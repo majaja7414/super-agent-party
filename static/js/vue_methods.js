@@ -241,7 +241,7 @@ let vue_methods = {
     },
     async confirmDeleteConversation(convId) {
       if (convId === this.conversationId) {
-        this.messages = [];
+        this.messages = [{ role: 'system', content: this.system_prompt }];
       }
       
       this.conversations = this.conversations.filter(c => c.id !== convId);
