@@ -265,28 +265,6 @@ let vue_data = {
       apiKey: '',
       modelId: ''
     },
-    languageOptions:[
-      { value: 'zh-CN', label: '中文' }, 
-      { value: 'en-US', label: 'English' },
-      { value: 'ja-JP', label: '日本語' },
-      { value: 'ko-KR', label: '한국어' },
-      { value: 'fr-FR', label: 'Français' },
-      { value: 'es-ES', label: 'Español' },
-      { value: 'de-DE', label: 'Deutsch' },
-      { value: 'it-IT', label: 'Italiano' },
-      { value: 'ru-RU', label: 'Русский' },
-      { value: 'pt-BR', label: 'Português' },
-      { value: 'ar-AR', label: 'العربية' },
-      { value: 'hi-IN', label: 'हिन्दी' },
-      { value: 'tr-TR', label: 'Türkçe' },
-      { value: 'vi-VN', label: 'Tiếng Việt' },
-      { value: 'th-TH', label: 'ไทย' },
-      { value: 'id-ID', label: 'Bahasa Indonesia' },
-      { value: 'ms-MY', label: 'Bahasa Melayu' },
-      { value: 'nl-NL', label: 'Nederlands' },
-      { value: 'pl-PL', label: 'Polski' },
-      { value: 'cs-CZ', label: 'Čeština' }
-    ],// 语言选项
     systemlanguageOptions:[
       { value: 'zh-CN', label: '中文' }, 
       { value: 'en-US', label: 'English' },
