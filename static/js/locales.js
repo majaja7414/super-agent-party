@@ -279,6 +279,8 @@ const translations = {
       'delete': '删除',
       'reset': '重置',
       'selectOrTypeModel': '选择或输入模型名称',
+      'expandAside': '展开侧边栏',
+      'collapseAside': '收起侧边栏',
     },
     'en-US': {
       'chat': 'Chat',
@@ -559,5 +561,7 @@ const translations = {
       'delete': 'Delete',
       'reset': 'Reset',
       'selectOrTypeModel': 'Select or Type Model Name',
+      'expandAside': 'Expand Aside',
+      'collapseAside': 'Collapse Aside',
     }
   };

@@ -75,6 +75,16 @@
     <!-- 顶部栏 -->
     <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
+        <!-- 新增展开/收起按钮 -->
+        <el-button 
+          @click="isCollapse = !isCollapse"
+          class="top-bar-btn"
+          text
+          :title="isCollapse ? t('expandAside') : t('collapseAside')">
+          <el-icon>
+            <i :class="isCollapse ? 'fa-solid fa-bars' : 'fa-solid fa-bars-staggered'"></i>
+          </el-icon>
+        </el-button>
         <el-button 
           v-if="updateAvailable"
           @click="handleUpdate" 
@@ -107,7 +117,10 @@
     <!-- 主容器 -->
     <el-container class="main-container">
       <!-- 侧边栏 -->
-      <el-aside :width="isCollapse ? '64px' : '200px'" class="sidebar">
+      <el-aside 
+        :width="isCollapse ? '64px' : '200px'" 
+        class="sidebar"
+        @dblclick="isCollapse = !isCollapse"> 
         <el-menu
           :collapse="isCollapse"
           :default-active="activeMenu"
