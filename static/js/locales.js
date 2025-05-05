@@ -281,6 +281,7 @@ const translations = {
       'selectOrTypeModel': '选择或输入模型名称',
       'expandAside': '展开侧边栏',
       'collapseAside': '收起侧边栏',
+      'pollinationsImageGeneration': 'Pollinations 图像生成',
     },
     'en-US': {
       'chat': 'Chat',
@@ -563,5 +564,6 @@ const translations = {
       'selectOrTypeModel': 'Select or Type Model Name',
       'expandAside': 'Expand Aside',
       'collapseAside': 'Collapse Aside',
+      'pollinationsImageGeneration': 'Pollinations Image Generation',
     }
   };

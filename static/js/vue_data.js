@@ -127,6 +127,9 @@ let vue_data = {
       },
       formula: {
         enabled: true
+      },
+      pollinations: {
+        enabled: false, // 默认不启用
       }
     },
     mcpServers: {},

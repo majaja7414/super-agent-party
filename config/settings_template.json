@@ -35,6 +35,9 @@
       },
       "formula": {
         "enabled": false
+      },
+      "pollinations": {
+        "enabled": false
       }
     },
     "reasoner": {

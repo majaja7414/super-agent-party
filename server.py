@@ -88,6 +88,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
     from py.llm_tool import custom_llm_tool
+    from py.pollinations import pollinations_image
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -98,6 +99,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "agent_tool_call": agent_tool_call,
         "a2a_tool_call": a2a_tool_call,
         "custom_llm_tool": custom_llm_tool,
+        "pollinations_image":pollinations_image,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -159,6 +161,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
+    from py.pollinations import pollinations_image_tool
     open_tag = "<think>"
     close_tag = "</think>"
     try:
@@ -181,6 +184,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_a2a_tool_fuction = await get_a2a_tool(settings)
         if get_a2a_tool_fuction:
             tools.append(get_a2a_tool_fuction)
+        if settings['tools']['pollinations']['enabled']:
+            tools.append(pollinations_image_tool)
         source_prompt = ""
         if request.fileLinks:
             # 遍历文件链接列表
@@ -1108,6 +1113,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
+    from py.pollinations import pollinations_image_tool
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
@@ -1131,6 +1137,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     get_a2a_tool_fuction = await get_a2a_tool(settings)
     if get_a2a_tool_fuction:
         tools.append(get_a2a_tool_fuction)
+    if settings['tools']['pollinations']['enabled']:
+        tools.append(pollinations_image_tool)
     search_not_done = False
     search_task = ""
     try:

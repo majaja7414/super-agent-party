@@ -1320,6 +1320,17 @@
               <div class="tool-header">
                 <span>
                   <el-icon>
+                    <i class="fa-solid fa-pencil"></i>
+                  </el-icon>
+                  {{ t('pollinationsImageGeneration') }}
+                </span>
+                <el-switch v-model="toolsSettings.pollinations.enabled" @click.stop @change="autoSaveSettings"/>
+              </div>
+            </div>
+            <div class="tool-item">
+              <div class="tool-header">
+                <span>
+                  <el-icon>
                     <i class="fa-solid fa-file-invoice-dollar"></i>
                   </el-icon>
                   {{ t('latexRenderingEnhancement') }}
