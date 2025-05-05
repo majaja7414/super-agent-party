@@ -24,8 +24,8 @@
       },
       "language": {
         "enabled": false,
-        "language": "zh-CN",
-        "tone": "正常"
+        "language": "",
+        "tone": ""
       },
       "inference": {
         "enabled": false
@@ -34,6 +34,9 @@
         "enabled": false
       },
       "formula": {
+        "enabled": false
+      },
+      "pollinations": {
         "enabled": false
       }
     },
