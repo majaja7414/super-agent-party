@@ -159,6 +159,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
+    open_tag = "<think>"
+    close_tag = "</think>"
     try:
         tools = request.tools or []
         if mcp_client_list:
@@ -309,27 +311,90 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
-                # 流式调用推理模型
-                reasoner_stream = await reasoner_client.chat.completions.create(
-                    model=settings['reasoner']['model'],
-                    messages=reasoner_messages,
-                    stream=True,
-                    max_tokens=1, # 根据实际情况调整
-                    temperature=settings['reasoner']['temperature']
-                )
-                full_reasoning = ""
-                # 处理推理模型的流式响应
-                async for chunk in reasoner_stream:
-                    if not chunk.choices:
-                        continue
+                for modelProvider in settings['modelProviders']: 
+                    if modelProvider['id'] == settings['reasoner']['selectedProvider']:
+                        vendor = modelProvider['vendor']
+                        break
+                if vendor == 'Ollama':
+                    # 流式调用推理模型
+                    reasoner_stream = await reasoner_client.chat.completions.create(
+                        model=settings['reasoner']['model'],
+                        messages=reasoner_messages,
+                        stream=True,
+                        temperature=settings['reasoner']['temperature']
+                    )
+                    full_reasoning = ""
+                    buffer = ""  # 跨chunk的内容缓冲区
+                    in_reasoning = False  # 是否在标签内
+                    
+                    async for chunk in reasoner_stream:
+                        if not chunk.choices:
+                            continue
+                        chunk_dict = chunk.model_dump()
+                        delta = chunk_dict["choices"][0].get("delta", {})
+                        if delta:
+                            current_content = delta.get("content", "")
+                            buffer += current_content  # 累积到缓冲区
+                            
+                            # 实时处理缓冲区内容
+                            while True:
+                                if not in_reasoning:
+                                    # 寻找开放标签
+                                    start_pos = buffer.find(open_tag)
+                                    if start_pos != -1:
+                                        # 开放标签前的内容（非思考内容）
+                                        non_reasoning = buffer[:start_pos]
+                                        buffer = buffer[start_pos+len(open_tag):]
+                                        in_reasoning = True
+                                    else:
+                                        break  # 无开放标签，保留后续处理
+                                else:
+                                    # 寻找闭合标签
+                                    end_pos = buffer.find(close_tag)
+                                    if end_pos != -1:
+                                        # 提取思考内容并构造响应
+                                        reasoning_part = buffer[:end_pos]
+                                        chunk_dict["choices"][0]["delta"] = {
+                                            "reasoning_content": reasoning_part,
+                                            "content": ""  # 清除非思考内容
+                                        }
+                                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                        full_reasoning += reasoning_part
+                                        buffer = buffer[end_pos+len(close_tag):]
+                                        in_reasoning = False
+                                    else:
+                                        # 发送未闭合的中间内容
+                                        if buffer:
+                                            chunk_dict["choices"][0]["delta"] = {
+                                                "reasoning_content": buffer,
+                                                "content": ""
+                                            }
+                                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                            full_reasoning += buffer
+                                            buffer = ""
+                                        break  # 等待更多内容
+                else:
+                    # 流式调用推理模型
+                    reasoner_stream = await reasoner_client.chat.completions.create(
+                        model=settings['reasoner']['model'],
+                        messages=reasoner_messages,
+                        stream=True,
+                        max_tokens=1, # 根据实际情况调整
+                        temperature=settings['reasoner']['temperature']
+                    )
+                    full_reasoning = ""
+                    # 处理推理模型的流式响应
+                    async for chunk in reasoner_stream:
+                        if not chunk.choices:
+                            continue
 
-                    chunk_dict = chunk.model_dump()
-                    delta = chunk_dict["choices"][0].get("delta", {})
-                    if delta:
-                        reasoning_content = delta.get("reasoning_content", "")
-                        if reasoning_content:
-                            full_reasoning += reasoning_content
-                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        chunk_dict = chunk.model_dump()
+                        delta = chunk_dict["choices"][0].get("delta", {})
+                        if delta:
+                            reasoning_content = delta.get("reasoning_content", "")
+                            if reasoning_content:
+                                full_reasoning += reasoning_content
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
 
                 # 在推理结束后添加完整推理内容到消息
                 request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
@@ -337,8 +402,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             in_reasoning = False
             reasoning_buffer = []
             content_buffer = []
-            open_tag = "<think>"
-            close_tag = "</think>"
             if settings['tools']['deepsearch']['enabled']: 
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
@@ -713,28 +776,92 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     yield f"data: {json.dumps(tool_chunk)}\n\n"
                 # 如果启用推理模型
                 if settings['reasoner']['enabled']:
-                    # 流式调用推理模型
-                    reasoner_stream = await reasoner_client.chat.completions.create(
-                        model=settings['reasoner']['model'],
-                        messages=reasoner_messages,
-                        stream=True,
-                        max_tokens=1, # 根据实际情况调整
-                        temperature=settings['reasoner']['temperature']
-                    )
-                    full_reasoning = ""
-                    # 处理推理模型的流式响应
-                    async for chunk in reasoner_stream:
-                        if not chunk.choices:
-                            continue
-
-                        chunk_dict = chunk.model_dump()
-                        delta = chunk_dict["choices"][0].get("delta", {})
-                        if delta:
-                            reasoning_content = delta.get("reasoning_content", "")
-                            if reasoning_content:
-                                full_reasoning += reasoning_content
+                    if tools:
+                        reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                    for modelProvider in settings['modelProviders']: 
+                        if modelProvider['id'] == settings['reasoner']['selectedProvider']:
+                            vendor = modelProvider['vendor']
+                            break
+                    if vendor == 'Ollama':
+                        # 流式调用推理模型
+                        reasoner_stream = await reasoner_client.chat.completions.create(
+                            model=settings['reasoner']['model'],
+                            messages=reasoner_messages,
+                            stream=True,
+                            temperature=settings['reasoner']['temperature']
+                        )
+                        full_reasoning = ""
+                        buffer = ""  # 跨chunk的内容缓冲区
+                        in_reasoning = False  # 是否在标签内
                         
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        async for chunk in reasoner_stream:
+                            if not chunk.choices:
+                                continue
+                            chunk_dict = chunk.model_dump()
+                            delta = chunk_dict["choices"][0].get("delta", {})
+                            if delta:
+                                current_content = delta.get("content", "")
+                                buffer += current_content  # 累积到缓冲区
+                                
+                                # 实时处理缓冲区内容
+                                while True:
+                                    if not in_reasoning:
+                                        # 寻找开放标签
+                                        start_pos = buffer.find(open_tag)
+                                        if start_pos != -1:
+                                            # 开放标签前的内容（非思考内容）
+                                            non_reasoning = buffer[:start_pos]
+                                            buffer = buffer[start_pos+len(open_tag):]
+                                            in_reasoning = True
+                                        else:
+                                            break  # 无开放标签，保留后续处理
+                                    else:
+                                        # 寻找闭合标签
+                                        end_pos = buffer.find(close_tag)
+                                        if end_pos != -1:
+                                            # 提取思考内容并构造响应
+                                            reasoning_part = buffer[:end_pos]
+                                            chunk_dict["choices"][0]["delta"] = {
+                                                "reasoning_content": reasoning_part,
+                                                "content": ""  # 清除非思考内容
+                                            }
+                                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                            full_reasoning += reasoning_part
+                                            buffer = buffer[end_pos+len(close_tag):]
+                                            in_reasoning = False
+                                        else:
+                                            # 发送未闭合的中间内容
+                                            if buffer:
+                                                chunk_dict["choices"][0]["delta"] = {
+                                                    "reasoning_content": buffer,
+                                                    "content": ""
+                                                }
+                                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                                full_reasoning += buffer
+                                                buffer = ""
+                                            break  # 等待更多内容
+                    else:
+                        # 流式调用推理模型
+                        reasoner_stream = await reasoner_client.chat.completions.create(
+                            model=settings['reasoner']['model'],
+                            messages=reasoner_messages,
+                            stream=True,
+                            max_tokens=1, # 根据实际情况调整
+                            temperature=settings['reasoner']['temperature']
+                        )
+                        full_reasoning = ""
+                        # 处理推理模型的流式响应
+                        async for chunk in reasoner_stream:
+                            if not chunk.choices:
+                                continue
+
+                            chunk_dict = chunk.model_dump()
+                            delta = chunk_dict["choices"][0].get("delta", {})
+                            if delta:
+                                reasoning_content = delta.get("reasoning_content", "")
+                                if reasoning_content:
+                                    full_reasoning += reasoning_content
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
 
                     # 在推理结束后添加完整推理内容到消息
                     request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
@@ -1091,14 +1218,36 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
-            reasoner_response = await reasoner_client.chat.completions.create(
-                model=settings['reasoner']['model'],
-                messages=reasoner_messages,
-                stream=False,
-                max_tokens=1, # 根据实际情况调整
-                temperature=settings['reasoner']['temperature']
-            )
-            request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+            for modelProvider in settings['modelProviders']: 
+                if modelProvider['id'] == settings['reasoner']['selectedProvider']:
+                    vendor = modelProvider['vendor']
+                    break
+            if vendor == 'Ollama':
+                reasoner_response = await reasoner_client.chat.completions.create(
+                    model=settings['reasoner']['model'],
+                    messages=reasoner_messages,
+                    stream=False,
+                    temperature=settings['reasoner']['temperature']
+                )
+                # 将推理结果中的思考内容提取出来
+                reasoning_content = reasoner_response.model_dump()['choices'][0]['message']['content']
+                # open_tag和close_tag之间的内容
+                start_index = reasoning_content.find(open_tag) + len(open_tag)
+                end_index = reasoning_content.find(close_tag)
+                if start_index != -1 and end_index != -1:
+                    reasoning_content = reasoning_content[start_index:end_index]
+                else:
+                    reasoning_content = ""
+                request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoning_content
+            else:
+                reasoner_response = await reasoner_client.chat.completions.create(
+                    model=settings['reasoner']['model'],
+                    messages=reasoner_messages,
+                    stream=False,
+                    max_tokens=1, # 根据实际情况调整
+                    temperature=settings['reasoner']['temperature']
+                )
+                request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         if settings['tools']['deepsearch']['enabled']: 
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         if settings['tools']['language']['enabled']:
@@ -1267,14 +1416,36 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
 
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
-                reasoner_response = await reasoner_client.chat.completions.create(
-                    model=settings['reasoner']['model'],
-                    messages=request.messages,
-                    stream=False,
-                    max_tokens=1, # 根据实际情况调整
-                    temperature=settings['reasoner']['temperature']
-                )
-                request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+                for modelProvider in settings['modelProviders']: 
+                    if modelProvider['id'] == settings['reasoner']['selectedProvider']:
+                        vendor = modelProvider['vendor']
+                        break
+                if vendor == 'Ollama':
+                    reasoner_response = await reasoner_client.chat.completions.create(
+                        model=settings['reasoner']['model'],
+                        messages=reasoner_messages,
+                        stream=False,
+                        temperature=settings['reasoner']['temperature']
+                    )
+                    # 将推理结果中的思考内容提取出来
+                    reasoning_content = reasoner_response.model_dump()['choices'][0]['message']['content']
+                    # open_tag和close_tag之间的内容
+                    start_index = reasoning_content.find(open_tag) + len(open_tag)
+                    end_index = reasoning_content.find(close_tag)
+                    if start_index != -1 and end_index != -1:
+                        reasoning_content = reasoning_content[start_index:end_index]
+                    else:
+                        reasoning_content = ""
+                    request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoning_content
+                else:
+                    reasoner_response = await reasoner_client.chat.completions.create(
+                        model=settings['reasoner']['model'],
+                        messages=reasoner_messages,
+                        stream=False,
+                        max_tokens=1, # 根据实际情况调整
+                        temperature=settings['reasoner']['temperature']
+                    )
+                    request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
