@@ -206,21 +206,19 @@
       height: 6px;
       background: rgba(255, 255, 255, 0.1);
       border-radius: 3px;
-      margin: 25px auto;
+      margin: 50px auto 25px; /* 增加顶部间距 */
       overflow: hidden;
       position: relative;
     }
-    
-    .progress-container::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
+
+    .progress-bar {
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      animation: shimmer 2s infinite;
-      transform: translateX(-100%);
+      background: linear-gradient(90deg, var(--secondary-glow) 0%, var(--primary-glow) 50%, #00ffaa 100%);
+      border-radius: 3px;
+      width: 0%; /* 初始宽度设为0 */
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); /* 更平滑的缓动函数 */
+      position: relative;
+      box-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
     }
     
     @keyframes shimmer {
@@ -323,54 +321,45 @@
     <div class="progress-container">
       <div class="progress-bar" id="progress"></div>
     </div>
-    
-    <div class="status-text" id="status">初始化核心服务</div>
   </div>
 
   <script>
     const progressElem = document.getElementById('progress')
-    const statusElem = document.getElementById('status')
-    const steps = [
-      { text: '初始化核心服务...', duration: 600 },
-      { text: '验证安全证书...', duration: 600 },
-      { text: '加载用户配置...', duration: 800 }
-    ]
-    let currentStep = 0
     let progress = 0
-    function updateProgress() {
-      if (currentStep < steps.length) {
-        const step = steps[currentStep]
-        statusElem.textContent = step.text
-        
-        const interval = setInterval(() => {
-          progress += Math.random() * 2 // 加快进度增长速度
-          if (progress >= 100 * (currentStep + 1) / steps.length) {
-            clearInterval(interval)
-            currentStep++
-            if (currentStep < steps.length) setTimeout(updateProgress, 2) // 缩短步骤间隔
-          }
-          progressElem.style.width = `${Math.min(progress, 100)}%`
-        }, 17) // 更密集的更新间隔
-        setTimeout(() => clearInterval(interval), step.duration)
+    let startTime = null
+
+    function animateProgress(timestamp) {
+      if (!startTime) startTime = timestamp
+      const progressTime = timestamp - startTime
+      const duration = 3000 // 总时长3秒
+      
+      // 使用缓动函数实现非线性动画
+      const progressPercent = Math.min(progressTime / duration, 1)
+      const easedProgress = 1 - Math.pow(1 - progressPercent, 3) // 三次方缓动
+      
+      progressElem.style.width = `${easedProgress * 100}%`
+      
+      if (progressPercent < 1) {
+        requestAnimationFrame(animateProgress)
       }
     }
 
-    // Add subtle animation to the container
-    const loadingContainer = document.querySelector('.loading-container');
+    // 启动动画
+    requestAnimationFrame(animateProgress)
+
+    // 保持原有的鼠标跟随效果不变
+    const loadingContainer = document.querySelector('.loading-container')
     document.addEventListener('mousemove', (e) => {
-      const x = e.clientX / window.innerWidth - 0.5;
-      const y = e.clientY / window.innerHeight - 0.5;
+      const x = e.clientX / window.innerWidth - 0.5
+      const y = e.clientY / window.innerHeight - 0.5
       
       loadingContainer.style.transform = `
         perspective(1000px) 
         rotateX(${y * 2}deg) 
         rotateY(${x * -2}deg)
         translateZ(10px)
-      `;
-    });
-
-    // 启动进度模拟
-    setTimeout(updateProgress, 200)
+      `
+    })
   </script>
 </body>
 </html>

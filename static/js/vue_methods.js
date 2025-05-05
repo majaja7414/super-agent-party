@@ -73,6 +73,15 @@ const MIME_WHITELIST = [
 ]
 
 let vue_methods = {
+  resetMessage(index) {
+    this.messages[index].content = this.t('defaultSystemPrompt');
+  },
+
+  deleteMessage(index) {
+    this.messages.splice(index, 1);
+    this.autoSaveSettings();
+  },
+
   openEditDialog(type, content, index = null) {
     this.editType = type;
     this.editContent = content;
@@ -241,7 +250,7 @@ let vue_methods = {
     },
     async confirmDeleteConversation(convId) {
       if (convId === this.conversationId) {
-        this.messages = [];
+        this.messages = [{ role: 'system', content: this.system_prompt }];
       }
       
       this.conversations = this.conversations.filter(c => c.id !== convId);

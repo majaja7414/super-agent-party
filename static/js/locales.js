@@ -274,6 +274,11 @@ const translations = {
       'edit': '编辑',
       'defaultSystemPrompt': '你是一个智能助手。',
       'system_prompt': '系统提示词：',
+      'expand': '展开',
+      'collapse': '收起',
+      'delete': '删除',
+      'reset': '重置',
+      'selectOrTypeModel': '选择或输入模型名称',
     },
     'en-US': {
       'chat': 'Chat',
@@ -549,5 +554,10 @@ const translations = {
       'edit': 'Edit',
       'defaultSystemPrompt': 'You are a helpful assistant.',
       'system_prompt': 'System Prompt:',
+      'expand': 'Expand',
+      'collapse': 'Collapse',
+      'delete': 'Delete',
+      'reset': 'Reset',
+      'selectOrTypeModel': 'Select or Type Model Name',
     }
   };

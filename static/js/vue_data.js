@@ -62,6 +62,7 @@ let vue_data = {
     isExpanded: true,
     isElectron: isElectron,
     isCollapse: true,
+    isBtnCollapse: false,
     activeMenu: 'home',
     isMaximized: false,
     hasUpdate: false,

@@ -286,7 +286,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 response = await client.chat.completions.create(
                     model=model,
                     messages=deepsearch_messages,
-                    temperature=0.5
+                    temperature=0.5,
+                    extra_body = extra_params, # 其他参数
                 )
                 user_prompt = response.choices[0].message.content
                 deepsearch_chunk = {
@@ -497,7 +498,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "content": search_prompt,
                         }
                     ],
-                    temperature=0.5
+                    temperature=0.5,
+                    extra_body = extra_params, # 其他参数
                 )
                 response_content = response.choices[0].message.content
                 # 用re 提取```json 包裹json字符串 ```
@@ -507,7 +509,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     except:
                         # 用re 提取```json 之后的内容
                         response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
-                response_content = json.loads(response_content)
+                try:
+                    response_content = json.loads(response_content)
+                except json.JSONDecodeError:
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": "\n\n❌主模型无法结构化输出，不能判别任务进度\n\n",
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
                 if response_content["status"] == "done":
                     search_chunk = {
                         "choices": [{
@@ -880,6 +892,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                         ],
                         temperature=0.5,
+                        extra_body = extra_params, # 其他参数
                     )
                     response_content = response.choices[0].message.content
                     # 用re 提取```json 包裹json字符串 ```
@@ -1065,7 +1078,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 model=model,
                 messages=deepsearch_messages,
                 temperature=0.5, 
-                max_tokens=512
+                max_tokens=512,
+                extra_body = extra_params, # 其他参数
             )
             user_prompt = response.choices[0].message.content
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
@@ -1153,6 +1167,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     }
                 ],
                 temperature=0.5,
+                extra_body = extra_params, # 其他参数
             )
             response_content = search_response.choices[0].message.content
             print(response_content)
@@ -1325,6 +1340,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         }
                     ],
                     temperature=0.5,
+                    extra_body = extra_params, # 其他参数
                 )
                 response_content = search_response.choices[0].message.content
                 # 用re 提取```json 包裹json字符串 ```
