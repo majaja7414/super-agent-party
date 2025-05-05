@@ -482,7 +482,7 @@ border: 1px solid var(--border-color) !important;
   color: var(--el-text-color-primary) !important;
 }
 .markdown-body table {
-  background-color: var(--el-bg-color) !important;
+  background-color: transparent !important;
   border-color: var(--el-border-color) !important;
   color: var(--text-color);
 }
