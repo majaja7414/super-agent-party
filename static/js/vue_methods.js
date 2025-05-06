@@ -128,7 +128,8 @@ let vue_methods = {
       this.autoSaveSettings();
     },
     switchTollmTools() {
-      this.activeMenu = 'llmTool'
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'llmTool';
     },
     cancelLLMTool() {
       this.showLLMForm = false
@@ -274,10 +275,12 @@ let vue_methods = {
       this.autoSaveSettings();
     },
     switchToagents() {
-      this.activeMenu = 'agents';
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'agents';
     },
     switchToa2aServers() {
-      this.activeMenu = 'a2a';
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'a2a';
     },
     syncProviderConfig(targetConfig) {
       // 当有选中供应商时执行同步
@@ -318,7 +321,8 @@ let vue_methods = {
       this.autoSaveSettings()
     },
     switchTomcpServers() {
-      this.activeMenu = 'mcp'
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'mcp'
     },
     // 窗口控制
     minimizeWindow() {
