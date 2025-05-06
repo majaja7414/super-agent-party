@@ -331,6 +331,12 @@ let vue_methods = {
       if (isElectron) window.electronAPI.windowAction('close');
     },
     handleSelect(key) {
+      if (key === 'agent_group') {
+        this.activeMenu = 'agent_group';
+        this.subMenu = 'agents'; // 默认显示第一个子菜单
+      } else {
+        this.activeMenu = key;
+      }
       this.activeMenu = key;
     }, 
     toggleIcon() {

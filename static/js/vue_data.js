@@ -249,6 +249,29 @@ let vue_data = {
     updateDownloaded: false,
     downloadProgress: 0,
     fileLinks: [],
+    subMenu: 'agents', // 新增子菜单状态
+    agentTiles: [
+      { 
+        id: 'agents',
+        title: 'agents',
+        icon: 'fa-solid fa-robot'
+      },
+      {
+        id: 'mcp',
+        title: 'mcpServers', 
+        icon: 'fa-solid fa-server'
+      },
+      {
+        id: 'a2a',
+        title: 'a2aServers',
+        icon: 'fa-solid fa-plug'
+      },
+      {
+        id: 'llmTool',
+        title: 'llmTools',
+        icon: 'fa-solid fa-network-wired'
+      }
+    ],
     vendorValues: [
       'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
