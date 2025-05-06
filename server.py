@@ -1854,7 +1854,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 保存上传的文件
-                with open(destination, "wb",encoding='utf-8') as buffer:
+                with open(destination, "wb") as buffer:
                     content = await file.read()
                     buffer.write(content)
                 
@@ -1883,7 +1883,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 复制文件到上传目录
-                with open(file_path, "rb" ,encoding='utf-8') as src, open(destination, "wb") as dst:
+                with open(file_path, "rb") as src, open(destination, "wb") as dst:
                     dst.write(src.read())
                 
                 file_link = {
