@@ -168,29 +168,11 @@
             </el-icon>
             <template #title>{{ t('knowledgeBase') }}</template>
           </el-menu-item>
-          <el-menu-item index="agents">
+          <el-menu-item index="agent_group">
             <el-icon>
-              <i class="fa-solid fa-robot"></i>
+              <i class="fa-solid fa-cubes"></i>
             </el-icon>
-            <template #title>{{ t('agents') }}</template>
-          </el-menu-item>
-          <el-menu-item index="llmTool">
-            <el-icon>
-              <i class="fa-solid fa-network-wired"></i>
-            </el-icon>
-            <template #title>{{ t('llmTool') }}</template>
-          </el-menu-item>
-          <el-menu-item index="mcp">
-            <el-icon>
-              <i class="fa-solid fa-server"></i>
-            </el-icon>
-            <template #title>{{ t('mcpServers') }}</template>
-          </el-menu-item>
-          <el-menu-item index="a2a">
-            <el-icon>
-              <i class="fa-solid fa-plug"></i>
-            </el-icon>
-            <template #title>{{ t('a2aServers') }}</template>
+            <template #title>{{ t('agentSuite') }}</template>
           </el-menu-item>
           <el-menu-item index="api">
             <el-icon>
@@ -632,319 +614,451 @@
                 />
               </div>
         </div>
-        <!---- 智能体页面 ---->
-        <div v-show="activeMenu === 'agents'" class="page agents-container">
-            <!-- 磁贴网格 -->
-            <div class="provider-grid">
-              <!-- 已有智能体 -->
-              <div class="provider-card agent-card" v-for="agent in agents" :key="agent.id">
-                <div class="card-header">
-                  <el-switch v-model="agent.enabled" @change="autoSaveSettings"></el-switch>
-                  <div class="card-actions">
-                    <!-- 更新删除按钮样式 -->
-                    <el-button @click="removeAgent(agent.id)" type="danger" circle size="small">
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
+
+        <div v-show="activeMenu === 'agent_group'" class="page agent-suite-container">
+          <div class="suite-layout">
+            <!-- 左侧导航 -->
+            <div class="suite-sidebar">
+              <div class="tile-nav">
+                <div 
+                  v-for="tile in agentTiles" 
+                  :key="tile.id"
+                  class="nav-item"
+                  :class="{ active: subMenu === tile.id }"
+                  @click="subMenu = tile.id">
+                  <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                  <span class="nav-text">{{ t(tile.title) }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 内容切换区 -->
+            <div class="suite-content">
+              <!-- 智能体页面 -->
+              <div v-show="subMenu === 'agents'" class="page agents-container">
+                <!-- 磁贴网格 -->
+                <div class="provider-grid">
+                  <!-- 已有智能体 -->
+                  <div class="provider-card agent-card" v-for="agent in agents" :key="agent.id">
+                    <div class="card-header">
+                      <el-switch v-model="agent.enabled" @change="autoSaveSettings"></el-switch>
+                      <div class="card-actions">
+                        <!-- 更新删除按钮样式 -->
+                        <el-button @click="removeAgent(agent.id)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    
+                    <div class="agent-content">
+                      <div class="agent-header">
+                        <span class="agent-name">{{ agent.name }}</span>
+                        <!-- 添加复制功能 -->
+                        <el-botton
+                          size="small"
+                          type="info"
+                          @click="copyAgentName(agent.name)"
+                        >
+                          <i class="fa-regular fa-copy"></i>
+                        </el-botton>
+                      </div>
+                      <!-- 带复制功能的ID展示 -->
+                      <el-tag 
+                        type="info" 
+                        size="small" 
+                        class="agent-id clickable"
+                        @click="copyAgentId(agent.id)"
+                      >
+                        {{ agent.id }}
+                        <i class="fa-regular fa-copy"></i>
+                      </el-tag>
+                      <p class="agent-prompt">{{ agent.system_prompt }}</p>
+                    </div>
+                  </div>
+                  <!-- 添加新智能体 -->
+                  <div class="provider-card add-tile" @click="showAgentForm = true">
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addNewAgent') }}</div>
                   </div>
                 </div>
+                <!-- 智能体编辑对话框 -->
+                <el-dialog v-model="showAgentForm" :title="editingAgent ? t('editAgent') : t('addAgent')" width="600px">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('agentName')" required>
+                      <el-input v-model="newAgent.name" :placeholder="t('agentNamePlaceholder')"/>
+                    </el-form-item>
+                    <el-form-item :label="t('systemPrompt')" required>
+                      <el-input 
+                        v-model="newAgent.system_prompt" 
+                        type="textarea" 
+                        :rows="6"
+                        :placeholder="t('systemPromptPlaceholder')"/>
+                    </el-form-item>
+                      <!-- 新增标签页 -->
+                      <el-tabs v-model="agentTabActive" class="agent-config-tabs">
+                        <!-- 知识库 -->
+                        <el-tab-pane :label="t('knowledgeBase')" name="knowledge">
+                          <div class="knowledge-dialog-content">
+                            <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
+                              <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ kb.name }}</div>
+                                <div class="knowledge-desc">{{ kb.introduction || t('noDescription') }}</div>
+                              </div>
+                            </div>
+                            <div v-if="knowledgeBases.length === 0" class="empty-tip">
+                              {{ t('noKnowledgeBase') }}
+                              <a href="#" @click.stop.prevent="switchToKnowledgePage">{{ t('goToKnowledgeBase') }}</a>
+                              {{ t('add') }}
+                            </div>
+                          </div>
+                        </el-tab-pane>
+                        <!-- MCP服务器 -->
+                        <el-tab-pane :label="t('mcpServers')" name="mcp">
+                          <div class="knowledge-dialog-content">
+                            <!-- 服务器列表 -->
+                            <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
+                              <el-switch 
+                                :active-value="false"  
+                                :inactive-value="true" 
+                                v-model="server.disabled" 
+                                @change="autoSaveSettings">
+                              </el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ name }}</div>
+                              </div>
+                            </div>
+                            <div v-if="Object.keys(mcpServers).length === 0" class="empty-tip">
+                              {{ t('nomcpServers') }}
+                              <a href="#" @click.stop.prevent="switchTomcpServers">{{ t('goTomcpServers') }}</a>
+                              {{ t('add') }}
+                            </div>
+                          </div>
+                        </el-tab-pane>
+                        <!-- A2A服务器 -->
+                        <el-tab-pane :label="t('a2aServers')" name="a2a">
+                          <div class="knowledge-dialog-content">
+                            <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
+                              <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ server.name }}</div>
+                                <div class="knowledge-desc">{{ server.description }}</div>
+                              </div>
+                            </div>
+                            <div v-if="Object.keys(a2aServers).length === 0" class="empty-tip">
+                              {{ t('noA2AServers') }}
+                              <a href="#" @click.stop.prevent="switchToa2aServers">{{ t('addA2AServer') }}</a>
+                              {{ t('add') }}
+                            </div>
+                          </div>
+                        </el-tab-pane>
+                        <!-- 工具 -->
+                        <el-tab-pane :label="t('tools')" name="tools">
+                          <div class="knowledge-dialog-content">
+                            <div class="knowledge-item">
+                              <el-switch v-model="webSearchSettings.enabled" @change="autoSaveSettings"></el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ t('webSearch') }}</div>
+                              </div>
+                            </div>
+                            <div class="knowledge-item">
+                              <el-switch v-model="reasonerSettings.enabled" @change="autoSaveSettings"></el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ t('deepThinking') }}</div>
+                              </div>
+                            </div>
+                            <div class="knowledge-item">
+                              <el-switch v-model="toolsSettings.deepsearch.enabled" @change="autoSaveSettings"></el-switch>
+                              <div class="knowledge-info">
+                                <div class="knowledge-name">{{ t('deepResearch') }}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </el-tab-pane>
+                      </el-tabs>
+                  </el-form>
+                  <el-alert
+                    type="info"
+                    :closable="false"
+                    class="mb-2"
+                  >
+                    <template #default>
+                      <div class="alert-content">
+                        {{ t('agentInfo') }}
+                      </div>
+                    </template>
+                  </el-alert>
+                  <template #footer>
+                    <el-button @click="showAgentForm = false">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary" 
+                      @click="saveAgent"
+                      :disabled="!newAgent.name || !newAgent.system_prompt">
+                      {{ t('createAgent') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
+              <!-- A2A页面 -->
+              <div v-show="subMenu === 'a2a'" class="page a2a-container">
+                <div class="provider-grid">
+                  <div class="provider-card a2a-card" v-for="(server, url) in a2aServers" :key="url">
+                    <div class="card-header">
+                      <template v-if="server.status === 'initializing'">
+                        <el-icon class="loading-spinner">
+                          <i class="fa-solid fa-spinner"></i>
+                        </el-icon>
+                      </template>
+                      <template v-else>
+                        <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
+                      </template>
+                      <div class="card-actions">
+                        <el-button @click="removeA2AServer(url)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="a2a-content">
+                      <h3 class="a2a-name">{{ server.name }}</h3>
+                      <p class="a2a-description">{{ server.description }}</p>
+                      <div class="a2a-skills">
+                        <el-tag v-for="(skill, index) in server.skills" :key="index" type="info" size="small">
+                          {{ skill }}
+                        </el-tag>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="provider-card add-tile" @click="showAddA2ADialog = true">
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addA2AServer') }}</div>
+                  </div>
+                </div>
+            
+                <!-- 添加A2A服务器对话框 -->
+                <el-dialog v-model="showAddA2ADialog" :title="t('addA2AServer')" width="500px" label-position="top">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('A2AUrl')" required>
+                      <el-input v-model="newA2AUrl" placeholder="http://127.0.0.1:5000"></el-input>
+                    </el-form-item>
+                  </el-form>
+                  <template #footer>
+                    <el-button @click="showAddA2ADialog = false">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary" 
+                      @click="addA2AServer"
+                      :disabled="!isValidUrl(newA2AUrl)">
+                      {{ t('confirmAdd') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
+              <!-- MCP页面 -->
+              <div v-show="subMenu === 'mcp'" class="page mcp-container">
+                <!-- 磁贴网格 -->
+                <div class="provider-grid">
+                  <div class="provider-card knowledge-card" v-for="(server, name) in mcpServers" :key="name">
+                    <div class="card-header">
+                      <!-- 加载状态指示 -->
+                      <template v-if="server.processingStatus === 'initializing'">
+                        <el-icon class="loading-spinner">
+                          <i class="fa-solid fa-spinner"></i>
+                        </el-icon>
+                      </template>
+                      <template v-else>
+                        <el-switch
+                          :active-value="false"  
+                          :inactive-value="true" 
+                          v-model="server.disabled"
+                          @change="autoSaveSettings"
+                          class="kb-switch"
+                        ></el-switch>
+                      </template>
+                      <div class="card-actions">
+                        <el-button
+                          @click="removeMCPServer(name)"
+                          type="danger"
+                          circle
+                          size="small"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="kb-content">
+                      <div class="kb-header">
+                        <h3 class="kb-title">{{ name }}</h3>
+                      </div>
+                    </div>
+                  </div>
+            
+                  <!-- 添加新磁贴 -->
+                  <div class="provider-card add-tile" @click="showAddMCPDialog = true;updateMCPExample()">
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
+                  </div>
+                </div>
+
+                <!-- 添加MCP对话框 -->
+                <el-dialog
+                  v-model="showAddMCPDialog"
+                  :title="t('addNewMCP')"
+                  width="600px"
+                  @closed="newMCPJson = ''">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('serverType')">
+                      <el-select 
+                        v-model="newMCPType" 
+                        @change="updateMCPExample"
+                        class="full-width-input">
+                        <el-option 
+                          :label="t('stdioServer')" 
+                          value="stdio">
+                        </el-option>
+                        <el-option
+                          :label="t('sseServer')"
+                          value="sse">
+                        </el-option>
+                        <el-option
+                          :label="t('wsServer')"
+                          value="ws">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
                 
-                <div class="agent-content">
-                  <div class="agent-header">
-                    <span class="agent-name">{{ agent.name }}</span>
-                    <!-- 添加复制功能 -->
-                    <el-botton
-                      size="small"
-                      type="info"
-                      @click="copyAgentName(agent.name)"
-                    >
-                      <i class="fa-regular fa-copy"></i>
-                    </el-botton>
-                  </div>
-                  <!-- 带复制功能的ID展示 -->
-                  <el-tag 
-                    type="info" 
-                    size="small" 
-                    class="agent-id clickable"
-                    @click="copyAgentId(agent.id)"
-                  >
-                    {{ agent.id }}
-                    <i class="fa-regular fa-copy"></i>
-                  </el-tag>
-                  <p class="agent-prompt">{{ agent.system_prompt }}</p>
-                </div>
-              </div>
-              <!-- 添加新智能体 -->
-              <div class="provider-card add-tile" @click="showAgentForm = true">
-                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addNewAgent') }}</div>
-              </div>
-            </div>
-            <!-- 智能体编辑对话框 -->
-            <el-dialog v-model="showAgentForm" :title="editingAgent ? t('editAgent') : t('addAgent')" width="600px">
-              <el-form label-position="top">
-                <el-form-item :label="t('agentName')" required>
-                  <el-input v-model="newAgent.name" :placeholder="t('agentNamePlaceholder')"/>
-                </el-form-item>
-                <el-form-item :label="t('systemPrompt')" required>
-                  <el-input 
-                    v-model="newAgent.system_prompt" 
-                    type="textarea" 
-                    :rows="6"
-                    :placeholder="t('systemPromptPlaceholder')"/>
-                </el-form-item>
-                  <!-- 新增标签页 -->
-                  <el-tabs v-model="agentTabActive" class="agent-config-tabs">
-                    <!-- 知识库 -->
-                    <el-tab-pane :label="t('knowledgeBase')" name="knowledge">
-                      <div class="knowledge-dialog-content">
-                        <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
-                          <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ kb.name }}</div>
-                            <div class="knowledge-desc">{{ kb.introduction || t('noDescription') }}</div>
-                          </div>
-                        </div>
-                        <div v-if="knowledgeBases.length === 0" class="empty-tip">
-                          {{ t('noKnowledgeBase') }}
-                          <a href="#" @click.stop.prevent="switchToKnowledgePage">{{ t('goToKnowledgeBase') }}</a>
-                          {{ t('add') }}
-                        </div>
-                      </div>
-                    </el-tab-pane>
-                    <!-- MCP服务器 -->
-                    <el-tab-pane :label="t('mcpServers')" name="mcp">
-                      <div class="knowledge-dialog-content">
-                        <!-- 服务器列表 -->
-                        <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
-                          <el-switch 
-                            :active-value="false"  
-                            :inactive-value="true" 
-                            v-model="server.disabled" 
-                            @change="autoSaveSettings">
-                          </el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ name }}</div>
-                          </div>
-                        </div>
-                        <div v-if="Object.keys(mcpServers).length === 0" class="empty-tip">
-                          {{ t('nomcpServers') }}
-                          <a href="#" @click.stop.prevent="switchTomcpServers">{{ t('goTomcpServers') }}</a>
-                          {{ t('add') }}
-                        </div>
-                      </div>
-                    </el-tab-pane>
-                    <!-- A2A服务器 -->
-                    <el-tab-pane :label="t('a2aServers')" name="a2a">
-                      <div class="knowledge-dialog-content">
-                        <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
-                          <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ server.name }}</div>
-                            <div class="knowledge-desc">{{ server.description }}</div>
-                          </div>
-                        </div>
-                        <div v-if="Object.keys(a2aServers).length === 0" class="empty-tip">
-                          {{ t('noA2AServers') }}
-                          <a href="#" @click.stop.prevent="switchToa2aServers">{{ t('addA2AServer') }}</a>
-                          {{ t('add') }}
-                        </div>
-                      </div>
-                    </el-tab-pane>
-                    <!-- 工具 -->
-                    <el-tab-pane :label="t('tools')" name="tools">
-                      <div class="knowledge-dialog-content">
-                        <div class="knowledge-item">
-                          <el-switch v-model="webSearchSettings.enabled" @change="autoSaveSettings"></el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ t('webSearch') }}</div>
-                          </div>
-                        </div>
-                        <div class="knowledge-item">
-                          <el-switch v-model="reasonerSettings.enabled" @change="autoSaveSettings"></el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ t('deepThinking') }}</div>
-                          </div>
-                        </div>
-                        <div class="knowledge-item">
-                          <el-switch v-model="toolsSettings.deepsearch.enabled" @change="autoSaveSettings"></el-switch>
-                          <div class="knowledge-info">
-                            <div class="knowledge-name">{{ t('deepResearch') }}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </el-tab-pane>
-                  </el-tabs>
-              </el-form>
-              <el-alert
-                type="info"
-                :closable="false"
-                class="mb-2"
-              >
-                <template #default>
-                  <div class="alert-content">
-                    {{ t('agentInfo') }}
-                  </div>
-                </template>
-              </el-alert>
-              <template #footer>
-                <el-button @click="showAgentForm = false">{{ t('cancel') }}</el-button>
-                <el-button 
-                  type="primary" 
-                  @click="saveAgent"
-                  :disabled="!newAgent.name || !newAgent.system_prompt">
-                  {{ t('createAgent') }}
-                </el-button>
-              </template>
-            </el-dialog>
-        </div>
-        <!-- llm tool 页面 -->
-        <div v-show="activeMenu === 'llmTool'" class="page llm-tool-container">
-            <!-- 磁贴网格 -->
-            <div class="provider-grid">
-              <!-- 已有LLM工具配置 -->
-              <div class="provider-card llm-card" v-for="(tool, id) in llmTools" :key="id">
-                <div class="card-header">
-                  <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
-                  <div class="card-actions">
-                    <el-button @click="removeLLMTool(id)" type="danger" circle size="small">
-                      <i class="fa-solid fa-trash"></i>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      {{ t('mcpJsonFormat') }}
+                      <pre class="json-example">{{ currentMCPExample }}</pre>
+                    </el-alert>
+                
+                    <el-form-item :label="t('mcpJsonInput')">
+                      <el-input
+                        v-model="newMCPJson"
+                        type="textarea"
+                        :rows="8"
+                        :placeholder="t('mcpJsonPlaceholder')"
+                        resize="none"/>
+                    </el-form-item>
+                  </el-form>
+                  <template #footer>
+                    <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary" 
+                      @click="addMCPServer"
+                      :disabled="!newMCPJson">
+                      {{ t('confirmAdd') }}
                     </el-button>
+                  </template>
+                </el-dialog>          
+                <el-dialog
+                  v-model="showMCPConfirm"
+                  :title="t('confirmDeleteTitle')"
+                  width="400px"
+                  @closed="deletingMCPName = null">
+                  <div class="confirm-content">
+                    <p>{{ t('confirmDeleteMCP', { name: deletingMCPName }) }}</p>
+                    <div class="confirm-buttons">
+                      <el-button @click="showMCPConfirm = false">{{ t('cancel') }}</el-button>
+                      <el-button type="danger" @click="confirmDeleteMCP">{{ t('confirm') }}</el-button>
+                    </div>
+                  </div>
+                </el-dialog>
+              </div>
+              <!-- LLM工具页面 -->
+              <div v-show="subMenu === 'llmTool'" class="page llm-tool-container">
+                <!-- 磁贴网格 -->
+                <div class="provider-grid">
+                  <!-- 已有LLM工具配置 -->
+                  <div class="provider-card llm-card" v-for="(tool, id) in llmTools" :key="id">
+                    <div class="card-header">
+                      <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                      <div class="card-actions">
+                        <el-button @click="removeLLMTool(id)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="llm-content">
+                      <h3 class="knowledge-info">{{ tool.name }}</h3>
+                      <el-tag type="info" size="small">{{ toolTypeLabel(tool.type) }}</el-tag>
+                      <p class="knowledge-desc">{{ tool.description || t('noDescription') }}</p>
+                    </div>
+                  </div>
+                  
+                  <!-- 添加新LLM工具 -->
+                  <div class="provider-card add-tile" @click="showLLMForm = true">
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addLLMTool') }}</div>
                   </div>
                 </div>
-                <div class="llm-content">
-                  <h3 class="knowledge-info">{{ tool.name }}</h3>
-                  <el-tag type="info" size="small">{{ toolTypeLabel(tool.type) }}</el-tag>
-                  <p class="knowledge-desc">{{ tool.description || t('noDescription') }}</p>
-                </div>
-              </div>
-              
-              <!-- 添加新LLM工具 -->
-              <div class="provider-card add-tile" @click="showLLMForm = true">
-                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addLLMTool') }}</div>
-              </div>
-            </div>
 
-            <!-- 添加/编辑LLM工具对话框 -->
-            <el-dialog v-model="showLLMForm" :title="editingLLM ? t('editLLMTool') : t('addLLMTool')" width="600px">
-              <el-form label-position="top">
-                <el-form-item :label="t('toolName')" required>
-                  <el-input v-model="newLLMTool.name" :placeholder="t('toolNamePlaceholder')"/>
-                </el-form-item>
+                <!-- 添加/编辑LLM工具对话框 -->
+                <el-dialog v-model="showLLMForm" :title="editingLLM ? t('editLLMTool') : t('addLLMTool')" width="600px">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('toolName')" required>
+                      <el-input v-model="newLLMTool.name" :placeholder="t('toolNamePlaceholder')"/>
+                    </el-form-item>
 
-                <el-form-item :label="t('interfaceType')" required>
-                  <el-select 
-                    v-model="newLLMTool.type" 
-                    @change="handleTypeChange"
-                    filterable
-                    allow-create
-                    :placeholder="t('selectInterfaceType')">
-                    <el-option
-                      v-for="type in llmInterfaceTypes"
-                      :key="type.value"
-                      :label="type.label"
-                      :value="type.value"
-                    />
-                  </el-select>
-                </el-form-item>
+                    <el-form-item :label="t('interfaceType')" required>
+                      <el-select 
+                        v-model="newLLMTool.type" 
+                        @change="handleTypeChange"
+                        filterable
+                        allow-create
+                        :placeholder="t('selectInterfaceType')">
+                        <el-option
+                          v-for="type in llmInterfaceTypes"
+                          :key="type.value"
+                          :label="type.label"
+                          :value="type.value"
+                        />
+                      </el-select>
+                    </el-form-item>
 
-                <el-form-item :label="t('description')" required>
-                  <el-input
-                    v-model="newLLMTool.description"
-                    type="textarea"
-                    :rows="3"
-                    :placeholder="t('descriptionPlaceholder')"
-                  />
-                </el-form-item>
+                    <el-form-item :label="t('description')" required>
+                      <el-input
+                        v-model="newLLMTool.description"
+                        type="textarea"
+                        :rows="3"
+                        :placeholder="t('descriptionPlaceholder')"
+                      />
+                    </el-form-item>
 
-                <el-form-item :label="t('baseURL')" required>
-                  <el-input
-                    v-model="newLLMTool.base_url"
-                    :placeholder="defaultBaseURL"
-                  />
-                </el-form-item>
+                    <el-form-item :label="t('baseURL')" required>
+                      <el-input
+                        v-model="newLLMTool.base_url"
+                        :placeholder="defaultBaseURL"
+                      />
+                    </el-form-item>
 
-                <el-form-item :label="t('apiKey')" required>
-                  <el-input
-                    v-model="newLLMTool.api_key"
-                    show-password
-                  />
-                </el-form-item>
+                    <el-form-item :label="t('apiKey')" required>
+                      <el-input
+                        v-model="newLLMTool.api_key"
+                        show-password
+                      />
+                    </el-form-item>
 
-                <el-form-item :label="t('modelName')" required>
-                  <el-input
-                    v-model="newLLMTool.model"
-                  >
-                  </el-input>
-                </el-form-item>
-              </el-form>
+                    <el-form-item :label="t('modelName')" required>
+                      <el-input
+                        v-model="newLLMTool.model"
+                      >
+                      </el-input>
+                    </el-form-item>
+                  </el-form>
 
-              <template #footer>
-                <el-button @click="cancelLLMTool">{{ t('cancel') }}</el-button>
-                <el-button 
-                  type="primary" 
-                  @click="saveLLMTool"
-                  :disabled="!formValid">
-                  {{ editingLLM ? t('save') : t('createImmediately') }}
-                </el-button>
-              </template>
-            </el-dialog>
-        </div>
-
-        <!---- a2a页面 ---->
-        <div v-show="activeMenu === 'a2a'" class="page a2a-container">
-            <div class="provider-grid">
-              <div class="provider-card a2a-card" v-for="(server, url) in a2aServers" :key="url">
-                <div class="card-header">
-                  <template v-if="server.status === 'initializing'">
-                    <el-icon class="loading-spinner">
-                      <i class="fa-solid fa-spinner"></i>
-                    </el-icon>
-                  </template>
-                  <template v-else>
-                    <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
-                  </template>
-                  <div class="card-actions">
-                    <el-button @click="removeA2AServer(url)" type="danger" circle size="small">
-                      <i class="fa-solid fa-trash"></i>
+                  <template #footer>
+                    <el-button @click="cancelLLMTool">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary" 
+                      @click="saveLLMTool"
+                      :disabled="!formValid">
+                      {{ editingLLM ? t('save') : t('createImmediately') }}
                     </el-button>
-                  </div>
-                </div>
-                <div class="a2a-content">
-                  <h3 class="a2a-name">{{ server.name }}</h3>
-                  <p class="a2a-description">{{ server.description }}</p>
-                  <div class="a2a-skills">
-                    <el-tag v-for="(skill, index) in server.skills" :key="index" type="info" size="small">
-                      {{ skill }}
-                    </el-tag>
-                  </div>
-                </div>
-              </div>
-              <div class="provider-card add-tile" @click="showAddA2ADialog = true">
-                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addA2AServer') }}</div>
+                  </template>
+                </el-dialog>
               </div>
             </div>
-        
-            <!-- 添加A2A服务器对话框 -->
-            <el-dialog v-model="showAddA2ADialog" :title="t('addA2AServer')" width="500px" label-position="top">
-              <el-form label-position="top">
-                <el-form-item :label="t('A2AUrl')" required>
-                  <el-input v-model="newA2AUrl" placeholder="http://127.0.0.1:5000"></el-input>
-                </el-form-item>
-              </el-form>
-              <template #footer>
-                <el-button @click="showAddA2ADialog = false">{{ t('cancel') }}</el-button>
-                <el-button 
-                  type="primary" 
-                  @click="addA2AServer"
-                  :disabled="!isValidUrl(newA2AUrl)">
-                  {{ t('confirmAdd') }}
-                </el-button>
-              </template>
-            </el-dialog>
+          </div>
         </div>
-        
+
 
         <div v-show="activeMenu === 'api-box'" class="page tools-container">
             <!-- 磁贴网格 -->
@@ -1078,117 +1192,6 @@
                   {{ t('confirmAdd') }}
                 </el-button>
               </template>
-            </el-dialog>
-        </div>
-        <!-- MCP -->
-        <div v-show="activeMenu === 'mcp'" class="page mcp-container">
-            <!-- 磁贴网格 -->
-            <div class="provider-grid">
-              <div class="provider-card knowledge-card" v-for="(server, name) in mcpServers" :key="name">
-                <div class="card-header">
-                  <!-- 加载状态指示 -->
-                  <template v-if="server.processingStatus === 'initializing'">
-                    <el-icon class="loading-spinner">
-                      <i class="fa-solid fa-spinner"></i>
-                    </el-icon>
-                  </template>
-                  <template v-else>
-                    <el-switch
-                      :active-value="false"  
-                      :inactive-value="true" 
-                      v-model="server.disabled"
-                      @change="autoSaveSettings"
-                      class="kb-switch"
-                    ></el-switch>
-                  </template>
-                  <div class="card-actions">
-                    <el-button
-                      @click="removeMCPServer(name)"
-                      type="danger"
-                      circle
-                      size="small"
-                    >
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-                <div class="kb-content">
-                  <div class="kb-header">
-                    <h3 class="kb-title">{{ name }}</h3>
-                  </div>
-                </div>
-              </div>
-        
-              <!-- 添加新磁贴 -->
-              <div class="provider-card add-tile" @click="showAddMCPDialog = true;updateMCPExample()">
-                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
-              </div>
-            </div>
-
-            <!-- 添加MCP对话框 -->
-            <el-dialog
-              v-model="showAddMCPDialog"
-              :title="t('addNewMCP')"
-              width="600px"
-              @closed="newMCPJson = ''">
-              <el-form label-position="top">
-                <el-form-item :label="t('serverType')">
-                  <el-select 
-                    v-model="newMCPType" 
-                    @change="updateMCPExample"
-                    class="full-width-input">
-                    <el-option 
-                      :label="t('stdioServer')" 
-                      value="stdio">
-                    </el-option>
-                    <el-option
-                      :label="t('sseServer')"
-                      value="sse">
-                    </el-option>
-                    <el-option
-                      :label="t('wsServer')"
-                      value="ws">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-            
-                <el-alert type="info" :closable="false" class="mb-2">
-                  {{ t('mcpJsonFormat') }}
-                  <pre class="json-example">{{ currentMCPExample }}</pre>
-                </el-alert>
-            
-                <el-form-item :label="t('mcpJsonInput')">
-                  <el-input
-                    v-model="newMCPJson"
-                    type="textarea"
-                    :rows="8"
-                    :placeholder="t('mcpJsonPlaceholder')"
-                    resize="none"/>
-                </el-form-item>
-              </el-form>
-              <template #footer>
-                <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
-                <el-button 
-                  type="primary" 
-                  @click="addMCPServer"
-                  :disabled="!newMCPJson">
-                  {{ t('confirmAdd') }}
-                </el-button>
-              </template>
-            </el-dialog>          
-            <el-dialog
-              v-model="showMCPConfirm"
-              :title="t('confirmDeleteTitle')"
-              width="400px"
-              @closed="deletingMCPName = null">
-              <div class="confirm-content">
-                <p>{{ t('confirmDeleteMCP', { name: deletingMCPName }) }}</p>
-                <div class="confirm-buttons">
-                  <el-button @click="showMCPConfirm = false">{{ t('cancel') }}</el-button>
-                  <el-button type="danger" @click="confirmDeleteMCP">{{ t('confirm') }}</el-button>
-                </div>
-              </div>
             </el-dialog>
         </div>
         <!-- logo页面 -->

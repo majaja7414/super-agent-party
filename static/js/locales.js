@@ -269,7 +269,8 @@ const translations = {
       'collapseAside': '收起侧边栏',
       'pollinationsImageGeneration': 'Pollinations 图像生成',
       'languagePlaceholder': '请输入语言',
-      'tonePlaceholder': '请输入语气'
+      'tonePlaceholder': '请输入语气',
+      'agentSuite': '智能体套件',
     },
     'en-US': {
       'chat': 'Chat',
@@ -541,5 +542,6 @@ const translations = {
       'pollinationsImageGeneration': 'Pollinations Image Generation',
       'languagePlaceholder': 'Please input a language',
       'tonePlaceholder': 'Please input a tone',
+      'agentSuite': 'Agent Suite',
     }
   };

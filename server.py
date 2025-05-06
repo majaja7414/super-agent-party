@@ -34,6 +34,7 @@ settings = None
 client = None
 reasoner_client = None
 mcp_client_list = {}
+locales = {}
 _TOOL_HOOKS = {}
 
 from py.get_setting import load_settings,save_settings,base_path,configure_host_port
@@ -41,7 +42,9 @@ configure_host_port(args.host, args.port)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
-    global settings, client, reasoner_client, mcp_client_list,local_timezone,logger
+    global settings, client, reasoner_client, mcp_client_list,local_timezone,logger,locales
+    with open(base_path + "/py/locales.json", "r", encoding="utf-8") as f:
+        locales = json.load(f)
     from tzlocal import get_localzone
     local_timezone = get_localzone()
     logger = logging.getLogger(__name__)
@@ -74,6 +77,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def t(text: str) -> str:
+    global locales
+    settings = await load_settings()
+    target_language = settings["systemSettings"]["language"]
+    return locales[target_language].get(text, text)
 
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     global mcp_client_list,_TOOL_HOOKS
@@ -241,7 +250,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "delta": {
                                     "role":"assistant",
                                     "content": "",
-                                    "reasoning_content": "思考前联网搜索中，请稍候...\n\n"
+                                    "reasoning_content": f"{await t("web_search")}\n\n"
                                 }
                             }
                         ]
@@ -268,7 +277,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tool_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n[搜索结果]({fileLink})\n\n",
+                                    "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                 }
                             }]
                         }
@@ -300,7 +309,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 deepsearch_chunk = {
                     "choices": [{
                         "delta": {
-                            "reasoning_content": f"\n\n💖开始执行任务：{user_prompt}\n\n",
+                            "reasoning_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
                         }
                     }]
                 }
@@ -583,7 +592,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n❌主模型无法结构化输出，不能判别任务进度\n\n",
+                                "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
                             }
                         }]
                     }
@@ -592,7 +601,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n✅任务完成\n\n",
+                                "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
                             }
                         }]
                     }
@@ -602,7 +611,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n❎任务未完成\n\n",
+                                "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
                             }
                         }]
                     }
@@ -626,7 +635,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": "\n\n❓需要用户明确需求\n\n",
+                                "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                             }
                         }]
                     }
@@ -647,7 +656,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": "\n\n思考后联网搜索中，请稍候...\n\n"
+                                        "reasoning_content": f"\n\n{await t("web_search")}\n\n"
                                     }
                                 }
                             ]
@@ -663,7 +672,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": "\n\n搜索网页详细信息中，请稍候...\n\n"
+                                        "reasoning_content": f"\n\n{await t("web_search_more")}\n\n"
                                     }
                                 }
                             ]
@@ -679,7 +688,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": "\n\n查询知识库中，请稍候...\n\n"
+                                        "reasoning_content": f"\n\n{await t("knowledge_base")}\n\n"
                                     }
                                 }
                             ]
@@ -695,7 +704,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"\n\n调用{response_content.name}工具中，请稍候...\n\n"
+                                        "reasoning_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
                                     }
                                 }
                             ]
@@ -774,7 +783,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     tool_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n[{response_content.name}工具结果]({fileLink})\n\n",
+                                "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
                             }
                         }]
                     }
@@ -1034,12 +1043,22 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         except:
                             # 用re 提取```json 之后的内容
                             response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
-                    response_content = json.loads(response_content)
+                    try:
+                        response_content = json.loads(response_content)
+                    except json.JSONDecodeError:
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
                     if response_content["status"] == "done":
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": "\n\n✅任务完成\n\n",
+                                    "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
                                 }
                             }]
                         }
@@ -1049,7 +1068,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": "\n\n❎任务未完成\n\n",
+                                    "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
                                 }
                             }]
                         }
@@ -1073,7 +1092,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": "\n\n❓需要用户明确需求\n\n",
+                                    "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n",
                                 }
                             }]
                         }
@@ -1835,7 +1854,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 保存上传的文件
-                with open(destination, "wb",encoding='utf-8') as buffer:
+                with open(destination, "wb") as buffer:
                     content = await file.read()
                     buffer.write(content)
                 
@@ -1864,7 +1883,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
                 
                 # 复制文件到上传目录
-                with open(file_path, "rb" ,encoding='utf-8') as src, open(destination, "wb") as dst:
+                with open(file_path, "rb") as src, open(destination, "wb") as dst:
                     dst.write(src.read())
                 
                 file_link = {
