@@ -783,7 +783,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     tool_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n<div class='file-links'><a href='{fileLink}' target='_blank' class='file-link'>{response_content.name}{await t('tool_result')}</a></div>\n\n", 
+                                "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
                             }
                         }]
                     }
