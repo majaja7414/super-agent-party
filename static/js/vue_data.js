@@ -249,7 +249,17 @@ let vue_data = {
     updateDownloaded: false,
     downloadProgress: 0,
     fileLinks: [],
-    subMenu: 'agents', // 新增子菜单状态
+    modelTiles: [
+      { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
+      { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
+      { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' }
+    ],
+    toolkitTiles: [
+      { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
+      { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
+      { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' }
+    ],
+    subMenu: '', // 新增子菜单状态
     agentTiles: [
       { 
         id: 'agents',

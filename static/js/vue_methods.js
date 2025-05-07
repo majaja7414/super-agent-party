@@ -338,7 +338,16 @@ let vue_methods = {
       if (key === 'agent_group') {
         this.activeMenu = 'agent_group';
         this.subMenu = 'agents'; // 默认显示第一个子菜单
-      } else {
+      }
+      else if (key === 'model-config') {
+        this.activeMenu = 'model-config';
+        this.subMenu = 'service'; // 默认显示第一个子菜单
+      }
+      else if (key === 'toolkit') {
+        this.activeMenu = 'toolkit';
+        this.subMenu = 'tools'; // 默认显示第一个子菜单
+      }
+      else {
         this.activeMenu = key;
       }
       this.activeMenu = key;
@@ -1241,8 +1250,8 @@ let vue_methods = {
     },
     switchToApiBox() {
       // 切换到 API 钥匙箱界面
-      this.activeMenu = 'api-box'
-      
+      this.activeMenu = 'model-config';
+      this.subMenu = 'service';
     },
 
     // 添加文件到列表
@@ -1712,8 +1721,8 @@ let vue_methods = {
       this.newKbFiles.splice(index, 1);
     },
     switchToKnowledgePage() {
-      this.activeMenu = 'document';  // 根据你的菜单项配置的实际值设置
-      window.scrollTo(0, 0);
+      this.activeMenu = 'toolkit';  // 根据你的菜单项配置的实际值设置
+      this.subMenu = 'document';   // 根据你的子菜单项配置的实际值设置
     },
     // 在 methods 中添加
     t(key) {

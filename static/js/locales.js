@@ -271,6 +271,11 @@ const translations = {
       'languagePlaceholder': '请输入语言',
       'tonePlaceholder': '请输入语气',
       'agentSuite': '智能体套件',
+      'modelConfig': '模型配置',
+      'modelService': '模型服务',
+      'mainModel': '主模型',
+      'reasonerModel': '推理模型',
+      'toolkit': '工具套件',
     },
     'en-US': {
       'chat': 'Chat',
@@ -543,5 +548,10 @@ const translations = {
       'languagePlaceholder': 'Please input a language',
       'tonePlaceholder': 'Please input a tone',
       'agentSuite': 'Agent Suite',
+      'modelConfig': 'Model Config',
+      'modelService': 'Model Service', 
+      'mainModel': 'Main Model',
+      'reasonerModel': 'Reasoner Model',
+      'toolkit': 'Toolkit',
     }
   };
