@@ -279,6 +279,7 @@ const translations = {
       'apiGroup': '接口调用',
       'openaiStyleAPI': 'OpenAI风格API',
       'browserMode': '浏览器模式',
+      'file_type_error': '文件类型不支持',
     },
     'en-US': {
       'chat': 'Chat',
@@ -559,5 +560,6 @@ const translations = {
       'apiGroup': 'API Access',
       'openaiStyleAPI': 'OpenAI-style API', 
       'browserMode': 'Browser Mode',
+      'file_type_error': 'File type is not supported',
     }
   };

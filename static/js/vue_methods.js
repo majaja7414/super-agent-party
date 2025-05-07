@@ -1243,7 +1243,7 @@ let vue_methods = {
         "⚙️ 配置文件：CONF/INI/ENV/TOML",
         "📝 文本文件：TXT/MD/LOG"
       ]
-      ElMessage.error(`不支持的文件类型，请选择以下类型：\n${categories.join('\n')}`)
+      showNotification(this.t('file_type_error'), 'error')
     },
     // 拖放处理
     handleDrop(event) {
