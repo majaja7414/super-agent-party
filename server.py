@@ -1,6 +1,7 @@
 # -- coding: utf-8 --
 import asyncio
 import copy
+import hashlib
 import json
 import os
 import re
@@ -172,6 +173,7 @@ async def images_in_messages(messages: List[Dict]) -> List[Dict]:
                             base64_image = await get_image_base64(image_url)
                             media_type = await get_image_media_type(image_url)
                             item["image_url"]["url"] = f"data:{media_type};base64,{base64_image}"
+                            item["image_url"]["hash"] = hashlib.md5(item["image_url"]["url"].encode()).hexdigest()
                         image_urls.append(item)
         if image_urls:
             images.append({'index': index, 'images': image_urls})
