@@ -38,7 +38,7 @@ locales = {}
 _TOOL_HOOKS = {}
 
 from py.get_setting import load_settings,save_settings,base_path,configure_host_port,SETTINGS_FILE,default_settings
-
+from py.llm_tool import get_image_base64,get_image_media_type
 if not os.path.exists(SETTINGS_FILE):
     with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(default_settings, f, ensure_ascii=False, indent=4)
@@ -144,7 +144,41 @@ class ChatRequest(BaseModel):
     presence_penalty: float = 0
     fileLinks: List[str] = None
 
-def tools_change_messages(request: ChatRequest, settings: dict):
+async def message_without_images(messages: List[Dict]) -> List[Dict]:
+    if messages:
+        for message in messages:
+            if 'content' in message:
+                # message['content'] 是一个列表
+                if isinstance(message['content'], list):
+                    for item in message['content']:
+                        if isinstance(item, dict) and item['type'] == 'text':
+                            message['content'] = item['text']
+                            break
+    return messages
+
+async def images_in_messages(messages: List[Dict]) -> List[Dict]:
+    images = []
+    index = 0
+    for message in messages:
+        image_urls = []
+        if 'content' in message:
+            # message['content'] 是一个列表
+            if isinstance(message['content'], list):
+                for item in message['content']:
+                    if isinstance(item, dict) and item['type'] == 'image_url':
+                        # 如果item["image_url"]["url"]是http或https开头，则转换成base64
+                        if item["image_url"]["url"].startswith("http"):
+                            image_url = item["image_url"]["url"]
+                            base64_image = await get_image_base64(image_url)
+                            media_type = await get_image_media_type(image_url)
+                            item["image_url"]["url"] = f"data:{media_type};base64,{base64_image}"
+                        image_urls.append(item)
+        if image_urls:
+            images.append({'index': index, 'images': image_urls})
+        index += 1
+    return images
+
+async def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
         request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
     if settings['tools']['inference']['enabled']:
@@ -160,6 +194,8 @@ def tools_change_messages(request: ChatRequest, settings: dict):
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
     global mcp_client_list
+    images = await images_in_messages(request.messages)
+    request.messages = await message_without_images(request.messages)
     from py.load_files import get_files_content
     from py.web_search import (
         DDGsearch_async, 
@@ -230,7 +266,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
-        request = tools_change_messages(request, settings)
+        request = await tools_change_messages(request, settings)
         model = settings['model']
         extra_params = settings['extra_params']
         # 移除extra_params这个list中"name"不包含非空白符的键值对
@@ -1138,6 +1174,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
+    images = await images_in_messages(request.messages)
+    request.messages = await message_without_images(request.messages)
     open_tag = "<think>"
     close_tag = "</think>"
     tools = request.tools or []
@@ -1206,7 +1244,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             else:
                 request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
-        request = tools_change_messages(request, settings)
+        request = await tools_change_messages(request, settings)
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
