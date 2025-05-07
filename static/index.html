@@ -566,29 +566,31 @@
               </el-button>
             </el-tooltip>
           </div>
-              <div class="input-container">
-                <!-- 紧凑型文件列表 -->
-                <div class="compact-file-list" v-if="files.length">
-                  <div v-for="(file, index) in files" :key="index" class="compact-file-item">
-                    <span class="file-name">@{{ file.name }}</span>
-                    <el-button
-                      @click.stop="removeFile(index)"
-                      class="delete-icon"
-                      circle
-                    >
-                    <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-                <el-input
-                  v-model="userInput"
-                  type="textarea"
-                  :rows="4"
-                  :placeholder="t('inputMessage')"
-                  resize="none"
-                  @keydown="handleKeydown"
-                />
+          <div class="input-container">
+            <!-- 紧凑型文件列表 -->
+            <div class="compact-file-list" v-if="files.length">
+              <div v-for="(file, index) in files" :key="index" class="compact-file-item">
+                <span class="file-name">@{{ file.name }}</span>
+                <el-button
+                  @click.stop="removeFile(index)"
+                  class="delete-icon"
+                  circle
+                >
+                <i class="fa-solid fa-trash"></i>
+                </el-button>
               </div>
+            </div>
+            <el-input
+              v-model="userInput"
+              type="textarea"
+              :rows="4"
+              :placeholder="t('inputMessage')"
+              resize="none"
+              @keydown="handleKeydown"
+              class="input-box"
+            >
+            </el-input>
+          </div>
         </div>
 
         <div v-show="activeMenu === 'model-config'" class="page agent-suite-container">
