@@ -285,7 +285,7 @@ const translations = {
       'newChat': '新建对话',
       'visionModel': '视觉模型',
       'visionSettings': '视觉配置',
-      'addVisionNotice': '请选择供应商后，请返回此页面并选择【视觉模型】以继续。词嵌入模型名称中一般包含“vision”、“v”、“o”等关键词。',
+      'addVisionNotice': '请选择供应商后，请返回此页面并选择【视觉模型】以继续。视觉模型名称中一般包含“vision”、“v”、“o”等关键词。',
     },
     'en-US': {
       'chat': 'Chat',
@@ -572,6 +572,6 @@ const translations = {
       'newChat': 'New Chat',
       'visionModel': 'Vision Model',
       'visionSettings': 'Vision Settings',
-      'addVisionNotice': 'Please select the supplier first, then return to this page and select 【Visual Model】 to continue. The name of the word embedding model generally contains keywords such as "vision", "v", "o", etc.',
+      'addVisionNotice': 'Please select the supplier first, then return to this page and select 【Visual Model】 to continue. The visual model name generally contains keywords such as "vision", "v", "o", etc.',
     }
   };
