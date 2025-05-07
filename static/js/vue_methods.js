@@ -254,9 +254,28 @@ let vue_methods = {
 
     generateConversationTitle(messages) {
       const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      
       if (lastUserMessage) {
-        return lastUserMessage.content.substring(0, 30) + (lastUserMessage.content.length > 30 ? '...' : '');
+        let textContent;
+        
+        // 判断 content 是否为字符串还是对象数组
+        if (typeof lastUserMessage.content === 'string') {
+          textContent = lastUserMessage.content;
+        } else if (Array.isArray(lastUserMessage.content)) {
+          // 提取所有文本类型的内容并拼接
+          textContent = lastUserMessage.content.filter(item => item.type === 'text')
+                           .map(item => item.text).join(' ');
+        } else {
+          // 如果既不是字符串也不是对象数组，设置为空字符串或其他默认值
+          textContent = '';
+        }
+    
+        // 拼接 fileLinks_content 部分，如果有
+        const fullContent = textContent + (lastUserMessage.fileLinks_content ?? '');
+        
+        return fullContent.substring(0, 30) + (fullContent.length > 30 ? '...' : '');
       }
+      
       return this.t('newChat');
     },
     async confirmDeleteConversation(convId) {
@@ -874,11 +893,49 @@ let vue_methods = {
             } else {
                 showNotification(this.t('file_upload_failed'), 'error');
             }
-        } catch (error) {
-            console.error('Error during file upload:', error);
-            showNotification(this.t('file_upload_failed'), 'error');
+          } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification(this.t('file_upload_failed'), 'error');
+          }
         }
-      }
+        let imageLinks = this.images || [];
+        if (imageLinks.length > 0){
+          const formData = new FormData();
+          
+          // 使用 'files' 作为键名，而不是 'file'
+          for (const file of imageLinks) {
+              if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
+                  formData.append('files', file.file, file.name); // 添加第三个参数为文件名
+              } else {
+                  console.error("Invalid file object:", file);
+                  showNotification(this.t('invalid_file'), 'error');
+                  return;
+              }
+          }
+      
+          try {
+              console.log('Uploading images...');
+              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+                  method: 'POST',
+                  body: formData
+              });
+              if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('Server responded with an error:', errorText);
+                  showNotification(this.t('file_upload_failed'), 'error');
+                  return;
+              }
+              const data = await response.json();
+              if (data.success) {
+                imageLinks = data.fileLinks;
+              } else {
+                showNotification(this.t('file_upload_failed'), 'error');
+              }
+          } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification(this.t('file_upload_failed'), 'error');
+          }
+        }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n') || '';
       const fileLinks_list = Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
       // fileLinks_list添加到self.filelinks
@@ -889,9 +946,11 @@ let vue_methods = {
         role: 'user',
         content: escapedContent,
         fileLinks: fileLinks,
-        fileLinks_content: fileLinks_content
+        fileLinks_content: fileLinks_content,
+        imageLinks: imageLinks || []
       });
       this.files = [];
+      this.images = [];
       let max_rounds = this.settings.max_rounds || 0;
       let messages;
       // 把窗口滚动到底部
@@ -903,7 +962,18 @@ let vue_methods = {
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
           role: msg.role,
-          content: msg.content + (msg.fileLinks_content ?? '')
+          content: (msg.imageLinks && msg.imageLinks.length > 0)
+            ? [
+                {
+                  type: "text",
+                  text: msg.content + (msg.fileLinks_content ?? '')
+                },
+                ...msg.imageLinks.map(imageLink => ({
+                  type: "image_url",
+                  image_url: { url: imageLink.path }
+                }))
+              ]
+            : msg.content + (msg.fileLinks_content ?? '')
         }));
       } else {
         // 准备发送的消息历史（保留最近 max_rounds 条消息）
@@ -911,7 +981,18 @@ let vue_methods = {
           .slice(-max_rounds)
           .map(msg => ({
             role: msg.role,
-            content: msg.content + (msg.fileLinks_content ?? '')
+            content: msg.imageLinks.length > 0
+              ? [
+                  {
+                    type: "text",
+                    text: msg.content + (msg.fileLinks_content ?? '')
+                  },
+                  ...msg.imageLinks.map(imageLink => ({
+                    type: "image_url",
+                    image_url: { url: imageLink.path }
+                  }))
+                ]
+              : msg.content + (msg.fileLinks_content ?? '')
           }));
       }
       
