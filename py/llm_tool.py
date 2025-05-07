@@ -122,7 +122,7 @@ async def custom_llm_tool(tool_name, query, image_url=None):
                         prompt = [
                             {
                                 "type": "image",
-                                "image_url": f"data:{media_type};base64,{base64_image}",
+                                "image_url": {"url": f"data:{media_type};base64,{base64_image}"},
                             },
                             {
                                 "type": "text",

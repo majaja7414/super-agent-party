@@ -132,41 +132,17 @@
             </el-icon>
             <template #title>{{ t('chat') }}</template>
           </el-menu-item>
-          <el-menu-item index="api-box">
+          <el-menu-item index="model-config">
             <el-icon>
-              <i class="fa-solid fa-cloud"></i>
+              <i class="fa-solid fa-gears"></i>
             </el-icon>
-              <template #title>{{ t('modelService') }}</template>
+            <template #title>{{ t('modelConfig') }}</template>
           </el-menu-item>
-          <el-menu-item index="settings">
+          <el-menu-item index="toolkit">
             <el-icon>
-              <i class="fa-solid fa-microchip"></i>
+              <i class="fa-solid fa-toolbox"></i>
             </el-icon>
-            <template #title>{{ t('mainModel') }}</template>
-          </el-menu-item>
-          <el-menu-item index="reasoner">
-            <el-icon>
-              <i class="fa-solid fa-atom"></i>
-            </el-icon>
-            <template #title>{{ t('reasoner') }}</template>
-          </el-menu-item>
-          <el-menu-item index="tools">
-            <el-icon>
-              <i class="fa-solid fa-screwdriver-wrench"></i>
-            </el-icon>
-            <template #title>{{ t('tools') }}</template>
-          </el-menu-item>
-          <el-menu-item index="websearch">
-            <el-icon>
-              <i class="fa-solid fa-globe"></i>
-            </el-icon>
-            <template #title>{{ t('webSearch') }}</template>
-          </el-menu-item>
-          <el-menu-item index="document">
-            <el-icon>
-              <i class="fa-solid fa-book"></i>
-            </el-icon>
-            <template #title>{{ t('knowledgeBase') }}</template>
+            <template #title>{{ t('toolkit') }}</template>
           </el-menu-item>
           <el-menu-item index="agent_group">
             <el-icon>
@@ -174,11 +150,11 @@
             </el-icon>
             <template #title>{{ t('agentSuite') }}</template>
           </el-menu-item>
-          <el-menu-item index="api">
+          <el-menu-item index="api-group">
             <el-icon>
-              <i class="fa-solid fa-key"></i>
+              <i class="fa-solid fa-plug"></i>
             </el-icon>
-            <template #title>{{ t('callingMethod') }}</template>
+            <template #title>{{ t('apiGroup') }}</template>
           </el-menu-item>
           <el-menu-item index="system">
             <el-icon>
@@ -468,7 +444,7 @@
               <el-button
                 @click="showHistoryDialog = true"
                 class="icon-btn history-btn"
-                :type="hasFiles ? 'primary' : 'default'"
+                :type="'default'"
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-clock-rotate-left"></i>
@@ -483,6 +459,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-paperclip"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('uploadImage')" placement="top">
+              <el-button
+                @click="sendImages"
+                class="icon-btn image-btn"
+                :type="hasImages ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-image"></i>
               </el-button>
             </el-tooltip>
 
@@ -590,29 +577,1136 @@
               </el-button>
             </el-tooltip>
           </div>
-              <div class="input-container">
-                <!-- 紧凑型文件列表 -->
-                <div class="compact-file-list" v-if="files.length">
-                  <div v-for="(file, index) in files" :key="index" class="compact-file-item">
-                    <span class="file-name">@{{ file.name }}</span>
-                    <el-button
-                      @click.stop="removeFile(index)"
-                      class="delete-icon"
-                      circle
-                    >
-                    <i class="fa-solid fa-trash"></i>
-                    </el-button>
+          <div class="input-container">
+            <!-- 紧凑型文件列表 -->
+            <div class="compact-file-list" v-if="allItems.length">
+              <div v-for="(item, index) in allItems" :key="index" class="compact-file-item">
+                <span class="file-name">@{{ item.name }}</span>
+                <el-button
+                  @click.stop="removeItem(index, item.type)"
+                  class="delete-icon"
+                  circle
+                >
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+            </div>
+            <el-input
+              v-model="userInput"
+              type="textarea"
+              :rows="4"
+              :placeholder="t('inputMessage')"
+              resize="none"
+              @keydown="handleKeydown"
+              class="input-box"
+            >
+            </el-input>
+          </div>
+        </div>
+
+        <div v-show="activeMenu === 'model-config'" class="page agent-suite-container">
+          <div class="suite-layout">
+            <!-- 左侧二级导航 -->
+            <div class="suite-sidebar">
+              <div class="tile-nav">
+                <div 
+                  v-for="tile in modelTiles" 
+                  :key="tile.id"
+                  class="nav-item"
+                  :class="{ active: subMenu === tile.id }"
+                  @click="subMenu = tile.id">
+                  <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                  <span class="nav-text">{{ t(tile.title) }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 右侧内容区 -->
+            <div class="suite-content">
+              <!-- 模型服务界面 -->
+              <div v-show="subMenu === 'service'" class="page">
+                <!-- 磁贴网格 -->
+                <div class="provider-grid">
+                  <!-- 已有供应商磁贴 -->
+                  <div class="provider-card" v-for="(provider, index) in modelProviders" :key="provider.id">
+                    <div class="card-header">
+                      <el-tag type="info" class="vendor-tag">{{ provider.vendor }}</el-tag>
+                      <div class="card-actions">
+                        <el-button
+                          @click="fetchModelsForProvider(provider)"
+                          type="primary"
+                          circle
+                          size="small"
+                        >
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        </el-button>
+                        <el-button
+                          @click="removeProvider(index)"
+                          type="danger"
+                          circle
+                          size="small"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+
+                    <div class="input-group">
+                      <!-- 添加输入框标签 -->
+                      <div class="input-item">
+                        <label>{{ t('apiAddress') }}</label>
+                        <el-input
+                          v-model="provider.url"
+                          :placeholder="t('apiAddressPlaceholder')"
+                          @change="autoSaveSettings"
+                        />
+                      </div>
+
+                      <div class="input-item">
+                        <label>{{ t('apiKey') }}</label>
+                        <el-input
+                          v-model="provider.apiKey"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @change="autoSaveSettings"
+                        />
+                      </div>
+
+                      <div class="input-item">
+                        <label>{{ t('modelId') }}</label>
+                        <el-select
+                          v-model="provider.modelId"
+                          filterable
+                          allow-create
+                          :placeholder="provider.models?.length ? t('selectOrTypeModel') : t('modelIdPlaceholder')"
+                          class="model-select"
+                          @change="autoSaveSettings"
+                        >
+                          <el-option
+                            v-for="model in provider.models"
+                            :key="model"
+                            :label="model"
+                            :value="model"
+                          />
+                        </el-select>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- 添加新磁贴 -->
+                  <div class="provider-card add-tile" @click="showAddDialog = true">
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addNewProvider') }}</div>
                   </div>
                 </div>
-                <el-input
-                  v-model="userInput"
-                  type="textarea"
-                  :rows="4"
-                  :placeholder="t('inputMessage')"
-                  resize="none"
-                  @keydown="handleKeydown"
-                />
+
+                <!-- 添加供应商对话框 -->
+                <el-dialog
+                  v-model="showAddDialog"
+                  :title="t('addNewProvider')"
+                  width="500px"
+                  @closed="newProviderTemp = { vendor: '', url: '' }"
+                >
+                  <el-form label-position="top">
+                    <el-form-item :label="t('provider')" required>
+                      <el-select
+                        v-model="newProviderTemp.vendor"
+                        :placeholder="t('pleaseSelect')"
+                        @change="handleVendorChange"
+                      >
+                        <el-option
+                          v-for="item in vendorOptions"
+                          :key="item.value"
+                          :label="item.label"
+                          :value="item.value"
+                        />
+                      </el-select>
+                    </el-form-item>
+
+                    <el-form-item
+                      v-if="newProviderTemp.vendor === 'custom'"
+                      :label="t('customURL')"
+                      required
+                    >
+                      <el-input
+                        v-model="newProviderTemp.url"
+                        placeholder="https://api.example.com/v1"
+                      />
+                    </el-form-item>
+
+                    <div v-if="newProviderTemp.vendor && newProviderTemp.vendor !== 'custom'">
+                      <el-alert
+                        :title="t('defaultConfigInfo')"
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        {{ t('autoFilledDefaultAPI') }} {{ newProviderTemp.vendor }}<br>
+                        {{ t('enterApiKeyThenClick') }}
+                      </el-alert>
+                    </div>
+                  </el-form>
+
+                  <template #footer>
+                    <el-button @click="showAddDialog = false">{{ t('cancel') }}</el-button>
+                    <el-button
+                      type="primary"
+                      @click="confirmAddProvider"
+                      :disabled="!validProvider"
+                    >
+                      {{ t('confirmAdd') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
               </div>
+              <!-- 主模型界面 -->
+              <div v-show="subMenu === 'main'" class="page">
+                <el-form :model="settings" class="settings-form" label-position="top">
+                  <div class="tool-item">
+                    <!-- 基础配置（仅供应商） -->
+                    <div class="tool-header" @click="toggleSection('settingsBase')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-microchip"></i>
+                          </el-icon>
+                          {{ t('basicConfiguration') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.settingsBase">
+                      <el-form-item :label="t('provider')" class="form-item-align">
+                        <el-select
+                          v-model="settings.selectedProvider"
+                          :placeholder="t('selectProvider')"
+                          filterable
+                          @change="selectMainProvider"
+                          @visible-change="handleMainProviderVisibleChange"
+                          class="full-width-input"
+                        >
+                          <el-option
+                            v-for="provider in modelProviders"
+                            :key="provider.id"
+                            :label="provider.vendor+' - '+provider.modelId"
+                            :value="provider.id"
+                          >
+                            <div class="provider-option">
+                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <span class="model-id">{{ provider.modelId }}</span>
+                            </div>
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </div>
+                      <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        <template #default>
+                          <div class="alert-content">
+                            {{ t('firstTimeUse') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              class="font-medium"
+                              @click="switchToApiBox"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('keyBoxInterface') }}
+                            </el-link>
+                            {{ t('addProviderReturnSelect') }}
+                            {{ t('mainmodelnotice') }}
+                          </div>
+                        </template>
+                      </el-alert>
+                  </div>
+                  <!-- 新增高级配置 -->
+                  <div class="tool-item">
+                    <div class="tool-header" @click="toggleSection('settingsAdvanced')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-chevron-right"></i>
+                          </el-icon>
+                          {{ t('advancedConfiguration') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.settingsAdvanced">
+                      <el-form-item :label="t('modelName')" class="form-item-align">
+                        <el-input
+                          v-model="settings.model"
+                          :placeholder="t('modelName')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('baseURL')" class="form-item-align">
+                        <el-input
+                          v-model="settings.base_url"
+                          :placeholder="t('baseURL')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="settings.api_key"
+                          :placeholder="t('apiKey')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('temperature')" class="form-item-align">
+                        <el-slider
+                          v-model="settings.temperature"
+                          :min="0"
+                          :max="1"
+                          :step="0.1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="'top_p'" class="form-item-align">
+                        <el-slider
+                          v-model="settings.top_p"
+                          :min="0"
+                          :max="1"
+                          :step="0.1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('outputLength')" class="form-item-align">
+                        <el-slider
+                          v-model="settings.max_tokens"
+                          :min="0"
+                          :max="128000"
+                          :step="1024"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('conversationRounds')" class="form-item-align">
+                        <el-slider
+                          v-model="settings.max_rounds"
+                          :min="0"
+                          :max="1000"
+                          :step="2"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <div class="param-header">
+                        <span>{{ t('extraParams') }}</span>
+                        <el-button 
+                          @click="addParam"
+                          type="primary"
+                          circle
+                          size="small"
+                          class="header-add-btn"
+                        >
+                          <i class="fa-solid fa-plus"></i>
+                        </el-button>
+                      </div>
+                      <div class="extra-params">
+                        <div
+                          v-for="(param, index) in settings.extra_params"
+                          :key="index"
+                          class="param-row"
+                        >
+                          <el-input
+                            v-model="param.name"
+                            :placeholder="t('paramName')"
+                            class="param-input"
+                          ></el-input>
+                      
+                          <el-select
+                            v-model="param.type"
+                            :placeholder="t('paramType')"
+                            @change="updateParamType(index)"
+                            class="type-select"
+                          >
+                            <el-option
+                              v-for="type in paramTypes"
+                              :key="type.value"
+                              :label="t(type.label)"
+                              :value="type.value"
+                            ></el-option>
+                          </el-select>
+                      
+                          <!-- 动态输入组件 -->
+                          <div class="value-input">
+                            <el-input
+                              v-show="param.type === 'string'"
+                              v-model="param.value"
+                              :placeholder="t('paramValue')"
+                              @input="autoSaveSettings"
+                            ></el-input>
+                          
+                            <el-input-number
+                              v-show="param.type === 'integer'"
+                              v-model="param.value"
+                              :step="1"         
+                              :precision="0"   
+                              @input="autoSaveSettings"
+                            ></el-input-number>
+                          
+                            <el-input-number
+                              v-show="param.type === 'float'"
+                              v-model="param.value"
+                              :step="0.5"      
+                              :precision="2"    
+                              @input="autoSaveSettings"
+                            ></el-input-number>
+      
+                            <el-switch 
+                              v-show="param.type === 'boolean'" 
+                              v-model="param.value" 
+                              @change="autoSaveSettings"
+                            ></el-switch>
+                          </div>
+                      
+                          <el-button
+                            @click="removeParam(index)"
+                            type="danger"
+                            circle
+                            size="small"
+                            class="remove-btn"
+                          >
+                            <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </el-form>
+              </div>
+              <!-- 推理模型界面 -->
+              <div v-show="subMenu === 'reasoner'" class="page">
+                <el-form :model="settings" class="settings-form" label-position="top">
+                  <div class="tool-item">
+                    <div class="tool-header" @click="toggleSection('reasonerConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-atom"></i>
+                          </el-icon>
+                          {{ t('reasonerConfig') }}
+                        </span>
+                      </div>
+                      <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.reasonerConfig">
+                      <el-form-item :label="t('provider')" class="form-item-align">
+                        <el-select
+                          v-model="reasonerSettings.selectedProvider"
+                          :placeholder="t('selectProvider')"
+                          filterable
+                          @change="selectReasonerProvider"
+                          @visible-change="handleReasonerProviderVisibleChange"
+                          class="full-width-input"
+                        >
+                          <el-option
+                            v-for="provider in modelProviders"
+                            :key="provider.id"
+                            :label="provider.vendor+' - '+provider.modelId"
+                            :value="provider.id"
+                          >
+                            <div class="provider-option">
+                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <span class="model-id">{{ provider.modelId }}</span>
+                            </div>
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </div>
+                    <el-alert
+                    type="info"
+                    :closable="false"
+                    class="mb-2"
+                  >
+                    <template #default>
+                      <div class="alert-content">
+                        {{ t('firstTimeUse') }}
+                        <el-link
+                          type="primary"
+                          :underline="false"
+                          class="font-medium"
+                          @click="switchToApiBox"
+                        >
+                          <el-icon class="mr-1">
+                            <i class="fa-solid fa-key"></i>
+                          </el-icon>{{ t('keyBoxInterface') }}
+                        </el-link>
+                        {{ t('addProviderReturnSelect') }}
+                        {{ t('addresonerNotice') }}
+                      </div>
+                    </template>
+                  </el-alert>
+                  </div>
+                  <div class="tool-item">
+                    <div class="tool-header" @click="toggleSection('reasonerAdvanced')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-chevron-right"></i>
+                          </el-icon>
+                          {{ t('advancedConfiguration') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.reasonerAdvanced">
+                      <el-form-item :label="t('modelName')" class="form-item-align">
+                        <el-input
+                          v-model="reasonerSettings.model"
+                          :placeholder="t('modelName')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('baseURL')" class="form-item-align">
+                        <el-input
+                          v-model="reasonerSettings.base_url"
+                          :placeholder="t('baseURL')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="reasonerSettings.api_key"
+                          :placeholder="t('apiKey')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('temperature')" class="form-item-align">
+                        <el-slider
+                          v-model="reasonerSettings.temperature"
+                          :min="0"
+                          :max="1"
+                          :step="0.1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                </el-form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div v-show="activeMenu === 'toolkit'" class="page agent-suite-container">
+          <div class="suite-layout">
+            <!-- 左侧导航 -->
+            <div class="suite-sidebar">
+              <div class="tile-nav">
+                <div 
+                  v-for="tile in toolkitTiles" 
+                  :key="tile.id"
+                  class="nav-item"
+                  :class="{ active: subMenu === tile.id }"
+                  @click="subMenu = tile.id">
+                  <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                  <span class="nav-text">{{ t(tile.title) }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 右侧内容 -->
+            <div class="suite-content">
+              <!-- 工具界面 -->
+              <div v-show="subMenu === 'tools'" class="page">
+                <div class="provider-grid">
+                  <!-- 当前时间工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch 
+                        v-model="toolsSettings.time.enabled" 
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('currentTime') }}</h3>
+                    </div>
+                  </div>
+        
+                  <!-- 深度研究工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch
+                        v-model="toolsSettings.deepsearch.enabled"
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('deepResearch') }}</h3>
+                    </div>
+                  </div>
+        
+                  <!-- 推理工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch
+                        v-model="toolsSettings.inference.enabled"
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('fakeInference') }}</h3>
+                    </div>
+                  </div>
+        
+                  <!-- 图像生成工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch
+                        v-model="toolsSettings.pollinations.enabled"
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('pollinationsImageGeneration') }}</h3>
+                    </div>
+                  </div>
+        
+                  <!-- LaTeX增强工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch
+                        v-model="toolsSettings.formula.enabled"
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div>
+                      <h3 class="kb-title">{{ t('latexRenderingEnhancement') }}</h3>
+                    </div>
+                  </div>
+        
+                  <!-- 语言语调工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch
+                        v-model="toolsSettings.language.enabled"
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('languageTone') }}</h3>
+                    </div>
+                    <el-form-item :label="t('assistantLanguage')">
+                      <el-input
+                        v-model="toolsSettings.language.language"
+                        @blur="autoSaveSettings"
+                        class="mini-input"
+                        :placeholder="t('languagePlaceholder')"
+                      ></el-input>
+                    </el-form-item>
+                    
+                    <el-form-item :label="t('assistantTone')">
+                      <el-input
+                        v-model="toolsSettings.language.tone"
+                        @blur="autoSaveSettings"
+                        class="mini-input"
+                        :placeholder="t('tonePlaceholder')"
+                      ></el-input>
+                    </el-form-item>
+                  </div>
+                </div>
+              </div>
+              <!-- 联网搜索界面 -->
+              <div v-show="subMenu === 'websearch'" class="page">
+                <el-form :model="webSearchSettings" class="settings-form"  label-position="top">
+                  <div class="tool-item">
+                    <div class="tool-header" @click="toggleSection('webSearchConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          {{ t('webSearch') }}
+                        </span>
+                      </div>
+                      <el-switch v-model="webSearchSettings.enabled" @click.stop @change="autoSaveSettings"/>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.webSearchConfig">
+                      <el-form-item :label="t('searchEngine')" class="form-item-align">
+                        <el-select
+                          v-model="webSearchSettings.engine"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option label="DuckDuckGo" value="duckduckgo" ></el-option>
+                          <el-option label="SearXNG" value="searxng" ></el-option>
+                          <el-option label="tavily" value="tavily" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('webCrawling')" class="form-item-align">
+                        <el-select
+                          v-model="webSearchSettings.crawler"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option label="Jina" value="jina" ></el-option>
+                          <el-option label="Crawl4AI" value="crawl4ai" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('webSearchTiming')" class="form-item-align">
+                        <el-select
+                          v-model="webSearchSettings.when"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option :label="t('beforeThinking')" value="before_thinking" ></el-option>
+                          <el-option :label="t('afterThinking')" value="after_thinking" ></el-option>
+                          <el-option :label="t('both')" value="both" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'duckduckgo'">
+                    <div class="tool-header" @click="toggleSection('duckduckgoConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          DuckDuckGo
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.duckduckgoConfig">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.duckduckgo_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'searxng'">
+                    <div class="tool-header" @click="toggleSection('searxngConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          SearXNG
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.searxngConfig">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.searxng_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('baseURL')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.searxng_url"
+                          :placeholder="t('searxngURLPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'tavily'">
+                    <div class="tool-header" @click="toggleSection('tavilyConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Tavily
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.tavilyConfig">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.tavily_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.tavily_api_key"
+                          :placeholder="t('tavilyAPIKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <div class="tool-item" v-show="webSearchSettings.crawler === 'jina'">
+                    <div class="tool-header" @click="toggleSection('jinaConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          jina
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.jinaConfig">
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.jina_api_key"
+                          :placeholder="t('jinaAPIKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <div class="tool-item" v-show="webSearchSettings.crawler === 'crawl4ai'">
+                    <div class="tool-header" @click="toggleSection('Crawl4AiConfig')">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Crawl4Ai
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.Crawl4AiConfig">
+                      <el-form-item :label="t('baseURL')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.Crawl4Ai_url"
+                          :placeholder="t('crawl4AiURLPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.Crawl4Ai_api_key"
+                          :placeholder="t('crawl4AiAPIKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                </el-form>
+              </div>
+              <!-- 知识库界面 -->
+              <div v-show="subMenu === 'document'" class="page">
+                  <!-- 磁贴网格 -->
+                  <div class="provider-grid">
+                    <!-- 知识库磁贴 -->
+                    <div class="provider-card knowledge-card" v-for="kb in knowledgeBases" :key="kb.id">
+                      <div class="card-header">
+                        <!-- 加载状态指示 -->
+                        <template v-if="kb.processingStatus === 'processing'">
+                          <el-icon class="loading-spinner">
+                            <i class="fa-solid fa-spinner"></i>
+                          </el-icon>
+                        </template>
+                        <template v-else>
+                          <el-switch v-model="kb.enabled" @change="toggleKbEnabled(kb)"></el-switch>
+                        </template>
+
+                        <div class="card-actions">
+                          <el-button @click="removeKnowledgeBase(kb)" type="danger"  circle size="small">
+                            <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                        </div>
+                      </div>
+
+                      <!-- 内容区域根据状态显示 -->
+                      <!-- 修改模板部分 -->
+                      <template v-if="kb.processingStatus !== 'processing'">
+                        <div class="kb-content">
+                          <div class="kb-header">
+                            <h3 class="kb-title">{{ kb.name }}</h3>
+                            <el-tag v-if="kb.files?.length" type="info" size="small" effect="dark">
+                              {{ kb.files.length }} {{ t('files') }}
+                            </el-tag>
+                          </div>
+                          <p class="kb-description">{{ kb.introduction || t('noDescription') }}</p>
+                          <div class="kb-meta">
+                            <div class="kb-meta-item">
+                              <el-icon class="kb-icon">
+                                <i class="fa-solid fa-file"></i>
+                              </el-icon>
+                              <span>{{ t('model') }}: {{ kb.model || t('default') }}</span>
+                            </div>
+                            <div class="kb-meta-item">
+                              <el-icon class="kb-icon">
+                                <i class="fa-solid fa-database"></i>
+                              </el-icon>
+                              <span>{{ t('segment') }}: {{ kb.chunk_size }} / {{ kb.chunk_overlap }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </template>
+                      <div v-else class="processing-message">
+                        <p>{{ t('knowledgeBaseGenerating') }}</p>
+                      </div>
+                    </div>
+                    <!-- 添加新知识库磁贴 -->
+                    <div class="provider-card add-tile" @click="showAddKbDialog = true;currentUploadType = 'file'">
+                      <el-icon :size="40" color="#909399">
+                        <i class="fa-solid fa-plus"></i>
+                      </el-icon>
+                      <div style="color: #606266; margin-top: 10px;">{{ t('addNewKnowledgeBase') }}</div>
+                    </div>
+                  </div>
+
+                  <!-- 添加知识库对话框 -->
+                  <el-dialog
+                    v-model="showAddKbDialog"
+                    :title="t('addNewKnowledgeBase')"
+                    width="600px"
+                    @closed="() => {
+                      newKb = {
+                        name: '',
+                        introduction: '',
+                        providerId: null,
+                        model: '',
+                        base_url: '',
+                        api_key: '',
+                        chunk_size: 1024,
+                        chunk_overlap: 256,
+                        chunk_k: 5
+                      }
+                    }"
+                  >
+                    <el-form label-position="top" label-width="120px">
+                      <el-form-item :label="t('knowledgeBaseName')" required>
+                        <el-input v-model="newKb.name" :placeholder="t('enterKnowledgeBaseName')" />
+                      </el-form-item>
+
+                      <el-form-item :label="t('knowledgeBaseIntro')">
+                        <el-input v-model="newKb.introduction" type="textarea" :placeholder="t('enterKnowledgeBaseIntro')" />
+                      </el-form-item>
+
+                      <el-form-item :label="t('provider')" required>
+                        <el-select
+                          v-model="newKb.providerId"
+                          :placeholder="t('selectProvider')"
+                          filterable
+                          @change="selectKbProvider"
+                          class="full-width-input"
+                        >
+                          <el-option
+                            v-for="provider in modelProviders"
+                            :key="provider.id"
+                            :label="provider.vendor+' - '+provider.modelId"
+                            :value="provider.id"
+                          >
+                            <div class="provider-option">
+                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <span class="model-id">{{ provider.modelId }}</span>
+                            </div>
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-alert type="info" :closable="false" class="mb-2">
+                        <template #default>
+                          <div class="alert-content">
+                            {{ t('firstTimeUse') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              class="font-medium"
+                              @click="switchToApiBox"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('keyBoxInterface') }}
+                            </el-link>
+                            {{ t('addProviderReturnSelect') }}
+                            {{ t('addemdNotice') }}
+                          </div>
+                        </template>
+                      </el-alert>
+                      <el-collapse v-model="activeCollapse" class="advanced-settings">
+                        <el-collapse-item name="advanced">
+                          <template #title>
+                            <div class="collapse-title">
+                              <el-icon class="mr-2">
+                                <i class="fa-solid fa-chevron-right"></i>
+                              </el-icon>
+                              <span class="font-medium">{{ t('advancedSettings') }}</span>
+                            </div>
+                          </template>
+                          <el-form-item :label="t('modelName')" required>
+                            <el-input
+                              v-model="newKb.model"
+                              :placeholder="t('modelName')"
+                            />
+                          </el-form-item>
+
+                          <el-form-item :label="t('baseURL')" required>
+                            <el-input
+                              v-model="newKb.base_url"
+                              :placeholder="t('baseURL')"
+                            />
+                          </el-form-item>
+
+                          <el-form-item :label="t('apiKey')" required>
+                            <el-input
+                              v-model="newKb.api_key"
+                              :placeholder="t('apiKey')"
+                              show-password
+                            />
+                          </el-form-item>
+
+                          <el-form-item :label="t('segmentSize')">
+                            <el-slider
+                              v-model="newKb.chunk_size"
+                              :min="512"
+                              :max="4096"
+                              :step="512"
+                              @input="autoSaveSettings"
+                            />
+                          </el-form-item>
+                          <el-form-item :label="t('overlapSize')">
+                            <el-slider
+                              v-model="newKb.chunk_overlap"
+                              :min="128"
+                              :max="1024"
+                              :step="128"
+                              @input="autoSaveSettings"
+                            />
+                          </el-form-item>
+                          <el-form-item :label="t('returnParagraphs')">
+                            <el-slider
+                              v-model="newKb.chunk_k"
+                              :min="1"
+                              :max="50"
+                              :step="1"
+                              @input="autoSaveSettings"
+                            />
+                          </el-form-item>
+                        </el-collapse-item>
+                      </el-collapse>
+                    </el-form>
+                    <!-- 文件上传区域 -->
+                    <el-form-item>
+                      <div
+                        class="drop-zone"
+                        @dragover.prevent
+                        @drop.prevent="handleKbDrop"
+                        @click="browseKbFiles"
+                      >
+                        <el-icon :size="50">
+                          <i class="fa-solid fa-upload"></i>
+                        </el-icon>
+                        <p>{{ t('clickOrDrop') }}</p>
+                      </div>
+
+                      <!-- 紧凑型文件列表 -->
+                      <div class="compact-file-list" v-if="newKbFiles.length">
+                        <div
+                          v-for="(file, index) in newKbFiles"
+                          :key="index"
+                          class="compact-file-item"
+                        >
+                          <span class="file-name">@{{ file.name }}</span>
+                          <el-button
+                            @click.stop="removeKbFile(index)"
+                            class="delete-icon"
+                            circle
+                          />
+                          <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                        </div>
+                      </div>
+                    </el-form-item>
+                    <template #footer>
+                      <el-button @click="showAddKbDialog = false">{{ t('cancel') }}</el-button>
+                      <el-button
+                        type="primary"
+                        @click="createKnowledgeBase"
+                        :disabled="!newKb.name || !newKb.providerId"
+                      >
+                        {{ t('createImmediately') }}
+                      </el-button>
+                    </template>
+                  </el-dialog>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 系统设置页面 -->
+        <div v-show="activeMenu === 'system'" class="page tools-container">
+          <el-form :model="systemSettings" class="settings-form" label-position="top">
+            <div class="tool-item">
+              <div class="tool-header">
+                <span>
+                  <el-icon>
+                    <i class="fa-solid fa-language"></i>
+                  </el-icon>
+                  {{ t('systemLanguage') }}
+                </span>
+              </div>
+              <div class="tool-content">
+                <el-form-item class="form-item-align">
+                  <el-select
+                    v-model="systemSettings.language"
+                    @change="handleSystemLanguageChange"
+                    class="full-width-input">
+                    <el-option
+                      v-for="option in systemlanguageOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+
+            <div class="tool-item">
+              <div class="tool-header">
+                <span>
+                  <el-icon>
+                    <i class="fa-solid fa-brush"></i>
+                  </el-icon>
+                  {{ t('themeSettings') }}
+                </span>
+              </div>
+              <div class="tool-content">
+                <el-form-item class="form-item-align">
+                  <el-select
+                    v-model="systemSettings.theme"
+                    @change="handleThemeChange"
+                    class="full-width-input">
+                    <el-option
+                      v-for="option in themeOptions"
+                      :key="option.value"
+                      :label="option.label"
+                      :value="option.value">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+          </el-form>
         </div>
 
         <div v-show="activeMenu === 'agent_group'" class="page agent-suite-container">
@@ -1059,141 +2153,6 @@
           </div>
         </div>
 
-
-        <div v-show="activeMenu === 'api-box'" class="page tools-container">
-            <!-- 磁贴网格 -->
-            <div class="provider-grid">
-              <!-- 已有供应商磁贴 -->
-              <div class="provider-card" v-for="(provider, index) in modelProviders" :key="provider.id">
-                <div class="card-header">
-                  <el-tag type="info" class="vendor-tag">{{ provider.vendor }}</el-tag>
-                  <div class="card-actions">
-                    <el-button
-                      @click="fetchModelsForProvider(provider)"
-                      type="primary"
-                      circle
-                      size="small"
-                    >
-                    <i class="fa-solid fa-magnifying-glass"></i>
-                    </el-button>
-                    <el-button
-                      @click="removeProvider(index)"
-                      type="danger"
-                      circle
-                      size="small"
-                    >
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-
-                <div class="input-group">
-                  <!-- 添加输入框标签 -->
-                  <div class="input-item">
-                    <label>{{ t('apiAddress') }}</label>
-                    <el-input
-                      v-model="provider.url"
-                      :placeholder="t('apiAddressPlaceholder')"
-                      @change="autoSaveSettings"
-                    />
-                  </div>
-
-                  <div class="input-item">
-                    <label>{{ t('apiKey') }}</label>
-                    <el-input
-                      v-model="provider.apiKey"
-                      :placeholder="t('apiKeyPlaceholder')"
-                      show-password
-                      @change="autoSaveSettings"
-                    />
-                  </div>
-
-                  <div class="input-item">
-                    <label>{{ t('modelId') }}</label>
-                    <el-select
-                      v-model="provider.modelId"
-                      filterable
-                      allow-create
-                      :placeholder="provider.models?.length ? t('selectOrTypeModel') : t('modelIdPlaceholder')"
-                      class="model-select"
-                      @change="autoSaveSettings"
-                    >
-                      <el-option
-                        v-for="model in provider.models"
-                        :key="model"
-                        :label="model"
-                        :value="model"
-                      />
-                    </el-select>
-                  </div>
-                </div>
-              </div>
-              <!-- 添加新磁贴 -->
-              <div class="provider-card add-tile" @click="showAddDialog = true">
-                <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addNewProvider') }}</div>
-              </div>
-            </div>
-
-            <!-- 添加供应商对话框 -->
-            <el-dialog
-              v-model="showAddDialog"
-              :title="t('addNewProvider')"
-              width="500px"
-              @closed="newProviderTemp = { vendor: '', url: '' }"
-            >
-              <el-form label-position="top">
-                <el-form-item :label="t('provider')" required>
-                  <el-select
-                    v-model="newProviderTemp.vendor"
-                    :placeholder="t('pleaseSelect')"
-                    @change="handleVendorChange"
-                  >
-                    <el-option
-                      v-for="item in vendorOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                </el-form-item>
-
-                <el-form-item
-                  v-if="newProviderTemp.vendor === 'custom'"
-                  :label="t('customURL')"
-                  required
-                >
-                  <el-input
-                    v-model="newProviderTemp.url"
-                    placeholder="https://api.example.com/v1"
-                  />
-                </el-form-item>
-
-                <div v-if="newProviderTemp.vendor && newProviderTemp.vendor !== 'custom'">
-                  <el-alert
-                    :title="t('defaultConfigInfo')"
-                    type="info"
-                    :closable="false"
-                    class="mb-2"
-                  >
-                    {{ t('autoFilledDefaultAPI') }} {{ newProviderTemp.vendor }}<br>
-                    {{ t('enterApiKeyThenClick') }}
-                  </el-alert>
-                </div>
-              </el-form>
-
-              <template #footer>
-                <el-button @click="showAddDialog = false">{{ t('cancel') }}</el-button>
-                <el-button
-                  type="primary"
-                  @click="confirmAddProvider"
-                  :disabled="!validProvider"
-                >
-                  {{ t('confirmAdd') }}
-                </el-button>
-              </template>
-            </el-dialog>
-        </div>
         <!-- logo页面 -->
         <div v-show="activeMenu === 'logo'" class="page logo-container">
           <div class="license-notice">
@@ -1273,1042 +2232,138 @@
           </div>
         </div>
 
-      <!-- 工具界面 -->
-      <div v-show="activeMenu === 'tools'" class="page tools-container">
-        <div class="provider-grid">
-          <!-- 当前时间工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch 
-                v-model="toolsSettings.time.enabled" 
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div class="tool-card-title">
-              <h3 class="kb-title">{{ t('currentTime') }}</h3>
-            </div>
-          </div>
-
-          <!-- 深度研究工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch
-                v-model="toolsSettings.deepsearch.enabled"
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div class="tool-card-title">
-              <h3 class="kb-title">{{ t('deepResearch') }}</h3>
-            </div>
-          </div>
-
-          <!-- 推理工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch
-                v-model="toolsSettings.inference.enabled"
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div class="tool-card-title">
-              <h3 class="kb-title">{{ t('fakeInference') }}</h3>
-            </div>
-          </div>
-
-          <!-- 图像生成工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch
-                v-model="toolsSettings.pollinations.enabled"
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div class="tool-card-title">
-              <h3 class="kb-title">{{ t('pollinationsImageGeneration') }}</h3>
-            </div>
-          </div>
-
-          <!-- LaTeX增强工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch
-                v-model="toolsSettings.formula.enabled"
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div>
-              <h3 class="kb-title">{{ t('latexRenderingEnhancement') }}</h3>
-            </div>
-          </div>
-
-          <!-- 语言语调工具 -->
-          <div class="provider-card tool-card">
-            <div class="card-header">
-              <el-switch
-                v-model="toolsSettings.language.enabled"
-                @change="autoSaveSettings"
-                class="tool-switch"
-              ></el-switch>
-            </div>
-            <div class="tool-card-title">
-              <h3 class="kb-title">{{ t('languageTone') }}</h3>
-            </div>
-            <el-form-item :label="t('assistantLanguage')">
-              <el-input
-                v-model="toolsSettings.language.language"
-                @blur="autoSaveSettings"
-                class="mini-input"
-                :placeholder="t('languagePlaceholder')"
-              ></el-input>
-            </el-form-item>
-            
-            <el-form-item :label="t('assistantTone')">
-              <el-input
-                v-model="toolsSettings.language.tone"
-                @blur="autoSaveSettings"
-                class="mini-input"
-                :placeholder="t('tonePlaceholder')"
-              ></el-input>
-            </el-form-item>
-          </div>
-        </div>
-      </div>
-
-        <!-- 联网搜索界面 -->
-        <div v-show="activeMenu === 'websearch'" class="page tools-container">
-          <el-form :model="webSearchSettings" class="settings-form"  label-position="top">
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('webSearchConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    {{ t('webSearch') }}
-                  </span>
-                </div>
-                <el-switch v-model="webSearchSettings.enabled" @click.stop @change="autoSaveSettings"/>
-              </div>
-              <div class="tool-content" v-show="expandedSections.webSearchConfig">
-                <el-form-item :label="t('searchEngine')" class="form-item-align">
-                  <el-select
-                    v-model="webSearchSettings.engine"
-                    @change="autoSaveSettings"
-                    class="full-width-input"
-                  >
-                    <el-option label="DuckDuckGo" value="duckduckgo" ></el-option>
-                    <el-option label="SearXNG" value="searxng" ></el-option>
-                    <el-option label="tavily" value="tavily" ></el-option>
-                  </el-select>
-                </el-form-item>
-                <el-form-item :label="t('webCrawling')" class="form-item-align">
-                  <el-select
-                    v-model="webSearchSettings.crawler"
-                    @change="autoSaveSettings"
-                    class="full-width-input"
-                  >
-                    <el-option label="Jina" value="jina" ></el-option>
-                    <el-option label="Crawl4AI" value="crawl4ai" ></el-option>
-                  </el-select>
-                </el-form-item>
-                <el-form-item :label="t('webSearchTiming')" class="form-item-align">
-                  <el-select
-                    v-model="webSearchSettings.when"
-                    @change="autoSaveSettings"
-                    class="full-width-input"
-                  >
-                    <el-option :label="t('beforeThinking')" value="before_thinking" ></el-option>
-                    <el-option :label="t('afterThinking')" value="after_thinking" ></el-option>
-                    <el-option :label="t('both')" value="both" ></el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-            </div>
-            <div class="tool-item" v-show="webSearchSettings.engine === 'duckduckgo'">
-              <div class="tool-header" @click="toggleSection('duckduckgoConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    DuckDuckGo
-                  </span>
+        <div v-show="activeMenu === 'api-group'" class="page agent-suite-container">
+          <div class="suite-layout">
+            <!-- 左侧导航 -->
+            <div class="suite-sidebar">
+              <div class="tile-nav">
+                <div 
+                  v-for="tile in apiTiles" 
+                  :key="tile.id"
+                  class="nav-item"
+                  :class="{ active: subMenu === tile.id }"
+                  @click="subMenu = tile.id">
+                  <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                  <span class="nav-text">{{ t(tile.title) }}</span>
                 </div>
               </div>
-              <div class="tool-content" v-show="expandedSections.duckduckgoConfig">
-                <el-form-item :label="t('resultCount')" class="form-item-align">
-                  <el-slider
-                    v-model="webSearchSettings.duckduckgo_max_results"
-                    :min="1"
-                    :max="20"
-                    :step="1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-              </div>
             </div>
-            <div class="tool-item" v-show="webSearchSettings.engine === 'searxng'">
-              <div class="tool-header" @click="toggleSection('searxngConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    SearXNG
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.searxngConfig">
-                <el-form-item :label="t('resultCount')" class="form-item-align">
-                  <el-slider
-                    v-model="webSearchSettings.searxng_max_results"
-                    :min="1"
-                    :max="20"
-                    :step="1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('baseURL')" class="form-item-align">
-                  <el-input
-                    v-model="webSearchSettings.searxng_url"
-                    :placeholder="t('searxngURLPlaceholder')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-            <div class="tool-item" v-show="webSearchSettings.engine === 'tavily'">
-              <div class="tool-header" @click="toggleSection('tavilyConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    Tavily
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.tavilyConfig">
-                <el-form-item :label="t('resultCount')" class="form-item-align">
-                  <el-slider
-                    v-model="webSearchSettings.tavily_max_results"
-                    :min="1"
-                    :max="20"
-                    :step="1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('apiKey')" class="form-item-align">
-                  <el-input
-                    v-model="webSearchSettings.tavily_api_key"
-                    :placeholder="t('tavilyAPIKeyPlaceholder')"
-                    show-password
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-            <div class="tool-item" v-show="webSearchSettings.crawler === 'jina'">
-              <div class="tool-header" @click="toggleSection('jinaConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    jina
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.jinaConfig">
-                <el-form-item :label="t('apiKey')" class="form-item-align">
-                  <el-input
-                    v-model="webSearchSettings.jina_api_key"
-                    :placeholder="t('jinaAPIKeyPlaceholder')"
-                    show-password
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-            <div class="tool-item" v-show="webSearchSettings.crawler === 'crawl4ai'">
-              <div class="tool-header" @click="toggleSection('Crawl4AiConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-globe"></i>
-                    </el-icon>
-                    Crawl4Ai
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.Crawl4AiConfig">
-                <el-form-item :label="t('baseURL')" class="form-item-align">
-                  <el-input
-                    v-model="webSearchSettings.Crawl4Ai_url"
-                    :placeholder="t('crawl4AiURLPlaceholder')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('apiKey')" class="form-item-align">
-                  <el-input
-                    v-model="webSearchSettings.Crawl4Ai_api_key"
-                    :placeholder="t('crawl4AiAPIKeyPlaceholder')"
-                    show-password
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-          </el-form>
-        </div>
-        <!-- API列表界面 -->
-        <div v-show="activeMenu === 'api'" class="page tools-container">
-          <el-form class="settings-form">
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('superapi')">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-link"></i>
-                    </el-icon>
-                    {{ t('useSuperAPI') }}
-                  </span>
-              </div>
-              <div class="tool-content" v-show="expandedSections.superapi">
-                <el-alert
-                  type="info"
-                  :closable="false"
-                  class="mb-2"
-                >
-                  {{ t('superAPIInstructions') }}
-                </el-alert>
-                <!-- 模型名称 -->
-                <el-form-item :label="t('modelName')" class="form-item-align">
-                  <el-input
-                    :value="'super-model'"
-                    readonly
-                    class="full-width-input"
-                  >
-                    <template #append>
-                      <el-button
-                        @click="copyModel"
-                        class="copy-btn"
+            <!-- 右侧内容 -->
+            <div class="suite-content">
+              <!-- OpenAI风格API -->
+              <div v-show="subMenu === 'openai'" class="page">
+                <el-form class="settings-form">
+                  <div class="tool-item">
+                    <!-- 原有SuperAPI内容 -->
+                    <div class="tool-header">
+                      <span>
+                        <el-icon><i class="fa-solid fa-link"></i></el-icon>
+                        {{ t('openaiStyleAPI') }}
+                      </span>
+                    </div>
+                    <div class="tool-content" v-show="expandedSections.superapi">
+                      <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
                       >
-                      <i class="fa-solid fa-copy"></i>
-                      </el-button>
-                    </template>
-                  </el-input>
-                </el-form-item>
+                        {{ t('superAPIInstructions') }}
+                      </el-alert>
+                      <!-- 模型名称 -->
+                      <el-form-item :label="t('modelName')" class="form-item-align">
+                        <el-input
+                          :value="'super-model'"
+                          readonly
+                          class="full-width-input"
+                        >
+                          <template #append>
+                            <el-button
+                              @click="copyModel"
+                              class="copy-btn"
+                            >
+                            <i class="fa-solid fa-copy"></i>
+                            </el-button>
+                          </template>
+                        </el-input>
+                      </el-form-item>
 
-                <!-- API端点 -->
-                <el-form-item :label="t('apiEndpoint')" class="form-item-align">
-                  <el-input
-                    :value="'http://127.0.0.1:3456/v1'"
-                    readonly
-                    class="full-width-input"
-                  >
-                    <template #append>
-                      <el-button
-                        @click="copyEndpoint"
-                        class="copy-btn"
-                      >
-                      <i class="fa-solid fa-copy"></i>
-                      </el-button>
-                    </template>
-                  </el-input>
-                </el-form-item>
-                <!-- 在index.html的API配置区块内添加 -->
-                <el-form-item :label="t('exampleLanguage')" class="form-item-align">
-                  <el-select
-                    v-model="selectedCodeLang"
-                    @change="autoSaveSettings"
-                    class="full-width-input"
-                  >
-                    <el-option label="Python" value="python"></el-option>
-                    <el-option label="JavaScript" value="javascript"></el-option>
-                    <el-option label="cURL" value="curl"></el-option>
-                  </el-select>
-                </el-form-item>
+                      <!-- API端点 -->
+                      <el-form-item :label="t('apiEndpoint')" class="form-item-align">
+                        <el-input
+                          :value="'http://127.0.0.1:3456/v1'"
+                          readonly
+                          class="full-width-input"
+                        >
+                          <template #append>
+                            <el-button
+                              @click="copyEndpoint"
+                              class="copy-btn"
+                            >
+                            <i class="fa-solid fa-copy"></i>
+                            </el-button>
+                          </template>
+                        </el-input>
+                      </el-form-item>
+                      <!-- 在index.html的API配置区块内添加 -->
+                      <el-form-item :label="t('exampleLanguage')" class="form-item-align">
+                        <el-select
+                          v-model="selectedCodeLang"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option label="Python" value="python"></el-option>
+                          <el-option label="JavaScript" value="javascript"></el-option>
+                          <el-option label="cURL" value="curl"></el-option>
+                        </el-select>
+                      </el-form-item>
 
-                <!-- 修改index.html中的代码块结构 -->
-                <div class="code-block">
-                  <div class="code-header">
-                    <span class="code-lang">{{ selectedCodeLang }}</span>
-                    <button class="copy-button" @click.prevent="handleCopy"><i class="fa-solid fa-copy"></i></button>
+                      <!-- 修改index.html中的代码块结构 -->
+                      <div class="code-block">
+                        <div class="code-header">
+                          <span class="code-lang">{{ selectedCodeLang }}</span>
+                          <button class="copy-button" @click.prevent="handleCopy"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                        <pre><code class="hljs" :class="'language-' + selectedCodeLang">{{ codeExamples[selectedCodeLang] }}</code></pre>
+                      </div>
+                    </div>
                   </div>
-                  <pre><code class="hljs" :class="'language-' + selectedCodeLang">{{ codeExamples[selectedCodeLang] }}</code></pre>
-                </div>
+                </el-form>
               </div>
-            </div>
-            <div class="tool-item">
-              <span>
-                <el-icon>
-                  <i class="fa-solid fa-globe"></i>
-                </el-icon>
-                {{ t('useWebmode') }}
-              </span>
-              <div class="browser-mode-btn-container">
-                <el-button
-                  class="browser-mode-btn"
-                  type="primary"
-                  @click="launchBrowserMode"
-                  :color="browserBtnColor"
-                  round
-                  size="large">
-                  <i class="fa-solid fa-globe" v-if="!isBrowserOpening"></i>
-                  <transition name="bounce">
-                    <span v-if="isBrowserOpening" class="ml-2">
-                      <el-icon class="is-loading"><loading /></el-icon>
-                      {{ t('launching') }}
+              <!-- 浏览器模式 -->
+              <div v-show="subMenu === 'browser'" class="page">
+                <el-form class="settings-form">
+                  <div class="tool-item">
+                    <span>
+                      <el-icon>
+                        <i class="fa-solid fa-globe"></i>
+                      </el-icon>
+                      {{ t('useWebmode') }}
                     </span>
-                    <span v-else class="ml-2">
-                      {{ t('launchBrowserMode') }}
-                    </span>
-                  </transition>
-                </el-button>
+                    <div class="browser-mode-btn-container">
+                      <el-button
+                        class="browser-mode-btn"
+                        type="primary"
+                        @click="launchBrowserMode"
+                        :color="browserBtnColor"
+                        round
+                        size="large">
+                        <i class="fa-solid fa-globe" v-if="!isBrowserOpening"></i>
+                        <transition name="bounce">
+                          <span v-if="isBrowserOpening" class="ml-2">
+                            <el-icon class="is-loading"><loading /></el-icon>
+                            {{ t('launching') }}
+                          </span>
+                          <span v-else class="ml-2">
+                            {{ t('launchBrowserMode') }}
+                          </span>
+                        </transition>
+                      </el-button>
+                    </div>
+                  </div>
+                </el-form>
               </div>
+            </div>
           </div>
-          </el-form>
-        </div>
-
-
-        <!-- 主模型界面 -->
-        <!-- 修改后的主模型界面 -->
-        <div v-show="activeMenu === 'settings'" class="page tools-container">
-          <el-form :model="settings" class="settings-form" label-position="top">
-            <div class="tool-item">
-              <!-- 基础配置（仅供应商） -->
-              <div class="tool-header" @click="toggleSection('settingsBase')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-microchip"></i>
-                    </el-icon>
-                    {{ t('basicConfiguration') }}
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.settingsBase">
-                <el-form-item :label="t('provider')" class="form-item-align">
-                  <el-select
-                    v-model="settings.selectedProvider"
-                    :placeholder="t('selectProvider')"
-                    filterable
-                    @change="selectMainProvider"
-                    @visible-change="handleMainProviderVisibleChange"
-                    class="full-width-input"
-                  >
-                    <el-option
-                      v-for="provider in modelProviders"
-                      :key="provider.id"
-                      :label="provider.vendor+' - '+provider.modelId"
-                      :value="provider.id"
-                    >
-                      <div class="provider-option">
-                        <span class="vendor-tag">{{ provider.vendor }}</span>
-                        <span class="model-id">{{ provider.modelId }}</span>
-                      </div>
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-                <el-alert
-                  type="info"
-                  :closable="false"
-                  class="mb-2"
-                >
-                  <template #default>
-                    <div class="alert-content">
-                      {{ t('firstTimeUse') }}
-                      <el-link
-                        type="primary"
-                        :underline="false"
-                        class="font-medium"
-                        @click="switchToApiBox"
-                      >
-                        <el-icon class="mr-1">
-                          <i class="fa-solid fa-key"></i>
-                        </el-icon>{{ t('keyBoxInterface') }}
-                      </el-link>
-                      {{ t('addProviderReturnSelect') }}
-                      {{ t('mainmodelnotice') }}
-                    </div>
-                  </template>
-                </el-alert>
-            </div>
-            <!-- 新增高级配置 -->
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('settingsAdvanced')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-chevron-right"></i>
-                    </el-icon>
-                    {{ t('advancedConfiguration') }}
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.settingsAdvanced">
-                <el-form-item :label="t('modelName')" class="form-item-align">
-                  <el-input
-                    v-model="settings.model"
-                    :placeholder="t('modelName')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('baseURL')" class="form-item-align">
-                  <el-input
-                    v-model="settings.base_url"
-                    :placeholder="t('baseURL')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('apiKey')" class="form-item-align">
-                  <el-input
-                    v-model="settings.api_key"
-                    :placeholder="t('apiKey')"
-                    show-password
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('temperature')" class="form-item-align">
-                  <el-slider
-                    v-model="settings.temperature"
-                    :min="0"
-                    :max="1"
-                    :step="0.1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item :label="'top_p'" class="form-item-align">
-                  <el-slider
-                    v-model="settings.top_p"
-                    :min="0"
-                    :max="1"
-                    :step="0.1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('outputLength')" class="form-item-align">
-                  <el-slider
-                    v-model="settings.max_tokens"
-                    :min="0"
-                    :max="128000"
-                    :step="1024"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('conversationRounds')" class="form-item-align">
-                  <el-slider
-                    v-model="settings.max_rounds"
-                    :min="0"
-                    :max="1000"
-                    :step="2"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-                <div class="param-header">
-                  <span>{{ t('extraParams') }}</span>
-                  <el-button 
-                    @click="addParam"
-                    type="primary"
-                    circle
-                    size="small"
-                    class="header-add-btn"
-                  >
-                    <i class="fa-solid fa-plus"></i>
-                  </el-button>
-                </div>
-                <div class="extra-params">
-                  <div
-                    v-for="(param, index) in settings.extra_params"
-                    :key="index"
-                    class="param-row"
-                  >
-                    <el-input
-                      v-model="param.name"
-                      :placeholder="t('paramName')"
-                      class="param-input"
-                    ></el-input>
-                
-                    <el-select
-                      v-model="param.type"
-                      :placeholder="t('paramType')"
-                      @change="updateParamType(index)"
-                      class="type-select"
-                    >
-                      <el-option
-                        v-for="type in paramTypes"
-                        :key="type.value"
-                        :label="t(type.label)"
-                        :value="type.value"
-                      ></el-option>
-                    </el-select>
-                
-                    <!-- 动态输入组件 -->
-                    <div class="value-input">
-                      <el-input
-                        v-show="param.type === 'string'"
-                        v-model="param.value"
-                        :placeholder="t('paramValue')"
-                        @input="autoSaveSettings"
-                      ></el-input>
-                    
-                      <el-input-number
-                        v-show="param.type === 'integer'"
-                        v-model="param.value"
-                        :step="1"         
-                        :precision="0"   
-                        @input="autoSaveSettings"
-                      ></el-input-number>
-                    
-                      <el-input-number
-                        v-show="param.type === 'float'"
-                        v-model="param.value"
-                        :step="0.5"      
-                        :precision="2"    
-                        @input="autoSaveSettings"
-                      ></el-input-number>
-
-                      <el-switch 
-                        v-show="param.type === 'boolean'" 
-                        v-model="param.value" 
-                        @change="autoSaveSettings"
-                      ></el-switch>
-                    </div>
-                
-                    <el-button
-                      @click="removeParam(index)"
-                      type="danger"
-                      circle
-                      size="small"
-                      class="remove-btn"
-                    >
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </el-form>
-        </div>
-        <!-- 知识库页面 -->
-        <div v-show="activeMenu === 'document'" class="page knowledge-base-container">
-            <!-- 磁贴网格 -->
-            <div class="provider-grid">
-              <!-- 知识库磁贴 -->
-              <div class="provider-card knowledge-card" v-for="kb in knowledgeBases" :key="kb.id">
-                <div class="card-header">
-                  <!-- 加载状态指示 -->
-                  <template v-if="kb.processingStatus === 'processing'">
-                    <el-icon class="loading-spinner">
-                      <i class="fa-solid fa-spinner"></i>
-                    </el-icon>
-                  </template>
-                  <template v-else>
-                    <el-switch v-model="kb.enabled" @change="toggleKbEnabled(kb)"></el-switch>
-                  </template>
-
-                  <div class="card-actions">
-                    <el-button @click="removeKnowledgeBase(kb)" type="danger"  circle size="small">
-                      <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-
-                <!-- 内容区域根据状态显示 -->
-                <!-- 修改模板部分 -->
-                <template v-if="kb.processingStatus !== 'processing'">
-                  <div class="kb-content">
-                    <div class="kb-header">
-                      <h3 class="kb-title">{{ kb.name }}</h3>
-                      <el-tag v-if="kb.files?.length" type="info" size="small" effect="dark">
-                        {{ kb.files.length }} {{ t('files') }}
-                      </el-tag>
-                    </div>
-                    <p class="kb-description">{{ kb.introduction || t('noDescription') }}</p>
-                    <div class="kb-meta">
-                      <div class="kb-meta-item">
-                        <el-icon class="kb-icon">
-                          <i class="fa-solid fa-file"></i>
-                        </el-icon>
-                        <span>{{ t('model') }}: {{ kb.model || t('default') }}</span>
-                      </div>
-                      <div class="kb-meta-item">
-                        <el-icon class="kb-icon">
-                          <i class="fa-solid fa-database"></i>
-                        </el-icon>
-                        <span>{{ t('segment') }}: {{ kb.chunk_size }} / {{ kb.chunk_overlap }}</span>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-                <div v-else class="processing-message">
-                  <p>{{ t('knowledgeBaseGenerating') }}</p>
-                </div>
-              </div>
-              <!-- 添加新知识库磁贴 -->
-              <div class="provider-card add-tile" @click="showAddKbDialog = true">
-                <el-icon :size="40" color="#909399">
-                  <i class="fa-solid fa-plus"></i>
-                </el-icon>
-                <div style="color: #606266; margin-top: 10px;">{{ t('addNewKnowledgeBase') }}</div>
-              </div>
-            </div>
-
-            <!-- 添加知识库对话框 -->
-            <el-dialog
-              v-model="showAddKbDialog"
-              :title="t('addNewKnowledgeBase')"
-              width="600px"
-              @closed="() => {
-                newKb = {
-                  name: '',
-                  introduction: '',
-                  providerId: null,
-                  model: '',
-                  base_url: '',
-                  api_key: '',
-                  chunk_size: 1024,
-                  chunk_overlap: 256,
-                  chunk_k: 5
-                }
-              }"
-            >
-              <el-form label-position="top" label-width="120px">
-                <el-form-item :label="t('knowledgeBaseName')" required>
-                  <el-input v-model="newKb.name" :placeholder="t('enterKnowledgeBaseName')" />
-                </el-form-item>
-
-                <el-form-item :label="t('knowledgeBaseIntro')">
-                  <el-input v-model="newKb.introduction" type="textarea" :placeholder="t('enterKnowledgeBaseIntro')" />
-                </el-form-item>
-
-                <el-form-item :label="t('provider')" required>
-                  <el-select
-                    v-model="newKb.providerId"
-                    :placeholder="t('selectProvider')"
-                    filterable
-                    @change="selectKbProvider"
-                    class="full-width-input"
-                  >
-                    <el-option
-                      v-for="provider in modelProviders"
-                      :key="provider.id"
-                      :label="provider.vendor+' - '+provider.modelId"
-                      :value="provider.id"
-                    >
-                      <div class="provider-option">
-                        <span class="vendor-tag">{{ provider.vendor }}</span>
-                        <span class="model-id">{{ provider.modelId }}</span>
-                      </div>
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-                <el-alert type="info" :closable="false" class="mb-2">
-                  <template #default>
-                    <div class="alert-content">
-                      {{ t('firstTimeUse') }}
-                      <el-link
-                        type="primary"
-                        :underline="false"
-                        class="font-medium"
-                        @click="switchToApiBox"
-                      >
-                        <el-icon class="mr-1">
-                          <i class="fa-solid fa-key"></i>
-                        </el-icon>{{ t('keyBoxInterface') }}
-                      </el-link>
-                      {{ t('addProviderReturnSelect') }}
-                      {{ t('addemdNotice') }}
-                    </div>
-                  </template>
-                </el-alert>
-                <el-collapse v-model="activeCollapse" class="advanced-settings">
-                  <el-collapse-item name="advanced">
-                    <template #title>
-                      <div class="collapse-title">
-                        <el-icon class="mr-2">
-                          <i class="fa-solid fa-chevron-right"></i>
-                        </el-icon>
-                        <span class="font-medium">{{ t('advancedSettings') }}</span>
-                      </div>
-                    </template>
-                    <el-form-item :label="t('modelName')" required>
-                      <el-input
-                        v-model="newKb.model"
-                        :placeholder="t('modelName')"
-                      />
-                    </el-form-item>
-
-                    <el-form-item :label="t('baseURL')" required>
-                      <el-input
-                        v-model="newKb.base_url"
-                        :placeholder="t('baseURL')"
-                      />
-                    </el-form-item>
-
-                    <el-form-item :label="t('apiKey')" required>
-                      <el-input
-                        v-model="newKb.api_key"
-                        :placeholder="t('apiKey')"
-                        show-password
-                      />
-                    </el-form-item>
-
-                    <el-form-item :label="t('segmentSize')">
-                      <el-slider
-                        v-model="newKb.chunk_size"
-                        :min="512"
-                        :max="4096"
-                        :step="512"
-                        @input="autoSaveSettings"
-                      />
-                    </el-form-item>
-                    <el-form-item :label="t('overlapSize')">
-                      <el-slider
-                        v-model="newKb.chunk_overlap"
-                        :min="128"
-                        :max="1024"
-                        :step="128"
-                        @input="autoSaveSettings"
-                      />
-                    </el-form-item>
-                    <el-form-item :label="t('returnParagraphs')">
-                      <el-slider
-                        v-model="newKb.chunk_k"
-                        :min="1"
-                        :max="50"
-                        :step="1"
-                        @input="autoSaveSettings"
-                      />
-                    </el-form-item>
-                  </el-collapse-item>
-                </el-collapse>
-              </el-form>
-              <!-- 文件上传区域 -->
-              <el-form-item>
-                <div
-                  class="drop-zone"
-                  @dragover.prevent
-                  @drop.prevent="handleKbDrop"
-                  @click="browseKbFiles"
-                >
-                  <el-icon :size="50">
-                    <i class="fa-solid fa-upload"></i>
-                  </el-icon>
-                  <p>{{ t('clickOrDrop') }}</p>
-                </div>
-
-                <!-- 紧凑型文件列表 -->
-                <div class="compact-file-list" v-if="newKbFiles.length">
-                  <div
-                    v-for="(file, index) in newKbFiles"
-                    :key="index"
-                    class="compact-file-item"
-                  >
-                    <span class="file-name">@{{ file.name }}</span>
-                    <el-button
-                      @click.stop="removeKbFile(index)"
-                      class="delete-icon"
-                      circle
-                    />
-                    <i class="fa-solid fa-trash"></i>
-                    </el-button>
-                  </div>
-                </div>
-              </el-form-item>
-              <template #footer>
-                <el-button @click="showAddKbDialog = false">{{ t('cancel') }}</el-button>
-                <el-button
-                  type="primary"
-                  @click="createKnowledgeBase"
-                  :disabled="!newKb.name || !newKb.providerId"
-                >
-                  {{ t('createImmediately') }}
-                </el-button>
-              </template>
-            </el-dialog>
-        </div>
-        <div v-show="activeMenu === 'system'" class="page tools-container">
-          <el-form :model="systemSettings" class="settings-form" label-position="top">
-            <div class="tool-item">
-              <div class="tool-header">
-                <span>
-                  <el-icon>
-                    <i class="fa-solid fa-language"></i>
-                  </el-icon>
-                  {{ t('systemLanguage') }}
-                </span>
-              </div>
-              <div class="tool-content">
-                <el-form-item class="form-item-align">
-                  <el-select
-                    v-model="systemSettings.language"
-                    @change="handleSystemLanguageChange"
-                    class="full-width-input">
-                    <el-option
-                      v-for="option in systemlanguageOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-            </div>
-
-            <div class="tool-item">
-              <div class="tool-header">
-                <span>
-                  <el-icon>
-                    <i class="fa-solid fa-brush"></i>
-                  </el-icon>
-                  {{ t('themeSettings') }}
-                </span>
-              </div>
-              <div class="tool-content">
-                <el-form-item class="form-item-align">
-                  <el-select
-                    v-model="systemSettings.theme"
-                    @change="handleThemeChange"
-                    class="full-width-input">
-                    <el-option
-                      v-for="option in themeOptions"
-                      :key="option.value"
-                      :label="option.label"
-                      :value="option.value">
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-            </div>
-          </el-form>
-        </div>
-        <!-- 推理模型界面 -->
-        <div v-show="activeMenu === 'reasoner'" class="page tools-container">
-          <el-form :model="settings" class="settings-form" label-position="top">
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('reasonerConfig')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-atom"></i>
-                    </el-icon>
-                    {{ t('reasonerConfig') }}
-                  </span>
-                </div>
-                <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
-              </div>
-              <div class="tool-content" v-show="expandedSections.reasonerConfig">
-                <el-form-item :label="t('provider')" class="form-item-align">
-                  <el-select
-                    v-model="reasonerSettings.selectedProvider"
-                    :placeholder="t('selectProvider')"
-                    filterable
-                    @change="selectReasonerProvider"
-                    @visible-change="handleReasonerProviderVisibleChange"
-                    class="full-width-input"
-                  >
-                    <el-option
-                      v-for="provider in modelProviders"
-                      :key="provider.id"
-                      :label="provider.vendor+' - '+provider.modelId"
-                      :value="provider.id"
-                    >
-                      <div class="provider-option">
-                        <span class="vendor-tag">{{ provider.vendor }}</span>
-                        <span class="model-id">{{ provider.modelId }}</span>
-                      </div>
-                    </el-option>
-                  </el-select>
-                </el-form-item>
-              </div>
-              <el-alert
-              type="info"
-              :closable="false"
-              class="mb-2"
-            >
-              <template #default>
-                <div class="alert-content">
-                  {{ t('firstTimeUse') }}
-                  <el-link
-                    type="primary"
-                    :underline="false"
-                    class="font-medium"
-                    @click="switchToApiBox"
-                  >
-                    <el-icon class="mr-1">
-                      <i class="fa-solid fa-key"></i>
-                    </el-icon>{{ t('keyBoxInterface') }}
-                  </el-link>
-                  {{ t('addProviderReturnSelect') }}
-                  {{ t('addresonerNotice') }}
-                </div>
-              </template>
-            </el-alert>
-            </div>
-            <div class="tool-item">
-              <div class="tool-header" @click="toggleSection('reasonerAdvanced')">
-                <div class="header-left">
-                  <span>
-                    <el-icon>
-                      <i class="fa-solid fa-chevron-right"></i>
-                    </el-icon>
-                    {{ t('advancedConfiguration') }}
-                  </span>
-                </div>
-              </div>
-              <div class="tool-content" v-show="expandedSections.reasonerAdvanced">
-                <el-form-item :label="t('modelName')" class="form-item-align">
-                  <el-input
-                    v-model="reasonerSettings.model"
-                    :placeholder="t('modelName')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('baseURL')" class="form-item-align">
-                  <el-input
-                    v-model="reasonerSettings.base_url"
-                    :placeholder="t('baseURL')"
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('apiKey')" class="form-item-align">
-                  <el-input
-                    v-model="reasonerSettings.api_key"
-                    :placeholder="t('apiKey')"
-                    show-password
-                    @input="autoSaveSettings"
-                    class="full-width-input"
-                  />
-                </el-form-item>
-                <el-form-item :label="t('temperature')" class="form-item-align">
-                  <el-slider
-                    v-model="reasonerSettings.temperature"
-                    :min="0"
-                    :max="1"
-                    :step="0.1"
-                    @input="autoSaveSettings"
-                  />
-                </el-form-item>
-              </div>
-            </div>
-          </el-form>
         </div>
       </el-main>
     </el-container>

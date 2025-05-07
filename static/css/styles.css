@@ -2017,3 +2017,12 @@ border: 1px solid var(--border-color) !important;
   overflow-y: auto;
   background: var(--el-bg-color-page);
 }
+
+.input-box {
+  border-radius: 12px !important;
+}
+
+/* 或者更具体地针对textarea元素 */
+.input-box .el-textarea__inner {
+  border-radius: 12px !important;
+}

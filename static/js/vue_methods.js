@@ -72,6 +72,16 @@ const MIME_WHITELIST = [
 'text/x-php'
 ]
 
+// 图片上传相关配置
+const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
+const IMAGE_MIME_WHITELIST = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/bmp'
+];
+
 let vue_methods = {
   resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
@@ -244,9 +254,28 @@ let vue_methods = {
 
     generateConversationTitle(messages) {
       const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+      
       if (lastUserMessage) {
-        return lastUserMessage.content.substring(0, 30) + (lastUserMessage.content.length > 30 ? '...' : '');
+        let textContent;
+        
+        // 判断 content 是否为字符串还是对象数组
+        if (typeof lastUserMessage.content === 'string') {
+          textContent = lastUserMessage.content;
+        } else if (Array.isArray(lastUserMessage.content)) {
+          // 提取所有文本类型的内容并拼接
+          textContent = lastUserMessage.content.filter(item => item.type === 'text')
+                           .map(item => item.text).join(' ');
+        } else {
+          // 如果既不是字符串也不是对象数组，设置为空字符串或其他默认值
+          textContent = '';
+        }
+    
+        // 拼接 fileLinks_content 部分，如果有
+        const fullContent = textContent + (lastUserMessage.fileLinks_content ?? '');
+        
+        return fullContent.substring(0, 30) + (fullContent.length > 30 ? '...' : '');
       }
+      
       return this.t('newChat');
     },
     async confirmDeleteConversation(convId) {
@@ -338,7 +367,20 @@ let vue_methods = {
       if (key === 'agent_group') {
         this.activeMenu = 'agent_group';
         this.subMenu = 'agents'; // 默认显示第一个子菜单
-      } else {
+      }
+      else if (key === 'model-config') {
+        this.activeMenu = 'model-config';
+        this.subMenu = 'service'; // 默认显示第一个子菜单
+      }
+      else if (key === 'toolkit') {
+        this.activeMenu = 'toolkit';
+        this.subMenu = 'tools'; // 默认显示第一个子菜单
+      }
+      else if (key === 'api-group') {
+        this.activeMenu = 'api-group';
+        this.subMenu = 'openai'; // 默认显示第一个子菜单
+      }
+      else {
         this.activeMenu = key;
       }
       this.activeMenu = key;
@@ -851,11 +893,49 @@ let vue_methods = {
             } else {
                 showNotification(this.t('file_upload_failed'), 'error');
             }
-        } catch (error) {
-            console.error('Error during file upload:', error);
-            showNotification(this.t('file_upload_failed'), 'error');
+          } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification(this.t('file_upload_failed'), 'error');
+          }
         }
-      }
+        let imageLinks = this.images || [];
+        if (imageLinks.length > 0){
+          const formData = new FormData();
+          
+          // 使用 'files' 作为键名，而不是 'file'
+          for (const file of imageLinks) {
+              if (file.file instanceof Blob) { // 确保 file.file 是一个有效的文件对象
+                  formData.append('files', file.file, file.name); // 添加第三个参数为文件名
+              } else {
+                  console.error("Invalid file object:", file);
+                  showNotification(this.t('invalid_file'), 'error');
+                  return;
+              }
+          }
+      
+          try {
+              console.log('Uploading images...');
+              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+                  method: 'POST',
+                  body: formData
+              });
+              if (!response.ok) {
+                  const errorText = await response.text();
+                  console.error('Server responded with an error:', errorText);
+                  showNotification(this.t('file_upload_failed'), 'error');
+                  return;
+              }
+              const data = await response.json();
+              if (data.success) {
+                imageLinks = data.fileLinks;
+              } else {
+                showNotification(this.t('file_upload_failed'), 'error');
+              }
+          } catch (error) {
+              console.error('Error during file upload:', error);
+              showNotification(this.t('file_upload_failed'), 'error');
+          }
+        }
       const fileLinks_content = fileLinks.map(fileLink => `\n[文件名：${fileLink.name}\n文件链接: ${fileLink.path}]`).join('\n') || '';
       const fileLinks_list = Array.isArray(fileLinks) ? fileLinks.map(fileLink => fileLink.path).flat() : []
       // fileLinks_list添加到self.filelinks
@@ -866,9 +946,11 @@ let vue_methods = {
         role: 'user',
         content: escapedContent,
         fileLinks: fileLinks,
-        fileLinks_content: fileLinks_content
+        fileLinks_content: fileLinks_content,
+        imageLinks: imageLinks || []
       });
       this.files = [];
+      this.images = [];
       let max_rounds = this.settings.max_rounds || 0;
       let messages;
       // 把窗口滚动到底部
@@ -880,7 +962,18 @@ let vue_methods = {
         // 如果 max_rounds 是 0, 映射所有消息
         messages = this.messages.map(msg => ({
           role: msg.role,
-          content: msg.content + (msg.fileLinks_content ?? '')
+          content: (msg.imageLinks && msg.imageLinks.length > 0)
+            ? [
+                {
+                  type: "text",
+                  text: msg.content + (msg.fileLinks_content ?? '')
+                },
+                ...msg.imageLinks.map(imageLink => ({
+                  type: "image_url",
+                  image_url: { url: imageLink.path }
+                }))
+              ]
+            : msg.content + (msg.fileLinks_content ?? '')
         }));
       } else {
         // 准备发送的消息历史（保留最近 max_rounds 条消息）
@@ -888,7 +981,18 @@ let vue_methods = {
           .slice(-max_rounds)
           .map(msg => ({
             role: msg.role,
-            content: msg.content + (msg.fileLinks_content ?? '')
+            content: msg.imageLinks.length > 0
+              ? [
+                  {
+                    type: "text",
+                    text: msg.content + (msg.fileLinks_content ?? '')
+                  },
+                  ...msg.imageLinks.map(imageLink => ({
+                    type: "image_url",
+                    image_url: { url: imageLink.path }
+                  }))
+                ]
+              : msg.content + (msg.fileLinks_content ?? '')
           }));
       }
       
@@ -1166,11 +1270,61 @@ let vue_methods = {
       this.scrollToBottom();    // 触发界面更新
       this.autoSaveSettings();
     },
-    sendFiles() {
+    async sendFiles() {
       this.showUploadDialog = true;
+      // 设置文件上传专用处理
+      this.currentUploadType = 'file';
     },
+    async sendImages() {
+      this.showUploadDialog = true;
+      // 设置图片上传专用处理
+      this.currentUploadType = 'image';
+    },
+    browseFiles() {
+      if (this.currentUploadType === 'image') {
+        this.browseImages();
+      } else {
+        this.browseDocuments();
+      }
+    },
+    // 专门处理图片选择
+    async browseImages() {
+      if (!this.isElectron) {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.multiple = true
+        input.accept = ALLOWED_IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')
+        
+        input.onchange = (e) => {
+          const files = Array.from(e.target.files)
+          const validFiles = files.filter(this.isValidImageType)
+          this.handleFiles(validFiles)
+        }
+        input.click()
+      } else {
+        const result = await window.electronAPI.openImageDialog();
+        if (!result.canceled) {
+          // 转换Electron文件路径为File对象
+          const files = await Promise.all(
+            result.filePaths
+              .filter(path => {
+                const ext = path.split('.').pop()?.toLowerCase() || '';
+                return ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+              })
+              .map(async path => {
+                // 读取文件内容并转换为File对象
+                const buffer = await window.electronAPI.readFile(path);
+                const blob = new Blob([buffer]);
+                return new File([blob], path.split(/[\\/]/).pop());
+              })
+          );
+          this.handleFiles(files);
+        }
+      }
+    },
+
     // 文件选择处理方法
-    async browseFiles() {
+    async browseDocuments() {
       if (!this.isElectron) {
         const input = document.createElement('input')
         input.type = 'file'
@@ -1206,31 +1360,53 @@ let vue_methods = {
     },
     // 文件验证方法
     isValidFileType(file) {
+      if (this.currentUploadType === 'image') {
+        return this.isValidImageType(file);
+      }
       const ext = (file.name.split('.').pop() || '').toLowerCase()
-      return ALLOWED_EXTENSIONS.includes(ext) || 
-             MIME_WHITELIST.some(mime => file.type.includes(mime))
+      return ALLOWED_EXTENSIONS.includes(ext) || MIME_WHITELIST.some(mime => file.type.includes(mime))
+    },
+    isValidImageType(file) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase()
+      return ALLOWED_IMAGE_EXTENSIONS.includes(ext) || IMAGE_MIME_WHITELIST.some(mime => file.type.includes(mime))
     },
     // 统一处理文件
-    handleFiles(files) {
-      if (files.length > 0) {
-        this.addFiles(files)
+    async handleFiles(files) {
+      const allowedExtensions = this.currentUploadType === 'image' ? ALLOWED_IMAGE_EXTENSIONS : ALLOWED_EXTENSIONS;
+      
+      const validFiles = files.filter(file => {
+        try {
+          // 安全获取文件扩展名
+          const filename = file.name || (file.path && file.path.split(/[\\/]/).pop()) || '';
+          const ext = filename.split('.').pop()?.toLowerCase() || '';
+          return allowedExtensions.includes(ext);
+        } catch (e) {
+          console.error('文件处理错误:', e);
+          return false;
+        }
+      });
+      if (validFiles.length > 0) {
+        this.addFiles(validFiles, this.currentUploadType);
       } else {
-        this.showErrorAlert()
+        this.showErrorAlert(this.currentUploadType);
       }
     },
-    removeFile(index) {
-      this.files.splice(index, 1);
-    },  
+    removeItem(index, type) {
+      if (type === 'file') {
+        this.files.splice(index, 1);
+      } else {
+        // 如果是图片，则从图片列表中删除，考虑this.files长度
+        index = index - this.files.length;
+        this.images.splice(index, 1);
+      }
+    },
     // 错误提示
-    showErrorAlert() {
-      const categories = [
-        "📄 办公文档：DOC/DOCX/PPT/XLS/PDF等",
-        "👨💻 编程文件：JS/TS/PY/Java/C/Go/Rust等",
-        "📊 数据文件：CSV/TSV/JSON/XML/YAML",
-        "⚙️ 配置文件：CONF/INI/ENV/TOML",
-        "📝 文本文件：TXT/MD/LOG"
-      ]
-      ElMessage.error(`不支持的文件类型，请选择以下类型：\n${categories.join('\n')}`)
+    showErrorAlert(type = 'file') {
+      const fileTypes = {
+        file: this.t('file_type_error'),
+        image: this.t('image_type_error')
+      };
+      showNotification(fileTypes[type], 'error');
     },
     // 拖放处理
     handleDrop(event) {
@@ -1241,19 +1417,20 @@ let vue_methods = {
     },
     switchToApiBox() {
       // 切换到 API 钥匙箱界面
-      this.activeMenu = 'api-box'
-      
+      this.activeMenu = 'model-config';
+      this.subMenu = 'service';
     },
 
     // 添加文件到列表
-    addFiles(files) {
+    addFiles(files, type = 'file') {
+      const targetArray = type === 'image' ? this.images : this.files;
+  
       const newFiles = files.map(file => ({
-        path: URL.createObjectURL(file), // 统一生成Blob URL
+        path: URL.createObjectURL(file),
         name: file.name,
-        file: file     // 统一包含File对象
+        file: file,
       }));
-      
-      this.files = [...this.files, ...newFiles];
+      targetArray.push(...newFiles);
       this.showUploadDialog = false;
     },
     highlightCode() {
@@ -1670,7 +1847,7 @@ let vue_methods = {
             const validPaths = result.filePaths
               .filter(path => {
                 const ext = path.split('.').pop()?.toLowerCase() || ''
-                return ALLOWED_EXTENSIONS.includes(ext)
+                return ALLOWED_IMAGE_EXTENSIONS.includes(ext)
               })
             this.handleKbFiles(validPaths)
           }
@@ -1712,8 +1889,8 @@ let vue_methods = {
       this.newKbFiles.splice(index, 1);
     },
     switchToKnowledgePage() {
-      this.activeMenu = 'document';  // 根据你的菜单项配置的实际值设置
-      window.scrollTo(0, 0);
+      this.activeMenu = 'toolkit';  // 根据你的菜单项配置的实际值设置
+      this.subMenu = 'document';   // 根据你的子菜单项配置的实际值设置
     },
     // 在 methods 中添加
     t(key) {
