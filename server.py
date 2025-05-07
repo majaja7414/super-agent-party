@@ -37,7 +37,12 @@ mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,SETTINGS_FILE,default_settings
+
+if not os.path.exists(SETTINGS_FILE):
+    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(default_settings, f, ensure_ascii=False, indent=4)
+
 configure_host_port(args.host, args.port)
 
 @asynccontextmanager

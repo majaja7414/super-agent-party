@@ -83,11 +83,9 @@ async def load_settings():
                 settings['isdocker'] = True
             return settings
         except FileNotFoundError:
-            # 首次运行，创建配置文件
-            settings = default_settings.copy()
             if in_docker():
                 settings['isdocker'] = True
-            await save_settings(settings)
+            await save_settings(default_settings)
             return settings
 
 
