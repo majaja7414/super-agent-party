@@ -280,6 +280,8 @@ const translations = {
       'openaiStyleAPI': 'OpenAI风格API',
       'browserMode': '浏览器模式',
       'file_type_error': '文件类型不支持',
+      'image_type_error': '图片类型不支持',
+      'uploadImage': '上传图片',
     },
     'en-US': {
       'chat': 'Chat',
@@ -561,5 +563,7 @@ const translations = {
       'openaiStyleAPI': 'OpenAI-style API', 
       'browserMode': 'Browser Mode',
       'file_type_error': 'File type is not supported',
+      'image_type_error': 'Image type is not supported',
+      'uploadImage': 'Upload Image'
     }
   };

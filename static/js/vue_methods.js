@@ -72,6 +72,16 @@ const MIME_WHITELIST = [
 'text/x-php'
 ]
 
+// 图片上传相关配置
+const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
+const IMAGE_MIME_WHITELIST = [
+  'image/png',
+  'image/jpeg',
+  'image/gif',
+  'image/webp',
+  'image/bmp'
+];
+
 let vue_methods = {
   resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
@@ -1179,11 +1189,61 @@ let vue_methods = {
       this.scrollToBottom();    // 触发界面更新
       this.autoSaveSettings();
     },
-    sendFiles() {
+    async sendFiles() {
       this.showUploadDialog = true;
+      // 设置文件上传专用处理
+      this.currentUploadType = 'file';
     },
+    async sendImages() {
+      this.showUploadDialog = true;
+      // 设置图片上传专用处理
+      this.currentUploadType = 'image';
+    },
+    browseFiles() {
+      if (this.currentUploadType === 'image') {
+        this.browseImages();
+      } else {
+        this.browseDocuments();
+      }
+    },
+    // 专门处理图片选择
+    async browseImages() {
+      if (!this.isElectron) {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.multiple = true
+        input.accept = ALLOWED_IMAGE_EXTENSIONS.map(ext => `.${ext}`).join(',')
+        
+        input.onchange = (e) => {
+          const files = Array.from(e.target.files)
+          const validFiles = files.filter(this.isValidImageType)
+          this.handleFiles(validFiles)
+        }
+        input.click()
+      } else {
+        const result = await window.electronAPI.openImageDialog();
+        if (!result.canceled) {
+          // 转换Electron文件路径为File对象
+          const files = await Promise.all(
+            result.filePaths
+              .filter(path => {
+                const ext = path.split('.').pop()?.toLowerCase() || '';
+                return ALLOWED_IMAGE_EXTENSIONS.includes(ext);
+              })
+              .map(async path => {
+                // 读取文件内容并转换为File对象
+                const buffer = await window.electronAPI.readFile(path);
+                const blob = new Blob([buffer]);
+                return new File([blob], path.split(/[\\/]/).pop());
+              })
+          );
+          this.handleFiles(files);
+        }
+      }
+    },
+
     // 文件选择处理方法
-    async browseFiles() {
+    async browseDocuments() {
       if (!this.isElectron) {
         const input = document.createElement('input')
         input.type = 'file'
@@ -1219,31 +1279,53 @@ let vue_methods = {
     },
     // 文件验证方法
     isValidFileType(file) {
+      if (this.currentUploadType === 'image') {
+        return this.isValidImageType(file);
+      }
       const ext = (file.name.split('.').pop() || '').toLowerCase()
-      return ALLOWED_EXTENSIONS.includes(ext) || 
-             MIME_WHITELIST.some(mime => file.type.includes(mime))
+      return ALLOWED_EXTENSIONS.includes(ext) || MIME_WHITELIST.some(mime => file.type.includes(mime))
+    },
+    isValidImageType(file) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase()
+      return ALLOWED_IMAGE_EXTENSIONS.includes(ext) || IMAGE_MIME_WHITELIST.some(mime => file.type.includes(mime))
     },
     // 统一处理文件
-    handleFiles(files) {
-      if (files.length > 0) {
-        this.addFiles(files)
+    async handleFiles(files) {
+      const allowedExtensions = this.currentUploadType === 'image' ? ALLOWED_IMAGE_EXTENSIONS : ALLOWED_EXTENSIONS;
+      
+      const validFiles = files.filter(file => {
+        try {
+          // 安全获取文件扩展名
+          const filename = file.name || (file.path && file.path.split(/[\\/]/).pop()) || '';
+          const ext = filename.split('.').pop()?.toLowerCase() || '';
+          return allowedExtensions.includes(ext);
+        } catch (e) {
+          console.error('文件处理错误:', e);
+          return false;
+        }
+      });
+      if (validFiles.length > 0) {
+        this.addFiles(validFiles, this.currentUploadType);
       } else {
-        this.showErrorAlert()
+        this.showErrorAlert(this.currentUploadType);
       }
     },
-    removeFile(index) {
-      this.files.splice(index, 1);
-    },  
+    removeItem(index, type) {
+      if (type === 'file') {
+        this.files.splice(index, 1);
+      } else {
+        // 如果是图片，则从图片列表中删除，考虑this.files长度
+        index = index - this.files.length;
+        this.images.splice(index, 1);
+      }
+    },
     // 错误提示
-    showErrorAlert() {
-      const categories = [
-        "📄 办公文档：DOC/DOCX/PPT/XLS/PDF等",
-        "👨💻 编程文件：JS/TS/PY/Java/C/Go/Rust等",
-        "📊 数据文件：CSV/TSV/JSON/XML/YAML",
-        "⚙️ 配置文件：CONF/INI/ENV/TOML",
-        "📝 文本文件：TXT/MD/LOG"
-      ]
-      showNotification(this.t('file_type_error'), 'error')
+    showErrorAlert(type = 'file') {
+      const fileTypes = {
+        file: this.t('file_type_error'),
+        image: this.t('image_type_error')
+      };
+      showNotification(fileTypes[type], 'error');
     },
     // 拖放处理
     handleDrop(event) {
@@ -1259,14 +1341,15 @@ let vue_methods = {
     },
 
     // 添加文件到列表
-    addFiles(files) {
+    addFiles(files, type = 'file') {
+      const targetArray = type === 'image' ? this.images : this.files;
+  
       const newFiles = files.map(file => ({
-        path: URL.createObjectURL(file), // 统一生成Blob URL
+        path: URL.createObjectURL(file),
         name: file.name,
-        file: file     // 统一包含File对象
+        file: file,
       }));
-      
-      this.files = [...this.files, ...newFiles];
+      targetArray.push(...newFiles);
       this.showUploadDialog = false;
     },
     highlightCode() {
@@ -1683,7 +1766,7 @@ let vue_methods = {
             const validPaths = result.filePaths
               .filter(path => {
                 const ext = path.split('.').pop()?.toLowerCase() || ''
-                return ALLOWED_EXTENSIONS.includes(ext)
+                return ALLOWED_IMAGE_EXTENSIONS.includes(ext)
               })
             this.handleKbFiles(validPaths)
           }

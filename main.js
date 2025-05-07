@@ -21,6 +21,7 @@ const locales = {
     paste: '粘贴',
     supportedFiles: '支持的文件',
     allFiles: '所有文件',
+    supportedimages: '支持的图片',
   },
   'en-US': {
     show: 'Show Window',
@@ -30,6 +31,7 @@ const locales = {
     paste: 'Paste',
     supportedFiles: 'Supported Files',
     allFiles: 'All Files',
+    supportedimages: 'Supported Images',
   }
 };
 const ALLOWED_EXTENSIONS = [
@@ -46,6 +48,7 @@ const ALLOWED_EXTENSIONS = [
   // 数据配置
   'csv', 'tsv', 'txt', 'md', 'log', 'conf', 'ini', 'env', 'toml'
   ];
+const ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'];
 let currentLanguage = 'zh-CN';
 
 // 构建菜单项
@@ -391,7 +394,17 @@ app.whenReady().then(async () => {
       })
       return result
     })
-
+    ipcMain.handle('open-image-dialog', async () => {
+      const result = await dialog.showOpenDialog({
+        properties: ['openFile'],
+        filters: [
+          { name: locales[currentLanguage].supportedimages, extensions: ALLOWED_IMAGE_EXTENSIONS },
+          { name: locales[currentLanguage].allFiles, extensions: ['*'] }
+        ]
+      })
+      // 返回包含文件名和路径的对象数组
+      return result
+    });
     ipcMain.handle('check-path-exists', (_, path) => {
       return fs.existsSync(path)
     })

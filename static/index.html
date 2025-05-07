@@ -462,6 +462,17 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('uploadImage')" placement="top">
+              <el-button
+                @click="sendImages"
+                class="icon-btn image-btn"
+                :type="hasImages ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-image"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('knowledgeBase')" placement="top">
               <el-button
                 @click="showKnowledgeDialog = true"
@@ -568,15 +579,15 @@
           </div>
           <div class="input-container">
             <!-- 紧凑型文件列表 -->
-            <div class="compact-file-list" v-if="files.length">
-              <div v-for="(file, index) in files" :key="index" class="compact-file-item">
-                <span class="file-name">@{{ file.name }}</span>
+            <div class="compact-file-list" v-if="allItems.length">
+              <div v-for="(item, index) in allItems" :key="index" class="compact-file-item">
+                <span class="file-name">@{{ item.name }}</span>
                 <el-button
-                  @click.stop="removeFile(index)"
+                  @click.stop="removeItem(index, item.type)"
                   class="delete-icon"
                   circle
                 >
-                <i class="fa-solid fa-trash"></i>
+                  <i class="fa-solid fa-trash"></i>
                 </el-button>
               </div>
             </div>
@@ -1456,7 +1467,7 @@
                       </div>
                     </div>
                     <!-- 添加新知识库磁贴 -->
-                    <div class="provider-card add-tile" @click="showAddKbDialog = true">
+                    <div class="provider-card add-tile" @click="showAddKbDialog = true;currentUploadType = 'file'">
                       <el-icon :size="40" color="#909399">
                         <i class="fa-solid fa-plus"></i>
                       </el-icon>

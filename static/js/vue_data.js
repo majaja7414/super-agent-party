@@ -314,6 +314,8 @@ let vue_data = {
     showUploadDialog: false,
     agentTabActive: 'knowledge',
     files: [],
+    images: [],
+    currentUploadType: 'file',
     selectedCodeLang: 'python',
     previewClickHandler: null,
     codeExamples: {

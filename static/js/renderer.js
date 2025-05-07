@@ -94,6 +94,12 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    allItems() {
+      return [
+        ...this.files.map(file => ({ ...file, type: 'file' })),
+        ...this.images.map(image => ({ ...image, type: 'image' }))
+      ];
+    },
     sortedConversations() {
       return [...this.conversations].sort((a, b) => b.timestamp - a.timestamp);
     },
@@ -115,6 +121,9 @@ const app = Vue.createApp({
     },
     hasFiles() {
       return this.files.length > 0
+    },
+    hasImages() {
+      return this.images.length > 0
     },
     formValid() {
       return !!this.newLLMTool.name && !!this.newLLMTool.type
