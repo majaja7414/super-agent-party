@@ -259,6 +259,10 @@ let vue_data = {
       { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
       { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' }
     ],
+    apiTiles: [
+      { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
+      { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
+    ],
     subMenu: '', // 新增子菜单状态
     agentTiles: [
       { 

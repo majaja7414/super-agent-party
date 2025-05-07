@@ -276,6 +276,9 @@ const translations = {
       'mainModel': '主模型',
       'reasonerModel': '推理模型',
       'toolkit': '工具套件',
+      'apiGroup': '接口调用',
+      'openaiStyleAPI': 'OpenAI风格API',
+      'browserMode': '浏览器模式',
     },
     'en-US': {
       'chat': 'Chat',
@@ -553,5 +556,8 @@ const translations = {
       'mainModel': 'Main Model',
       'reasonerModel': 'Reasoner Model',
       'toolkit': 'Toolkit',
+      'apiGroup': 'API Access',
+      'openaiStyleAPI': 'OpenAI-style API', 
+      'browserMode': 'Browser Mode',
     }
   };

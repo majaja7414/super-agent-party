@@ -347,6 +347,10 @@ let vue_methods = {
         this.activeMenu = 'toolkit';
         this.subMenu = 'tools'; // 默认显示第一个子菜单
       }
+      else if (key === 'api-group') {
+        this.activeMenu = 'api-group';
+        this.subMenu = 'openai'; // 默认显示第一个子菜单
+      }
       else {
         this.activeMenu = key;
       }
