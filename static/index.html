@@ -762,7 +762,7 @@
                 <el-form :model="settings" class="settings-form" label-position="top">
                   <div class="tool-item">
                     <!-- 基础配置（仅供应商） -->
-                    <div class="tool-header" @click="toggleSection('settingsBase')">
+                    <div class="tool-header">
                       <div class="header-left">
                         <span>
                           <el-icon>
@@ -772,7 +772,7 @@
                         </span>
                       </div>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.settingsBase">
+                    <div class="tool-content">
                       <el-form-item :label="t('provider')" class="form-item-align">
                         <el-select
                           v-model="settings.selectedProvider"
@@ -822,7 +822,7 @@
                   </div>
                   <!-- 新增高级配置 -->
                   <div class="tool-item">
-                    <div class="tool-header" @click="toggleSection('settingsAdvanced')">
+                    <div class="tool-header">
                       <div class="header-left">
                         <span>
                           <el-icon>
@@ -832,7 +832,7 @@
                         </span>
                       </div>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.settingsAdvanced">
+                    <div class="tool-content">
                       <el-form-item :label="t('modelName')" class="form-item-align">
                         <el-input
                           v-model="settings.model"
@@ -983,7 +983,7 @@
               <div v-show="subMenu === 'reasoner'" class="page">
                 <el-form :model="settings" class="settings-form" label-position="top">
                   <div class="tool-item">
-                    <div class="tool-header" @click="toggleSection('reasonerConfig')">
+                    <div class="tool-header">
                       <div class="header-left">
                         <span>
                           <el-icon>
@@ -994,7 +994,7 @@
                       </div>
                       <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.reasonerConfig">
+                    <div class="tool-content">
                       <el-form-item :label="t('provider')" class="form-item-align">
                         <el-select
                           v-model="reasonerSettings.selectedProvider"
@@ -1043,7 +1043,7 @@
                   </el-alert>
                   </div>
                   <div class="tool-item">
-                    <div class="tool-header" @click="toggleSection('reasonerAdvanced')">
+                    <div class="tool-header">
                       <div class="header-left">
                         <span>
                           <el-icon>
@@ -1053,7 +1053,7 @@
                         </span>
                       </div>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.reasonerAdvanced">
+                    <div class="tool-content">
                       <el-form-item :label="t('modelName')" class="form-item-align">
                         <el-input
                           v-model="reasonerSettings.model"
@@ -1082,6 +1082,115 @@
                       <el-form-item :label="t('temperature')" class="form-item-align">
                         <el-slider
                           v-model="reasonerSettings.temperature"
+                          :min="0"
+                          :max="1"
+                          :step="0.1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                </el-form>
+              </div>
+              <div v-show="subMenu === 'vision'" class="page">
+                <el-form :model="settings" class="settings-form" label-position="top">
+                  <div class="tool-item">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon><i class="fa-solid fa-camera"></i></el-icon>
+                          {{ t('visionSettings') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('provider')" class="form-item-align">
+                        <el-select
+                          v-model="visionSettings.selectedProvider"
+                          :placeholder="t('selectProvider')"
+                          filterable
+                          @change="selectVisionProvider"
+                          @visible-change="handleVisionProviderVisibleChange"
+                          class="full-width-input"
+                        >
+                          <el-option
+                            v-for="provider in modelProviders"
+                            :key="provider.id"
+                            :label="provider.vendor+' - '+provider.modelId"
+                            :value="provider.id"
+                          >
+                            <div class="provider-option">
+                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <span class="model-id">{{ provider.modelId }}</span>
+                            </div>
+                          </el-option>
+                        </el-select>
+                      </el-form-item>
+                    </div>
+                    <el-alert
+                    type="info"
+                    :closable="false"
+                    class="mb-2"
+                  >
+                    <template #default>
+                      <div class="alert-content">
+                        {{ t('firstTimeUse') }}
+                        <el-link
+                          type="primary"
+                          :underline="false"
+                          class="font-medium"
+                          @click="switchToApiBox"
+                        >
+                          <el-icon class="mr-1">
+                            <i class="fa-solid fa-key"></i>
+                          </el-icon>{{ t('keyBoxInterface') }}
+                        </el-link>
+                        {{ t('addProviderReturnSelect') }}
+                        {{ t('addresonerNotice') }}
+                      </div>
+                    </template>
+                  </el-alert>
+                  </div>
+                  <div class="tool-item">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-chevron-right"></i>
+                          </el-icon>
+                          {{ t('advancedConfiguration') }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('modelName')" class="form-item-align">
+                        <el-input
+                          v-model="visionSettings.model"
+                          :placeholder="t('modelName')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('baseURL')" class="form-item-align">
+                        <el-input
+                          v-model="visionSettings.base_url"
+                          :placeholder="t('baseURL')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="visionSettings.api_key"
+                          :placeholder="t('apiKey')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('temperature')" class="form-item-align">
+                        <el-slider
+                          v-model="visionSettings.temperature"
                           :min="0"
                           :max="1"
                           :step="0.1"

@@ -283,6 +283,8 @@ const translations = {
       'image_type_error': '图片类型不支持',
       'uploadImage': '上传图片（施工中）',
       'newChat': '新建对话',
+      'visionModel': '视觉模型',
+      'visionSettings': '视觉配置',
     },
     'en-US': {
       'chat': 'Chat',
@@ -567,5 +569,7 @@ const translations = {
       'image_type_error': 'Image type is not supported',
       'uploadImage': 'Upload Image (Under Construction)',
       'newChat': 'New Chat',
+      'visionModel': 'Vision Model',
+      'visionSettings': 'Vision Settings',
     }
   };

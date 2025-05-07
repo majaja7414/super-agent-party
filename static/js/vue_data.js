@@ -86,6 +86,14 @@ let vue_data = {
       selectedProvider: null,
       temperature: 0.7,  // 默认温度值
     },
+    visionSettings: {
+      enabled: false, // 默认不启用
+      model: '',
+      base_url: '',
+      api_key: '',
+      selectedProvider: null,
+      temperature: 0.7,  // 默认温度值
+    },
     paramTypes: [
       { value: 'string', label: 'string' },
       { value: 'integer', label: 'integer' },
@@ -252,7 +260,8 @@ let vue_data = {
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
-      { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' }
+      { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' },
+      { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'}
     ],
     toolkitTiles: [
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
