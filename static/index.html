@@ -1102,6 +1102,7 @@
                           {{ t('visionSettings') }}
                         </span>
                       </div>
+                      <el-switch v-model="visionSettings.enabled" @click.stop @change="autoSaveSettings"/>
                     </div>
                     <div class="tool-content">
                       <el-form-item :label="t('provider')" class="form-item-align">
