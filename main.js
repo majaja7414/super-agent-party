@@ -296,12 +296,28 @@ app.whenReady().then(async () => {
     console.log('Backend ready, loading main content...')
 
     // 检查更新IPC
-    ipcMain.handle('check-for-updates', () => {
+    ipcMain.handle('check-for-updates', async () => {
       if (isDev) {
         console.log('Auto updates are disabled in development mode.')
-        return
+        return { updateAvailable: false }
       }
-      return autoUpdater.checkForUpdates()
+      try {
+        const result = await autoUpdater.checkForUpdates()
+        // 只返回必要的可序列化数据
+        return {
+          updateAvailable: updateAvailable,
+          updateInfo: result ? {
+            version: result.updateInfo.version,
+            releaseDate: result.updateInfo.releaseDate
+          } : null
+        }
+      } catch (error) {
+        console.error('检查更新出错:', error)
+        return { 
+          updateAvailable: false, 
+          error: error.message 
+        }
+      }
     })
 
     // 下载更新IPC
