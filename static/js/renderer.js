@@ -1,3 +1,11 @@
+// 在页面加载完成后添加 content-loaded 类
+document.addEventListener('DOMContentLoaded', function() {
+  // 设置一个短暂的延迟，确保所有资源都已加载
+  setTimeout(function() {
+    document.body.classList.add('content-loaded');
+  }, 100);
+});
+
 // 创建Vue应用
 const app = Vue.createApp({
   data() {

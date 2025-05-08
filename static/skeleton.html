@@ -15,6 +15,16 @@
       overflow: hidden;
     }
     
+    /* 添加淡入淡出过渡效果 */
+    body {
+      opacity: 1;
+      transition: opacity 0.3s ease-out;
+    }
+    
+    body.fade-out {
+      opacity: 0;
+    }
+    
     /* 主容器 */
     #app {
       display: flex;
@@ -187,6 +197,15 @@
       height: 16px;
       border-radius: 50%;
     }
+    
+    /* 隐藏iframe */
+    #preload-frame {
+      position: absolute;
+      width: 0;
+      height: 0;
+      border: 0;
+      visibility: hidden;
+    }
   </style>
 </head>
 <body>
@@ -258,6 +277,8 @@
       </div>
     </div>
     
+    <!-- 添加隐藏的iframe用于预加载主页面 -->
+    <iframe id="preload-frame"></iframe>
   </div>
   
   <script>
@@ -267,10 +288,24 @@
     // 监听后端服务准备就绪的消息
     if (ipcRenderer) {
       ipcRenderer.on('backend-ready', () => {
-        // 后端服务准备就绪，可以进行页面跳转
-        // 使用从preload.js中暴露的服务器配置
+        // 后端服务准备就绪，开始预加载主页面
         const { host, port } = window.electron.server;
-        window.location.href = `http://${host}:${port}`;
+        const mainPageUrl = `http://${host}:${port}`;
+        
+        // 使用隐藏的iframe预加载主页面
+        const preloadFrame = document.getElementById('preload-frame');
+        preloadFrame.src = mainPageUrl;
+        
+        // 监听iframe加载完成事件
+        preloadFrame.onload = function() {
+          // 主页面已预加载完成，添加淡出效果
+          document.body.classList.add('fade-out');
+          
+          // 等待淡出动画完成后再跳转
+          setTimeout(() => {
+            window.location.href = mainPageUrl;
+          }, 300); // 与CSS过渡时间匹配
+        };
       });
     }
   </script>
