@@ -167,12 +167,68 @@
       font-size: 14px;
       margin-top: 10px;
     }
+    /* 动态渐变标题 */
     .app-title {
-      text-align: center;
-      color: #545558;
-      font-size: 36px;
-      margin-top: 10px;
+        text-align: center;
+        font-size: 3.5rem;
+        margin: 1.5rem 0;
+        position: relative;
+        display: inline-block;
+        background: linear-gradient(135deg, 
+            #0d85cf 0%, 
+            #14c5d1 25%, 
+            #13db84 50%, 
+            #acd712 75%, 
+            #d5890f 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-size: 300% 300%;
+        animation: gradientFlow 8s ease infinite;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        text-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+        transition: transform 0.3s ease;
     }
+    /* 标题装饰线 */
+    .app-title::before,
+    .app-title::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 40px;
+        height: 2px;
+        background: linear-gradient(90deg, 
+            rgba(106,17,203,0.5) 0%, 
+            rgba(168,255,120,0.5) 100%);
+        transform: translateY(-50%);
+        opacity: 0.6;
+    }
+    .app-title::before {
+        left: -60px;
+    }
+    .app-title::after {
+        right: -60px;
+    }
+    /* 悬停放大效果 */
+    @media (hover: hover) {
+        .app-title:hover {
+            transform: scale(1.03);
+        }
+    }
+    /* 渐变流动动画 */
+    @keyframes gradientFlow {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    }
+
     /* 中心内容容器 */
     .center-content {
       position: absolute;
@@ -272,7 +328,9 @@
             <img src="source/icon.png" alt="Super Agent Party">
           </div>
           <!-- 应用标题 -->
-          <h1 class="app-title">Agent Party</h1>
+          <h1 class="app-title">
+            <span class="title-glow">Agent Party</span>
+          </h1>
         </div>
         
         <!-- 聊天区域骨架 -->
