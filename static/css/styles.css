@@ -2034,6 +2034,8 @@ border: 1px solid var(--border-color) !important;
 }
 
 .image-links {
+  /* 垂直排列 */
+  flex-direction: column;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -2042,7 +2044,6 @@ border: 1px solid var(--border-color) !important;
 .image-link {
   max-width: 100%; /* 🌟 同时限制相对和绝对大小 */
   height: auto; /* 🌟 保持比例 */
-  border-radius: 6px;
+  border-radius: 12px;
   object-fit: contain; /* 🌟 智能适应容器 */
-  box-shadow: 0 2px 4px var(--el-border-color);
 }
