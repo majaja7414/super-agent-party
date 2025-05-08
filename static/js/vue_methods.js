@@ -790,6 +790,7 @@ let vue_methods = {
           this.toolsSettings = data.data.tools || {};
           this.llmTools = data.data.llmTools || [];
           this.reasonerSettings = data.data.reasoner || {};
+          this.visionSettings = data.data.vision || {};
           this.webSearchSettings = data.data.webSearch || {};
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
@@ -1193,6 +1194,7 @@ let vue_methods = {
         conversations: this.conversations,
         conversationId: this.conversationId,
         reasoner: this.reasonerSettings,
+        vision: this.visionSettings,
         webSearch: this.webSearchSettings, 
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
@@ -1593,6 +1595,15 @@ let vue_methods = {
         this.autoSaveSettings();
       }
     },
+    selectVisionProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.visionSettings.model = provider.modelId;
+        this.visionSettings.base_url = provider.url;
+        this.visionSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
     // 在methods中添加
     handleMainProviderVisibleChange(visible) {
       if (!visible) {
@@ -1602,6 +1613,11 @@ let vue_methods = {
     handleReasonerProviderVisibleChange(visible) {
       if (!visible) {
         this.selectReasonerProvider(this.reasonerSettings.selectedProvider);
+      }
+    },
+    handleVisionProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectVisionProvider(this.visionSettings.selectedProvider);
       }
     },
     // 创建知识库

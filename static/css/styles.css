@@ -188,12 +188,13 @@ body {
 }
 
 .el-menu-item {
-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--el-bg-color-page)!important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .el-menu-item:hover {
-background: var(--el-menu-hover-bg-color) !important;
-transform: translateX(4px);
+  background: var(--el-menu-hover-bg-color) !important;
+  transform: translateX(4px);
 }
 
 /* 输入系统全局适配 */
@@ -528,7 +529,7 @@ border: 1px solid var(--border-color) !important;
 
 /* 顶部栏样式 */
 .top-bar {
-  background-color: var(--el-color-primary-dark-2);
+  background-color: var(--el-bg-color-page);
   padding: 0 16px !important;
   display: flex;
   align-items: center;
@@ -546,7 +547,7 @@ border: 1px solid var(--border-color) !important;
   height: 24px;
   width: 24px;
   padding: 0;
-  color: var(--el-color-white) !important;
+  color: var(--el-text-color) !important;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -568,9 +569,14 @@ border: 1px solid var(--border-color) !important;
   overflow: hidden;
 }
 
+.el-aside {
+  background-color: var(--el-bg-color-page)!important;
+}
+
+
 /* 侧边栏样式 */
 .sidebar {
-  background-color: var(--el-bg-color);
+  background-color: var(--el-bg-color-page) !important;
   border-right: 1px solid var(--el-border-color-light);
   transition: width 0.3s;
   height: 100%;
@@ -2025,4 +2031,19 @@ border: 1px solid var(--border-color) !important;
 /* 或者更具体地针对textarea元素 */
 .input-box .el-textarea__inner {
   border-radius: 12px !important;
+}
+
+.image-links {
+  /* 垂直排列 */
+  flex-direction: column;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.image-link {
+  max-width: 100%; /* 🌟 同时限制相对和绝对大小 */
+  height: auto; /* 🌟 保持比例 */
+  border-radius: 12px;
+  object-fit: contain; /* 🌟 智能适应容器 */
 }

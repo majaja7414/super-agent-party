@@ -2,6 +2,27 @@ const { contextBridge, shell, ipcRenderer } = require('electron');
 const path = require('path');
 const { remote } = require('@electron/remote/main')
 
+// 与 main.js 保持一致的服务器配置
+const HOST = '127.0.0.1'
+const PORT = 3456
+
+// 暴露基本的ipcRenderer给骨架屏页面使用
+contextBridge.exposeInMainWorld('electron', {
+  ipcRenderer: {
+    on: (channel, func) => {
+      // 只允许特定的通道
+      const validChannels = ['backend-ready'];
+      if (validChannels.includes(channel)) {
+        ipcRenderer.on(channel, (event, ...args) => func(...args));
+      }
+    }
+  },
+  // 暴露服务器配置
+  server: {
+    host: HOST,
+    port: PORT
+  }
+});
 
 // 暴露安全接口
 contextBridge.exposeInMainWorld('electronAPI', {

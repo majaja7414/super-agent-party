@@ -281,8 +281,12 @@ const translations = {
       'browserMode': '浏览器模式',
       'file_type_error': '文件类型不支持',
       'image_type_error': '图片类型不支持',
-      'uploadImage': '上传图片（施工中）',
+      'uploadImage': '上传图片',
       'newChat': '新建对话',
+      'visionModel': '视觉模型',
+      'visionSettings': '视觉配置',
+      'addVisionNotice': '请选择供应商后，请返回此页面并选择【视觉模型】以继续。视觉模型名称中一般包含“vision”、“v”、“o”等关键词。',
+      'vision': '视觉',
     },
     'en-US': {
       'chat': 'Chat',
@@ -565,7 +569,11 @@ const translations = {
       'browserMode': 'Browser Mode',
       'file_type_error': 'File type is not supported',
       'image_type_error': 'Image type is not supported',
-      'uploadImage': 'Upload Image (Under Construction)',
+      'uploadImage': 'Upload Image',
       'newChat': 'New Chat',
+      'visionModel': 'Vision Model',
+      'visionSettings': 'Vision Settings',
+      'addVisionNotice': 'Please select the supplier first, then return to this page and select 【Visual Model】 to continue. The visual model name generally contains keywords such as "vision", "v", "o", etc.',
+      'vision': 'Vision',
     }
   };
