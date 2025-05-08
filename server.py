@@ -47,7 +47,7 @@ configure_host_port(args.host, args.port)
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
     global settings, client, reasoner_client, mcp_client_list,local_timezone,logger,locales
-    with open(base_path + "/py/locales.json", "r", encoding="utf-8") as f:
+    with open(base_path + "/config/locales.json", "r", encoding="utf-8") as f:
         locales = json.load(f)
     from tzlocal import get_localzone
     local_timezone = get_localzone()
