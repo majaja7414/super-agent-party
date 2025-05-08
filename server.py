@@ -180,6 +180,23 @@ async def images_in_messages(messages: List[Dict]) -> List[Dict]:
         index += 1
     return images
 
+async def images_add_in_messages(request_messages: List[Dict], images: List[Dict]) -> List[Dict]:
+    messages=copy.deepcopy(request_messages)
+    for image in images:
+        index = image['index']
+        if index < len(messages):
+            if 'content' in messages[index]:
+                # message['content'] 是一个字符串
+                if isinstance(messages[index]['content'], str):
+                    messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
+                    for item in image['images']:
+                        messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
+                # message['content'] 是一个列表
+                elif isinstance(messages[index]['content'], list):
+                    for item in image['images']:
+                        messages[index]['content'].extend({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
+    return messages
+
 async def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
         request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
@@ -463,10 +480,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
+            msg = await images_add_in_messages(request.messages, images)
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
-                    messages=request.messages,
+                    messages=msg,  # 添加图片信息到消息
                     temperature=request.temperature,
                     tools=tools,
                     stream=True,
@@ -479,7 +497,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 response = await client.chat.completions.create(
                     model=model,
-                    messages=request.messages,
+                    messages=msg,  # 添加图片信息到消息
                     temperature=request.temperature,
                     stream=True,
                     max_tokens=request.max_tokens or settings['max_tokens'],
@@ -922,10 +940,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                     # 在推理结束后添加完整推理内容到消息
                     request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
+                msg = await images_add_in_messages(request.messages, images)
                 if tools:
                     response = await client.chat.completions.create(
                         model=model,
-                        messages=request.messages,
+                        messages=msg,  # 添加图片信息到消息
                         temperature=request.temperature,
                         tools=tools,
                         stream=True,
@@ -938,7 +957,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 else:
                     response = await client.chat.completions.create(
                         model=model,
-                        messages=request.messages,
+                        messages=msg,  # 添加图片信息到消息
                         temperature=request.temperature,
                         stream=True,
                         max_tokens=request.max_tokens or settings['max_tokens'],
@@ -1324,10 +1343,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
+        msg = await images_add_in_messages(request.messages, images)
         if tools:
             response = await client.chat.completions.create(
                 model=model,
-                messages=request.messages,
+                messages=msg,  # 添加图片信息到消息
                 temperature=request.temperature,
                 tools=tools,
                 stream=False,
@@ -1340,7 +1360,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         else:
             response = await client.chat.completions.create(
                 model=model,
-                messages=request.messages,
+                messages=msg,  # 添加图片信息到消息
                 temperature=request.temperature,
                 stream=False,
                 max_tokens=request.max_tokens or settings['max_tokens'],
@@ -1518,10 +1538,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         temperature=settings['reasoner']['temperature']
                     )
                     request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+            msg = await images_add_in_messages(request.messages, images)
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
-                    messages=request.messages,
+                    messages=msg,  # 添加图片信息到消息
                     temperature=request.temperature,
                     tools=tools,
                     stream=False,
@@ -1534,7 +1555,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             else:
                 response = await client.chat.completions.create(
                     model=model,
-                    messages=request.messages,
+                    messages=msg,  # 添加图片信息到消息
                     temperature=request.temperature,
                     stream=False,
                     max_tokens=request.max_tokens or settings['max_tokens'],

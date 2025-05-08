@@ -188,6 +188,10 @@
                       @{{ link.name }}
                     </a>
                   </div>
+                  <!-- 图片展示 -->
+                  <div v-if="message.imageLinks?.length" class="image-links">
+                    <img v-for="(link, linkIndex) in message.imageLinks" :key="linkIndex" :src="link.path" class="image-link" @click="openImage(link.path)" />
+                  </div>
                 </div>
                 <!-- AI回复内容 -->
                 <div v-else-if="message.role === 'assistant'"  class="markdown-body" v-html="formatMessage(message.content)"></div>
