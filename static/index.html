@@ -190,7 +190,7 @@
                   </div>
                   <!-- 图片展示 -->
                   <div v-if="message.imageLinks?.length" class="image-links">
-                    <img v-for="(link, linkIndex) in message.imageLinks" :key="linkIndex" :src="link.path" class="image-link" @click="openImage(link.path)" />
+                    <img v-for="(link, linkIndex) in message.imageLinks" :key="linkIndex" :src="link.path" class="image-link"/>
                   </div>
                 </div>
                 <!-- AI回复内容 -->
@@ -485,6 +485,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-book"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('vision')" placement="top">
+              <el-button
+                @click="visionSettings.enabled = !visionSettings.enabled; autoSaveSettings()"
+                class="icon-btn vision-btn"
+                :type="visionSettings.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-camera"></i>
               </el-button>
             </el-tooltip>
 

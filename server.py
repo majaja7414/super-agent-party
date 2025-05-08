@@ -1,7 +1,6 @@
 # -- coding: utf-8 --
 import asyncio
 import copy
-import hashlib
 import json
 import os
 import re
@@ -15,7 +14,6 @@ from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
-import shutil
 from typing import List, Dict
 import shortuuid
 from py.mcp_clients import McpClient
@@ -158,6 +156,7 @@ async def message_without_images(messages: List[Dict]) -> List[Dict]:
     return messages
 
 async def images_in_messages(messages: List[Dict]) -> List[Dict]:
+    import hashlib
     images = []
     index = 0
     for message in messages:
@@ -180,21 +179,43 @@ async def images_in_messages(messages: List[Dict]) -> List[Dict]:
         index += 1
     return images
 
-async def images_add_in_messages(request_messages: List[Dict], images: List[Dict]) -> List[Dict]:
+async def images_add_in_messages(request_messages: List[Dict], images: List[Dict], settings: dict) -> List[Dict]:
     messages=copy.deepcopy(request_messages)
-    for image in images:
-        index = image['index']
-        if index < len(messages):
-            if 'content' in messages[index]:
-                # message['content'] 是一个字符串
-                if isinstance(messages[index]['content'], str):
-                    messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
+    if settings['vision']['enabled']:
+        for image in images:
+            index = image['index']
+            if index < len(messages):
+                if 'content' in messages[index]:
                     for item in image['images']:
-                        messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
-                # message['content'] 是一个列表
-                elif isinstance(messages[index]['content'], list):
-                    for item in image['images']:
-                        messages[index]['content'].extend({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
+                        # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
+                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
+                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                        else:
+                            images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": item['image_url']['url']}}]
+                            client = AsyncOpenAI(api_key=settings['vision']['api_key'],base_url=settings['vision']['base_url'])
+                            response = await client.chat.completions.create(
+                                model=settings['vision']['model'],
+                                messages = [{"role": "user", "content": images_content}],
+                                temperature=settings['vision']['temperature'],
+                            )
+                            messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
+                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "w", encoding='utf-8') as f:
+                                f.write(str(response.choices[0].message.content))
+    else:           
+        for image in images:
+            index = image['index']
+            if index < len(messages):
+                if 'content' in messages[index]:
+                    # message['content'] 是一个字符串
+                    if isinstance(messages[index]['content'], str):
+                        messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
+                        for item in image['images']:
+                            messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
+                    # message['content'] 是一个列表
+                    elif isinstance(messages[index]['content'], list):
+                        for item in image['images']:
+                            messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
     return messages
 
 async def tools_change_messages(request: ChatRequest, settings: dict):
@@ -480,7 +501,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if settings['tools']['language']['enabled']:
                 request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
-            msg = await images_add_in_messages(request.messages, images)
+            msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
@@ -940,7 +961,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                     # 在推理结束后添加完整推理内容到消息
                     request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
-                msg = await images_add_in_messages(request.messages, images)
+                msg = await images_add_in_messages(request.messages, images,settings)
                 if tools:
                     response = await client.chat.completions.create(
                         model=model,
@@ -1343,7 +1364,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         if settings['tools']['language']['enabled']:
             request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
-        msg = await images_add_in_messages(request.messages, images)
+        msg = await images_add_in_messages(request.messages, images,settings)
         if tools:
             response = await client.chat.completions.create(
                 model=model,
@@ -1538,7 +1559,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         temperature=settings['reasoner']['temperature']
                     )
                     request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-            msg = await images_add_in_messages(request.messages, images)
+            msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
                 response = await client.chat.completions.create(
                     model=model,
