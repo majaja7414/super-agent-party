@@ -188,12 +188,13 @@ body {
 }
 
 .el-menu-item {
-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--el-bg-color-page)!important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .el-menu-item:hover {
-background: var(--el-menu-hover-bg-color) !important;
-transform: translateX(4px);
+  background: var(--el-menu-hover-bg-color) !important;
+  transform: translateX(4px);
 }
 
 /* 输入系统全局适配 */
@@ -528,7 +529,7 @@ border: 1px solid var(--border-color) !important;
 
 /* 顶部栏样式 */
 .top-bar {
-  background-color: var(--el-color-primary-dark-2);
+  background-color: var(--el-bg-color-page);
   padding: 0 16px !important;
   display: flex;
   align-items: center;
@@ -568,9 +569,14 @@ border: 1px solid var(--border-color) !important;
   overflow: hidden;
 }
 
+.el-aside {
+  background-color: var(--el-bg-color-page)!important;
+}
+
+
 /* 侧边栏样式 */
 .sidebar {
-  background-color: var(--el-bg-color);
+  background-color: var(--el-bg-color-page) !important;
   border-right: 1px solid var(--el-border-color-light);
   transition: width 0.3s;
   height: 100%;

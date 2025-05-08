@@ -409,11 +409,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     if modelProvider['id'] == settings['reasoner']['selectedProvider']:
                         vendor = modelProvider['vendor']
                         break
+                msg = await images_add_in_messages(reasoner_messages, images,settings)
                 if vendor == 'Ollama':
                     # 流式调用推理模型
                     reasoner_stream = await reasoner_client.chat.completions.create(
                         model=settings['reasoner']['model'],
-                        messages=reasoner_messages,
+                        messages=msg,
                         stream=True,
                         temperature=settings['reasoner']['temperature']
                     )
@@ -471,7 +472,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     # 流式调用推理模型
                     reasoner_stream = await reasoner_client.chat.completions.create(
                         model=settings['reasoner']['model'],
-                        messages=reasoner_messages,
+                        messages=msg,
                         stream=True,
                         max_tokens=1, # 根据实际情况调整
                         temperature=settings['reasoner']['temperature']
@@ -877,11 +878,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         if modelProvider['id'] == settings['reasoner']['selectedProvider']:
                             vendor = modelProvider['vendor']
                             break
+                    msg = await images_add_in_messages(reasoner_messages, images,settings)
                     if vendor == 'Ollama':
                         # 流式调用推理模型
                         reasoner_stream = await reasoner_client.chat.completions.create(
                             model=settings['reasoner']['model'],
-                            messages=reasoner_messages,
+                            messages=msg,
                             stream=True,
                             temperature=settings['reasoner']['temperature']
                         )
@@ -939,7 +941,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         # 流式调用推理模型
                         reasoner_stream = await reasoner_client.chat.completions.create(
                             model=settings['reasoner']['model'],
-                            messages=reasoner_messages,
+                            messages=msg,
                             stream=True,
                             max_tokens=1, # 根据实际情况调整
                             temperature=settings['reasoner']['temperature']
@@ -1333,10 +1335,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 if modelProvider['id'] == settings['reasoner']['selectedProvider']:
                     vendor = modelProvider['vendor']
                     break
+            msg = await images_add_in_messages(reasoner_messages, images,settings)    
             if vendor == 'Ollama':
                 reasoner_response = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
-                    messages=reasoner_messages,
+                    messages=msg,
                     stream=False,
                     temperature=settings['reasoner']['temperature']
                 )
@@ -1353,7 +1356,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             else:
                 reasoner_response = await reasoner_client.chat.completions.create(
                     model=settings['reasoner']['model'],
-                    messages=reasoner_messages,
+                    messages=msg,
                     stream=False,
                     max_tokens=1, # 根据实际情况调整
                     temperature=settings['reasoner']['temperature']
@@ -1532,10 +1535,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     if modelProvider['id'] == settings['reasoner']['selectedProvider']:
                         vendor = modelProvider['vendor']
                         break
+                msg = await images_add_in_messages(reasoner_messages, images,settings)
                 if vendor == 'Ollama':
                     reasoner_response = await reasoner_client.chat.completions.create(
                         model=settings['reasoner']['model'],
-                        messages=reasoner_messages,
+                        messages=msg,
                         stream=False,
                         temperature=settings['reasoner']['temperature']
                     )
@@ -1552,7 +1556,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 else:
                     reasoner_response = await reasoner_client.chat.completions.create(
                         model=settings['reasoner']['model'],
-                        messages=reasoner_messages,
+                        messages=msg,
                         stream=False,
                         max_tokens=1, # 根据实际情况调整
                         temperature=settings['reasoner']['temperature']
