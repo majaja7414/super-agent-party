@@ -1863,7 +1863,7 @@ let vue_methods = {
             const validPaths = result.filePaths
               .filter(path => {
                 const ext = path.split('.').pop()?.toLowerCase() || ''
-                return ALLOWED_IMAGE_EXTENSIONS.includes(ext)
+                return ALLOWED_EXTENSIONS.includes(ext)
               })
             this.handleKbFiles(validPaths)
           }
