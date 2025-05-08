@@ -547,7 +547,7 @@ border: 1px solid var(--border-color) !important;
   height: 24px;
   width: 24px;
   padding: 0;
-  color: var(--el-color-white) !important;
+  color: var(--el-text-color) !important;
   display: flex;
   align-items: center;
   justify-content: center;
