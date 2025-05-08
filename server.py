@@ -207,14 +207,13 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
             index = image['index']
             if index < len(messages):
                 if 'content' in messages[index]:
-                    # message['content'] 是一个字符串
-                    if isinstance(messages[index]['content'], str):
-                        messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
-                        for item in image['images']:
-                            messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
-                    # message['content'] 是一个列表
-                    elif isinstance(messages[index]['content'], list):
-                        for item in image['images']:
+                    for item in image['images']:
+                        # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
+                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
+                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                        else:
+                            messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
                             messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
     return messages
 
