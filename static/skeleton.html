@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Agent party</title>
+  <link rel="icon" href="source/icon.png" type="image/png">
+  <style>
+    /* 基础样式 */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background-color: #f0f2f5;
+      overflow: hidden;
+    }
+    
+    /* 主容器 */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    
+    /* 顶部栏 */
+    .top-bar {
+      height: 30px;
+      background-color: #f0f2f5;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 0 10px;
+      -webkit-app-region: drag;
+      border-bottom: 1px solid #e4e7ed;
+    }
+    
+    /* 主容器 */
+    .main-container {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    
+    /* 侧边栏 */
+    .sidebar {
+      width: 64px;
+      background-color: #f0f2f5;
+      border-right: 1px solid #e4e7ed;
+      transition: width 0.3s;
+      overflow: hidden;
+    }
+    
+    /* 侧边栏菜单 */
+    .el-menu-vertical {
+      height: 100%;
+      border-right: none;
+    }
+    
+    /* 内容区 */
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: #f0f2f5;
+    }
+    
+    /* 骨架屏元素 */
+    .skeleton-item {
+      background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      margin-bottom: 10px;
+    }
+    
+    /* 菜单项骨架 */
+    .menu-skeleton {
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .menu-icon-skeleton {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    
+    .menu-text-skeleton {
+      height: 16px;
+      width: 100px;
+    }
+    
+    /* 聊天区域骨架 */
+    .chat-skeleton {
+      height: calc(100vh - 200px);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .message-skeleton {
+      height: 80px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    
+    .input-skeleton {
+      height: 100px;
+      border-radius: 8px;
+      margin-top: auto;
+    }
+    
+    /* 按钮组骨架 */
+    .button-group-skeleton {
+      display: flex;
+      margin-bottom: 10px;
+    }
+    
+    .button-skeleton {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    
+    /* 闪烁动画 */
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+    
+    /* 应用图标 */
+    .app-logo {
+      width: 64px;
+      height: 64px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0 auto;
+    }
+    
+    .app-logo img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    
+    /* 加载提示 */
+    .loading-text {
+      text-align: center;
+      color: #909399;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    
+    /* 中心内容容器 */
+    .center-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    
+    /* 窗口控制按钮 */
+    .window-controls {
+      display: flex;
+      -webkit-app-region: no-drag;
+    }
+    
+    .window-btn {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+    
+    .window-btn-skeleton {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部栏 -->
+    <div class="top-bar">
+      <div class="window-controls">
+        <div class="window-btn">
+          <div class="skeleton-item window-btn-skeleton"></div>
+        </div>
+        <div class="window-btn">
+          <div class="skeleton-item window-btn-skeleton"></div>
+        </div>
+        <div class="window-btn">
+          <div class="skeleton-item window-btn-skeleton"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主容器 -->
+    <div class="main-container">
+      <!-- 侧边栏 -->
+      <div class="sidebar">
+        <div class="el-menu-vertical">
+          <!-- 菜单项骨架 -->
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+          <div class="menu-skeleton">
+            <div class="skeleton-item menu-icon-skeleton"></div>
+            <div class="skeleton-item menu-text-skeleton"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 内容区 -->
+      <div class="content">
+        <!-- 中心内容 -->
+        <div class="center-content">
+          <!-- 应用图标 -->
+          <div class="app-logo">
+            <img src="source/icon.png" alt="Super Agent Party">
+          </div>
+        </div>
+        
+        <!-- 聊天区域骨架 -->
+        <div class="chat-skeleton">
+          <!-- 消息骨架 -->
+          <div class="skeleton-item message-skeleton"></div>
+          <div class="skeleton-item message-skeleton"></div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+  
+  <script>
+    // 从预加载脚本中获取ipcRenderer
+    const { ipcRenderer } = window.electron || {};
+    
+    // 监听后端服务准备就绪的消息
+    if (ipcRenderer) {
+      ipcRenderer.on('backend-ready', () => {
+        // 后端服务准备就绪，可以进行页面跳转
+        // 使用从preload.js中暴露的服务器配置
+        const { host, port } = window.electron.server;
+        window.location.href = `http://${host}:${port}`;
+      });
+    }
+  </script>
+</body>
+</html>

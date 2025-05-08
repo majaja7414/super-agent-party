@@ -60,25 +60,52 @@ if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true })
 }
 
-function createLoadingWindow() {
+// 创建骨架屏窗口
+function createSkeletonWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  loadingWindow = new BrowserWindow({
-    width: 600,
-    height: 500,
+  mainWindow = new BrowserWindow({
+    width: width,
+    height: height,
     frame: false,
-    transparent: true,
-    alwaysOnTop: true,
-    resizable: false,
+    show: true,
     icon: 'static/source/icon.png',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-      devTools: false
+      preload: path.join(__dirname, 'static/js/preload.js'),
+      nodeIntegration: false,
+      sandbox: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+      webSecurity: false,
+      devTools: isDev,
+      partition: 'persist:main-session',
     }
   })
+
+  remoteMain.enable(mainWindow.webContents)
   
-  // 加载本地等待页面
-  loadingWindow.loadFile(path.join(__dirname, 'static/loading.html'))
+  // 加载骨架屏页面
+  mainWindow.loadFile(path.join(__dirname, 'static/skeleton.html'))
+  
+  // 设置自动更新
+  setupAutoUpdater()
+  
+  // 窗口状态同步
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-state', 'maximized')
+  })
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-state', 'normal')
+  })
+  
+  // 窗口关闭事件处理 - 最小化到托盘而不是退出
+  mainWindow.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault()
+      mainWindow.hide()
+      return false
+    }
+    return true
+  })
 }
 
 function startBackend() {
@@ -179,24 +206,18 @@ async function waitForBackend() {
   const RETRY_INTERVAL = 1000
   let retries = 0
 
-  const updateProgress = (progress) => {
-    if (loadingWindow && !loadingWindow.isDestroyed()) {
-      loadingWindow.webContents.send('progress-update', {
-        progress: Math.min(progress, 95)
-      })
-    }
-  }
-
   while (retries < MAX_RETRIES) {
     try {
       const response = await fetch(`http://${HOST}:${PORT}/health`)
       if (response.ok) {
-        updateProgress(100)
+        // 后端服务准备就绪，通知骨架屏页面
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('backend-ready')
+        }
         return
       }
     } catch (err) {
       retries++
-      updateProgress((retries / MAX_RETRIES) * 90)
       await new Promise(resolve => setTimeout(resolve, RETRY_INTERVAL))
     }
   }
@@ -262,46 +283,17 @@ app.on('second-instance', (event, commandLine, workingDirectory) => {
 // 只有在获得锁（第一个实例）时才执行初始化
 app.whenReady().then(async () => {
   try {
-    createLoadingWindow()
-
-    // 并行处理后端启动和预加载
-    const [_, preloadComplete] = await Promise.allSettled([
-      (async () => {
-        startBackend()
-        await waitForBackend()
-      })(),
-    ])
-
-    // 关闭加载窗口
-    if (loadingWindow && !loadingWindow.isDestroyed()) {
-      loadingWindow.close()
-      loadingWindow = null
-    }
-
-    // 创建主窗口
-    console.log('Creating main window...')
-    const { width, height } = screen.getPrimaryDisplay().workAreaSize
-    mainWindow = new BrowserWindow({
-      width: width,
-      height: height,
-      frame: false,
-      show: false,
-      icon: 'static/source/icon.png',
-      webPreferences: {
-        preload: path.join(__dirname, 'static/js/preload.js'),
-        nodeIntegration: false,
-        sandbox: false,
-        contextIsolation: true,
-        enableRemoteModule: false,
-        webSecurity: false,
-        devTools: isDev, // 开发模式下启用开发者工具，但是不默认展开
-        partition: 'persist:main-session',
-      }
-    })
-
-    remoteMain.enable(mainWindow.webContents)
-    // 设置自动更新
-    setupAutoUpdater()
+    // 创建骨架屏窗口
+    createSkeletonWindow()
+    
+    // 启动后端服务
+    startBackend()
+    
+    // 等待后端服务准备就绪
+    await waitForBackend()
+    
+    // 后端服务准备就绪后，加载完整内容
+    console.log('Backend ready, loading main content...')
 
     // 检查更新IPC
     ipcMain.handle('check-for-updates', () => {
@@ -326,7 +318,6 @@ app.whenReady().then(async () => {
             
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)
-    mainWindow.show()
     ipcMain.on('set-language', (_, lang) => {
       currentLanguage = lang;
       updateTrayMenu();
