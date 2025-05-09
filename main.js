@@ -76,7 +76,7 @@ function createSkeletonWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       webSecurity: false,
-      devTools: true,
+      devTools: isDev,
       partition: 'persist:main-session',
     }
   })
