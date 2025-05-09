@@ -196,6 +196,9 @@ let vue_data = {
       Crawl4Ai_api_key: 'test_api_code'
     },
     knowledgeBases: [],
+    KBSettings: {
+      when: 'before_thinking',
+    },
     showAddKbDialog: false,
     showKnowledgeDialog: false,
     showMCPServerDialog: false,

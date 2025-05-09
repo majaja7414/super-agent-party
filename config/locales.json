@@ -11,7 +11,8 @@
         "knowledge_base":"查询知识库中，请稍候...",
         "call":"调用",
         "tool":"工具中，请稍候...",
-        "tool_result":"工具结果"
+        "tool_result":"工具结果",
+        "KB_search":"知识库搜索中，请稍候..."
     },
     "en-US":{
         "web_search":"Searching the Internet, please wait...",
@@ -25,6 +26,7 @@
         "knowledge_base":"Querying the knowledge base, please wait...",
         "call":"Call",
         "tool":"Tool, please wait...",
-        "tool_result":"Tool result"
+        "tool_result":"Tool result",
+        "KB_search":"Knowledge base search, please wait..."
     }
 }

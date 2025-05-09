@@ -827,6 +827,7 @@ let vue_methods = {
           this.reasonerSettings = data.data.reasoner || {};
           this.visionSettings = data.data.vision || {};
           this.webSearchSettings = data.data.webSearch || {};
+          this.KBSettings = data.data.KBSettings || {};
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
@@ -1231,6 +1232,7 @@ let vue_methods = {
         reasoner: this.reasonerSettings,
         vision: this.visionSettings,
         webSearch: this.webSearchSettings, 
+        KBSettings: this.KBSettings,
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,

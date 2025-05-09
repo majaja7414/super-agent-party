@@ -290,6 +290,7 @@ const translations = {
       'visionSettings': '视觉配置',
       'addVisionNotice': '请选择供应商后，请返回此页面并选择【视觉模型】以继续。视觉模型名称中一般包含“vision”、“v”、“o”等关键词。',
       'vision': '视觉',
+      'KBSearchTiming': '知识库搜索时机',
     },
     'en-US': {
       'chat': 'Chat',
@@ -581,5 +582,6 @@ const translations = {
       'visionSettings': 'Vision Settings',
       'addVisionNotice': 'Please select the supplier first, then return to this page and select 【Visual Model】 to continue. The visual model name generally contains keywords such as "vision", "v", "o", etc.',
       'vision': 'Vision',
+      'KBSearchTiming': 'Knowledge Base Search Timing'
     }
   };
