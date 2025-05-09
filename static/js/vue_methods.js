@@ -83,6 +83,13 @@ const IMAGE_MIME_WHITELIST = [
 ];
 
 let vue_methods = {
+  handleUpdateAction() {
+    if (this.updateDownloaded) {
+      window.electronAPI.quitAndInstall();
+    } else if (this.updateAvailable) {
+      window.electronAPI.downloadUpdate();
+    }
+  },
   formatFileUrl(originalUrl) {
     if (!this.isElectron) {
       try {

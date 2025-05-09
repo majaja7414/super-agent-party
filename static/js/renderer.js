@@ -30,12 +30,13 @@ const app = Vue.createApp({
       window.electronAPI.onUpdateError((_, err) => {
         showNotification(err, 'error');
       });
-      window.electronAPI.onDownloadProgress((_, progressObj) => {
-        this.downloadProgress = progressObj.percent;
+      window.electronAPI.onDownloadProgress((_, progress) => {
+        this.downloadProgress = progress.percent;
+        this.updateIcon = 'fa-solid fa-spinner fa-spin';
       });
       window.electronAPI.onUpdateDownloaded(() => {
         this.updateDownloaded = true;
-        showNotification(this.t('updateDownloaded'), 'success');
+        this.updateIcon = 'fa-solid fa-rocket';
       });
     }
     this.$nextTick(() => {
@@ -102,6 +103,11 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    updateButtonText() {
+      if (this.updateDownloaded) return this.t('installNow');
+      if (this.downloadProgress > 0) return this.t('downloading');
+      return this.t('updateAvailable');
+    },
     allItems() {
       return [
         ...this.files.map(file => ({ ...file, type: 'file' })),
