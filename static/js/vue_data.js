@@ -57,6 +57,11 @@ if (isElectron) {
   }
 
 let vue_data = {
+    downloadProgress: 0,
+    updateDownloaded: false,
+    updateAvailable: false,
+    updateInfo: null,
+    updateIcon: 'fa-solid fa-download',
     system_prompt: ' ',
     isdocker: false,
     isExpanded: true,

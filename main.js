@@ -76,7 +76,7 @@ function createSkeletonWindow() {
       contextIsolation: true,
       enableRemoteModule: false,
       webSecurity: false,
-      devTools: isDev,
+      devTools: true,
       partition: 'persist:main-session',
     }
   })
@@ -226,32 +226,26 @@ async function waitForBackend() {
 
 // 配置自动更新
 function setupAutoUpdater() {
-  // 检查更新出错
+  autoUpdater.autoDownload = false; // 先禁用自动下载
   autoUpdater.on('error', (err) => {
-    mainWindow.webContents.send('update-error', err.message)
-  })
-
-  // 检查到新版本
+    mainWindow.webContents.send('update-error', err.message);
+  });
   autoUpdater.on('update-available', (info) => {
-    updateAvailable = true
-    mainWindow.webContents.send('update-available', info)
-  })
-
-  // 没有新版本
-  autoUpdater.on('update-not-available', () => {
-    updateAvailable = false
-    mainWindow.webContents.send('update-not-available')
-  })
-
-  // 下载进度
+    updateAvailable = true;
+    // 显示更新按钮并开始下载
+    mainWindow.webContents.send('update-available', info);
+    autoUpdater.downloadUpdate(); // 自动开始下载
+  });
   autoUpdater.on('download-progress', (progressObj) => {
-    mainWindow.webContents.send('download-progress', progressObj)
-  })
-
-  // 下载完成
+    mainWindow.webContents.send('download-progress', {
+      percent: progressObj.percent.toFixed(1),
+      transferred: (progressObj.transferred / 1024 / 1024).toFixed(2),
+      total: (progressObj.total / 1024 / 1024).toFixed(2)
+    });
+  });
   autoUpdater.on('update-downloaded', () => {
-    mainWindow.webContents.send('update-downloaded')
-  })
+    mainWindow.webContents.send('update-downloaded');
+  });
 }
 
 // 确保只运行一个实例
@@ -329,8 +323,8 @@ app.whenReady().then(async () => {
 
     // 安装更新IPC
     ipcMain.handle('quit-and-install', () => {
-      autoUpdater.quitAndInstall()
-    })
+      setTimeout(() => autoUpdater.quitAndInstall(), 500);
+    });
             
     // 加载主页面
     await mainWindow.loadURL(`http://${HOST}:${PORT}`)

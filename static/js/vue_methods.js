@@ -83,6 +83,30 @@ const IMAGE_MIME_WHITELIST = [
 ];
 
 let vue_methods = {
+  handleUpdateAction() {
+    if (this.updateDownloaded) {
+      window.electronAPI.quitAndInstall();
+    } else if (this.updateAvailable) {
+      window.electronAPI.downloadUpdate();
+    }
+  },
+  formatFileUrl(originalUrl) {
+    if (!this.isElectron) {
+      try {
+        const url = new URL(originalUrl);
+        // 替换0.0.0.0为当前域名
+        if (url.hostname === '0.0.0.0' || url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+          url.hostname = window.location.hostname;
+          // 如果需要强制使用HTTPS可以添加：
+          url.protocol = window.location.protocol;
+        }
+        return url.toString();
+      } catch(e) {
+        return originalUrl;
+      }
+    }
+    return originalUrl;
+  },
   resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
   },
@@ -1863,7 +1887,7 @@ let vue_methods = {
             const validPaths = result.filePaths
               .filter(path => {
                 const ext = path.split('.').pop()?.toLowerCase() || ''
-                return ALLOWED_IMAGE_EXTENSIONS.includes(ext)
+                return ALLOWED_EXTENSIONS.includes(ext)
               })
             this.handleKbFiles(validPaths)
           }

@@ -3,6 +3,7 @@
   /* 过渡动画 */
   --transition-duration: 0.3s;
   --transition-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --progress:0%;
 }
 /* 亮色主题默认值 */
 [data-theme="light"] {
@@ -2046,4 +2047,30 @@ border: 1px solid var(--border-color) !important;
   height: auto; /* 🌟 保持比例 */
   border-radius: 12px;
   object-fit: contain; /* 🌟 智能适应容器 */
+}
+
+.update-btn {
+  transition: all 0.3s ease;
+  background: linear-gradient(90deg, #409eff var(--progress), transparent var(--progress));
+}
+.update-btn.installed {
+  background: #67c23a !important;
+}
+.update-btn:hover {
+  transform: scale(1.05);
+}
+.progress-text {
+  margin-left: 5px;
+  font-size: 0.8em;
+}
+.fa-spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.update-btn {
+  --progress: calc(var(--download-progress) * 1%);
 }
