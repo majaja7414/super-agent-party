@@ -25,6 +25,8 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 #### **[点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.2/Super-Agent-Party-Setup-0.1.2.exe)**
 
+⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
+
 ### docker部署（推荐）
 
 - 两行命令安装本项目：

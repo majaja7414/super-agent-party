@@ -25,6 +25,8 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 #### **[Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.2/Super-Agent-Party-Setup-0.1.2.exe)**
 
+⭐Note! Choose to install for the current user only during installation, otherwise, administrator privileges will be required when starting.
+
 ### Docker Deployment (Recommended)
 
 - Install this project with two commands:
