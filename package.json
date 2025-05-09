@@ -107,20 +107,20 @@
     },
     "win": {
       "icon": "static/source/icon.png",
+      "verifyUpdateCodeSignature": false,
       "target": [
         "nsis"
       ],
-      "artifactName": "${productName}-Setup-${version}.${ext}",
       "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao",
       "rfc3161TimeStampServer": "http://timestamp.digicert.com"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "menuCategory": "Productivity Tools"
+      "allowElevation": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "uninstallDisplayName": "${productName}",
+      "createDesktopShortcut": true
     }
   }
 }

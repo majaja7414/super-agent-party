@@ -231,7 +231,7 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': latex_message})
     return request
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
     global mcp_client_list
     images = await images_in_messages(request.messages)
     request.messages = await message_without_images(request.messages)
@@ -277,12 +277,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             tools.append(pollinations_image_tool)
         source_prompt = ""
         if request.fileLinks:
-            # 遍历文件链接列表
-            for file_link in request.fileLinks:
-                # 如果file_link是http://${HOST}:${PORT}开头
-                if file_link.startswith(f"http://${HOST}:{PORT}"):
-                    # 将"http://${HOST}:{PORT}"替换为"uploaded_files"
-                    file_link = file_link.replace(f"http://{HOST}:{PORT}", "uploaded_files")
+            print("fileLinks",request.fileLinks)
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
             fileLinks_message = f"\n\n相关文件内容：{files_content}"
@@ -353,7 +348,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
                             f.write(str(results))           
                         # 将文件链接更新为新的链接
-                        fileLink=f"http://{HOST}:{PORT}/uploaded_files/{filename}"
+                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
                         tool_chunk = {
                             "choices": [{
                                 "delta": {
@@ -861,7 +856,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
                         f.write(str(results))            
                     # 将文件链接更新为新的链接
-                    fileLink=f"http://{HOST}:{PORT}/uploaded_files/{filename}"
+                    fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
                     tool_chunk = {
                         "choices": [{
                             "delta": {
@@ -1199,7 +1194,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict):
+async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
     global mcp_client_list
     from py.load_files import get_files_content
     from py.web_search import (
@@ -1260,12 +1255,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             extra_params = {}
         extra_params['enable_thinking'] = False
         if request.fileLinks:
-            # 遍历文件链接列表
-            for file_link in request.fileLinks:
-                # 如果file_link是http://${HOST}:${PORT}开头
-                if file_link.startswith(f"http://${HOST}:{PORT}"):
-                    # 将"http://${HOST}:{PORT}"替换为"uploaded_files"
-                    file_link = file_link.replace(f"http://{HOST}:{PORT}", "uploaded_files")
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
             system_message = f"\n\n相关文件内容：{files_content}"
@@ -1747,7 +1736,8 @@ async def fetch_provider_models(request: ProviderModelRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/v1/chat/completions")
-async def chat_endpoint(request: ChatRequest):
+async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
+    fastapi_base_url = str(fastapi_request.base_url)
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
     if model == 'super-model':
@@ -1769,8 +1759,8 @@ async def chat_endpoint(request: ChatRequest):
             settings = current_settings
         try:
             if request.stream:
-                return await generate_stream_response(client,reasoner_client, request, settings)
-            return await generate_complete_response(client,reasoner_client, request, settings)
+                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url)
+            return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1812,8 +1802,8 @@ async def chat_endpoint(request: ChatRequest):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings)
-            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
+            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1927,6 +1917,7 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 
 @app.post("/load_file")
 async def load_file_endpoint(request: Request, files: List[UploadFile] = File(None)):
+    fastapi_base_url = str(request.base_url)
     logger.info(f"Received request with content type: {request.headers.get('Content-Type')}")
     file_links = []
     
@@ -1949,7 +1940,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     buffer.write(content)
                 
                 file_link = {
-                    "path": f"http://{HOST}:{PORT}/uploaded_files/{unique_filename}",
+                    "path": f"{fastapi_base_url}uploaded_files/{unique_filename}",
                     "name": file.filename
                 }
                 file_links.append(file_link)
@@ -1977,7 +1968,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     dst.write(src.read())
                 
                 file_link = {
-                    "path": f"http://{HOST}:{PORT}/uploaded_files/{unique_filename}",
+                    "path": f"{fastapi_base_url}uploaded_files/{unique_filename}",
                     "name": file_name
                 }
                 file_links.append(file_link)

@@ -99,6 +99,7 @@ let vue_methods = {
           url.hostname = window.location.hostname;
           // 如果需要强制使用HTTPS可以添加：
           url.protocol = window.location.protocol;
+          url.port = window.location.port;
         }
         return url.toString();
       } catch(e) {
@@ -472,8 +473,18 @@ let vue_methods = {
           })
           .catch(console.error);
       });
-    
-      return rendered;
+
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = rendered;
+      // 处理链接标签
+      const links = tempDiv.getElementsByTagName('a');
+      for (const link of links) {
+        const originalHref = link.getAttribute('href');
+        if (originalHref) {
+          link.setAttribute('href', this.formatFileUrl(originalHref));
+        }
+      }
+      return tempDiv.innerHTML;
     },
     copyMessageContent(message) {
       // 获取原始内容（用户消息直接复制，AI消息复制原始markdown）
