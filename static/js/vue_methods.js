@@ -1088,7 +1088,9 @@ let vue_methods = {
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || '请求失败');
+          // throw new Error(errorData.error?.message || this.t('error_unknown'));
+          showNotification(errorData.error?.message || this.t('error_unknown'), 'error');
+          throw new Error(errorData.error?.message || this.t('error_unknown')); // 抛出错误以停止执行
         }
         
         this.isTyping = true;
@@ -1154,6 +1156,7 @@ let vue_methods = {
                 }
               } catch (e) {
                 console.error(e);
+                showNotification(e, 'error');
               }
             }
           }
