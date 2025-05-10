@@ -251,7 +251,7 @@
             <!-- 文件上传对话框 -->
             <el-dialog
               v-model="showUploadDialog"
-              :title="t('uploadFile')"
+              :title="currentUploadType==='file' ? t('uploadFile') : t('uploadImage')"
               width="30%"
               :before-close="() => showUploadDialog = false">
 
