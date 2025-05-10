@@ -56,10 +56,19 @@ def get_base_path():
     else:
         # 开发环境使用当前工作目录
         return os.path.abspath(".")
+    
+# 在get_setting.py开头添加
+from appdirs import user_data_dir
+# 替换原有的base_path定义
+APP_NAME = "Super-Agent-Party"  # 替换为你的应用名称
+USER_DATA_DIR = user_data_dir(APP_NAME, roaming=True)
+os.makedirs(USER_DATA_DIR, exist_ok=True)
+# 修改SETTINGS_FILE路径
+SETTINGS_FILE = os.path.join(USER_DATA_DIR, 'settings.json')
+
 base_path = get_base_path()
 CONFIG_BASE_PATH = os.path.join(base_path, 'config')
 os.makedirs(CONFIG_BASE_PATH, exist_ok=True)
-SETTINGS_FILE = os.path.join(CONFIG_BASE_PATH, 'settings.json')
 SETTINGS_TEMPLATE_FILE = os.path.join(CONFIG_BASE_PATH, 'settings_template.json')
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
