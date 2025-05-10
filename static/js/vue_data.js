@@ -181,6 +181,7 @@ let vue_data = {
 }
 }`
     },
+    activeKbTab: 'add', // 默认激活的标签页
     webSearchSettings: {
       enabled: false,
       engine: 'duckduckgo',

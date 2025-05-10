@@ -292,6 +292,8 @@ const translations = {
       'vision': '视觉',
       'KBSearchTiming': '知识库搜索时机',
       'error_unknown': '未知错误',
+      'kbSettings': '知识库配置',
+      'addKnowledgeBase': '添加知识库',
     },
     'en-US': {
       'chat': 'Chat',
@@ -585,5 +587,7 @@ const translations = {
       'vision': 'Vision',
       'KBSearchTiming': 'Knowledge Base Search Timing',
       'error_unknown': 'Unknown error',
+      'kbSettings': 'Knowledge Base Settings',
+      'addKnowledgeBase': 'Add Knowledge Base',
     }
   };
