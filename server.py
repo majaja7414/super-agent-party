@@ -188,8 +188,8 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                 if 'content' in messages[index]:
                     for item in image['images']:
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
-                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
                                 messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": item['image_url']['url']}}]
@@ -200,7 +200,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                                 temperature=settings['vision']['temperature'],
                             )
                             messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "w", encoding='utf-8') as f:
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "w", encoding='utf-8') as f:
                                 f.write(str(response.choices[0].message.content))
     else:           
         for image in images:
@@ -209,8 +209,8 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                 if 'content' in messages[index]:
                     for item in image['images']:
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
-                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
                                 messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
