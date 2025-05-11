@@ -2,9 +2,8 @@ import asyncio
 import json
 import os
 import sys
-import aiofiles
-import portalocker
-
+import aiosqlite
+from pathlib import Path
 HOST = None
 PORT = None
 _save_lock = asyncio.Lock()
@@ -73,48 +72,43 @@ SETTINGS_TEMPLATE_FILE = os.path.join(CONFIG_BASE_PATH, 'settings_template.json'
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)
 
-async def load_settings():
-    async with _save_lock:  # 等待所有写入操作完成
-        try:
-            async with aiofiles.open(SETTINGS_FILE, mode='r', encoding='utf-8') as f:
-                contents = await f.read()
-                settings = json.loads(contents)
-            # 补充缺失的字段（包括嵌套字段）
-            def merge_defaults(default, target):
-                for key, value in default.items():
-                    if key not in target:
-                        target[key] = value
-                    elif isinstance(value, dict):
-                        merge_defaults(value, target[key])
-            merge_defaults(default_settings, settings)
-            # 设置 isdocker 字段
-            if in_docker():
-                settings['isdocker'] = True
-            return settings
-        except FileNotFoundError:
-            if in_docker():
-                settings['isdocker'] = True
-            await save_settings(default_settings)
-            return settings
-
-
-async def save_settings(settings):
-    async with _save_lock:
-        loop = asyncio.get_event_loop()
-        async with aiofiles.open(SETTINGS_FILE, mode='w', encoding='utf-8') as af:
-            # 获取底层文件描述符
-            raw_file = af._file.buffer.raw  # 访问aiofiles内部原始文件对象
-            fd = raw_file.fileno()
-            
-            # 使用文件描述符加锁
-            await loop.run_in_executor(
-                None, 
-                lambda: portalocker.lock(raw_file, portalocker.LOCK_EX)
+# 修改数据库路径定义
+DATABASE_PATH = os.path.join(USER_DATA_DIR, 'super_agent_party.db')
+# 添加数据库初始化函数
+async def init_db():
+    Path(USER_DATA_DIR).mkdir(parents=True, exist_ok=True)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute('''
+            CREATE TABLE IF NOT EXISTS settings (
+                id INTEGER PRIMARY KEY,
+                data TEXT NOT NULL
             )
-            try:
-                await af.write(json.dumps(settings, ensure_ascii=False, indent=2))
-            finally:
-                await loop.run_in_executor(
-                    None, 
-                    lambda: portalocker.unlock(raw_file)
-                )
+        ''')
+        await db.commit()
+# 修改 load_settings 函数
+async def load_settings():
+    await init_db()
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        async with db.execute('SELECT data FROM settings WHERE id = 1') as cursor:
+            row = await cursor.fetchone()
+            if row:
+                settings = json.loads(row[0])
+                # 合并默认设置（保持原有逻辑）
+                def merge_defaults(default, target):
+                    for key, value in default.items():
+                        if key not in target:
+                            target[key] = value
+                        elif isinstance(value, dict):
+                            merge_defaults(value, target[key])
+                merge_defaults(default_settings, settings)
+                return settings
+            else:
+                # 插入默认配置
+                await save_settings(default_settings)
+                return default_settings.copy()
+# 修改 save_settings 函数
+async def save_settings(settings):
+    data = json.dumps(settings, ensure_ascii=False, indent=2)
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute('INSERT OR REPLACE INTO settings (id, data) VALUES (1, ?)', (data,))
+        await db.commit()
