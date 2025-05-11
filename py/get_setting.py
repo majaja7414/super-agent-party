@@ -1,4 +1,3 @@
-import asyncio
 import json
 import os
 import sys
@@ -6,7 +5,6 @@ import aiosqlite
 from pathlib import Path
 HOST = None
 PORT = None
-_save_lock = asyncio.Lock()
 def configure_host_port(host, port):
     global HOST, PORT
     HOST = host
