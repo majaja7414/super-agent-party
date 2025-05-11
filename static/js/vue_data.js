@@ -305,7 +305,7 @@ let vue_data = {
       }
     ],
     vendorValues: [
-      'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
+      'custom', 'OpenAI', 'Ollama','Vllm', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
       'LMstudio', 'Gemini','Anthropic', 'Grok', 'mistral', 'lingyi',
       'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'o3',

@@ -1576,6 +1576,7 @@ let vue_methods = {
         'moonshot': 'https://api.moonshot.cn/v1',
         'minimax': 'https://api.minimax.chat/v1',
         'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
+        'Vllm': 'http://127.0.0.1:8000/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
         'Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
         'Anthropic': 'https://api.anthropic.com/v1',
