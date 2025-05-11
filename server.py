@@ -36,7 +36,7 @@ mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -2087,8 +2087,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # 生成智能体ID和配置路径
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
-                os.makedirs('agents', exist_ok=True)
-                config_path = os.path.join('agents', f"{agent_id}.json")
+                config_path = os.path.join(AGENT_DIR, f"{agent_id}.json")
                 
                 with open(config_path, 'w', encoding='utf-8') as f:
                     json.dump(current_settings, f, indent=4, ensure_ascii=False)

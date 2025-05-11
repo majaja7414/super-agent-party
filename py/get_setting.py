@@ -65,6 +65,9 @@ os.makedirs(USER_DATA_DIR, exist_ok=True)
 UPLOAD_FILES_DIR = os.path.join(USER_DATA_DIR, 'uploaded_files')
 os.makedirs(UPLOAD_FILES_DIR, exist_ok=True)
 
+AGENT_DIR = os.path.join(USER_DATA_DIR, 'agents')
+os.makedirs(AGENT_DIR, exist_ok=True)
+
 KB_DIR = os.path.join(USER_DATA_DIR, 'kb')
 os.makedirs(KB_DIR, exist_ok=True)
 
