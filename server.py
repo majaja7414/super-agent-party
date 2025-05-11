@@ -36,7 +36,7 @@ mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -338,8 +338,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         uid = str(uuid.uuid4())
                         # 构造文件名
                         filename = f"{timestamp}_{uid}.txt"
-                        # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                        # 将搜索结果写入UPLOAD_FILES_DIR文件夹下的filename文件
+                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
                             f.write(str(all_kb_content))           
                         # 将文件链接更新为新的链接
                         fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
@@ -391,7 +391,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         # 构造文件名
                         filename = f"{timestamp}_{uid}.txt"
                         # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
                             f.write(str(results))           
                         # 将文件链接更新为新的链接
                         fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
@@ -899,7 +899,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     # 构造文件名
                     filename = f"{timestamp}_{uid}.txt"
                     # 将搜索结果写入uploaded_file文件夹下的filename文件
-                    with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                    with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
                         f.write(str(results))            
                     # 将文件链接更新为新的链接
                     fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
@@ -1968,11 +1968,6 @@ async def initialize_a2a(request: Request):
 async def health_check():
     return {"status": "ok"}
 
-# 设置文件存储目录
-UPLOAD_DIRECTORY = "./uploaded_files"
-
-if not os.path.exists(UPLOAD_DIRECTORY):
-    os.makedirs(UPLOAD_DIRECTORY)
 
 @app.post("/load_file")
 async def load_file_endpoint(request: Request, files: List[UploadFile] = File(None)):
@@ -1991,7 +1986,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
             for file in files:
                 file_extension = os.path.splitext(file.filename)[1]
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
-                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
                 
                 # 保存上传的文件
                 with open(destination, "wb") as buffer:
@@ -2020,7 +2015,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 # 生成唯一文件名
                 file_extension = os.path.splitext(file_name)[1]
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
-                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
                 
                 # 复制文件到上传目录
                 with open(file_path, "rb") as src, open(destination, "wb") as dst:
@@ -2116,7 +2111,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
 
-app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
+app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")
 

@@ -58,8 +58,16 @@ def get_base_path():
 from appdirs import user_data_dir
 # 替换原有的base_path定义
 APP_NAME = "Super-Agent-Party"  # 替换为你的应用名称
+
 USER_DATA_DIR = user_data_dir(APP_NAME, roaming=True)
 os.makedirs(USER_DATA_DIR, exist_ok=True)
+
+UPLOAD_FILES_DIR = os.path.join(USER_DATA_DIR, 'uploaded_files')
+os.makedirs(UPLOAD_FILES_DIR, exist_ok=True)
+
+KB_DIR = os.path.join(USER_DATA_DIR, 'kb')
+os.makedirs(KB_DIR, exist_ok=True)
+
 # 修改SETTINGS_FILE路径
 SETTINGS_FILE = os.path.join(USER_DATA_DIR, 'settings.json')
 
