@@ -21,15 +21,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
@@ -44,102 +44,41 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
-        run: |
-          pyinstaller server.spec
+        run: pyinstaller server.spec
 
       - name: Build Electron app
         run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            npm run build:win
-          elif [ "${{ matrix.os }}" == "macos-latest" ]; then
-            npm run build:mac
-          else
-            npm run build:linux
-          fi
+          case "${{ matrix.os }}" in
+            windows-latest) npm run build:win ;;
+            macos-latest) npm run build:mac ;;
+            *) npm run build:linux ;;
+          esac
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.0
         with:
           name: ${{ matrix.artifact_name }}
-          path: |
-            release/
+          path: release/
 
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
+    permissions:
+      contents: write
     steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: Automated release for ${{ github.ref_name }}
+          files: |
+            super-agent-party-win/release/*.exe
+            super-agent-party-mac/release/*.dmg
+            super-agent-party-linux/release/*.AppImage
+            super-agent-party-linux/release/*.deb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      # Windows
-      - name: Set asset name for Windows
-        id: set_asset_name_win
-        run: echo "::set-output name=asset_name::$(ls ./super-agent-party-win/release/*.exe | xargs -n 1 basename)"
-      
-      - name: Upload Windows Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./super-agent-party-win/release/*.exe
-          asset_name: ${{ steps.set_asset_name_win.outputs.asset_name }}
-          asset_content_type: application/octet-stream
-
-      # macOS
-      - name: Set asset name for macOS
-        id: set_asset_name_mac
-        run: echo "::set-output name=asset_name::$(ls ./super-agent-party-mac/release/*.dmg | xargs -n 1 basename)"
-
-      - name: Upload macOS Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./super-agent-party-mac/release/*.dmg
-          asset_name: ${{ steps.set_asset_name_mac.outputs.asset_name }}
-          asset_content_type: application/octet-stream
-
-      # Linux - AppImage
-      - name: Set asset name for Linux AppImage
-        id: set_asset_name_linux_appimage
-        run: echo "::set-output name=asset_name::$(ls ./super-agent-party-linux/release/*.AppImage | xargs -n 1 basename)"
-
-      - name: Upload Linux AppImage Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./super-agent-party-linux/release/*.AppImage
-          asset_name: ${{ steps.set_asset_name_linux_appimage.outputs.asset_name }}
-          asset_content_type: application/octet-stream
-
-      # Linux - deb
-      - name: Set asset name for Linux deb
-        id: set_asset_name_linux_deb
-        run: echo "::set-output name=asset_name::$(ls ./super-agent-party-linux/release/*.deb | xargs -n 1 basename)"
-
-      - name: Upload Linux deb Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./super-agent-party-linux/release/*.deb
-          asset_name: ${{ steps.set_asset_name_linux_deb.outputs.asset_name }}
-          asset_content_type: application/vnd.debian.binary-package
