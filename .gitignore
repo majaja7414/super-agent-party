@@ -30,7 +30,7 @@ MANIFEST
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
-*.spec
+# *.spec
 
 # Installer logs
 pip-log.txt
@@ -182,5 +182,4 @@ release/
 server.build/
 server.dist/
 agents/
-tiktoken_cache/
 super-agent-data/

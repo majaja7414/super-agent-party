@@ -75,13 +75,17 @@
       "icon": "static/source/icon.png",
       "target": ["AppImage", "deb"],
       "artifactName": "${productName}-${version}-Linux.${ext}",
-      "category": "Development"
+      "verifyUpdateCodeSignature": false,
+      "legalTrademarks": "Super Agent Party™",
+      "publisherName": "Heshengtao"
     },
     "mac": {
       "icon": "static/source/icon.png",
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
-      "category": "public.app-category.productivity"
+      "verifyUpdateCodeSignature": false,
+      "legalTrademarks": "Super Agent Party™",
+      "publisherName": "Heshengtao"
     },
     "dmg": {
       "background": "static/source/icon.png",
