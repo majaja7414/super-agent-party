@@ -75,13 +75,15 @@
       "icon": "static/source/icon.png",
       "target": ["AppImage", "deb"],
       "artifactName": "${productName}-${version}-Linux.${ext}",
-      "category": "Development"
+      "verifyUpdateCodeSignature": false,
+      "publisherName": "Heshengtao"
     },
     "mac": {
       "icon": "static/source/icon.png",
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
-      "category": "public.app-category.productivity"
+      "verifyUpdateCodeSignature": false,
+      "publisherName": "Heshengtao"
     },
     "dmg": {
       "background": "static/source/icon.png",
@@ -111,7 +113,6 @@
       "target": [
         "nsis"
       ],
-      "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao",
       "rfc3161TimeStampServer": "http://timestamp.digicert.com"
     },
