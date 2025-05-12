@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 import platform
 
-# 强制禁用签名配置
-macos_codesign_settings = {
+# 全平台禁用签名配置
+universal_disable_sign = {
     'codesign_identity': None,
     'entitlements_file': None,
-    'signing_requirements': ''
+    'signing_requirements': '',
+    'exclude_binaries': True  # 防止包含已签名二进制文件
 }
 
 a = Analysis(
@@ -28,8 +29,7 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # 加强排除可能触发签名的组件
-        'electron',
+        'electron',  # 全局排除
         'electron-builder',
         'electron-updater',
         'node_modules/electron/**',
@@ -43,35 +43,37 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 
+# 全平台通用构建配置
+base_exe_config = {
+    'debug': False,
+    'strip': False,
+    'upx': True,
+    'bootloader_ignore_signals': False,
+    'disable_windowed_traceback': False,
+    **universal_disable_sign  # 合并签名禁用配置
+}
+
 if platform.system() == 'Darwin':
+    # macOS 特殊配置
     exe = EXE(
         pyz,
         a.scripts,
         [],
-        exclude_binaries=True,
         name='server',
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=True,
         console=False,
-        disable_windowed_traceback=False,
         argv_emulation=True,
-        target_arch=None,
         icon='static/source/icon.png',
-        **macos_codesign_settings  # 应用签名禁用配置
+        **base_exe_config
     )
     coll = COLLECT(
         exe,
         a.binaries,
         a.datas,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
         name='server',
-        **macos_codesign_settings  # 应用签名禁用配置
+        upx_exclude=[],
+        **universal_disable_sign
     )
-    # 创建 .app bundle 时禁用签名
+    # macOS 专用 .app 配置
     app = BUNDLE(
         coll,
         name='server.app',
@@ -80,35 +82,26 @@ if platform.system() == 'Darwin':
         info_plist={
             'NSHighResolutionCapable': 'True',
             'LSBackgroundOnly': 'True',
-            'NSAppleScriptEnabled': 'NO'  # 禁用可能触发签名的功能
+            'NSAppleScriptEnabled': 'NO'
         },
-        **macos_codesign_settings  # 关键：应用签名禁用配置到 BUNDLE
+        **universal_disable_sign
     )
 else:
+    # Windows/Linux 配置
     exe = EXE(
         pyz,
         a.scripts,
         [],
-        exclude_binaries=True,
         name='server',
-        debug=False,
-        bootloader_ignore_signals=False,
-        strip=False,
-        upx=True,
-        console=True,
-        disable_windowed_traceback=False,
-        argv_emulation=False,
-        target_arch=None,
-        icon='static/source/icon.png',
-        **macos_codesign_settings
+        console=(platform.system() != 'Windows'),  # Windows 无弹窗
+        icon='static/source/icon.png' if platform.system() == 'Windows' else None,
+        **base_exe_config
     )
     coll = COLLECT(
         exe,
         a.binaries,
         a.datas,
-        strip=False,
-        upx=True,
-        upx_exclude=[],
         name='server',
-        **macos_codesign_settings
+        upx_exclude=[],
+        **universal_disable_sign
     )
