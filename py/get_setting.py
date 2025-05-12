@@ -116,6 +116,9 @@ async def load_settings():
                 merge_defaults(default_settings, settings)
                 return settings
             else:
+                # 如果in_docker()返回True，则修改默认配置
+                if in_docker():
+                    default_settings["isdocker"] = True
                 # 插入默认配置
                 await save_settings(default_settings)
                 return default_settings.copy()
