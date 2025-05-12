@@ -41,6 +41,9 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
+a.codesign_identity = None
+
 pyz = PYZ(a.pure)
 
 # 全平台通用构建配置

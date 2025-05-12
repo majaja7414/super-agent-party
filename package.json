@@ -83,7 +83,9 @@
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
       "verifyUpdateCodeSignature": false,
-      "publisherName": "Heshengtao"
+      "publisherName": "Heshengtao",
+      "identity": null,
+      "hardenedRuntime": false
     },
     "dmg": {
       "background": "static/source/icon.png",
