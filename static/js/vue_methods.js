@@ -827,6 +827,7 @@ let vue_methods = {
           this.reasonerSettings = data.data.reasoner || {};
           this.visionSettings = data.data.vision || {};
           this.webSearchSettings = data.data.webSearch || {};
+          this.KBSettings = data.data.KBSettings || {};
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
@@ -1087,7 +1088,9 @@ let vue_methods = {
         
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.error?.message || '请求失败');
+          // throw new Error(errorData.error?.message || this.t('error_unknown'));
+          showNotification(errorData.error?.message || this.t('error_unknown'), 'error');
+          throw new Error(errorData.error?.message || this.t('error_unknown')); // 抛出错误以停止执行
         }
         
         this.isTyping = true;
@@ -1153,6 +1156,7 @@ let vue_methods = {
                 }
               } catch (e) {
                 console.error(e);
+                showNotification(e, 'error');
               }
             }
           }
@@ -1231,6 +1235,7 @@ let vue_methods = {
         reasoner: this.reasonerSettings,
         vision: this.visionSettings,
         webSearch: this.webSearchSettings, 
+        KBSettings: this.KBSettings,
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
@@ -1571,6 +1576,7 @@ let vue_methods = {
         'moonshot': 'https://api.moonshot.cn/v1',
         'minimax': 'https://api.minimax.chat/v1',
         'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
+        'Vllm': 'http://127.0.0.1:8000/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
         'Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
         'Anthropic': 'https://api.anthropic.com/v1',

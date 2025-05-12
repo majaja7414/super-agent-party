@@ -36,16 +36,16 @@ mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,SETTINGS_FILE,default_settings
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
-if not os.path.exists(SETTINGS_FILE):
-    with open(SETTINGS_FILE, "w", encoding="utf-8") as f:
-        json.dump(default_settings, f, ensure_ascii=False, indent=4)
+
 
 configure_host_port(args.host, args.port)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): 
+    from py.get_setting import init_db
+    await init_db()
     global settings, client, reasoner_client, mcp_client_list,local_timezone,logger,locales
     with open(base_path + "/config/locales.json", "r", encoding="utf-8") as f:
         locales = json.load(f)
@@ -188,8 +188,8 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                 if 'content' in messages[index]:
                     for item in image['images']:
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
-                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
                                 messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": item['image_url']['url']}}]
@@ -200,7 +200,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                                 temperature=settings['vision']['temperature'],
                             )
                             messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "w", encoding='utf-8') as f:
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "w", encoding='utf-8') as f:
                                 f.write(str(response.choices[0].message.content))
     else:           
         for image in images:
@@ -209,8 +209,8 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                 if 'content' in messages[index]:
                     for item in image['images']:
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
-                        if os.path.exists(f"uploaded_files/{item['image_url']['hash']}.txt"):
-                            with open(f"uploaded_files/{item['image_url']['hash']}.txt", "r", encoding='utf-8') as f:
+                        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
+                            with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
                                 messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
@@ -246,7 +246,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool
+    from py.know_base import kb_tool,query_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -288,17 +288,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             else:
                 request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
             source_prompt += fileLinks_message
-        kb_list = []
-        if settings["knowledgeBases"]:
-            for kb in settings["knowledgeBases"]:
-                if kb["enabled"] and kb["processingStatus"] == "completed":
-                    kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
-        if kb_list:
-            kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
-            if request.messages and request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] += kb_list_message
-            else:
-                request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
         user_prompt = request.messages[-1]['content']
         request = await tools_change_messages(request, settings)
         model = settings['model']
@@ -314,6 +303,63 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {}
         extra_params['enable_thinking'] = False
         async def stream_generator(user_prompt):
+            kb_list = []
+            if settings["knowledgeBases"]:
+                for kb in settings["knowledgeBases"]:
+                    if kb["enabled"] and kb["processingStatus"] == "completed":
+                        kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
+            if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
+                if kb_list:
+                    chunk_dict = {
+                        "id": "webSearch",
+                        "choices": [
+                            {
+                                "finish_reason": None,
+                                "index": 0,
+                                "delta": {
+                                    "role":"assistant",
+                                    "content": "",
+                                    "reasoning_content": f"{await t("KB_search")}\n\n"
+                                }
+                            }
+                        ]
+                    }
+                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    all_kb_content = ""
+                    # 用query_knowledge_base函数查询kb_list中所有的知识库
+                    for kb in kb_list:
+                        kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
+                        all_kb_content += kb_content +"\n\n"
+                    if all_kb_content:
+                        kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
+                        request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
+                                                # 获取时间戳和uuid
+                        timestamp = time.time()
+                        uid = str(uuid.uuid4())
+                        # 构造文件名
+                        filename = f"{timestamp}_{uid}.txt"
+                        # 将搜索结果写入UPLOAD_FILES_DIR文件夹下的filename文件
+                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                            f.write(str(all_kb_content))           
+                        # 将文件链接更新为新的链接
+                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                        tool_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(tool_chunk)}\n\n"
+            if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
+                if kb_list:
+                    kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+                    if request.messages and request.messages[0]['role'] == 'system':
+                        request.messages[0]['content'] += kb_list_message
+                    else:
+                        request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
+            else:
+                kb_list = []
             if settings['webSearch']['enabled']:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                     chunk_dict = {
@@ -345,7 +391,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         # 构造文件名
                         filename = f"{timestamp}_{uid}.txt"
                         # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
                             f.write(str(results))           
                         # 将文件链接更新为新的链接
                         fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
@@ -853,7 +899,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     # 构造文件名
                     filename = f"{timestamp}_{uid}.txt"
                     # 将搜索结果写入uploaded_file文件夹下的filename文件
-                    with open(f"uploaded_files/{filename}", "w", encoding='utf-8') as f:
+                    with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
                         f.write(str(results))            
                     # 将文件链接更新为新的链接
                     fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
@@ -1207,7 +1253,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool
+    from py.know_base import kb_tool,query_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -1265,17 +1311,30 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             else:
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
         kb_list = []
+        user_prompt = request.messages[-1]['content']
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
                 if kb["enabled"] and kb["processingStatus"] == "completed":
                     kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
-        if kb_list:
-            kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
-            if request.messages and request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] += kb_list_message
-            else:
-                request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
-        user_prompt = request.messages[-1]['content']
+        if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
+            if kb_list:
+                all_kb_content = ""
+                # 用query_knowledge_base函数查询kb_list中所有的知识库
+                for kb in kb_list:
+                    kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
+                    all_kb_content += kb_content +"\n\n"
+                if all_kb_content:
+                    kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
+                    request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
+        if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
+            if kb_list:
+                kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += kb_list_message
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
+        else:
+            kb_list = []
         request = await tools_change_messages(request, settings)
         if settings['webSearch']['enabled']:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
@@ -1909,11 +1968,6 @@ async def initialize_a2a(request: Request):
 async def health_check():
     return {"status": "ok"}
 
-# 设置文件存储目录
-UPLOAD_DIRECTORY = "./uploaded_files"
-
-if not os.path.exists(UPLOAD_DIRECTORY):
-    os.makedirs(UPLOAD_DIRECTORY)
 
 @app.post("/load_file")
 async def load_file_endpoint(request: Request, files: List[UploadFile] = File(None)):
@@ -1932,7 +1986,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
             for file in files:
                 file_extension = os.path.splitext(file.filename)[1]
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
-                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
                 
                 # 保存上传的文件
                 with open(destination, "wb") as buffer:
@@ -1961,7 +2015,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                 # 生成唯一文件名
                 file_extension = os.path.splitext(file_name)[1]
                 unique_filename = f"{uuid.uuid4()}{file_extension}"
-                destination = os.path.join(UPLOAD_DIRECTORY, unique_filename)
+                destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
                 
                 # 复制文件到上传目录
                 with open(file_path, "rb") as src, open(destination, "wb") as dst:
@@ -2033,8 +2087,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
                 # 生成智能体ID和配置路径
                 agent_id = str(shortuuid.ShortUUID().random(length=8))
-                os.makedirs('agents', exist_ok=True)
-                config_path = os.path.join('agents', f"{agent_id}.json")
+                config_path = os.path.join(AGENT_DIR, f"{agent_id}.json")
                 
                 with open(config_path, 'w', encoding='utf-8') as f:
                     json.dump(current_settings, f, indent=4, ensure_ascii=False)
@@ -2057,7 +2110,7 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print(f"WebSocket error: {e}")
 
-app.mount("/uploaded_files", StaticFiles(directory="uploaded_files"), name="uploaded_files")
+app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")
 

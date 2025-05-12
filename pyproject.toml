@@ -5,8 +5,9 @@ description = "超级智能体派对 | 链接一切模型、知识库、搜索�
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "aiofiles>=24.1.0",
     "aiohttp>=3.11.18",
+    "aiosqlite>=0.21.0",
+    "appdirs>=1.4.4",
     "bs4>=0.0.2",
     "docstring-parser>=0.16",
     "duckduckgo-search>=8.0.1",
@@ -20,7 +21,6 @@ dependencies = [
     "odfpy>=1.4.1",
     "openai>=1.76.0",
     "openpyxl>=3.1.5",
-    "portalocker>=3.1.1",
     "pyinstaller>=6.13.0",
     "pypdf2>=3.0.1",
     "python-a2a[all]==0.3.0",

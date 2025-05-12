@@ -181,6 +181,7 @@ let vue_data = {
 }
 }`
     },
+    activeKbTab: 'add', // 默认激活的标签页
     webSearchSettings: {
       enabled: false,
       engine: 'duckduckgo',
@@ -196,6 +197,9 @@ let vue_data = {
       Crawl4Ai_api_key: 'test_api_code'
     },
     knowledgeBases: [],
+    KBSettings: {
+      when: 'before_thinking',
+    },
     showAddKbDialog: false,
     showKnowledgeDialog: false,
     showMCPServerDialog: false,
@@ -301,7 +305,7 @@ let vue_data = {
       }
     ],
     vendorValues: [
-      'custom', 'OpenAI', 'Ollama', 'Deepseek', 'Volcano',
+      'custom', 'OpenAI', 'Ollama','Vllm', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
       'LMstudio', 'Gemini','Anthropic', 'Grok', 'mistral', 'lingyi',
       'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'o3',

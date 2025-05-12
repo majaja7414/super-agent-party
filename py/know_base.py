@@ -25,10 +25,7 @@ from langchain_ollama import OllamaEmbeddings
 from typing import List, Dict
 
 from langchain_core.documents import Document
-
-KB_DIR = 'kb'
-os.makedirs(KB_DIR, exist_ok=True)
-
+from py.get_setting import KB_DIR
 
 def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
     """为每个文件单独分块并添加元数据"""

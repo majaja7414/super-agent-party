@@ -200,13 +200,16 @@ function showNotification(message, type = 'success') {
   void notification.offsetWidth;
   
   notification.classList.add('show');
-  
+
+  // 设置显示时间：错误提示显示5秒，其他提示显示2秒
+  const duration = type === 'error' ? 5000 : 2000;
+
   setTimeout(() => {
     notification.classList.remove('show');
     notification.classList.add('hide');
     setTimeout(() => notification.remove(), 400);
-  }, 2000);
-};
+  }, duration);
+}
 
 // 修改图标注册方式（完整示例）
 app.use(ElementPlus);

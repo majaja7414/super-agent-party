@@ -15,9 +15,11 @@
 https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## Why Choose Us?
-- ✅ No refactoring required: Preserve the existing calling method, with transparent and cost-effective functional upgrades
-- ✅ Avoid repeated connections to multiple service providers: Pre-configured adapters for mainstream LLM manufacturers/intelligent body protocols, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware immediately
-- ✅ Automatically trigger knowledge bases, real-time internet access, deep thinking control, in-depth research, and other high-level intelligent body functions when calling!
+- ✅ Efficient development: Supports streaming output, does not affect the original API's response speed, and no code changes are required
+- ✅ Quick access: Avoids repeated access to multiple service providers for a single function, pre-configured with mainstream LLM manufacturer/intelligent body protocol adapters, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware instantly
+- ✅ High customization: Supports custom knowledge base, real-time networking, MCP, A2A, deep thinking control, in-depth research, custom tools, and other advanced intelligent body functions, creating a pluggable LLM enhancement platform. Customized intelligent bodies can be saved as snapshots for convenient use next time. Snapshotted intelligent bodies can be called directly using the OpenAI API.
+- ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
+- ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
 
 ## Installation Method
 
@@ -32,7 +34,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 - Install this project with two commands:
 ```shell
 docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
 - Out-of-the-box experience: Access http://localhost:3456/

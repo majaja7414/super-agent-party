@@ -183,3 +183,4 @@ server.build/
 server.dist/
 agents/
 tiktoken_cache/
+super-agent-data/

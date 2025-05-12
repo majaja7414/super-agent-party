@@ -15,9 +15,11 @@
 https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ## 为什么选择我们？
-- ✅无需重构：保留现有调用方式，功能升级透明无感成本最优解
-- ✅避免为单一功能重复对接多个服务商开箱即用：预置主流LLM厂商/智能体协议适配器，兼容OpenAI/Ollama/MCP/A2A等，即刻体验下一代LLM中间件
-- ✅调用时自动触发知识库、实时联网、深度思考控制、深度研究等各类高级智能体功能！
+- ✅高效开发：支持流式输出，完全不影响原有API的反应速度，无需修改调用的代码
+- ✅快速接入：避免为单一功能重复对接多个服务商，预置主流LLM厂商/智能体协议适配器，兼容OpenAI/Ollama/MCP/A2A等，即刻体验下一代LLM中间件
+- ✅高度定制：支持自定义知识库、实时联网、MCP、A2A、深度思考控制、深度研究、自定义工具等高级智能体功能，打造可插拔的LLM增强中台。自定义后的智能体可以快照保存，方便下次使用。快照后的智能体可以使用openai API直接调用。
+- ✅数据安全：支持本地知识库、本地模型接入等，数据不外泄，确保企业数据安全。所有的文件将缓存到本地，不会上传到任何地方。
+- ✅团队协作：支持团队协作，多人共享知识库、模型服务、工具、MCP、A2A等资源，提高团队协作效率。聊天记录或知识库中的所有文件、图片都被存放到本地，可以作为内网文件床、图床使用。
 
 ## 安装方法
 
@@ -32,7 +34,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 - 两行命令安装本项目：
 ```shell
 docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
 - 开箱即用：访问http://localhost:3456/
