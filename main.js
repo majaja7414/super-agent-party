@@ -203,7 +203,7 @@ function startBackend() {
 
 async function waitForBackend() {
   const MAX_RETRIES = 30
-  const RETRY_INTERVAL = 1000
+  const RETRY_INTERVAL = 500
   let retries = 0
 
   while (retries < MAX_RETRIES) {
