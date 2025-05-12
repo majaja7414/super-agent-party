@@ -1,6 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 import platform
 
+# 强制禁用签名配置
+macos_codesign_settings = {
+    'codesign_identity': None,
+    'entitlements_file': None,
+    'signing_requirements': ''
+}
 
 a = Analysis(
     ['server.py'],
@@ -22,6 +28,10 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
+        # 加强排除可能触发签名的组件
+        'electron',
+        'electron-builder',
+        'electron-updater',
         'node_modules/electron/**',
         'node_modules/electron-builder/**',
         'node_modules/electron-publish/**',
@@ -44,13 +54,12 @@ if platform.system() == 'Darwin':
         bootloader_ignore_signals=False,
         strip=False,
         upx=True,
-        console=False,  # macOS 使用 GUI 模式
+        console=False,
         disable_windowed_traceback=False,
-        argv_emulation=True,  # macOS 需要
+        argv_emulation=True,
         target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
         icon='static/source/icon.png',
+        **macos_codesign_settings  # 应用签名禁用配置
     )
     coll = COLLECT(
         exe,
@@ -60,8 +69,9 @@ if platform.system() == 'Darwin':
         upx=True,
         upx_exclude=[],
         name='server',
+        **macos_codesign_settings  # 应用签名禁用配置
     )
-    # 创建 .app bundle
+    # 创建 .app bundle 时禁用签名
     app = BUNDLE(
         coll,
         name='server.app',
@@ -69,8 +79,10 @@ if platform.system() == 'Darwin':
         bundle_identifier='com.superagent.party',
         info_plist={
             'NSHighResolutionCapable': 'True',
-            'LSBackgroundOnly': 'True',  # 后台运行
+            'LSBackgroundOnly': 'True',
+            'NSAppleScriptEnabled': 'NO'  # 禁用可能触发签名的功能
         },
+        **macos_codesign_settings  # 关键：应用签名禁用配置到 BUNDLE
     )
 else:
     exe = EXE(
@@ -87,9 +99,8 @@ else:
         disable_windowed_traceback=False,
         argv_emulation=False,
         target_arch=None,
-        codesign_identity=None,
-        entitlements_file=None,
         icon='static/source/icon.png',
+        **macos_codesign_settings
     )
     coll = COLLECT(
         exe,
@@ -99,4 +110,5 @@ else:
         upx=True,
         upx_exclude=[],
         name='server',
+        **macos_codesign_settings
     )
