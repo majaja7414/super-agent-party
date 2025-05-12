@@ -34,7 +34,7 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 - 两行命令安装本项目：
 ```shell
 docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
 - 开箱即用：访问http://localhost:3456/

@@ -10,7 +10,7 @@ If you are using a Windows system, you can directly [download](https://github.co
 - Pull the official image from Docker Hub:
 ```shell
 docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
 - Build the image from the source code:
@@ -19,7 +19,7 @@ git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
 docker pull python:3.12-slim 
 docker build -t super-agent-party . 
-docker run -d -p 3456:3456 super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data super-agent-party:latest
 ```
 
 2. Access http://localhost:3456/

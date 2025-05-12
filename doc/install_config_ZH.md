@@ -10,7 +10,7 @@
 - 从dockerhub拉取官网镜像：
 ```shell
 docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
 - 从源码生成镜像：
@@ -19,7 +19,7 @@ git clone https://github.com/heshengtao/super-agent-party.git
 cd super-agent-party
 docker pull python:3.12-slim 
 docker build -t super-agent-party . 
-docker run -d -p 3456:3456 super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data super-agent-party:latest
 ```
 
 2. 访问http://localhost:3456/
