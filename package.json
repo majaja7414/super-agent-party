@@ -76,7 +76,6 @@
       "target": ["AppImage", "deb"],
       "artifactName": "${productName}-${version}-Linux.${ext}",
       "verifyUpdateCodeSignature": false,
-      "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao"
     },
     "mac": {
@@ -84,7 +83,6 @@
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
       "verifyUpdateCodeSignature": false,
-      "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao"
     },
     "dmg": {
@@ -115,7 +113,6 @@
       "target": [
         "nsis"
       ],
-      "legalTrademarks": "Super Agent Party™",
       "publisherName": "Heshengtao",
       "rfc3161TimeStampServer": "http://timestamp.digicert.com"
     },
