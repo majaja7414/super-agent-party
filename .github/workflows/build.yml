@@ -11,11 +11,9 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest]
-        include:
-          - os: windows-latest
-            artifact_name: super-agent-party-win
-          - os: ubuntu-latest
-            artifact_name: super-agent-party-linux
+
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout code
@@ -44,41 +42,16 @@ jobs:
       - name: Build Python backend
         run: pyinstaller server.spec
 
-      - name: Build Electron app
+      - name: Build and Publish Electron app
         shell: bash
         run: |
           case "${{ matrix.os }}" in
-            windows-latest) npm run build:win ;;
-            macos-latest) npm run build:mac ;;
-            *) npm run build:linux ;;
+            windows-latest)
+              npx electron-builder build --win --publish always
+              ;;
+            ubuntu-latest)
+              npx electron-builder build --linux --publish always
+              ;;
           esac
         env:
-          CI: false
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4.3.0
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: release/
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Create Release and Upload Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: Automated release for ${{ github.ref_name }}
-          files: |
-            super-agent-party-win/release/*.exe
-            super-agent-party-linux/release/*.AppImage
-            super-agent-party-linux/release/*.deb
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
