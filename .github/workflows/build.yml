@@ -1,17 +1,22 @@
 name: Build and Release
+
 on:
   push:
     tags:
       - 'v*'
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
-        
-    permissions:
-      contents: write
+        os: [windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            artifact_name: super-agent-party-win
+          - os: ubuntu-latest
+            artifact_name: super-agent-party-linux
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -37,35 +42,43 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
-        run: |
-          pyinstaller server.spec
-          mkdir -p dist/server || true
+        run: pyinstaller server.spec
 
-      - name: Build Unsigned macOS App
+      - name: Build Electron app
         shell: bash
-        if: matrix.os == 'macos-latest'
-        run: |
-          # 解除临时目录权限限制
-          sudo chmod -R a+rwx /Users/runner/work/_temp
-          
-          # 强制禁用签名
-          export CSC_IDENTITY_AUTO_DISCOVERY=false
-          
-          npx electron-builder build --mac --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Build Other Platforms
-        shell: bash
-        if: matrix.os != 'macos-latest'
         run: |
           case "${{ matrix.os }}" in
-            windows-latest)
-              npx electron-builder build --win --publish always
-              ;;
-            ubuntu-latest)
-              npx electron-builder build --linux --publish always
-              ;;
+            windows-latest) npm run build:win ;;
+            macos-latest) npm run build:mac ;;
+            *) npm run build:linux ;;
           esac
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI: false
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4.3.0
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: release/
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: Automated release for ${{ github.ref_name }}
+          files: |
+            super-agent-party-win/release/*.exe
+            super-agent-party-linux/release/*.AppImage
+            super-agent-party-linux/release/*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
