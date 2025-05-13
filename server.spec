@@ -13,10 +13,7 @@ a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
-    noarchive=False,
-    codesign_identity=None,
     entitle_file=None,
-    exclude_binaries=True,
     datas=[
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
@@ -45,8 +42,6 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
-
-a.codesign_identity = None
 
 pyz = PYZ(a.pure)
 
