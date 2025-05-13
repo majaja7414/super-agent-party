@@ -3,6 +3,7 @@
   "version": "v0.1.3",
   "description": "超级智能体派对 | 链接一切模型、知识库、搜索引擎、MCP服务器、A2A服务器；可以web端、桌面端、API等多种方式使用",
   "main": "main.js",
+  "asar": false,
   "scripts": {
     "start": "cross-env NODE_ENV=production electron .",
     "dev": "cross-env NODE_ENV=development electron .",
@@ -83,9 +84,15 @@
     "mac": {
       "icon": "static/source/icon.png",
       "target": ["dmg"],
-      "artifactName": "${productName}-${version}-Mac.${ext}",
+      "artifactName": "${productName}-${version}-Mac-UNSIGNED.${ext}",
+      "category": "public.app-category.utilities",
       "identity": null,
-      "hardenedRuntime": false
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": null,
+      "entitlementsInherit": null,
+      "type": "distribution",
+      "asarUnpack": "**/*.node"
     },
     "dmg": {
       "background": "static/source/icon.png",

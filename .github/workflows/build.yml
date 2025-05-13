@@ -1,20 +1,17 @@
 name: Build and Release
-
 on:
   push:
     tags:
       - 'v*'
-
 jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
-
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        
     permissions:
       contents: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -40,10 +37,27 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
-        run: pyinstaller server.spec
+        run: |
+          pyinstaller server.spec
+          mkdir -p dist/server || true
 
-      - name: Build and Publish Electron app
+      - name: Build Unsigned macOS App
         shell: bash
+        if: matrix.os == 'macos-latest'
+        run: |
+          # 解除临时目录权限限制
+          sudo chmod -R a+rwx /Users/runner/work/_temp
+          
+          # 强制禁用签名
+          export CSC_IDENTITY_AUTO_DISCOVERY=false
+          
+          npx electron-builder build --mac --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build Other Platforms
+        shell: bash
+        if: matrix.os != 'macos-latest'
         run: |
           case "${{ matrix.os }}" in
             windows-latest)
