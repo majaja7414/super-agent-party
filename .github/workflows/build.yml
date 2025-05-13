@@ -44,6 +44,7 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
+        shell: bash
         run: |
           pyinstaller server.spec
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
@@ -52,6 +53,7 @@ jobs:
           fi
 
       - name: Build Electron app
+        shell: bash
         run: |
           case "${{ matrix.os }}" in
             windows-latest) npm run build:win ;;
