@@ -35,7 +35,10 @@
     "MCP",
     "A2A"
   ],
-  "author": "heshengtao",
+  "author": {
+    "name": "Heshengtao",
+    "email": "hst97@qq.com"
+  },
   "license": "AGPL-3.0",
   "build": {
     "appId": "com.superagent.party",
