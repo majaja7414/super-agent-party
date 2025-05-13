@@ -46,7 +46,17 @@ jobs:
       - name: Build Python backend
         shell: bash
         run: |
-          pyinstaller server.spec
+          export PYINSTALLER_DO_NOT_SIGN=1
+          
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            find . -name "*.framework" -exec rm -rf {} \; || true
+          fi
+          
+          pyinstaller --noconfirm \
+            --clean \
+            --log-level WARN \
+            server.spec
+
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             find dist -name '*.dylib' -exec codesign --force --deep -s - {} \;
             codesign --force --deep -s - dist/server/server.exe
