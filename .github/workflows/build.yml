@@ -44,33 +44,13 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
-        shell: bash
-        run: |
-          export PYINSTALLER_DO_NOT_SIGN=1
-          
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            find . -name "*.framework" -exec rm -rf {} \; || true
-          fi
-          
-          pyinstaller --noconfirm \
-            --clean \
-            --log-level WARN \
-            server.spec
-
-          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            find dist -name '*.dylib' -exec codesign --force --deep -s - {} \;
-            codesign --force --deep -s - dist/server/server.exe
-          fi
+        run: pyinstaller server.spec
 
       - name: Build Electron app
-        shell: bash
         run: |
           case "${{ matrix.os }}" in
             windows-latest) npm run build:win ;;
-            macos-latest) 
-              npm run build:mac
-              find release -name '*.app' -exec codesign --force --deep -s - {} \;
-              ;;
+            macos-latest) npm run build:mac ;;
             *) npm run build:linux ;;
           esac
 

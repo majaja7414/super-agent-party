@@ -13,6 +13,10 @@ a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
+    noarchive=False,
+    codesign_identity=None,
+    entitle_file=None,
+    exclude_binaries=True,
     datas=[
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
