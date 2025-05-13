@@ -45,6 +45,7 @@ jobs:
         run: pyinstaller server.spec
 
       - name: Build Electron app
+        shell: bash
         run: |
           case "${{ matrix.os }}" in
             windows-latest) npm run build:win ;;
