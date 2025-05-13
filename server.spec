@@ -65,8 +65,6 @@ if platform.system() == 'Darwin':
         console=False,
         argv_emulation=True,
         icon='static/source/icon.png',
-        codesign_identity=None,
-        entitlements_file=None,
         **base_exe_config
     )
     coll = COLLECT(
