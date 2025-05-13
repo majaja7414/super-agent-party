@@ -52,6 +52,8 @@ jobs:
             macos-latest) npm run build:mac ;;
             *) npm run build:linux ;;
           esac
+        env:
+          CI: false
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.3.0

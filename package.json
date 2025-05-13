@@ -8,9 +8,9 @@
     "dev": "cross-env NODE_ENV=development electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder -mwl",
-    "build:win": "electron-builder -w -c.publish=null -c.releaseInfo=null",
-    "build:mac": "electron-builder -m -c.publish=null -c.releaseInfo=null",
-    "build:linux": "electron-builder -l -c.publish=null -c.releaseInfo=null",
+    "build:win": "electron-builder -w",
+    "build:mac": "electron-builder -m",
+    "build:linux": "electron-builder -l",
     "pack": "electron-builder --dir"
   },
   "dependencies": {
@@ -44,11 +44,8 @@
     "appId": "com.superagent.party",
     "productName": "Super-Agent-Party",
     "copyright": "Copyright © 2025 Heshengtao",
-    "publish": [{
-      "provider": "github",
-      "owner": "heshengtao",
-      "repo": "super-agent-party"
-    }],
+    "publish": null,
+    "releaseInfo": {},
     "compression": "maximum",
     "directories": {
       "output": "release"
