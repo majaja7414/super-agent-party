@@ -44,8 +44,11 @@
     "appId": "com.superagent.party",
     "productName": "Super-Agent-Party",
     "copyright": "Copyright © 2025 Heshengtao",
-    "publish": null,
-    "releaseInfo": {},
+    "publish": [{
+      "provider": "github",
+      "owner": "heshengtao",
+      "repo": "super-agent-party"
+    }],
     "compression": "maximum",
     "directories": {
       "output": "release"
