@@ -74,16 +74,12 @@
     "linux": {
       "icon": "static/source/icon.png",
       "target": ["AppImage", "deb"],
-      "artifactName": "${productName}-${version}-Linux.${ext}",
-      "verifyUpdateCodeSignature": false,
-      "publisherName": "Heshengtao"
+      "artifactName": "${productName}-${version}-Linux.${ext}"
     },
     "mac": {
       "icon": "static/source/icon.png",
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
-      "verifyUpdateCodeSignature": false,
-      "publisherName": "Heshengtao",
       "identity": null,
       "hardenedRuntime": false
     },
