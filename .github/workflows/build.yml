@@ -14,8 +14,6 @@ jobs:
         include:
           - os: windows-latest
             artifact_name: super-agent-party-win
-          - os: macos-latest
-            artifact_name: super-agent-party-mac
           - os: ubuntu-latest
             artifact_name: super-agent-party-linux
 
