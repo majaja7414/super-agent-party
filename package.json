@@ -8,9 +8,9 @@
     "dev": "cross-env NODE_ENV=development electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder -mwl",
-    "build:win": "electron-builder -w",
-    "build:mac": "electron-builder -m",
-    "build:linux": "electron-builder -l",
+    "build:win": "electron-builder -w -c.publish=never",
+    "build:mac": "electron-builder -m -c.publish=never",
+    "build:linux": "electron-builder -l -c.publish=never",
     "pack": "electron-builder --dir"
   },
   "dependencies": {
