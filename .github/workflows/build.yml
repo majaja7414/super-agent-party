@@ -22,38 +22,51 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Install Python dependencies
+        shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install uv
           uv pip install --system -r requirements.txt
           uv pip install --system pyinstaller
-
       - name: Install Node.js dependencies
         run: npm ci
-
       - name: Build Python backend
-        run: pyinstaller server.spec
-
+        shell: bash
+        run: |
+          export PYINSTALLER_DO_NOT_SIGN=1
+          
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            find . -name "*.framework" -exec rm -rf {} \; || true
+          fi
+          
+          pyinstaller --noconfirm \
+            --clean \
+            --log-level WARN \
+            server.spec
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            find dist -name '*.dylib' -exec codesign --force --deep -s - {} \;
+            codesign --force --deep -s - dist/your_app_name
+          fi
       - name: Build Electron app
+        shell: bash
         run: |
           case "${{ matrix.os }}" in
             windows-latest) npm run build:win ;;
-            macos-latest) npm run build:mac ;;
+            macos-latest) 
+              npm run build:mac
+              find release -name '*.app' -exec codesign --force --deep -s - {} \;
+              ;;
             *) npm run build:linux ;;
           esac
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4.3.0
         with:
