@@ -110,6 +110,8 @@ let vue_methods = {
   },
   resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
+    this.system_prompt = this.t('defaultSystemPrompt');
+    this.autoSaveSettings();
   },
 
   deleteMessage(index) {
