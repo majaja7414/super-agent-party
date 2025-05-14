@@ -25,40 +25,55 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ### windows桌面版安装
 
-#### **[点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.2/Super-Agent-Party-Setup-0.1.2.exe)**
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-Setup-0.1.3.exe)
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
+
+### Linux 桌面版安装
+
+我们提供了两种主流的 Linux 安装包格式，方便你在不同场景下使用。
+
+#### 1. 使用 `.AppImage` 安装（推荐）
+
+`.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
+
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.AppImage)
+
+
+#### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
+
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.deb)
 
 ### docker部署（推荐）
 
 - 两行命令安装本项目：
-```shell
-docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
-```
+  ```shell
+  docker pull ailm32442/super-agent-party:latest
+  docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
+  ```
 
 - 开箱即用：访问http://localhost:3456/
 
 ### 源码部署
 
 - windows ：
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
-uv sync
-npm install
-start_with_dev.bat
-```
+  ```shell
+  git clone https://github.com/heshengtao/super-agent-party.git
+  cd super-agent-party
+  uv sync
+  npm install
+  start_with_dev.bat
+  ```
 
 - linux or mac ：
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
-uv sync
-npm install
-chmod +x start_with_dev.sh
-./start_with_dev.sh
-```
+  ```shell
+  git clone https://github.com/heshengtao/super-agent-party.git
+  cd super-agent-party
+  uv sync
+  npm install
+  chmod +x start_with_dev.sh
+  ./start_with_dev.sh
+  ```
 
 详细部署方法请参考[部署和使用文档](doc/install_config_ZH.md)
 
@@ -66,24 +81,24 @@ chmod +x start_with_dev.sh
 
 - 桌面端：点击桌面端图标即可开箱即用。
 
+- web端：启动后访问http://localhost:3456/
+
 - API调用：开发者友好，完美兼容openai格式，可以流式输出，完全不影响原有API的反应速度，无需修改调用的代码：
 
-```python
-from openai import OpenAI
-client = OpenAI(
-  api_key="super-secret-key",
-  base_url="http://localhost:3456/v1"
-)
-response = client.chat.completions.create(
-  model="super-model",
-  messages=[
-      {"role": "user", "content": "什么是super agent party？"}
-  ]
-)
-print(response.choices[0].message.content)
-```
-
-- web端：启动后访问http://localhost:3456/
+  ```python
+  from openai import OpenAI
+  client = OpenAI(
+    api_key="super-secret-key",
+    base_url="http://localhost:3456/v1"
+  )
+  response = client.chat.completions.create(
+    model="super-model",
+    messages=[
+        {"role": "user", "content": "什么是super agent party？"}
+    ]
+  )
+  print(response.choices[0].message.content)
+  ```
 
 ## 功能介绍
 

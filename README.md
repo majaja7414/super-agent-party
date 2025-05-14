@@ -25,63 +25,79 @@ https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
 
 ### Windows Desktop Installation
 
-#### **[Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.2/Super-Agent-Party-Setup-0.1.2.exe)**
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-Setup-0.1.3.exe)
 
-⭐Note! Choose to install for the current user only during installation, otherwise, administrator privileges will be required when starting.
+⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
+
+### Linux Desktop Installation
+
+We provide two mainstream Linux installation package formats for your convenience in different scenarios.
+
+#### 1. Install using `.AppImage` (Recommended)
+
+`.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
+
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.AppImage)
+
+#### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
+
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
-- Install this project with two commands:
-```shell
-docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
-```
+- Two commands to install this project:
+  ```shell
+  docker pull ailm32442/super-agent-party:latest
+  docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
+  ```
 
-- Out-of-the-box experience: Access http://localhost:3456/
+- Plug and play: access http://localhost:3456/
 
 ### Source Code Deployment
 
-- windows :
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
-uv sync
-npm install
-start_with_dev.bat
-```
+- Windows:
+  ```shell
+  git clone https://github.com/heshengtao/super-agent-party.git
+  cd super-agent-party
+  uv sync
+  npm install
+  start_with_dev.bat
+  ```
 
-- linux or mac :
-```shell
-git clone https://github.com/heshengtao/super-agent-party.git
-cd super-agent-party
-uv sync
-npm install
-chmod +x start_with_dev.sh
-./start_with_dev.sh
-```
+- Linux or Mac:
+  ```shell
+  git clone https://github.com/heshengtao/super-agent-party.git
+  cd super-agent-party
+  uv sync
+  npm install
+  chmod +x start_with_dev.sh
+  ./start_with_dev.sh
+  ```
 
-For detailed deployment methods, please refer to the [Deployment and Usage Documentation](doc/install_config.md)
+For detailed deployment methods, please refer to the [Deployment and Usage Documentation](doc/install_config_ZH.md)
 
 ## Usage
 
-- Desktop: Click the desktop icon to use it out-of-the-box.
-- API Call: Developer-friendly, perfectly compatible with OpenAI format, can output streams, and does not affect the original API's response speed. No need to modify the calling code:
-```python
-from openai import OpenAI
-client = OpenAI(
-  api_key="super-secret-key",
-  base_url="http://localhost:3456/v1"
-)
-response = client.chat.completions.create(
-  model="super-model",
-  messages=[
-      {"role": "user", "content": "What is Super Agent Party?"}
-  ]
-)
-print(response.choices[0].message.content)
-```
+- Desktop: Click the desktop icon to use immediately.
 
-- Web: Access http://localhost:3456/ after startup
+- Web: Access http://localhost:3456/ after startup.
+
+- API call: Developer-friendly, perfectly compatible with OpenAI format, can output in real-time, and does not affect the original API's response speed. No need to modify the calling code:
+
+  ```python
+  from openai import OpenAI
+  client = OpenAI(
+    api_key="super-secret-key",
+    base_url="http://localhost:3456/v1"
+  )
+  response = client.chat.completions.create(
+    model="super-model",
+    messages=[
+        {"role": "user", "content": "What is Super Agent Party?"}
+    ]
+  )
+  print(response.choices[0].message.content)
+  ```
 
 ## Function Introduction
 
