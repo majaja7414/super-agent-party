@@ -37,6 +37,8 @@ docker pull ailm32442/super-agent-party:latest
 docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
+- wherein, `./super-agent-data` is the local data directory, storing files and configuration data, which can be replaced with other directories.
+
 - Out-of-the-box experience: Access http://localhost:3456/
 
 ### Source Code Deployment

@@ -37,6 +37,8 @@ docker pull ailm32442/super-agent-party:latest
 docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
 ```
 
+- 其中，`./super-agent-data`是本地数据目录，存放文件和配置数据，可以替换成其他目录。
+
 - 开箱即用：访问http://localhost:3456/
 
 ### 源码部署
