@@ -271,7 +271,7 @@
             <el-dialog
               v-model="showKnowledgeDialog"
               :title="t('knowledgeBaseSelection')"
-              width="400px">
+              width="30%">
               <div class="knowledge-dialog-content">
                 <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
                   <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
@@ -290,7 +290,7 @@
           <el-dialog
             v-model="showAgentDialog"
             :title="t('agentSettings')"
-            width="500px">
+            width="30%">
             <div class="agent-dialog-content">
               <!-- 主智能体选择 -->
               <div class="agent-section">
@@ -338,7 +338,7 @@
           <el-dialog
             v-model="showMCPServerDialog"
             :title="t('mcpServersManagement')"
-            width="400px">
+            width="30%">
             <div class="knowledge-dialog-content">
               <!-- 服务器列表 -->
               <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
@@ -362,7 +362,7 @@
           <el-dialog
             v-model="showA2AServerDialog"
             :title="t('a2aServersManagement')"
-            width="400px">
+            width="30%">
             <div class="knowledge-dialog-content">
               <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
                 <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
@@ -381,7 +381,7 @@
           <el-dialog
             v-model="showLLMToolsDialog"
             :title="t('llmToolsManagement')"
-            width="400px">
+            width="30%">
             <div class="knowledge-dialog-content">
               <div v-for="(tool, index) in llmTools" :key="index" class="knowledge-item">
                 <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
@@ -407,7 +407,7 @@
           <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
-            width="400px">
+            width="30%">
             <div class="knowledge-dialog-content">
               <!-- 对话记录列表 -->
               <div v-for="conv in sortedConversations" 
@@ -721,7 +721,7 @@
                 <el-dialog
                   v-model="showAddDialog"
                   :title="t('addNewProvider')"
-                  width="500px"
+                  width="30%"
                   @closed="newProviderTemp = { vendor: '', url: '' }"
                 >
                   <el-form label-position="top">
@@ -1610,7 +1610,7 @@
                   <el-dialog
                     v-model="showAddKbDialog"
                     :title="t('addNewKnowledgeBase')"
-                    width="600px"
+                    width="30%"
                     @closed="() => {
                       newKb = {
                         name: '',
