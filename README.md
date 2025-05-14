@@ -9,10 +9,7 @@
 
 🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.
 
-![image](static/source/image.png)
-
-## Demo
-https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
+![image](doc/image/demo.png)
 
 ## Why Choose Us?
 - ✅ Efficient development: Supports streaming output, does not affect the original API's response speed, and no code changes are required

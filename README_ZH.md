@@ -9,10 +9,7 @@
 
 🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、MCP、A2A、深度思考控制、深度研究、自定义工具等高阶功能，打造可插拔的LLM增强中台。
 
-![image](static/source/image-ZN.png)
-
-## 效果演示
-https://github.com/user-attachments/assets/1118302b-139a-4b33-ac08-adbde647f573
+![image](doc/image/demo.png)
 
 ## 为什么选择我们？
 - ✅高效开发：支持流式输出，完全不影响原有API的反应速度，无需修改调用的代码
