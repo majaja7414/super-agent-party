@@ -296,6 +296,9 @@ const translations = {
       'error_unknown': '未知错误',
       'kbSettings': '知识库配置',
       'addKnowledgeBase': '添加知识库',
+      'embeddingProvider': '词嵌入模型供应商',
+      'reasoningProvider': '推理模型供应商',
+      'visionProvider': '视觉模型供应商',
     },
     'en-US': {
       'chat': 'Chat',
@@ -593,5 +596,8 @@ const translations = {
       'error_unknown': 'Unknown error',
       'kbSettings': 'Knowledge Base Settings',
       'addKnowledgeBase': 'Add Knowledge Base',
+      'embeddingProvider': 'Embedding Provider',
+      'reasoningProvider': 'Reasoning Provider',
+      'visionProvider': 'Vision Provider',
     }
   };

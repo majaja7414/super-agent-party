@@ -1014,7 +1014,7 @@
                       <el-switch v-model="reasonerSettings.enabled" @click.stop @change="autoSaveSettings"/>
                     </div>
                     <div class="tool-content">
-                      <el-form-item :label="t('provider')" class="form-item-align">
+                      <el-form-item :label="t('reasoningProvider')" class="form-item-align">
                         <el-select
                           v-model="reasonerSettings.selectedProvider"
                           :placeholder="t('selectProvider')"
@@ -1124,7 +1124,7 @@
                       <el-switch v-model="visionSettings.enabled" @click.stop @change="autoSaveSettings"/>
                     </div>
                     <div class="tool-content">
-                      <el-form-item :label="t('provider')" class="form-item-align">
+                      <el-form-item :label="t('visionProvider')" class="form-item-align">
                         <el-select
                           v-model="visionSettings.selectedProvider"
                           :placeholder="t('selectProvider')"
@@ -1634,7 +1634,7 @@
                         <el-input v-model="newKb.introduction" type="textarea" :placeholder="t('enterKnowledgeBaseIntro')" />
                       </el-form-item>
 
-                      <el-form-item :label="t('provider')" required>
+                      <el-form-item :label="t('embeddingProvider')" required>
                         <el-select
                           v-model="newKb.providerId"
                           :placeholder="t('selectProvider')"
