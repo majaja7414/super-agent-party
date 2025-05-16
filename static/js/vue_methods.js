@@ -2007,7 +2007,8 @@ let vue_methods = {
           [mcpId]: {
             ...servers[Object.keys(servers)[0]],
             processingStatus: 'initializing', // 新增状态字段
-            disabled:true
+            disabled:true,
+            type: this.newMCPType
           }
         };
         

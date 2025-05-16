@@ -154,31 +154,39 @@ let vue_data = {
     currentMCPExample: '',
     mcpExamples: {
       stdio: `{
-"mcpServers": {
-  "echo-server": {
-    "command": "node",
-    "args": [
-      "path/to/echo-mcp/build/index.js"
-    ],
-    "disabled": false
+  "mcpServers": {
+    "echo-server": {
+      "command": "node",
+      "args": [
+        "path/to/echo-mcp/build/index.js"
+      ],
+      "disabled": false
+    }
   }
-}
 }`,
       sse: `{
-"mcpServers": {
-  "sse-server": {
-    "url": "http://localhost:8000/sse",
-    "disabled": false
+  "mcpServers": {
+    "sse-server": {
+      "url": "http://localhost:8000/sse",
+      "disabled": false
+    }
   }
-}
 }`,
       ws: `{
-"mcpServers": {
-  "websocket-server": {
-    "url": "ws://localhost:8000/ws",
-    "disabled": false
+  "mcpServers": {
+    "websocket-server": {
+      "url": "ws://localhost:8000/ws",
+      "disabled": false
+    }
   }
-}
+}`,
+    streamablehttp: `{
+  "mcpServers": {
+    "streamablehttp-server": {
+      "url": "http://localhost:8000/streamablehttp",
+      "disabled": false
+    }
+  }
 }`
     },
     activeKbTab: 'add', // 默认激活的标签页

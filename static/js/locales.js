@@ -301,6 +301,7 @@ const translations = {
       'visionProvider': '视觉模型供应商',
       'gotoAPI': '获取API密钥或相关文档',
       'gotoGithub': '获取Github文档',
+      'streamableHttpServer': '流式HTTP',
     },
     'en-US': {
       'chat': 'Chat',
@@ -603,5 +604,6 @@ const translations = {
       'visionProvider': 'Vision Provider',
       'gotoAPI': 'Obtain API key or relevant documentation',
       'gotoGithub': 'Go to Github documentation',
+      'streamableHttpServer': 'Streamable HTTP',
     }
   };
