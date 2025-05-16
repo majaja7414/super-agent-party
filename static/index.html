@@ -758,8 +758,18 @@
                         :closable="false"
                         class="mb-2"
                       >
-                        {{ t('autoFilledDefaultAPI') }} {{ newProviderTemp.vendor }}<br>
-                        {{ t('enterApiKeyThenClick') }}
+                        1. {{ t('autoFilledDefaultAPI') }} {{ newProviderTemp.vendor }} URL<br>2. 
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            :href="vendorAPIpage[newProviderTemp.vendor]" 
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link><br>
+                        3. {{ t('enterApiKeyThenClick') }}
                       </el-alert>
                     </div>
                   </el-form>

@@ -299,6 +299,7 @@ const translations = {
       'embeddingProvider': '词嵌入模型供应商',
       'reasoningProvider': '推理模型供应商',
       'visionProvider': '视觉模型供应商',
+      'gotoAPI': '获取API密钥或相关文档',
     },
     'en-US': {
       'chat': 'Chat',
@@ -599,5 +600,6 @@ const translations = {
       'embeddingProvider': 'Embedding Provider',
       'reasoningProvider': 'Reasoning Provider',
       'visionProvider': 'Vision Provider',
+      'gotoAPI': 'Obtain API key or relevant documentation',
     }
   };
