@@ -219,7 +219,11 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
 
 async def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
-        request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        time_message = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += time_message
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': time_message})
     if settings['tools']['inference']['enabled']:
         inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
         request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
@@ -229,6 +233,12 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages[0]['content'] += latex_message
         else:
             request.messages.insert(0, {'role': 'system', 'content': latex_message})
+    if settings['tools']['language']['enabled']:
+        language_message = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += language_message
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': language_message})
     return request
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
@@ -442,8 +452,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 reasoner_messages = copy.deepcopy(request.messages)
                 if settings['tools']['deepsearch']['enabled']: 
                     reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-                if settings['tools']['language']['enabled']:
-                    reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 for modelProvider in settings['modelProviders']: 
@@ -540,8 +548,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             if settings['tools']['deepsearch']['enabled']: 
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-            if settings['tools']['language']['enabled']:
-                request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
             msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
                 response = await client.chat.completions.create(
@@ -1375,8 +1381,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             reasoner_messages = copy.deepcopy(request.messages)
             if settings['tools']['deepsearch']['enabled']: 
                 reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-            if settings['tools']['language']['enabled']:
-                reasoner_messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言推理分析思考，不要使用其他语言推理分析，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + reasoner_messages[-1]['content']
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
             for modelProvider in settings['modelProviders']: 
@@ -1412,8 +1416,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         if settings['tools']['deepsearch']['enabled']: 
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-        if settings['tools']['language']['enabled']:
-            request.messages[-1]['content'] = f"请使用{settings['tools']['language']['language']}语言回答问题，语气风格为{settings['tools']['language']['tone']}\n\n用户：" + request.messages[-1]['content']
         msg = await images_add_in_messages(request.messages, images,settings)
         if tools:
             response = await client.chat.completions.create(

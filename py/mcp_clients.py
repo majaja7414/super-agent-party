@@ -8,6 +8,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from mcp.client.sse import sse_client
 from mcp.client.websocket import websocket_client
+from mcp.client.streamable_http import streamablehttp_client
 import shutil
 import nest_asyncio
 from dotenv import load_dotenv
@@ -63,16 +64,21 @@ class McpClient:
         command = server_config.get('command', '')
         if not command:
             server_url = server_config.get('url', '')
+            mcptype = server_config.get('type', '')
             if not server_url:
                 self.disabled = True
                 return
             else:
-                if server_url.startswith("ws://") or server_url.startswith("wss://"):
+                if mcptype == 'ws':
                     stream = await self.exit_stack.enter_async_context(websocket_client(server_url))
                     self.stdio, self.write = stream
                     self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
-                elif server_url.startswith("http://") or server_url.startswith("https://"):
+                elif mcptype == 'sse':
                     stream = await self.exit_stack.enter_async_context(sse_client(server_url))
+                    self.stdio, self.write = stream
+                    self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
+                elif mcptype == 'streamablehttp':
+                    stream = await self.exit_stack.enter_async_context(streamablehttp_client(server_url))
                     self.stdio, self.write = stream
                     self.session = await self.exit_stack.enter_async_context(ClientSession(self.stdio, self.write))
         else:

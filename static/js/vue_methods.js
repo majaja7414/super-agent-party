@@ -110,6 +110,8 @@ let vue_methods = {
   },
   resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
+    this.system_prompt = this.t('defaultSystemPrompt');
+    this.autoSaveSettings();
   },
 
   deleteMessage(index) {
@@ -2005,7 +2007,8 @@ let vue_methods = {
           [mcpId]: {
             ...servers[Object.keys(servers)[0]],
             processingStatus: 'initializing', // 新增状态字段
-            disabled:true
+            disabled:true,
+            type: this.newMCPType
           }
         };
         

@@ -2074,3 +2074,15 @@ border: 1px solid var(--border-color) !important;
 .update-btn {
   --progress: calc(var(--download-progress) * 1%);
 }
+
+/* 让菜单容器使用 flex 纵向布局，并占满高度 */
+.el-menu-vertical {
+  background-color: var(--el-bg-color-page)!important;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+/* 选择倒数第二个菜单项（system）*/
+.el-menu-item:nth-last-child(2) {
+  margin-top: auto; /* 这个属性会让它和后面的元素自动推到容器底部 */
+}

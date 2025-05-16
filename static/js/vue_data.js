@@ -154,31 +154,39 @@ let vue_data = {
     currentMCPExample: '',
     mcpExamples: {
       stdio: `{
-"mcpServers": {
-  "echo-server": {
-    "command": "node",
-    "args": [
-      "path/to/echo-mcp/build/index.js"
-    ],
-    "disabled": false
+  "mcpServers": {
+    "echo-server": {
+      "command": "node",
+      "args": [
+        "path/to/echo-mcp/build/index.js"
+      ],
+      "disabled": false
+    }
   }
-}
 }`,
       sse: `{
-"mcpServers": {
-  "sse-server": {
-    "url": "http://localhost:8000/sse",
-    "disabled": false
+  "mcpServers": {
+    "sse-server": {
+      "url": "http://localhost:8000/sse",
+      "disabled": false
+    }
   }
-}
 }`,
       ws: `{
-"mcpServers": {
-  "websocket-server": {
-    "url": "ws://localhost:8000/ws",
-    "disabled": false
+  "mcpServers": {
+    "websocket-server": {
+      "url": "ws://localhost:8000/ws",
+      "disabled": false
+    }
   }
-}
+}`,
+    streamablehttp: `{
+  "mcpServers": {
+    "streamablehttp-server": {
+      "url": "http://localhost:8000/streamablehttp",
+      "disabled": false
+    }
+  }
 }`
     },
     activeKbTab: 'add', // 默认激活的标签页
@@ -308,12 +316,45 @@ let vue_data = {
       'custom', 'OpenAI', 'Ollama','Vllm', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
       'LMstudio', 'Gemini','Anthropic', 'Grok', 'mistral', 'lingyi',
-      'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'o3',
-      'aihubmix', 'ocoolai', 'Github', 'dmxapi', 'openrouter',
-      'together', 'fireworks', '360', 'Nvidia', 'hyperbolic',
-      'jina', 'gitee', 'ppinfra', 'perplexity', 'infini',
+      'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'Github', 'openrouter',
+      'together', 'fireworks', '360', 'Nvidia',
+      'jina', 'gitee', 'perplexity', 'infini',
       'modelscope', 'tencent'
     ],
+    vendorAPIpage: {
+      'OpenAI': 'https://platform.openai.com/api-keys',
+      'Ollama': 'https://ollama.com/',
+      'Vllm': 'https://docs.vllm.ai/en/latest/',
+      'Deepseek': 'https://platform.deepseek.com/api_keys',
+      'Volcano': 'https://www.volcengine.com/experience/ark',
+      'siliconflow': 'https://cloud.siliconflow.cn/i/yGxrNlGb',
+      'aliyun': 'https://bailian.console.aliyun.com/?tab=model#/api-key',
+      'ZhipuAI': 'https://open.bigmodel.cn/usercenter/apikeys',
+      'moonshot': 'https://platform.moonshot.cn/console/api-keys',
+      'minimax': 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
+      'LMstudio': 'https://lmstudio.ai/docs/app',
+      'Gemini': 'https://aistudio.google.com/app/apikey',
+      'Anthropic': 'https://console.anthropic.com/settings/keys',
+      'Grok': 'https://console.x.ai/',
+      'mistral': 'https://console.mistral.ai/api-keys/',
+      'lingyi': 'https://platform.lingyiwanwu.com/apikeys',
+      'baichuan': 'https://platform.baichuan-ai.com/console/apikey',
+      'qianfan': 'https://console.bce.baidu.com/iam/#/iam/apikey/list',
+      'hunyuan': 'https://console.cloud.tencent.com/hunyuan/api-key',
+      'stepfun': 'https://platform.stepfun.com/interface-key',
+      'Github': 'https://github.com/settings/tokens',
+      'openrouter': 'https://openrouter.ai/settings/keys',
+      'together': 'https://api.together.ai/settings/api-keys',
+      'fireworks': 'https://fireworks.ai/account/api-keys',
+      '360': 'https://ai.360.com/platform/keys',
+      'Nvidia': 'https://build.nvidia.com/meta/llama-3_1-405b-instruct',
+      'jina': 'https://jina.ai/api-dashboard',
+      'gitee': 'https://ai.gitee.com/dashboard/settings/tokens',
+      'perplexity': 'https://www.perplexity.ai/settings/api',
+      'infini': 'https://cloud.infini-ai.com/iam/secret/key',
+      'modelscope': 'https://modelscope.cn/my/myaccesstoken',
+      'tencent': 'https://console.cloud.tencent.com/lkeap/api'
+    },
     newProviderTemp: {
       vendor: '',
       url: '',
