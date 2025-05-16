@@ -300,6 +300,7 @@ const translations = {
       'reasoningProvider': '推理模型供应商',
       'visionProvider': '视觉模型供应商',
       'gotoAPI': '获取API密钥或相关文档',
+      'gotoGithub': '获取Github文档',
     },
     'en-US': {
       'chat': 'Chat',
@@ -601,5 +602,6 @@ const translations = {
       'reasoningProvider': 'Reasoning Provider',
       'visionProvider': 'Vision Provider',
       'gotoAPI': 'Obtain API key or relevant documentation',
+      'gotoGithub': 'Go to Github documentation',
     }
   };
