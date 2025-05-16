@@ -340,7 +340,7 @@ let vue_data = {
       'fireworks': 'https://fireworks.ai/account/api-keys',
       '360': 'https://ai.360.com/platform/keys',
       'Nvidia': 'https://build.nvidia.com/meta/llama-3_1-405b-instruct',
-      'jina': 'https://jina.ai/',
+      'jina': 'https://jina.ai/api-dashboard',
       'gitee': 'https://ai.gitee.com/dashboard/settings/tokens',
       'perplexity': 'https://www.perplexity.ai/settings/api',
       'infini': 'https://cloud.infini-ai.com/iam/secret/key',
