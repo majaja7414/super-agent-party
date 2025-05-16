@@ -219,7 +219,11 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
 
 async def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
-        request.messages[-1]['content'] = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n用户：" + request.messages[-1]['content']
+        time_message = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += time_message
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': time_message})
     if settings['tools']['inference']['enabled']:
         inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
         request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
