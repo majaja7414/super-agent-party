@@ -2069,7 +2069,7 @@
                     </div>
                   </div>
                   <!-- 添加新智能体 -->
-                  <div class="provider-card add-tile" @click="showAgentForm = true">
+                  <div class="provider-card add-tile" @click="showAgentForm = true;newAgent.system_prompt = this.system_prompt">
                     <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
                     <div style="color: #606266; margin-top: 10px;">{{ t('addNewAgent') }}</div>
                   </div>
