@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from tiktoken_ext import openai_public
 import tiktoken_ext
 import os
@@ -249,7 +250,55 @@ async def query_knowledge_base(kb_id: int, query: str):
         return f"Knowledge base {kb_id} not found in settings"
     # 查询知识库
     results = query_vector_store(query,kb_id, cur_kb,cur_vendor)
-    return json.dumps(results, ensure_ascii=False, indent=2)
+    return results
+
+async def rerank_knowledge_base(query: str , docs: List[Dict]) -> List[Dict]:
+    settings = await load_settings()
+    providerId = settings["KBSettings"]["selectedProvider"]
+    cur_vendor = None
+    for provider in settings["modelProviders"]:
+        if provider["id"] == providerId:
+            cur_vendor = provider["vendor"]
+            break
+    if cur_vendor == "jina":
+        # 获取设置中的模型和参数（可从配置中扩展）
+        jina_api_key = settings["KBSettings"]["api_key"]
+        model_name = settings["KBSettings"]["model"]
+        top_n = settings["KBSettings"]["top_n"]
+
+        # 构建 documents 列表
+        documents = [doc.get("content", "") for doc in docs]
+
+        # 构建请求数据
+        url = settings["KBSettings"]["base_url"] + "/rerank"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {jina_api_key}"
+        }
+        data = {
+            "model": model_name,
+            "query": query,
+            "top_n": top_n,
+            "documents": documents,
+            "return_documents": False
+        }
+
+        # 发送请求
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            raise Exception(f"Jina reranking failed: {response.text}")
+
+        result = response.json()
+
+        # 提取 rerank 后的顺序
+        ranked_indices = [item['index'] for item in result.get('results', [])]
+        ranked_docs = [docs[i] for i in ranked_indices]
+
+        return ranked_docs
+    else:
+        return docs
 
 kb_tool = {
     "type": "function",

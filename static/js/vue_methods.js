@@ -1617,6 +1617,17 @@ let vue_methods = {
         this.newProviderTemp.apiKey = 'ollama'
       }
     },
+    // rerank供应商
+    selectRankProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.KBSettings.model = provider.modelId;
+        this.KBSettings.base_url = provider.url;
+        this.KBSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+
     // 主模型供应商选择
     selectMainProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
@@ -1647,6 +1658,13 @@ let vue_methods = {
         this.autoSaveSettings();
       }
     },
+
+    handleRankProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectRankProvider(this.KBSettings.selectedProvider);
+      }
+    },
+
     // 在methods中添加
     handleMainProviderVisibleChange(visible) {
       if (!visible) {

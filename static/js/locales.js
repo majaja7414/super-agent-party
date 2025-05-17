@@ -302,6 +302,9 @@ const translations = {
       'gotoAPI': '获取API密钥或相关文档',
       'gotoGithub': '获取Github文档',
       'streamableHttpServer': '流式HTTP',
+      'rerankEnable': '启用重排模型',
+      'returnChunks': '返回结果数量',
+      'rerankProvider': '重排模型供应商',
     },
     'en-US': {
       'chat': 'Chat',
@@ -605,5 +608,8 @@ const translations = {
       'gotoAPI': 'Obtain API key or relevant documentation',
       'gotoGithub': 'Go to Github documentation',
       'streamableHttpServer': 'Streamable HTTP',
+      'rerankEnable': 'Enable Rerank Model',
+      'returnChunks': 'Number of results returned',
+      'rerankProvider': 'Rerank Model Provider',
     }
   };

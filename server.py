@@ -253,7 +253,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool,query_knowledge_base
+    from py.know_base import kb_tool,query_knowledge_base,rerank_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -332,12 +332,15 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         ]
                     }
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    all_kb_content = ""
+                    all_kb_content = []
                     # 用query_knowledge_base函数查询kb_list中所有的知识库
                     for kb in kb_list:
                         kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
-                        all_kb_content += kb_content +"\n\n"
+                        all_kb_content.extend(kb_content)
+                        if settings["KBSettings"]["is_rerank"]:
+                            all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
                     if all_kb_content:
+                        all_kb_content = json.dumps(all_kb_content, ensure_ascii=False, indent=4)
                         kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
                         request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
                                                 # 获取时间戳和uuid
@@ -858,6 +861,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         }
                         yield f"data: {json.dumps(chunk)}\n\n"
                         break
+                    if response_content.name in ["query_knowledge_base"]:
+                        if settings["KBSettings"]["is_rerank"]:
+                            results = await rerank_knowledge_base(user_prompt,results)
+                        results = json.dumps(results, ensure_ascii=False, indent=4)
                     request.messages.append(
                         {
                             "tool_calls": [
@@ -1256,7 +1263,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool,query_knowledge_base
+    from py.know_base import kb_tool,query_knowledge_base,rerank_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -1321,11 +1328,13 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
         if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
             if kb_list:
-                all_kb_content = ""
+                all_kb_content = []
                 # 用query_knowledge_base函数查询kb_list中所有的知识库
                 for kb in kb_list:
                     kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
-                    all_kb_content += kb_content +"\n\n"
+                    all_kb_content.extend(kb_content)
+                    if settings["KBSettings"]["is_rerank"]:
+                        all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
                 if all_kb_content:
                     kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
                     request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
@@ -1536,6 +1545,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 print(results)
                 if results is None:
                     break
+                if response_content.name in ["query_knowledge_base"]:
+                    if settings["KBSettings"]["is_rerank"]:
+                        results = await rerank_knowledge_base(user_prompt,results)
+                    results = json.dumps(results, ensure_ascii=False, indent=4)
                 request.messages.append(
                     {
                         "tool_calls": [

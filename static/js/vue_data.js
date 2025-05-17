@@ -207,6 +207,12 @@ let vue_data = {
     knowledgeBases: [],
     KBSettings: {
       when: 'before_thinking',
+      is_rerank: false,
+      selectedProvider: null,
+      model: '',
+      base_url: '',
+      api_key: '',
+      top_n: 5,
     },
     showAddKbDialog: false,
     showKnowledgeDialog: false,
