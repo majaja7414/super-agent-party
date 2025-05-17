@@ -313,7 +313,6 @@ async def rerank_knowledge_base(query: str , docs: List[Dict]) -> List[Dict]:
             "query": query,
             "top_n": top_n,
             "documents": documents,
-            "return_documents": False
         }
 
         # 发送请求

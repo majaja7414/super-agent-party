@@ -1895,6 +1895,29 @@
                             </el-option>
                           </el-select>
                         </el-form-item>
+                        <el-alert
+                          type="info"
+                          :closable="false"
+                          class="mb-2"
+                        >
+                          <template #default>
+                            <div class="alert-content">
+                              {{ t('firstTimeUse') }}
+                              <el-link
+                                type="primary"
+                                :underline="false"
+                                class="font-medium"
+                                @click="switchToApiBox"
+                              >
+                                <el-icon class="mr-1">
+                                  <i class="fa-solid fa-key"></i>
+                                </el-icon>{{ t('keyBoxInterface') }}
+                              </el-link>
+                              {{ t('addProviderReturnSelect') }}
+                              {{ t('rerankmodelnotice') }}
+                            </div>
+                          </template>
+                        </el-alert>
                         <el-form-item :label="t('modelName')" class="form-item-align">
                           <el-input
                             v-model="KBSettings.model"
