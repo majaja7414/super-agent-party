@@ -297,6 +297,39 @@ async def rerank_knowledge_base(query: str , docs: List[Dict]) -> List[Dict]:
         ranked_docs = [docs[i] for i in ranked_indices]
 
         return ranked_docs
+    elif cur_vendor == "Vllm":
+        # 获取设置中的模型和参数（可从配置中扩展）
+        model_name = settings["KBSettings"]["model"]
+        top_n = settings["KBSettings"]["top_n"]
+
+        # 构建 documents 列表
+        documents = [doc.get("content", "") for doc in docs]
+
+        # 构建请求数据
+        url = settings["KBSettings"]["base_url"] + "/rerank"
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+        data = {
+            "model": model_name,
+            "query": query,
+            "top_n": top_n,
+            "documents": documents,
+            "return_documents": False
+        }
+
+        # 发送请求
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            raise Exception(f"Vllm reranking failed: {response.text}")
+
+        result = response.json()
+
+        # 提取 rerank 后的顺序
+        ranked_indices = [item['index'] for item in result.get('results', [])]
+        ranked_docs = [docs[i] for i in ranked_indices]
+
+        return ranked_docs
     else:
         return docs
 

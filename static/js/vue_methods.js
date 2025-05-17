@@ -1616,6 +1616,9 @@ let vue_methods = {
       if (value === 'Ollama') {
         this.newProviderTemp.apiKey = 'ollama'
       }
+      if (value === 'Vllm') {
+        this.newProviderTemp.apiKey = 'Vllm'
+      }
     },
     // rerank供应商
     selectRankProvider(providerId) {
