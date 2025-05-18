@@ -1943,6 +1943,10 @@ border: 1px solid var(--border-color) !important;
   height: calc(100vh - 60px);
 }
 
+.storage-container {
+  height: calc(100vh - 60px);
+}
+
 .suite-layout {
   display: flex;
   height: 100%;

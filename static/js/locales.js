@@ -306,6 +306,10 @@ const translations = {
       'returnChunks': '返回结果数量',
       'rerankProvider': '重排模型供应商',
       'rerankmodelnotice': '请选择供应商后，请返回此页面并选择【重排模型】以继续。重排模型名称中一般包含“rerank”、“rank”等关键词。目前供应商只支持jina和Vllm',
+      'storage': '存储空间',
+      'storageText': '文本文件',
+      'storageImage': '图片文件',
+      'storageVideo': '视频文件',
     },
     'en-US': {
       'chat': 'Chat',
@@ -613,5 +617,9 @@ const translations = {
       'returnChunks': 'Number of results returned',
       'rerankProvider': 'Rerank Model Provider',
       'rerankmodelnotice': 'Please select the supplier first, then return to this page and select 【Re-rank Model】 to continue. The re-rank model name generally contains keywords such as "rerank", "rank", etc. Currently, the supplier only supports jina and Vllm',
+      'storage': 'Storage',
+      'storageText': 'Text File',
+      'storageImage': 'Image File',
+      'storageVideo': 'Video File',
     }
   };

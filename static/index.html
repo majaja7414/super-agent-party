@@ -156,6 +156,12 @@
             </el-icon>
             <template #title>{{ t('apiGroup') }}</template>
           </el-menu-item>
+          <el-menu-item index="storage">
+            <el-icon>
+              <i class="fa-solid fa-box-archive"></i>
+            </el-icon>
+            <template #title>{{ t('storage') }}</template>
+          </el-menu-item>
           <el-menu-item index="system">
             <el-icon>
               <i class="fa-solid fa-gear"></i>
@@ -2448,6 +2454,89 @@
                     </el-button>
                   </template>
                 </el-dialog>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 在内容区添加存储空间界面 -->
+        <div v-show="activeMenu === 'storage'" class="page storage-container">
+          <div class="suite-layout">
+            <!-- 左侧二级导航 -->
+            <div class="suite-sidebar">
+              <div class="tile-nav">
+                <div 
+                  v-for="tile in storageTiles" 
+                  :key="tile.id"
+                  class="nav-item"
+                  :class="{ active: subMenu === tile.id }"
+                  @click="subMenu = tile.id">
+                  <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                  <span class="nav-text">{{ t(tile.title) }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <!-- 右侧内容区 -->
+            <div class="suite-content">
+              <!-- 文本存储 -->
+              <div v-show="subMenu === 'text'" class="page">
+                <div class="file-list">
+                  <div class="file-item" v-for="(file, index) in textFiles" :key="index">
+                    <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
+                    <div class="file-info">
+                      <span class="file-name">{{ file.name }}</span>
+                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                    </div>
+                    <div class="file-actions">
+                      <el-button circle size="small" @click="previewFile(file)">
+                        <i class="fa-solid fa-eye"></i>
+                      </el-button>
+                      <el-button type="danger" circle size="small" @click="deleteFile(file)">
+                        <i class="fa-solid fa-trash"></i>
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 图片存储 -->
+              <div v-show="subMenu === 'image'" class="page">
+                <div class="image-grid">
+                  <div class="image-item" v-for="(img, index) in imageFiles" :key="index">
+                    <img :src="img.preview" class="thumbnail"/>
+                    <div class="image-overlay">
+                      <span class="image-name">{{ img.name }}</span>
+                      <div class="image-actions">
+                        <el-button circle size="small" @click="previewImage(img)">
+                          <i class="fa-solid fa-expand"></i>
+                        </el-button>
+                        <el-button type="danger" circle size="small" @click="deleteImage(img)">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- 视频存储 -->
+              <div v-show="subMenu === 'video'" class="page">
+                <div class="video-list">
+                  <div class="video-item" v-for="(video, index) in videoFiles" :key="index">
+                    <video class="video-preview" :src="video.url"></video>
+                    <div class="video-info">
+                      <span class="video-name">{{ video.name }}</span>
+                      <span class="video-duration">{{ formatDuration(video.duration) }}</span>
+                    </div>
+                    <div class="video-actions">
+                      <el-button circle size="small" @click="playVideo(video)">
+                        <i class="fa-solid fa-play"></i>
+                      </el-button>
+                      <el-button type="danger" circle size="small" @click="deleteVideo(video)">
+                        <i class="fa-solid fa-trash"></i>
+                      </el-button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -295,6 +295,14 @@ let vue_data = {
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
     ],
+    storageTiles: [
+      { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
+      { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
+      { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
+    ],
+    textFiles: [],
+    imageFiles: [],
+    videoFiles: [],
     subMenu: '', // 新增子菜单状态
     agentTiles: [
       { 
