@@ -142,6 +142,9 @@ class ChatRequest(BaseModel):
     frequency_penalty: float = 0
     presence_penalty: float = 0
     fileLinks: List[str] = None
+    enable_thinking: bool = False
+    enable_deep_research: bool = False
+    enable_web_search: bool = False
 
 async def message_without_images(messages: List[Dict]) -> List[Dict]:
     if messages:
@@ -238,7 +241,7 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': language_message})
     return request
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
     images = await images_in_messages(request.messages)
     request.messages = await message_without_images(request.messages)
@@ -370,7 +373,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
             else:
                 kb_list = []
-            if settings['webSearch']['enabled']:
+            if settings['webSearch']['enabled'] or enable_web_search:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                     chunk_dict = {
                         "id": "webSearch",
@@ -426,7 +429,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(Crawl4Ai_tool)
             if kb_list:
                 tools.append(kb_tool)
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 deepsearch_messages = copy.deepcopy(request.messages)
                 deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
@@ -448,9 +451,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
                 print(request.messages[-1]['content'])
             # 如果启用推理模型
-            if settings['reasoner']['enabled']:
+            if settings['reasoner']['enabled'] or enable_thinking:
                 reasoner_messages = copy.deepcopy(request.messages)
-                if settings['tools']['deepsearch']['enabled']: 
+                if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -546,7 +549,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             in_reasoning = False
             reasoning_buffer = []
             content_buffer = []
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
@@ -664,7 +667,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 full_content += final_chunk["choices"][0]["delta"].get("content", "")
             if tool_calls:
                 pass
-            elif settings['tools']['deepsearch']['enabled']: 
+            elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -922,7 +925,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(tool_chunk)}\n\n"
                 # 如果启用推理模型
-                if settings['reasoner']['enabled']:
+                if settings['reasoner']['enabled'] or enable_thinking:
                     if tools:
                         reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                     for modelProvider in settings['modelProviders']: 
@@ -1127,7 +1130,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     full_content += final_chunk["choices"][0]["delta"].get("content", "")
                 if tool_calls:
                     pass
-                elif settings['tools']['deepsearch']['enabled']: 
+                elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1250,7 +1253,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
+async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
     from py.load_files import get_files_content
     from py.web_search import (
@@ -1348,7 +1351,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         else:
             kb_list = []
         request = await tools_change_messages(request, settings)
-        if settings['webSearch']['enabled']:
+        if settings['webSearch']['enabled'] or enable_web_search:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
                     results = await DDGsearch_async(user_prompt)
@@ -1371,7 +1374,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(Crawl4Ai_tool)
         if kb_list:
             tools.append(kb_tool)
-        if settings['tools']['deepsearch']['enabled']: 
+        if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             deepsearch_messages = copy.deepcopy(request.messages)
             deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
@@ -1383,9 +1386,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             )
             user_prompt = response.choices[0].message.content
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
-        if settings['reasoner']['enabled']:
+        if settings['reasoner']['enabled'] or enable_thinking:
             reasoner_messages = copy.deepcopy(request.messages)
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -1420,7 +1423,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=settings['reasoner']['temperature']
                 )
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-        if settings['tools']['deepsearch']['enabled']: 
+        if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         msg = await images_add_in_messages(request.messages, images,settings)
         if tools:
@@ -1450,7 +1453,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             )
         if response.choices[0].message.tool_calls:
             pass
-        elif settings['tools']['deepsearch']['enabled']: 
+        elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1587,7 +1590,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "content": f"{response_content.name}工具结果："+str(results),
                 }
             )
-            if settings['reasoner']['enabled']:
+            if settings['reasoner']['enabled'] or enable_thinking:
 
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -1651,7 +1654,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             print(response)
             if response.choices[0].message.tool_calls:
                 pass
-            elif settings['tools']['deepsearch']['enabled']: 
+            elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1729,7 +1732,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 response_dict["choices"][0]['message']['reasoning_content'] = reasoning_content.group(1).strip()
                 # 移除原内容中的标签部分
                 response_dict["choices"][0]['message']['content'] = re.sub(fr'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
-        if settings['reasoner']['enabled']:
+        if settings['reasoner']['enabled'] or enable_thinking:
             response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         return JSONResponse(content=response_dict)
     except Exception as e:
@@ -1811,6 +1814,9 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
     fastapi_base_url = str(fastapi_request.base_url)
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
+    enable_thinking = request.enable_thinking or False
+    enable_deep_research = request.enable_deep_research or False
+    enable_web_search = request.enable_web_search or False
     if model == 'super-model':
         current_settings = await load_settings()
         # 动态更新客户端配置
@@ -1830,8 +1836,8 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
             settings = current_settings
         try:
             if request.stream:
-                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url)
-            return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url)
+                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+            return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1873,8 +1879,8 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
-            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking)
+            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
