@@ -77,7 +77,7 @@
     <el-header v-if="isElectron" class="top-bar" height="30px">
       <div class="window-controls">
         <el-button 
-          v-if="updateAvailable"
+          v-if="updateDownloaded"
           @click="handleUpdateAction" 
           class="top-bar-btn update-btn"
           :class="{ 'installed': updateDownloaded }"
@@ -86,8 +86,6 @@
             <i :class="updateIcon"></i>
           </el-icon>
           {{ updateButtonText }}
-          <span v-if="downloadProgress > 0" class="progress-text">
-            ({{ downloadProgress }}%)
           </span>
         </el-button>
         <!-- 新增展开/收起按钮 -->

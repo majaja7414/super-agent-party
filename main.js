@@ -227,9 +227,11 @@ async function waitForBackend() {
 // 配置自动更新
 function setupAutoUpdater() {
   autoUpdater.autoDownload = false; // 先禁用自动下载
-  autoUpdater.on('error', (err) => {
-    mainWindow.webContents.send('update-error', err.message);
-  });
+  if (isDev) {
+    autoUpdater.on('error', (err) => {
+      mainWindow.webContents.send('update-error', err.message);
+    });
+  }
   autoUpdater.on('update-available', (info) => {
     updateAvailable = true;
     // 显示更新按钮并开始下载
