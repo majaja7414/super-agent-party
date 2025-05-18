@@ -1788,6 +1788,7 @@ let vue_methods = {
           chunk_size: this.newKb.chunk_size,
           chunk_overlap: this.newKb.chunk_overlap,
           chunk_k: this.newKb.chunk_k,
+          weight: this.newKb.weight,
           files: uploadedFiles.map(file => ({ // 使用服务器返回的文件链接
             name: file.name,
             path: file.path,
@@ -1852,7 +1853,8 @@ let vue_methods = {
           api_key: '',
           chunk_size: 1024,
           chunk_overlap: 256,
-          chunk_k: 5
+          chunk_k: 5,
+          weight: 0.5,
         };
         this.newKbFiles = [];
       } catch (error) {

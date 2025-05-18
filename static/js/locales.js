@@ -310,6 +310,9 @@ const translations = {
       'storageText': '文本文件',
       'storageImage': '图片文件',
       'storageVideo': '视频文件',
+      'keywordSemanticWeight': '关键词↔️语义 搜索权重',
+      'keyword': '关键词',
+      'semantic': '语义',
     },
     'en-US': {
       'chat': 'Chat',
@@ -621,5 +624,8 @@ const translations = {
       'storageText': 'Text File',
       'storageImage': 'Image File',
       'storageVideo': 'Video File',
+      'keywordSemanticWeight': 'Keyword↔️Semantic Search Weight',
+      'keyword': 'Keyword',
+      'semantic': 'Semantic',
     }
   };

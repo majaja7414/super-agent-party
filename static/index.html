@@ -1673,6 +1673,7 @@
                         api_key: '',
                         chunk_size: 1024,
                         chunk_overlap: 256,
+                        weight: 0.5,
                         chunk_k: 5
                       }
                     }"
@@ -1784,6 +1785,18 @@
                               :step="1"
                               @input="autoSaveSettings"
                             />
+                          </el-form-item>
+                          <el-form-item :label="t('keywordSemanticWeight')">
+                            <span style="margin-right: 10px;">{{t('keyword')}}</span>
+                            <el-slider
+                              v-model="newKb.weight"
+                              :min="0"
+                              :max="1"
+                              :step="0.1"
+                              @input="autoSaveSettings"
+                              style="flex: 1;"
+                            ></el-slider>
+                            <span style="margin-left: 10px;">{{t('semantic')}}</span>
                           </el-form-item>
                         </el-collapse-item>
                       </el-collapse>

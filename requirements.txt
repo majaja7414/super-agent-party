@@ -27,3 +27,4 @@ python-a2a[all]==0.3.0
 ollama
 appdirs
 aiosqlite
+rank_bm25

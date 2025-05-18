@@ -232,6 +232,7 @@ let vue_data = {
       chunk_size: 2048,
       chunk_overlap: 512,
       chunk_k: 5,
+      weight: 0.5,
       processingStatus: 'processing',
     },
     newKbFiles: [],
