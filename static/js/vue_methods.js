@@ -407,6 +407,10 @@ let vue_methods = {
         this.activeMenu = 'api-group';
         this.subMenu = 'openai'; // 默认显示第一个子菜单
       }
+      else if (key === 'storage') {
+        this.activeMenu = 'storage';
+        this.subMenu = 'text'; // 默认显示第一个子菜单
+      }
       else {
         this.activeMenu = key;
       }
