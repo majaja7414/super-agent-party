@@ -162,7 +162,8 @@ def load_retrievers(kb_id, cur_kb, cur_vendor):
 def query_vector_store(query: str, kb_id, cur_kb, cur_vendor):
     """使用EnsembleRetriever的混合查询"""
     bm25_retriever, vector_retriever = load_retrievers(kb_id, cur_kb, cur_vendor)
-
+    if "weight" not in cur_kb:
+        cur_kb["weight"] = 0.5
     # 初始化混合检索器
     ensemble_retriever = EnsembleRetriever(
         retrievers=[bm25_retriever, vector_retriever],
