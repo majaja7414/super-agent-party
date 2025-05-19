@@ -313,6 +313,8 @@ const translations = {
       'keywordSemanticWeight': '关键词↔️语义 搜索权重',
       'keyword': '关键词',
       'semantic': '语义',
+      'MCPStyleAPI': 'MCP风格API',
+      'MCPAPIInstructions':'可以在其他支持MCP的客户端中选择SSE协议，并填入对应的URL，即可使用',
     },
     'en-US': {
       'chat': 'Chat',
@@ -627,5 +629,7 @@ const translations = {
       'keywordSemanticWeight': 'Keyword↔️Semantic Search Weight',
       'keyword': 'Keyword',
       'semantic': 'Semantic',
+      'MCPStyleAPI': 'MCP Style API',
+      'MCPAPIInstructions':'It can be used by selecting the SSE protocol in other clients that support MCP and filling in the corresponding URL.',
     }
   };

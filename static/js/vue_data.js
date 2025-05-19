@@ -55,8 +55,10 @@ if (isElectron) {
     HOST = window.location.hostname
     PORT = window.location.port
   }
-
+  // 判断协议
+  const protocol = window.location.protocol;
 let vue_data = {
+    partyURL:window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`,
     downloadProgress: 0,
     updateDownloaded: false,
     updateAvailable: false,
@@ -294,6 +296,7 @@ let vue_data = {
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
+      { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
     ],
     storageTiles: [

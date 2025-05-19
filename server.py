@@ -5,6 +5,7 @@ import json
 import os
 import re
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -1277,7 +1278,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     close_tag = "</think>"
     tools = request.tools or []
     tools = request.tools or []
-    print(tools)
     if mcp_client_list:
         for server_name, mcp_client in mcp_client_list.items():
             if server_name in settings['mcpServers']:
@@ -1300,6 +1300,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         tools.append(pollinations_image_tool)
     search_not_done = False
     search_task = ""
+    print(tools)
     try:
         model = settings['model']
         extra_params = settings['extra_params']
@@ -1737,13 +1738,15 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         return JSONResponse(content=response_dict)
     except Exception as e:
         return JSONResponse(
-            status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
 # 在现有路由后添加以下代码
-@app.get("/v1/models")
+@app.get("/v1/models",operation_id="get_models")
 async def get_models():
+    """
+    获取模型列表
+    """
     from openai.types import Model
     from openai.pagination import SyncPage
     try:
@@ -1760,6 +1763,16 @@ async def get_models():
             )
             for agent in agents.values()  
         ]
+        # 添加默认的 'super-model'
+        model_data.append(
+            Model(
+                id='super-model',
+                created=0,
+                object="model",
+                owned_by="super-agent-party"  # 非空字符串
+            )
+        )
+
         # 构造完整 SyncPage 响应
         response = SyncPage[Model](
             object="list",
@@ -1809,8 +1822,17 @@ async def fetch_provider_models(request: ProviderModelRequest):
         # 处理异常，返回错误信息
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", operation_id="chat_with_agent_party")
 async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
+    """
+    用来与agent party中的模型聊天
+    messages: 必填项，聊天记录，包括role和content
+    model: 可选项，默认使用 'super-model'，可以用get_models()获取所有可用的模型
+    stream: 可选项，默认为False，是否启用流式响应
+    enable_thinking: 默认为False，是否启用思考模式
+    enable_deep_research: 默认为False，是否启用深度研究模式
+    enable_web_search: 默认为False，是否启用网络搜索
+    """
     fastapi_base_url = str(fastapi_request.base_url)
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
@@ -1879,8 +1901,8 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking)
-            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1890,7 +1912,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
                 status_code=500,
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
-    
+
 # 添加状态存储
 mcp_status = {}
 @app.post("/create_mcp")
@@ -2127,6 +2149,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
     except Exception as e:
         print(f"WebSocket error: {e}")
+
+mcp = FastApiMCP(
+    app,
+    name="Agent party MCP - chat with multiple agents",
+    include_operations=["get_models", "chat_with_agent_party"],
+)
+
+mcp.mount()
 
 app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
