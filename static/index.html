@@ -864,31 +864,6 @@
                       </div>
                     </div>
                     <div class="tool-content">
-                      <el-form-item :label="t('modelName')" class="form-item-align">
-                        <el-input
-                          v-model="settings.model"
-                          :placeholder="t('modelName')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('baseURL')" class="form-item-align">
-                        <el-input
-                          v-model="settings.base_url"
-                          :placeholder="t('baseURL')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('apiKey')" class="form-item-align">
-                        <el-input
-                          v-model="settings.api_key"
-                          :placeholder="t('apiKey')"
-                          show-password
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
                       <el-form-item :label="t('temperature')" class="form-item-align">
                         <el-slider
                           v-model="settings.temperature"
@@ -1085,31 +1060,6 @@
                       </div>
                     </div>
                     <div class="tool-content">
-                      <el-form-item :label="t('modelName')" class="form-item-align">
-                        <el-input
-                          v-model="reasonerSettings.model"
-                          :placeholder="t('modelName')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('baseURL')" class="form-item-align">
-                        <el-input
-                          v-model="reasonerSettings.base_url"
-                          :placeholder="t('baseURL')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('apiKey')" class="form-item-align">
-                        <el-input
-                          v-model="reasonerSettings.api_key"
-                          :placeholder="t('apiKey')"
-                          show-password
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
                       <el-form-item :label="t('temperature')" class="form-item-align">
                         <el-slider
                           v-model="reasonerSettings.temperature"
@@ -1195,31 +1145,6 @@
                       </div>
                     </div>
                     <div class="tool-content">
-                      <el-form-item :label="t('modelName')" class="form-item-align">
-                        <el-input
-                          v-model="visionSettings.model"
-                          :placeholder="t('modelName')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('baseURL')" class="form-item-align">
-                        <el-input
-                          v-model="visionSettings.base_url"
-                          :placeholder="t('baseURL')"
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
-                      <el-form-item :label="t('apiKey')" class="form-item-align">
-                        <el-input
-                          v-model="visionSettings.api_key"
-                          :placeholder="t('apiKey')"
-                          show-password
-                          @input="autoSaveSettings"
-                          class="full-width-input"
-                        />
-                      </el-form-item>
                       <el-form-item :label="t('temperature')" class="form-item-align">
                         <el-slider
                           v-model="visionSettings.temperature"
@@ -1737,27 +1662,6 @@
                               <span class="font-medium">{{ t('advancedSettings') }}</span>
                             </div>
                           </template>
-                          <el-form-item :label="t('modelName')" required>
-                            <el-input
-                              v-model="newKb.model"
-                              :placeholder="t('modelName')"
-                            />
-                          </el-form-item>
-
-                          <el-form-item :label="t('baseURL')" required>
-                            <el-input
-                              v-model="newKb.base_url"
-                              :placeholder="t('baseURL')"
-                            />
-                          </el-form-item>
-
-                          <el-form-item :label="t('apiKey')" required>
-                            <el-input
-                              v-model="newKb.api_key"
-                              :placeholder="t('apiKey')"
-                              show-password
-                            />
-                          </el-form-item>
 
                           <el-form-item :label="t('segmentSize')">
                             <el-slider
@@ -1933,31 +1837,6 @@
                             </div>
                           </template>
                         </el-alert>
-                        <el-form-item :label="t('modelName')" class="form-item-align">
-                          <el-input
-                            v-model="KBSettings.model"
-                            :placeholder="t('modelName')"
-                            @input="autoSaveSettings"
-                            class="full-width-input"
-                          />
-                        </el-form-item>
-                        <el-form-item :label="t('baseURL')" class="form-item-align">
-                          <el-input
-                            v-model="KBSettings.base_url"
-                            :placeholder="t('baseURL')"
-                            @input="autoSaveSettings"
-                            class="full-width-input"
-                          />
-                        </el-form-item>
-                        <el-form-item :label="t('apiKey')" class="form-item-align">
-                          <el-input
-                            v-model="KBSettings.api_key"
-                            :placeholder="t('apiKey')"
-                            show-password
-                            @input="autoSaveSettings"
-                            class="full-width-input"
-                          />
-                        </el-form-item>
                       </div>
                     </div>
                   </el-form>
