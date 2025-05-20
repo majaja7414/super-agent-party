@@ -297,6 +297,7 @@ let vue_data = {
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
       { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
+      { id: 'docker', title: 'docker', icon: 'fa-brands fa-docker'},
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
     ],
     storageTiles: [
@@ -395,6 +396,9 @@ let vue_data = {
     currentUploadType: 'file',
     selectedCodeLang: 'python',
     previewClickHandler: null,
+    dockerExamples: `docker pull ailm32442/super-agent-party:latest
+docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
+`,
     codeExamples: {
       python: `from openai import OpenAI
 client = OpenAI(

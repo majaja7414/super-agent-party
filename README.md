@@ -48,6 +48,8 @@ We provide two mainstream Linux installation package formats for your convenienc
   docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
   ```
 
+- ⭐Note! `./super-agent-data` can be replaced with any local folder, after Docker starts, all data will be cached in this local folder and will not be uploaded anywhere.
+
 - Plug and play: access http://localhost:3456/
 
 ### Source Code Deployment
