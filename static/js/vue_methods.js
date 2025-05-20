@@ -2222,13 +2222,47 @@ let vue_methods = {
       // 时间戳转日期
       return new Date(date).toLocaleString();
     },
-    deleteFile(file) {
+    async deleteFile(file) {
       console.log('deleteFile:', file);
       this.textFiles = this.textFiles.filter(f => f !== file);
       this.autoSaveSettings();
+      fileName = file.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
     },
-    deleteImage(img) {
+    async deleteImage(img) {
       this.imageFiles = this.imageFiles.filter(i => i !== img);
       this.autoSaveSettings();
+      fileName = img.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
     },
 }

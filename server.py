@@ -2161,6 +2161,20 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/delete_file")
+async def delete_file_endpoint(request: Request):
+    data = await request.json()
+    file_name = data.get("fileName")
+    file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={"success": True})
+        else:
+            return JSONResponse(content={"success": False, "message": "File not found"})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "message": str(e)})
+
 @app.post("/create_kb")
 async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
