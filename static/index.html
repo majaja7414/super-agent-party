@@ -2398,13 +2398,15 @@
               <div v-show="subMenu === 'image'" class="page image-container">
                 <div class="image-grid">
                   <div class="image-item" v-for="(img, index) in imageFiles" :key="index">
-                    <img :src="img.preview" class="thumbnail"/>
+                    <img :src="`${partyURL}/uploaded_files/${img.unique_filename}`" class="thumbnail"/>
                     <div class="image-overlay">
                       <span class="image-name">{{ img.name }}</span>
                       <div class="image-actions">
-                        <el-button circle size="small" @click="previewImage(img)">
-                          <i class="fa-solid fa-expand"></i>
-                        </el-button>
+                        <a :href="`${partyURL}/uploaded_files/${img.unique_filename}`" download target="_blank">
+                          <el-button circle size="small">
+                            <i class="fa-solid fa-download"></i>
+                          </el-button>
+                        </a>
                         <el-button type="danger" circle size="small" @click="deleteImage(img)">
                           <i class="fa-solid fa-trash"></i>
                         </el-button>
