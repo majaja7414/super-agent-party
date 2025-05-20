@@ -936,6 +936,9 @@ let vue_methods = {
             const data = await response.json();
             if (data.success) {
                 fileLinks = data.fileLinks;
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
             } else {
                 showNotification(this.t('file_upload_failed'), 'error');
             }
@@ -974,6 +977,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 imageLinks = data.fileLinks;
+                // data.imageFiles 添加到 this.imageFiles
+                this.imageFiles = [...this.imageFiles, ...data.imageFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
               }
@@ -1730,6 +1736,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -1766,6 +1775,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -2209,5 +2221,14 @@ let vue_methods = {
     formatDate(date) {
       // 时间戳转日期
       return new Date(date).toLocaleString();
+    },
+    deleteFile(file) {
+      console.log('deleteFile:', file);
+      this.textFiles = this.textFiles.filter(f => f !== file);
+      this.autoSaveSettings();
+    },
+    deleteImage(img) {
+      this.imageFiles = this.imageFiles.filter(i => i !== img);
+      this.autoSaveSettings();
     },
 }

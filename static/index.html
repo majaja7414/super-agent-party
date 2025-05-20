@@ -2372,18 +2372,21 @@
             <!-- 右侧内容区 -->
             <div class="suite-content">
               <!-- 文本存储 -->
-              <div v-show="subMenu === 'text'" class="page">
+              <div v-show="subMenu === 'text'" class="page text-container">
                 <div class="file-list">
                   <div class="file-item" v-for="(file, index) in textFiles" :key="index">
                     <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
                     <div class="file-info">
-                      <span class="file-name">{{ file.name }}</span>
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                      <span class="file-name">{{ file.original_filename }}</span>
                     </div>
                     <div class="file-actions">
-                      <el-button circle size="small" @click="previewFile(file)">
-                        <i class="fa-solid fa-eye"></i>
-                      </el-button>
+                      <!-- 下载按钮 -->
+                      <a :href="`${partyURL}/uploaded_files/${file.unique_filename}`" download target="_blank">
+                        <el-button circle size="small">
+                          <i class="fa-solid fa-download"></i>
+                        </el-button>
+                      </a>
+                      <!-- 删除按钮 -->
                       <el-button type="danger" circle size="small" @click="deleteFile(file)">
                         <i class="fa-solid fa-trash"></i>
                       </el-button>
@@ -2392,7 +2395,7 @@
                 </div>
               </div>
               <!-- 图片存储 -->
-              <div v-show="subMenu === 'image'" class="page">
+              <div v-show="subMenu === 'image'" class="page image-container">
                 <div class="image-grid">
                   <div class="image-item" v-for="(img, index) in imageFiles" :key="index">
                     <img :src="img.preview" class="thumbnail"/>
@@ -2411,7 +2414,7 @@
                 </div>
               </div>
               <!-- 视频存储 -->
-              <div v-show="subMenu === 'video'" class="page">
+              <div v-show="subMenu === 'video'" class="page video-container">
                 <div class="video-list">
                   <div class="video-item" v-for="(video, index) in videoFiles" :key="index">
                     <video class="video-preview" :src="video.url"></video>
