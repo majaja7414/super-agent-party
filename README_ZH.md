@@ -49,6 +49,8 @@
   docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
   ```
 
+- ⭐注意！`./super-agent-data`可以替换为任意本地文件夹，docker启动后，所有数据都将缓存到该本地文件夹，不会上传到任何地方。
+
 - 开箱即用：访问http://localhost:3456/
 
 ### 源码部署

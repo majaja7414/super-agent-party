@@ -2542,7 +2542,7 @@
                         {{ t('openaiStyleAPI') }}
                       </span>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.superapi">
+                    <div class="tool-content">
                       <el-alert
                         type="info"
                         :closable="false"
@@ -2621,7 +2621,7 @@
                         {{ t('MCPStyleAPI') }}
                       </span>
                     </div>
-                    <div class="tool-content" v-show="expandedSections.superapi">
+                    <div class="tool-content">
                       <el-alert
                         type="info"
                         :closable="false"
@@ -2650,7 +2650,36 @@
                   </div>
                 </el-form>
               </div>
-                        
+              <!-- docker -->
+              <div v-show="subMenu === 'docker'" class="page">
+                <el-form class="settings-form">
+                  <div class="tool-item">
+                    <div class="tool-header">
+                      <span>
+                        <el-icon><i class='fa-brands fa-docker'></i></el-icon>
+                        {{ t('docker') }}
+                      </span>
+                    </div>
+                    <div class="tool-content">
+                      <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        {{ t('dockerInstructions') }}
+                      </el-alert>
+                      <!-- 修改index.html中的代码块结构 -->
+                      <div class="code-block">
+                        <div class="code-header">
+                          <span class="code-lang">shell</span>
+                          <button class="copy-button" @click.prevent="handleCopy"><i class="fa-solid fa-copy"></i></button>
+                        </div>
+                        <pre><code class="hljs language-shell">{{ dockerExamples }}</code></pre>
+                      </div>
+                    </div>
+                  </div>
+                </el-form>
+              </div>
               <!-- 浏览器模式 -->
               <div v-show="subMenu === 'browser'" class="page">
                 <el-form class="settings-form">

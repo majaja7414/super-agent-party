@@ -834,6 +834,9 @@ let vue_methods = {
           this.visionSettings = data.data.vision || {};
           this.webSearchSettings = data.data.webSearch || {};
           this.KBSettings = data.data.KBSettings || {};
+          this.textFiles = data.data.textFiles || [];
+          this.imageFiles = data.data.imageFiles || [];
+          this.videoFiles = data.data.videoFiles || [];
           this.knowledgeBases = data.data.knowledgeBases || [];
           this.modelProviders = data.data.modelProviders || [];
           this.systemSettings = data.data.systemSettings || {};
@@ -1242,6 +1245,9 @@ let vue_methods = {
         vision: this.visionSettings,
         webSearch: this.webSearchSettings, 
         KBSettings: this.KBSettings,
+        textFiles: this.textFiles,
+        imageFiles: this.imageFiles,
+        videoFiles: this.videoFiles,
         knowledgeBases: this.knowledgeBases,
         modelProviders: this.modelProviders,
         systemSettings: this.systemSettings,
