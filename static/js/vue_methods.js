@@ -407,6 +407,10 @@ let vue_methods = {
         this.activeMenu = 'api-group';
         this.subMenu = 'openai'; // 默认显示第一个子菜单
       }
+      else if (key === 'storage') {
+        this.activeMenu = 'storage';
+        this.subMenu = 'text'; // 默认显示第一个子菜单
+      }
       else {
         this.activeMenu = key;
       }
@@ -1616,7 +1620,21 @@ let vue_methods = {
       if (value === 'Ollama') {
         this.newProviderTemp.apiKey = 'ollama'
       }
+      if (value === 'Vllm') {
+        this.newProviderTemp.apiKey = 'Vllm'
+      }
     },
+    // rerank供应商
+    selectRankProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.KBSettings.model = provider.modelId;
+        this.KBSettings.base_url = provider.url;
+        this.KBSettings.api_key = provider.apiKey;
+        this.autoSaveSettings();
+      }
+    },
+
     // 主模型供应商选择
     selectMainProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
@@ -1647,6 +1665,13 @@ let vue_methods = {
         this.autoSaveSettings();
       }
     },
+
+    handleRankProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectRankProvider(this.KBSettings.selectedProvider);
+      }
+    },
+
     // 在methods中添加
     handleMainProviderVisibleChange(visible) {
       if (!visible) {
@@ -1763,6 +1788,7 @@ let vue_methods = {
           chunk_size: this.newKb.chunk_size,
           chunk_overlap: this.newKb.chunk_overlap,
           chunk_k: this.newKb.chunk_k,
+          weight: this.newKb.weight,
           files: uploadedFiles.map(file => ({ // 使用服务器返回的文件链接
             name: file.name,
             path: file.path,
@@ -1827,7 +1853,8 @@ let vue_methods = {
           api_key: '',
           chunk_size: 1024,
           chunk_overlap: 256,
-          chunk_k: 5
+          chunk_k: 5,
+          weight: 0.5,
         };
         this.newKbFiles = [];
       } catch (error) {

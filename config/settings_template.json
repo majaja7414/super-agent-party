@@ -72,7 +72,8 @@
     },
     "knowledgeBases": [],
     "KBSettings": {
-      "when": "before_thinking"
+      "when": "before_thinking",
+      "is_rerank": false
     },
     "modelProviders": [],
     "agents": {},

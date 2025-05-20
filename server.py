@@ -5,6 +5,7 @@ import json
 import os
 import re
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -142,6 +143,9 @@ class ChatRequest(BaseModel):
     frequency_penalty: float = 0
     presence_penalty: float = 0
     fileLinks: List[str] = None
+    enable_thinking: bool = False
+    enable_deep_research: bool = False
+    enable_web_search: bool = False
 
 async def message_without_images(messages: List[Dict]) -> List[Dict]:
     if messages:
@@ -219,11 +223,8 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
 
 async def tools_change_messages(request: ChatRequest, settings: dict):
     if settings['tools']['time']['enabled']:
-        time_message = f"当前系统时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n"
-        if request.messages and request.messages[0]['role'] == 'system':
-            request.messages[0]['content'] += time_message
-        else:
-            request.messages.insert(0, {'role': 'system', 'content': time_message})
+        time_message = f"消息发送时间：{local_timezone}  {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}\n\n"
+        request.messages[-1]['content'] = time_message + request.messages[-1]['content']
     if settings['tools']['inference']['enabled']:
         inference_message = "回答用户前请先思考推理，再回答问题，你的思考推理的过程必须放在<think>与</think>之间。\n\n"
         request.messages[-1]['content'] = f"{inference_message}\n\n用户：" + request.messages[-1]['content']
@@ -241,7 +242,7 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': language_message})
     return request
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
     images = await images_in_messages(request.messages)
     request.messages = await message_without_images(request.messages)
@@ -256,7 +257,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool,query_knowledge_base
+    from py.know_base import kb_tool,query_knowledge_base,rerank_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -335,12 +336,15 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         ]
                     }
                     yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    all_kb_content = ""
+                    all_kb_content = []
                     # 用query_knowledge_base函数查询kb_list中所有的知识库
                     for kb in kb_list:
                         kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
-                        all_kb_content += kb_content +"\n\n"
+                        all_kb_content.extend(kb_content)
+                        if settings["KBSettings"]["is_rerank"]:
+                            all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
                     if all_kb_content:
+                        all_kb_content = json.dumps(all_kb_content, ensure_ascii=False, indent=4)
                         kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
                         request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
                                                 # 获取时间戳和uuid
@@ -370,7 +374,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
             else:
                 kb_list = []
-            if settings['webSearch']['enabled']:
+            if settings['webSearch']['enabled'] or enable_web_search:
                 if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                     chunk_dict = {
                         "id": "webSearch",
@@ -426,7 +430,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(Crawl4Ai_tool)
             if kb_list:
                 tools.append(kb_tool)
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 deepsearch_messages = copy.deepcopy(request.messages)
                 deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
                 print(request.messages[-1]['content'])
@@ -448,9 +452,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
                 print(request.messages[-1]['content'])
             # 如果启用推理模型
-            if settings['reasoner']['enabled']:
+            if settings['reasoner']['enabled'] or enable_thinking:
                 reasoner_messages = copy.deepcopy(request.messages)
-                if settings['tools']['deepsearch']['enabled']: 
+                if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -546,7 +550,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             in_reasoning = False
             reasoning_buffer = []
             content_buffer = []
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
@@ -664,7 +668,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 full_content += final_chunk["choices"][0]["delta"].get("content", "")
             if tool_calls:
                 pass
-            elif settings['tools']['deepsearch']['enabled']: 
+            elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -861,6 +865,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         }
                         yield f"data: {json.dumps(chunk)}\n\n"
                         break
+                    if response_content.name in ["query_knowledge_base"]:
+                        if settings["KBSettings"]["is_rerank"]:
+                            results = await rerank_knowledge_base(user_prompt,results)
+                        results = json.dumps(results, ensure_ascii=False, indent=4)
                     request.messages.append(
                         {
                             "tool_calls": [
@@ -918,7 +926,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(tool_chunk)}\n\n"
                 # 如果启用推理模型
-                if settings['reasoner']['enabled']:
+                if settings['reasoner']['enabled'] or enable_thinking:
                     if tools:
                         reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                     for modelProvider in settings['modelProviders']: 
@@ -1123,7 +1131,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     full_content += final_chunk["choices"][0]["delta"].get("content", "")
                 if tool_calls:
                     pass
-                elif settings['tools']['deepsearch']['enabled']: 
+                elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1246,7 +1254,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
-async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url):
+async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
     from py.load_files import get_files_content
     from py.web_search import (
@@ -1259,7 +1267,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
-    from py.know_base import kb_tool,query_knowledge_base
+    from py.know_base import kb_tool,query_knowledge_base,rerank_knowledge_base
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
@@ -1270,7 +1278,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     close_tag = "</think>"
     tools = request.tools or []
     tools = request.tools or []
-    print(tools)
     if mcp_client_list:
         for server_name, mcp_client in mcp_client_list.items():
             if server_name in settings['mcpServers']:
@@ -1293,6 +1300,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         tools.append(pollinations_image_tool)
     search_not_done = False
     search_task = ""
+    print(tools)
     try:
         model = settings['model']
         extra_params = settings['extra_params']
@@ -1324,11 +1332,13 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
         if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
             if kb_list:
-                all_kb_content = ""
+                all_kb_content = []
                 # 用query_knowledge_base函数查询kb_list中所有的知识库
                 for kb in kb_list:
                     kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
-                    all_kb_content += kb_content +"\n\n"
+                    all_kb_content.extend(kb_content)
+                    if settings["KBSettings"]["is_rerank"]:
+                        all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
                 if all_kb_content:
                     kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
                     request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
@@ -1342,7 +1352,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         else:
             kb_list = []
         request = await tools_change_messages(request, settings)
-        if settings['webSearch']['enabled']:
+        if settings['webSearch']['enabled'] or enable_web_search:
             if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                 if settings['webSearch']['engine'] == 'duckduckgo':
                     results = await DDGsearch_async(user_prompt)
@@ -1365,7 +1375,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(Crawl4Ai_tool)
         if kb_list:
             tools.append(kb_tool)
-        if settings['tools']['deepsearch']['enabled']: 
+        if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             deepsearch_messages = copy.deepcopy(request.messages)
             deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
             response = await client.chat.completions.create(
@@ -1377,9 +1387,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             )
             user_prompt = response.choices[0].message.content
             request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
-        if settings['reasoner']['enabled']:
+        if settings['reasoner']['enabled'] or enable_thinking:
             reasoner_messages = copy.deepcopy(request.messages)
-            if settings['tools']['deepsearch']['enabled']: 
+            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -1414,7 +1424,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=settings['reasoner']['temperature']
                 )
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
-        if settings['tools']['deepsearch']['enabled']: 
+        if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
         msg = await images_add_in_messages(request.messages, images,settings)
         if tools:
@@ -1444,7 +1454,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             )
         if response.choices[0].message.tool_calls:
             pass
-        elif settings['tools']['deepsearch']['enabled']: 
+        elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1539,6 +1549,10 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 print(results)
                 if results is None:
                     break
+                if response_content.name in ["query_knowledge_base"]:
+                    if settings["KBSettings"]["is_rerank"]:
+                        results = await rerank_knowledge_base(user_prompt,results)
+                    results = json.dumps(results, ensure_ascii=False, indent=4)
                 request.messages.append(
                     {
                         "tool_calls": [
@@ -1577,7 +1591,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "content": f"{response_content.name}工具结果："+str(results),
                 }
             )
-            if settings['reasoner']['enabled']:
+            if settings['reasoner']['enabled'] or enable_thinking:
 
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -1641,7 +1655,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             print(response)
             if response.choices[0].message.tool_calls:
                 pass
-            elif settings['tools']['deepsearch']['enabled']: 
+            elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 search_prompt = f"""
 初始任务：
 {user_prompt}
@@ -1719,18 +1733,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 response_dict["choices"][0]['message']['reasoning_content'] = reasoning_content.group(1).strip()
                 # 移除原内容中的标签部分
                 response_dict["choices"][0]['message']['content'] = re.sub(fr'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
-        if settings['reasoner']['enabled']:
+        if settings['reasoner']['enabled'] or enable_thinking:
             response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         return JSONResponse(content=response_dict)
     except Exception as e:
         return JSONResponse(
-            status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
         )
 
 # 在现有路由后添加以下代码
-@app.get("/v1/models")
+@app.get("/v1/models",operation_id="get_models")
 async def get_models():
+    """
+    获取模型列表
+    """
     from openai.types import Model
     from openai.pagination import SyncPage
     try:
@@ -1747,6 +1763,16 @@ async def get_models():
             )
             for agent in agents.values()  
         ]
+        # 添加默认的 'super-model'
+        model_data.append(
+            Model(
+                id='super-model',
+                created=0,
+                object="model",
+                owned_by="super-agent-party"  # 非空字符串
+            )
+        )
+
         # 构造完整 SyncPage 响应
         response = SyncPage[Model](
             object="list",
@@ -1796,11 +1822,23 @@ async def fetch_provider_models(request: ProviderModelRequest):
         # 处理异常，返回错误信息
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", operation_id="chat_with_agent_party")
 async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
+    """
+    用来与agent party中的模型聊天
+    messages: 必填项，聊天记录，包括role和content
+    model: 可选项，默认使用 'super-model'，可以用get_models()获取所有可用的模型
+    stream: 可选项，默认为False，是否启用流式响应
+    enable_thinking: 默认为False，是否启用思考模式
+    enable_deep_research: 默认为False，是否启用深度研究模式
+    enable_web_search: 默认为False，是否启用网络搜索
+    """
     fastapi_base_url = str(fastapi_request.base_url)
     global client, settings,reasoner_client,mcp_client_list
     model = request.model or 'super-model' # 默认使用 'super-model'
+    enable_thinking = request.enable_thinking or False
+    enable_deep_research = request.enable_deep_research or False
+    enable_web_search = request.enable_web_search or False
     if model == 'super-model':
         current_settings = await load_settings()
         # 动态更新客户端配置
@@ -1820,8 +1858,8 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
             settings = current_settings
         try:
             if request.stream:
-                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url)
-            return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url)
+                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+            return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1863,8 +1901,8 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
-            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+            return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
             print("Client disconnected")
@@ -1874,7 +1912,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
                 status_code=500,
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
-    
+
 # 添加状态存储
 mcp_status = {}
 @app.post("/create_mcp")
@@ -2111,6 +2149,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
     except Exception as e:
         print(f"WebSocket error: {e}")
+
+mcp = FastApiMCP(
+    app,
+    name="Agent party MCP - chat with multiple agents",
+    include_operations=["get_models", "chat_with_agent_party"],
+)
+
+mcp.mount()
 
 app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")

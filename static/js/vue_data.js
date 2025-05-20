@@ -55,8 +55,10 @@ if (isElectron) {
     HOST = window.location.hostname
     PORT = window.location.port
   }
-
+  // 判断协议
+  const protocol = window.location.protocol;
 let vue_data = {
+    partyURL:window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`,
     downloadProgress: 0,
     updateDownloaded: false,
     updateAvailable: false,
@@ -207,6 +209,12 @@ let vue_data = {
     knowledgeBases: [],
     KBSettings: {
       when: 'before_thinking',
+      is_rerank: false,
+      selectedProvider: null,
+      model: '',
+      base_url: '',
+      api_key: '',
+      top_n: 5,
     },
     showAddKbDialog: false,
     showKnowledgeDialog: false,
@@ -226,6 +234,7 @@ let vue_data = {
       chunk_size: 2048,
       chunk_overlap: 512,
       chunk_k: 5,
+      weight: 0.5,
       processingStatus: 'processing',
     },
     newKbFiles: [],
@@ -287,8 +296,17 @@ let vue_data = {
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
+      { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
     ],
+    storageTiles: [
+      { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
+      { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
+      { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
+    ],
+    textFiles: [],
+    imageFiles: [],
+    videoFiles: [],
     subMenu: '', // 新增子菜单状态
     agentTiles: [
       { 

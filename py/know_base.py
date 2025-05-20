@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 from tiktoken_ext import openai_public
 import tiktoken_ext
 import os
@@ -19,6 +20,9 @@ os.environ["TIKTOKEN_CACHE_DIR"] = get_tiktoken_cache_path()
 import json
 from pathlib import Path
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.retrievers import EnsembleRetriever
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_ollama import OllamaEmbeddings
@@ -32,38 +36,56 @@ def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=cur_kb["chunk_size"],
         chunk_overlap=cur_kb["chunk_overlap"],
-        separators=["\n\n", "\n", "。", "！", "？"]
+        separators=["\n\n", "\n", "。", "！", "？", "!", "?", "."]
     )
     
-    all_chunks = []
-    
+    all_docs = []
     for doc in results:
-        # 对每个文件单独分块
         chunks = text_splitter.split_text(doc["content"])
-        
-        # 为每个块添加元数据
         for chunk in chunks:
-            all_chunks.append({
-                "text": chunk,
-                "metadata": {
+            all_docs.append(Document(
+                page_content=chunk,
+                metadata={
                     "file_path": doc["file_path"],
-                    "file_name": doc["file_name"]
+                    "file_name": doc["file_name"],
+                    "doc_id": f"{doc['file_path']}_{len(all_docs)}"  # 唯一标识
                 }
-            })
+            ))
+    return all_docs
+
+def build_vector_store(docs: List[Document], kb_id: int, cur_kb: Dict, cur_vendor: str):
+    """构建并保存双索引（参数修正版）"""
+    # 参数校验
+    if not isinstance(docs, list) or not all(isinstance(d, Document) for d in docs):
+        raise ValueError("Input must be a list of Document objects")
     
-    return all_chunks
+    # ========== BM25索引构建 ==========
+    try:
+        kb_dir = Path(KB_DIR)  # 根目录
+        if not kb_dir.exists():
+            kb_dir.mkdir(parents=True, exist_ok=True)
+        
+        save_dir = kb_dir / str(kb_id)  # 知识库专属目录
+        save_dir.mkdir(parents=True, exist_ok=True)  # 确保目录存在
 
-def build_vector_store(chunks: List[Dict], kb_id, cur_kb, cur_vendor):
-    """构建并保存向量数据库（支持分批处理）"""
-    # 校验输入数据
-    if not chunks:
-        raise ValueError("Empty chunks list")
-    if not all(isinstance(chunk, dict) for chunk in chunks):
-        raise TypeError("Chunks must be list of dictionaries")
-    if not all("text" in chunk and "metadata" in chunk for chunk in chunks):
-        raise ValueError("Missing required fields in chunks")
-
-    # 初始化嵌入模型
+        bm25_path = save_dir / "bm25_index.json"
+        
+        # 写入前做空值检查
+        if not docs:
+            raise ValueError("Documents list is empty")
+        # 保存文档数据
+        with open(bm25_path, "w", encoding="utf-8") as f:
+            json.dump({
+                "docs": [
+                    {
+                        "page_content": doc.page_content,
+                        "metadata": doc.metadata
+                    } for doc in docs
+                ]
+            }, f, ensure_ascii=False)
+    except Exception as e:
+        raise RuntimeError(f"Failed to save BM25 index: {str(e)}")
+    # ========== 向量索引构建 ==========
     try:
         if cur_vendor == "Ollama":
             embeddings = OllamaEmbeddings(
@@ -76,89 +98,44 @@ def build_vector_store(chunks: List[Dict], kb_id, cur_kb, cur_vendor):
                 openai_api_key=cur_kb["api_key"],
                 openai_api_base=cur_kb["base_url"],
             )
-    except KeyError as e:
-        raise ValueError(f"Missing required config key: {e}")
-
-    # 转换文档数据结构
-    documents = []
-    for idx, chunk in enumerate(chunks):
-        try:
-            doc = Document(
-                page_content=chunk["text"],
-                metadata={k: str(v) for k, v in chunk["metadata"].items()}
-            )
-            documents.append(doc)
-        except Exception as e:
-            print(f"Error processing chunk {idx}: {str(e)}")
-    
-    if not documents:
-        raise ValueError("No valid documents after processing chunks")
-
-    # 创建存储路径
-    save_path = Path(KB_DIR) / str(kb_id)
-    try:
-        save_path.mkdir(parents=True, exist_ok=True)
-        if not os.access(save_path, os.W_OK):
-            raise PermissionError(f"Write permission denied: {save_path}")
-    except OSError as e:
-        raise RuntimeError(f"Path creation failed: {str(e)}")
-
-    # 分批处理文档（每5个一批）
-    batch_size = 5
-    vector_db = None
-    total_batches = (len(documents) + batch_size - 1) // batch_size
-
-    for batch_num in range(total_batches):
-        start_idx = batch_num * batch_size
-        end_idx = start_idx + batch_size
-        current_batch = documents[start_idx:end_idx]
-
-        try:
-            if vector_db is None:
-                # 第一批次创建新数据库
-                vector_db = FAISS.from_documents(
-                    documents=current_batch,
-                    embedding=embeddings
-                )
-            else:
-                # 后续批次增量添加
-                vector_db.add_documents(current_batch)
+        # 批量处理文档
+        batch_size = 5  # 根据显存调整
+        vector_db = None
+        
+        for i in range(0, len(docs), batch_size):
+            batch = docs[i:i+batch_size]
             
-            print(f"Processed batch {batch_num + 1}/{total_batches} "
-                  f"({len(current_batch)} documents)")
-
-        except Exception as e:
-            print(f"Failed to process batch {batch_num + 1}: {str(e)}")
-            # 可以选择记录失败批次以便后续重试
-            continue
-
-    if vector_db is None:
-        raise RuntimeError("Failed to create vector store from all batches")
-
-    # 最终保存整个数据库
-    try:
-        vector_db.save_local(
-            folder_path=str(save_path),
-            index_name="index"
-        )
+            if vector_db is None:
+                vector_db = FAISS.from_documents(batch, embeddings)
+            else:
+                vector_db.add_documents(batch)
+            
+            print(f"Processed {min(i+batch_size, len(docs))}/{len(docs)} documents")
+        
+        # 最终保存
+        save_path = Path(KB_DIR) / str(kb_id)
+        vector_db.save_local(folder_path=str(save_path), index_name="index")
+        
     except Exception as e:
-        raise RuntimeError(f"Save failed: {str(e)}")
+        raise RuntimeError(f"Vector store build failed: {str(e)}")
 
-    return vector_db
-
-
-
-def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
-    """根据知识库ID查询对应向量数据库"""
-    # 构建安全路径
-    kb_path = Path(KB_DIR) / str(kb_id)
+def load_retrievers(kb_id, cur_kb, cur_vendor):
+    """加载双检索器"""
+    # 加载BM25
+    bm25_path = Path(KB_DIR) / str(kb_id) / "bm25_index.json"
+    with open(bm25_path, "r", encoding="utf-8") as f:
+        bm25_data = json.load(f)
     
-    # 验证路径合法性
-    if not os.path.exists(kb_path):
-        raise FileNotFoundError(f"Knowledge base {kb_id} not found")
-    if not os.path.isdir(kb_path):
-        raise ValueError(f"Invalid knowledge base path: {kb_id}")
-    # 初始化带重试的嵌入模型
+    bm25_docs = [
+        Document(
+            page_content=doc["page_content"],
+            metadata=doc["metadata"]
+        ) for doc in bm25_data["docs"]
+    ]
+    bm25_retriever = BM25Retriever.from_documents(bm25_docs)
+    bm25_retriever.k = cur_kb["chunk_k"]
+    # 加载向量检索器
+    kb_path = Path(KB_DIR) / str(kb_id)
     if cur_vendor == "Ollama":
         embeddings = OllamaEmbeddings(
             model=cur_kb["model"],
@@ -170,30 +147,36 @@ def query_vector_store(query: str, kb_id, cur_kb,cur_vendor):
             openai_api_key=cur_kb["api_key"],
             openai_api_base=cur_kb["base_url"],
         )
-    try:
-        # 加载指定知识库
-        vector_db = FAISS.load_local(
-            folder_path=str(kb_path),
-            embeddings=embeddings,
-            allow_dangerous_deserialization=True,
-            index_name="index"  # 与保存时的默认名称一致
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to load vector store: {str(e)}")
-    # 执行语义搜索
-    results = vector_db.similarity_search_with_score(
-        query=query,
-        k=cur_kb["chunk_k"],
+    
+    vector_db = FAISS.load_local(
+        folder_path=str(kb_path),
+        embeddings=embeddings,
+        allow_dangerous_deserialization=True,
+        index_name="index"  # 与保存时的默认名称一致
     )
-    # 格式化输出（带元数据过滤）
+    vector_retriever = vector_db.as_retriever(
+        search_kwargs={"k": cur_kb["chunk_k"]}
+    )
+    return bm25_retriever, vector_retriever
+
+def query_vector_store(query: str, kb_id, cur_kb, cur_vendor):
+    """使用EnsembleRetriever的混合查询"""
+    bm25_retriever, vector_retriever = load_retrievers(kb_id, cur_kb, cur_vendor)
+    if "weight" not in cur_kb:
+        cur_kb["weight"] = 0.5
+    # 初始化混合检索器
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, vector_retriever],
+        weights=[1 - cur_kb["weight"], cur_kb["weight"]],  # 权重配置
+    )
+    
+    # 获取结果
+    docs = ensemble_retriever.invoke(query)
+    # 格式转换
     return [{
         "content": doc.page_content,
-        "metadata": {
-            "file_name": doc.metadata.get("file_name", "unknown"),
-            "file_path": doc.metadata.get("file_path", "unknown")
-        },
-        "score": float(score)
-    } for doc, score in results]
+        "metadata": doc.metadata,
+    } for doc in docs]
 
 
 async def process_knowledge_base(kb_id: int):
@@ -249,7 +232,87 @@ async def query_knowledge_base(kb_id: int, query: str):
         return f"Knowledge base {kb_id} not found in settings"
     # 查询知识库
     results = query_vector_store(query,kb_id, cur_kb,cur_vendor)
-    return json.dumps(results, ensure_ascii=False, indent=2)
+    return results
+
+async def rerank_knowledge_base(query: str , docs: List[Dict]) -> List[Dict]:
+    settings = await load_settings()
+    providerId = settings["KBSettings"]["selectedProvider"]
+    cur_vendor = None
+    for provider in settings["modelProviders"]:
+        if provider["id"] == providerId:
+            cur_vendor = provider["vendor"]
+            break
+    if cur_vendor == "jina":
+        # 获取设置中的模型和参数（可从配置中扩展）
+        jina_api_key = settings["KBSettings"]["api_key"]
+        model_name = settings["KBSettings"]["model"]
+        top_n = settings["KBSettings"]["top_n"]
+
+        # 构建 documents 列表
+        documents = [doc.get("content", "") for doc in docs]
+
+        # 构建请求数据
+        url = settings["KBSettings"]["base_url"] + "/rerank"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {jina_api_key}"
+        }
+        data = {
+            "model": model_name,
+            "query": query,
+            "top_n": top_n,
+            "documents": documents,
+            "return_documents": False
+        }
+
+        # 发送请求
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            raise Exception(f"Jina reranking failed: {response.text}")
+
+        result = response.json()
+
+        # 提取 rerank 后的顺序
+        ranked_indices = [item['index'] for item in result.get('results', [])]
+        ranked_docs = [docs[i] for i in ranked_indices]
+
+        return ranked_docs
+    elif cur_vendor == "Vllm":
+        # 获取设置中的模型和参数（可从配置中扩展）
+        model_name = settings["KBSettings"]["model"]
+        top_n = settings["KBSettings"]["top_n"]
+
+        # 构建 documents 列表
+        documents = [doc.get("content", "") for doc in docs]
+
+        # 构建请求数据
+        url = settings["KBSettings"]["base_url"] + "/rerank"
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
+        data = {
+            "model": model_name,
+            "query": query,
+            "top_n": top_n,
+            "documents": documents,
+        }
+
+        # 发送请求
+        async with httpx.AsyncClient() as client:
+            response = await client.post(url, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            raise Exception(f"Vllm reranking failed: {response.text}")
+
+        result = response.json()
+
+        # 提取 rerank 后的顺序
+        ranked_indices = [item['index'] for item in result.get('results', [])]
+        ranked_docs = [docs[i] for i in ranked_indices]
+
+        return ranked_docs
+    else:
+        return docs
 
 kb_tool = {
     "type": "function",
