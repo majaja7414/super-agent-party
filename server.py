@@ -37,6 +37,22 @@ mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
 
+ALLOWED_EXTENSIONS = [
+  # 办公文档
+  'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
+  'numbers', 'key', 'rtf', 'odt',
+  
+  # 编程开发
+  'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go', 'rs',
+  'swift', 'kt', 'dart', 'rb', 'php', 'html', 'css', 'scss', 'less',
+  'vue', 'svelte', 'jsx', 'tsx', 'json', 'xml', 'yml', 'yaml', 
+  'sql', 'sh',
+  
+  # 数据配置
+  'csv', 'tsv', 'txt', 'md', 'log', 'conf', 'ini', 'env', 'toml'
+]
+ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
+
 from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
@@ -2066,9 +2082,8 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
     fastapi_base_url = str(request.base_url)
     logger.info(f"Received request with content type: {request.headers.get('Content-Type')}")
     file_links = []
-    
     content_type = request.headers.get('Content-Type', '')
-    
+    current_settings = await load_settings()
     try:
         if 'multipart/form-data' in content_type:
             # 处理浏览器上传的文件
@@ -2090,7 +2105,14 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     "name": file.filename
                 }
                 file_links.append(file_link)
-        
+                file_meta = {
+                    "unique_filename": unique_filename,
+                    "original_filename": file.filename,
+                }
+                if file_extension in ALLOWED_EXTENSIONS:
+                    current_settings['textFiles'].append(file_meta)
+                elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
+                    current_settings['imageFiles'].append(file_meta)
         elif 'application/json' in content_type:
             # 处理Electron发送的JSON文件路径
             data = await request.json()
@@ -2118,10 +2140,17 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     "name": file_name
                 }
                 file_links.append(file_link)
-        
+                file_meta = {
+                    "unique_filename": unique_filename,
+                    "original_filename": file_name,
+                }
+                if file_extension in ALLOWED_EXTENSIONS:
+                    current_settings['textFiles'].append(file_meta)
+                elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
+                    current_settings['imageFiles'].append(file_meta)
         else:
             raise HTTPException(status_code=400, detail="Unsupported Content-Type")
-        
+        await save_settings(current_settings)
         return JSONResponse(content={"success": True, "fileLinks": file_links})
     
     except Exception as e:

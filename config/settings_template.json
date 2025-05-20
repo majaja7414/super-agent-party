@@ -77,5 +77,8 @@
     },
     "modelProviders": [],
     "agents": {},
-    "a2aServers": {}
+    "a2aServers": {},
+    "textFiles": [],
+    "imageFiles": [],
+    "videoFiles": []
 }
