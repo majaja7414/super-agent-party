@@ -2374,6 +2374,7 @@
               <!-- 文本存储 -->
               <div v-show="subMenu === 'text'" class="page text-container">
                 <div class="file-list">
+                  <!-- 文件列表 -->
                   <div class="file-item" v-for="(file, index) in textFiles" :key="index">
                     <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
                     <div class="file-info">
@@ -2392,6 +2393,10 @@
                       </el-button>
                     </div>
                   </div>
+                </div>
+                <!-- 如果文件列表长度为0 -->
+                <div v-if="textFiles.length === 0" class="no-files">
+                  <el-empty :description="t('noFiles')" />
                 </div>
               </div>
               <!-- 图片存储 -->
@@ -2414,6 +2419,9 @@
                     </div>
                   </div>
                 </div>
+                <div v-if="imageFiles.length === 0" class="no-Images">
+                  <el-empty :description="t('noImages')" />
+                </div>
               </div>
               <!-- 视频存储 -->
               <div v-show="subMenu === 'video'" class="page video-container">
@@ -2433,6 +2441,9 @@
                       </el-button>
                     </div>
                   </div>
+                </div>
+                <div v-if="videoFiles.length === 0" class="no-Videos">
+                  <el-empty :description="t('noVideos')" />
                 </div>
               </div>
             </div>

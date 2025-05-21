@@ -319,6 +319,9 @@ const translations = {
       'dockerInstructions':'请确保您已经安装了Docker，并且Docker服务正在运行。你可以复制以下代码在终端中运行，以启动一个super agent party的本地服务。⭐注意！`./super-agent-data`可以替换为任意本地文件夹，docker启动后，所有数据都将缓存到该本地文件夹，不会上传到任何地方。',
       'fileDeleted': '文件已删除',
       'fileDeleteFailed': '文件删除失败',
+      'noFiles': '存储空间中无文本文件',
+      'noImages': '存储空间中无图片文件',
+      'noVideos': '存储空间中无视频文件',
     },
     'en-US': {
       'chat': 'Chat',
@@ -639,5 +642,8 @@ const translations = {
       'dockerInstructions':'Please ensure that you have installed Docker and the Docker service is running. You can copy the following code and run it in the terminal to start a local service of super agent party. ⭐Note! `./super-agent-data` can be replaced with any local folder, after Docker starts, all data will be cached to that local folder and will not be uploaded anywhere.',
       'fileDeleted': 'File deleted',
       'fileDeleteFailed': 'File delete failed',
+      'noFiles': 'There are no text files in the storage space',
+      'noImages': 'There are no image files in the storage space',
+      'noVideos': 'There are no video files in the storage space',
     }
   };
