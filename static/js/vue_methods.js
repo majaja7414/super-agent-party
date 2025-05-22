@@ -492,6 +492,21 @@ let vue_methods = {
       }
       return tempDiv.innerHTML;
     },
+    copyLink(uniqueFilename) {
+      const url = `${this.partyURL}/uploaded_files/${uniqueFilename}`
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          this.$message.success(this.t('copy_success'))
+        })
+        .catch(() => {
+          this.$message.error(this.t('copy_failed'), 'error')
+        })
+    },
+    previewImage(img) {
+      this.previewImageUrl = `${this.partyURL}/uploaded_files/${img.unique_filename}`
+      this.previewVisible = true
+      console.log(this.previewImageUrl)
+    },
     copyMessageContent(message) {
       // 获取原始内容（用户消息直接复制，AI消息复制原始markdown）
       let content = message.role === 'user' 

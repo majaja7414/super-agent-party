@@ -2139,6 +2139,12 @@ border: 1px solid var(--border-color) !important;
   display: flex;
   gap: 8px;
   margin-left: 12px;
+  .file-actions-btn {
+    margin: 2px!important;
+  }
+  .a {
+    margin: 0px!important;
+  }
 }
 
 .image-container {
@@ -2199,6 +2205,35 @@ border: 1px solid var(--border-color) !important;
 
 .image-actions {
   display: flex;
-  gap: 4px;
-  margin-left: 8px;
+  gap: 1px;
+  .image-actions-btn {
+    margin: 3px!important;
+  }
+  .a {
+    margin: 3px!important;
+  }
+}
+
+/* 添加预览样式 */
+.image-preview-dialog {
+  .el-dialog__body {
+    padding: 0;
+    height: auto;
+  }
+  
+  .preview-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background: var(--bg-color);
+  }
+  
+  .preview-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    justify-content: center;
+    align-items: center;
+  }
 }

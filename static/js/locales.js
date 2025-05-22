@@ -322,6 +322,7 @@ const translations = {
       'noFiles': '存储空间中无文本文件',
       'noImages': '存储空间中无图片文件',
       'noVideos': '存储空间中无视频文件',
+      'preview': '预览',
     },
     'en-US': {
       'chat': 'Chat',
@@ -645,5 +646,6 @@ const translations = {
       'noFiles': 'There are no text files in the storage space',
       'noImages': 'There are no image files in the storage space',
       'noVideos': 'There are no video files in the storage space',
+      'preview': 'Preview',
     }
   };
