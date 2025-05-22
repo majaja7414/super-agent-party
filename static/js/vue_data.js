@@ -332,18 +332,18 @@ let vue_data = {
       }
     ],
     vendorValues: [
-      'custom', 'OpenAI', 'Ollama','Vllm', 'Deepseek', 'Volcano',
-      'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax',
-      'LMstudio', 'Gemini','Anthropic', 'Grok', 'mistral', 'lingyi',
-      'baichuan', 'qianfan', 'hunyuan', 'stepfun', 'Github', 'openrouter',
-      'together', 'fireworks', '360', 'Nvidia',
+      'custom', 'OpenAI', 'Ollama','Vllm','LMstudio', 'Deepseek', 'Volcano',
+      'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax', 'Gemini','Anthropic', 
+      'Grok', 'mistral', 'lingyi','baichuan', 'qianfan', 'hunyuan', 'stepfun', 'Github', 
+      'openrouter','together', 'fireworks', '360', 'Nvidia',
       'jina', 'gitee', 'perplexity', 'infini',
       'modelscope', 'tencent'
     ],
     vendorAPIpage: {
       'OpenAI': 'https://platform.openai.com/api-keys',
       'Ollama': 'https://ollama.com/',
-      'Vllm': 'https://docs.vllm.ai/en/latest/',
+      'Vllm': 'https://docs.vllm.ai/en/latest/',      
+      'LMstudio': 'https://lmstudio.ai/docs/app',
       'Deepseek': 'https://platform.deepseek.com/api_keys',
       'Volcano': 'https://www.volcengine.com/experience/ark',
       'siliconflow': 'https://cloud.siliconflow.cn/i/yGxrNlGb',
@@ -351,7 +351,6 @@ let vue_data = {
       'ZhipuAI': 'https://open.bigmodel.cn/usercenter/apikeys',
       'moonshot': 'https://platform.moonshot.cn/console/api-keys',
       'minimax': 'https://platform.minimaxi.com/user-center/basic-information/interface-key',
-      'LMstudio': 'https://lmstudio.ai/docs/app',
       'Gemini': 'https://aistudio.google.com/app/apikey',
       'Anthropic': 'https://console.anthropic.com/settings/keys',
       'Grok': 'https://console.x.ai/',
