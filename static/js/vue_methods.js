@@ -492,6 +492,21 @@ let vue_methods = {
       }
       return tempDiv.innerHTML;
     },
+    copyLink(uniqueFilename) {
+      const url = `${this.partyURL}/uploaded_files/${uniqueFilename}`
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          this.$message.success(this.t('copy_success'))
+        })
+        .catch(() => {
+          this.$message.error(this.t('copy_failed'), 'error')
+        })
+    },
+    previewImage(img) {
+      this.previewImageUrl = `${this.partyURL}/uploaded_files/${img.unique_filename}`
+      this.previewVisible = true
+      console.log(this.previewImageUrl)
+    },
     copyMessageContent(message) {
       // 获取原始内容（用户消息直接复制，AI消息复制原始markdown）
       let content = message.role === 'user' 
@@ -936,6 +951,9 @@ let vue_methods = {
             const data = await response.json();
             if (data.success) {
                 fileLinks = data.fileLinks;
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
             } else {
                 showNotification(this.t('file_upload_failed'), 'error');
             }
@@ -974,6 +992,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 imageLinks = data.fileLinks;
+                // data.imageFiles 添加到 this.imageFiles
+                this.imageFiles = [...this.imageFiles, ...data.imageFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
               }
@@ -1730,6 +1751,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -1766,6 +1790,9 @@ let vue_methods = {
               const data = await response.json();
               if (data.success) {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
+                // data.textFiles 添加到 this.textFiles
+                this.textFiles = [...this.textFiles, ...data.textFiles];
+                this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -2209,5 +2236,48 @@ let vue_methods = {
     formatDate(date) {
       // 时间戳转日期
       return new Date(date).toLocaleString();
+    },
+    async deleteFile(file) {
+      console.log('deleteFile:', file);
+      this.textFiles = this.textFiles.filter(f => f !== file);
+      this.autoSaveSettings();
+      fileName = file.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
+    },
+    async deleteImage(img) {
+      this.imageFiles = this.imageFiles.filter(i => i !== img);
+      this.autoSaveSettings();
+      fileName = img.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
     },
 }

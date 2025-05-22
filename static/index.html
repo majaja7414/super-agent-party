@@ -2350,7 +2350,6 @@
             </div>
           </div>
         </div>
-
         <!-- 在内容区添加存储空间界面 -->
         <div v-show="activeMenu === 'storage'" class="page storage-container">
           <div class="suite-layout">
@@ -2372,46 +2371,87 @@
             <!-- 右侧内容区 -->
             <div class="suite-content">
               <!-- 文本存储 -->
-              <div v-show="subMenu === 'text'" class="page">
+              <div v-show="subMenu === 'text'" class="page text-container">
                 <div class="file-list">
+                  <!-- 文件列表 -->
                   <div class="file-item" v-for="(file, index) in textFiles" :key="index">
                     <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
                     <div class="file-info">
-                      <span class="file-name">{{ file.name }}</span>
-                      <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                      <span class="file-name">{{ file.original_filename }}</span>
                     </div>
                     <div class="file-actions">
-                      <el-button circle size="small" @click="previewFile(file)">
-                        <i class="fa-solid fa-eye"></i>
+                      <!-- 复制链接按钮 -->
+                      <el-button circle size="small" class="file-actions-btn" @click="copyLink(file.unique_filename)">
+                        <i class="fa-solid fa-link"></i>
                       </el-button>
-                      <el-button type="danger" circle size="small" @click="deleteFile(file)">
+                      <!-- 下载按钮 -->
+                      <a :href="`${partyURL}/uploaded_files/${file.unique_filename}`" download target="_blank">
+                        <el-button circle size="small" class="file-actions-btn">
+                            <i class="fa-solid fa-download"></i>
+                        </el-button>
+                      </a>
+                      <!-- 删除按钮 -->
+                      <el-button type="danger" circle size="small" class="file-actions-btn" @click="deleteFile(file)">
                         <i class="fa-solid fa-trash"></i>
                       </el-button>
                     </div>
                   </div>
                 </div>
+                <!-- 如果文件列表长度为0 -->
+                <div v-if="textFiles.length === 0" class="no-files">
+                  <el-empty :description="t('noFiles')" />
+                </div>
               </div>
               <!-- 图片存储 -->
-              <div v-show="subMenu === 'image'" class="page">
+              <div v-show="subMenu === 'image'" class="page image-container">
                 <div class="image-grid">
                   <div class="image-item" v-for="(img, index) in imageFiles" :key="index">
-                    <img :src="img.preview" class="thumbnail"/>
+                    <img :src="`${partyURL}/uploaded_files/${img.unique_filename}`" class="thumbnail"/>
                     <div class="image-overlay">
                       <span class="image-name">{{ img.name }}</span>
                       <div class="image-actions">
-                        <el-button circle size="small" @click="previewImage(img)">
-                          <i class="fa-solid fa-expand"></i>
+                        <!-- 复制链接按钮 -->
+                        <el-button circle size="small" class="image-actions-btn" @click="copyLink(img.unique_filename)">
+                          <i class="fa-solid fa-link"></i>
                         </el-button>
-                        <el-button type="danger" circle size="small" @click="deleteImage(img)">
+                        <!-- 新增预览按钮 -->
+                        <el-button circle size="small" class="image-actions-btn" @click="previewImage(img)">
+                          <i class="fa-solid fa-eye"></i>
+                        </el-button>
+                        
+                        <!-- 下载按钮 -->
+                        <a :href="`${partyURL}/uploaded_files/${img.unique_filename}`" download target="_blank">
+                          <el-button circle size="small" class="image-actions-btn">
+                              <i class="fa-solid fa-download"></i>
+                          </el-button>
+                        </a>
+                        
+                        <el-button type="danger" class="image-actions-btn" circle size="small" @click="deleteImage(img)">
                           <i class="fa-solid fa-trash"></i>
                         </el-button>
                       </div>
                     </div>
                   </div>
                 </div>
+                <div v-if="imageFiles.length === 0" class="no-Images">
+                  <el-empty :description="t('noImages')" />
+                </div>
+                <el-dialog
+                  v-model="previewVisible"
+                  :title="t('preview')"
+                  class="image-preview-dialog"
+                  width="600px">
+                  <div class="preview-container">
+                    <img 
+                      :src="previewImageUrl" 
+                      class="preview-image"
+                      alt="Preview"
+                    />
+                  </div>
+                </el-dialog>
               </div>
               <!-- 视频存储 -->
-              <div v-show="subMenu === 'video'" class="page">
+              <div v-show="subMenu === 'video'" class="page video-container">
                 <div class="video-list">
                   <div class="video-item" v-for="(video, index) in videoFiles" :key="index">
                     <video class="video-preview" :src="video.url"></video>
@@ -2429,11 +2469,13 @@
                     </div>
                   </div>
                 </div>
+                <div v-if="videoFiles.length === 0" class="no-Videos">
+                  <el-empty :description="t('noVideos')" />
+                </div>
               </div>
             </div>
           </div>
         </div>
-
         <!-- logo页面 -->
         <div v-show="activeMenu === 'logo'" class="page logo-container">
           <div class="license-notice">
@@ -2719,7 +2761,6 @@
       </el-main>
     </el-container>
   </div>
-
   <!-- 引入Vue和Element Plus -->
   <script src="node_modules/vue/dist/vue.global.js"></script>
   <script src="node_modules/element-plus/dist/index.full.js"></script>

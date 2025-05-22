@@ -453,5 +453,7 @@ main();`,
       { value: 'openai', label: 'OpenAI' },
       { value: 'ollama', label: 'Ollama' }
     ],
-    modelOptions: []
+    modelOptions: [],
+    previewVisible: false,
+    previewImageUrl: ''
 };

@@ -2082,8 +2082,9 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
     fastapi_base_url = str(request.base_url)
     logger.info(f"Received request with content type: {request.headers.get('Content-Type')}")
     file_links = []
+    textFiles = []
+    imageFiles = []
     content_type = request.headers.get('Content-Type', '')
-    current_settings = await load_settings()
     try:
         if 'multipart/form-data' in content_type:
             # 处理浏览器上传的文件
@@ -2109,10 +2110,12 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     "unique_filename": unique_filename,
                     "original_filename": file.filename,
                 }
+                # file_extension移除点号
+                file_extension = file_extension[1:]
                 if file_extension in ALLOWED_EXTENSIONS:
-                    current_settings['textFiles'].append(file_meta)
+                    textFiles.append(file_meta)
                 elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
-                    current_settings['imageFiles'].append(file_meta)
+                    imageFiles.append(file_meta)
         elif 'application/json' in content_type:
             # 处理Electron发送的JSON文件路径
             data = await request.json()
@@ -2144,18 +2147,33 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
                     "unique_filename": unique_filename,
                     "original_filename": file_name,
                 }
+                # file_extension移除点号
+                file_extension = file_extension[1:]
                 if file_extension in ALLOWED_EXTENSIONS:
-                    current_settings['textFiles'].append(file_meta)
+                    textFiles.append(file_meta)
                 elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
-                    current_settings['imageFiles'].append(file_meta)
+                    imageFiles.append(file_meta)
         else:
             raise HTTPException(status_code=400, detail="Unsupported Content-Type")
-        await save_settings(current_settings)
-        return JSONResponse(content={"success": True, "fileLinks": file_links})
+        return JSONResponse(content={"success": True, "fileLinks": file_links , "textFiles": textFiles, "imageFiles": imageFiles})
     
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/delete_file")
+async def delete_file_endpoint(request: Request):
+    data = await request.json()
+    file_name = data.get("fileName")
+    file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={"success": True})
+        else:
+            return JSONResponse(content={"success": False, "message": "File not found"})
+    except Exception as e:
+        return JSONResponse(content={"success": False, "message": str(e)})
 
 @app.post("/create_kb")
 async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
