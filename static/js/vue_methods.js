@@ -775,11 +775,20 @@ let vue_methods = {
             const previewContainer = codeBlock.querySelector('.preview-container');
             try {
                 if (lang === 'mermaid') {
-                    const svg = previewContainer.querySelector('svg');
-                    const svgData = new XMLSerializer().serializeToString(svg);
-                    const blob = new Blob([svgData], {type: 'image/svg+xml'});
-                    this.triggerDownload(blob, 'mermaid-diagram.svg');
-                } 
+                    // 使用html2canvas来截图
+                    html2canvas(previewContainer, {
+                        // 如果Mermaid图表面板有滚动条，你可能需要设置宽度和高度
+                        width: previewContainer.offsetWidth,
+                        height: previewContainer.offsetHeight,
+                    }).then(canvas => {
+                        canvas.toBlob(blob => {
+                            this.triggerDownload(blob, 'mermaid-diagram.png');
+                        });
+                    }).catch(error => {
+                        console.error('截图失败:', error);
+                        showNotification('截图失败，请检查控制台', 'error');
+                    });
+                }
                 else if (lang === 'html') {
                     const iframe = previewContainer.querySelector('iframe');
                     const canvas = await html2canvas(iframe.contentDocument.body);
