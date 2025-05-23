@@ -1129,6 +1129,19 @@ border: 1px solid var(--border-color) !important;
   background: var(--code-bg-color);
 }
 
+.copy-button, .download-button{
+  background: var(--el-bg-color-page);
+  border: none;
+  color: var(--el-color-primary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.copy-button:hover, .download-button:hover {
+  background: var(--code-bg-color);
+}
+
 /* 在样式表中添加覆盖规则 */
 .code-block pre {
   background-color: transparent !important;

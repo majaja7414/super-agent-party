@@ -14,6 +14,7 @@ const app = Vue.createApp({
   mounted() {
     this.initWebSocket();
     this.highlightCode();
+    this.initDownloadButtons();
     if (isElectron) {
       // 检查更新
       this.checkForUpdates();

@@ -24,13 +24,15 @@ const md = window.markdownit({
     language = 'mermaid';
     };
     const previewable = ['html', 'mermaid'].includes(language);
+    const downloadButton = previewable ? 
+    `<button class="download-button" data-lang="${language}"><i class="fa-solid fa-download"></i></button>` : '';
     // 添加预览按钮
     const previewButton = previewable ? 
     `<button class="preview-button" data-lang="${language}"><i class="fa-solid fa-eye"></i></button>` : '';
     try {
-    return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></div></pre>`;
+    return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}${downloadButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs language-${language}">${hljs.highlight(str, { language }).value}</code></div></pre>`;
     } catch (__) {
-    return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs">${md.utils.escapeHtml(str)}</code></div></pre>`;
+    return `<pre class="code-block"><div class="code-header"><span class="code-lang">${language}</span><div class="code-actions">${previewButton}${downloadButton}<button class="copy-button"><i class="fa-solid fa-copy"></i></button></div></div><div class="code-content"><code class="hljs">${md.utils.escapeHtml(str)}</code></div></pre>`;
     }
 }
 });
@@ -755,7 +757,53 @@ let vue_methods = {
 
       return parts;
     },
+    initDownloadButtons() {
+        document.body.addEventListener('click', async (e) => {
+            const button = e.target.closest('.download-button');
+            if (!button) return;
+            const lang = button.dataset.lang;
+            const codeBlock = button.closest('.code-block');
+            const previewButton = codeBlock.querySelector('.preview-button');
+            const existingPreview = codeBlock.querySelector('.preview-container.active');
+            // 如果previewButton不在预览状态，则执行预览操作
+            if (!existingPreview) {
+                // 触发预览按钮的点击事件
+                previewButton.click();
+                // 等待预览完成
+                await new Promise(resolve => setTimeout(resolve, 500)); // 根据实际情况调整延时
+            }
+            const previewContainer = codeBlock.querySelector('.preview-container');
+            try {
+                if (lang === 'mermaid') {
+                    const svg = previewContainer.querySelector('svg');
+                    const svgData = new XMLSerializer().serializeToString(svg);
+                    const blob = new Blob([svgData], {type: 'image/svg+xml'});
+                    this.triggerDownload(blob, 'mermaid-diagram.svg');
+                } 
+                else if (lang === 'html') {
+                    const iframe = previewContainer.querySelector('iframe');
+                    const canvas = await html2canvas(iframe.contentDocument.body);
+                    canvas.toBlob(blob => {
+                        this.triggerDownload(blob, 'html-preview.png');
+                    });
+                }
+            } catch (error) {
+                console.error('下载失败:', error);
+                showNotification('下载失败，请检查控制台', 'error');
+            }
+        });
+    },
 
+    triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
     
     handleCopy(event) {
       const button = event.target.closest('.copy-button')
