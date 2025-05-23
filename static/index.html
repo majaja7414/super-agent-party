@@ -723,24 +723,29 @@
                 <el-dialog
                   v-model="showAddDialog"
                   :title="t('addNewProvider')"
-                  width="30%"
+                  width="90%"
                   @closed="newProviderTemp = { vendor: '', url: '' }"
                 >
-                  <el-form label-position="top">
-                    <el-form-item :label="t('provider')" required>
-                      <el-select
-                        v-model="newProviderTemp.vendor"
-                        :placeholder="t('pleaseSelect')"
-                        @change="handleVendorChange"
+                  <!-- 供应商选择区域 -->
+                  <el-form-item :label="t('provider')" required label-position="top">
+                    <div class="vendor-grid">
+                      <div 
+                        v-for="item in vendorOptions" 
+                        :key="item.value"
+                        class="vendor-card"
+                        :class="{ 'selected': newProviderTemp.vendor === item.value }"
+                        @click="handleSelectVendor(item.value)"
                       >
-                        <el-option
-                          v-for="item in vendorOptions"
-                          :key="item.value"
-                          :label="item.label"
-                          :value="item.value"
+                        <img 
+                          :src="getVendorLogo(item.value)" 
+                          :alt="item.label"
+                          class="vendor-logo"
                         />
-                      </el-select>
-                    </el-form-item>
+                        <div class="vendor-name">{{ t(item.label) }}</div>
+                      </div>
+                    </div>
+                  </el-form-item>
+
 
                     <el-form-item
                       v-if="newProviderTemp.vendor === 'custom'"

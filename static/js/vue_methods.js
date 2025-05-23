@@ -2280,4 +2280,11 @@ let vue_methods = {
         showNotification(this.t('fileDeleteFailed'), 'error');
       }
     },
+    getVendorLogo(vendor) {
+      return this.vendorLogoList[vendor] || "";
+    },
+    handleSelectVendor(vendor) {
+      this.newProviderTemp.vendor = vendor;
+      this.handleVendorChange(vendor);
+    }
 }
