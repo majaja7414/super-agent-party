@@ -103,7 +103,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 The following content has been merged into the main branch, but has not yet been included in the release version.
 
 1. Add storage space management function, which allows you to view the files and images uploaded in the chat in the storage space and save them locally, thus enhancing the software's image and document storage capabilities.
-2. Adding a file/image link viewing tool allows the large model to retrieve file/image information based on the URL provided by the user.
+2. Adding a file/image link viewing tool allows the large model to retrieve file/image information based on the URL provided by the user.It can also be used to view files or image information inside the server, and even the tool results in chat records. Tool results will not occupy the context, but will be stored as separate files, which can be viewed by the large model at any time, realizing the memo function of the large model.
 3. The agent party's configured intelligent entities can now be invoked using MCP.
 4. The openai interface has added the following switch parameters:
 - enable_thinking: Default to False, whether to enable the thinking mode.

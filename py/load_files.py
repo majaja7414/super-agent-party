@@ -319,13 +319,13 @@ file_tool = {
     "type": "function",
     "function": {
         "name": "get_file_content",
-        "description": f"获取给定的文件URL中的内容，无论是公网URL还是服务器内部URL，支持格式：{', '.join(ALLOWED_EXTENSIONS)}",
+        "description": f"获取给定的文件URL中的内容，无论是公网URL还是服务器内部URL，由于工具调用结果会被缓存在服务器中，本工具也可以通过工具调用结果的URL用来查看工具调用结果，支持格式：{', '.join(ALLOWED_EXTENSIONS)}",
         "parameters": {
             "type": "object",
             "properties": {
                 "file_url": {
                     "type": "string",
-                    "description": "文件URL",
+                    "description": "文件URL或者工具调用结果的URL",
                 }
             },
             "required": ["file_url"],
