@@ -504,6 +504,7 @@ let vue_methods = {
           this.$message.error(this.t('copy_failed'), 'error')
         })
     },
+    
     previewImage(img) {
       this.previewImageUrl = `${this.partyURL}/uploaded_files/${img.unique_filename}`
       this.previewVisible = true
@@ -1366,6 +1367,16 @@ let vue_methods = {
     // 修改copyEndpoint方法
     copyEndpoint() {
       navigator.clipboard.writeText(`http://${HOST}:${PORT}/v1`)
+        .then(() => {
+          showNotification(this.t('copy_success'), 'success');
+        })
+        .catch(() => {
+          showNotification(this.t('copy_fail'), 'error');
+        });
+    },
+
+    copyMCPEndpoint(){
+      navigator.clipboard.writeText(`http://${HOST}:${PORT}/mcp`)
         .then(() => {
           showNotification(this.t('copy_success'), 'success');
         })
