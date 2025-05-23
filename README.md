@@ -98,6 +98,20 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   print(response.choices[0].message.content)
   ```
 
+## Recently updated
+
+The following content has been merged into the main branch, but has not yet been included in the release version.
+
+1. Add storage space management function, which allows you to view the files and images uploaded in the chat in the storage space and save them locally, thus enhancing the software's image and document storage capabilities.
+2. Adding a file/image link viewing tool allows the large model to retrieve file/image information based on the URL provided by the user.
+3. The agent party's configured intelligent entities can now be invoked using MCP.
+4. The openai interface has added the following switch parameters:
+- enable_thinking: Default to False, whether to enable the thinking mode.
+- enable_deep_research: Defaults to False, whether to enable the deep research mode.
+- enable_web_search: Defaulted to False, whether to enable web search.
+5. The knowledge base supports the rerank model, which can improve the retrieval results of the knowledge base.
+The MCP tool for accessing intelligent entities already supports streaming HTTP.
+
 ## Function Introduction
 
 0. Switch to the calling method from the sidebar to view how to call Agent Party in OpenAI API or web mode.
@@ -108,7 +122,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 - [tavily](https://tavily.com/) (requires applying for an API key)
 - [jina](https://github.com/jina-ai/jina) (can be used without an API key for web scraping)
 - [crawl4ai](https://github.com/unclecode/crawl4ai) (can be deployed locally with Docker for web scraping).
-3. [MCP](https://modelcontextprotocol.io/introduction) service, allowing large models to actively call MCP services according to the question. Currently supports three calling methods: standard input/output, server-sent events (SSE), and WebSocket.
+3. [MCP](https://modelcontextprotocol.io/introduction) service, allowing large models to actively call MCP services according to the question. Currently supports three calling methods: standard input/output, server-sent events (SSE),Streaming HTTP, and WebSocket.
 4. [A2A](https://github.com/google/A2A) service, allowing large models to actively call A2A services according to the question.
 5. Deep thinking, which can transplant the reasoning ability of reasoning models to tool calls or multimodal models, allowing large models to use reasoning models for reasoning analysis before tool calls. For example, deepseek-V3 can be called by tools, but the reasoning model deepseek-R1 cannot be called by tools. Therefore, the reasoning ability of deepseek-R1 can be transplanted to deepseek-V3, allowing deepseek-V3 to use deepseek-R1 for reasoning analysis before tool calls.
 6. In-depth research, which converts user questions into tasks, analyzes and reasons step by step, calls tools, and outputs results. If the task is not completed, it will continue to analyze and reason, and call tools until the task is completed.
