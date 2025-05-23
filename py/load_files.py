@@ -49,7 +49,7 @@ office_extensions = {ext for group in FILE_FILTERS if group['name'] == '办公�
 async def handle_url(url):
     """异步处理URL输入"""
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
+        async with session.get(url,headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}) as response:
             response.raise_for_status()
             content = await response.read()
             path = urlparse(url).path
@@ -264,10 +264,10 @@ def _process_ppt(content):
         pythoncom.CoUninitialize()
         os.unlink(tmp_path)
 
-async def get_file_content(input_str):
+async def get_file_content(file_url):
     """异步获取文件内容（增加编码异常处理）"""
     try:
-        content, ext = await get_content(input_str)
+        content, ext = await get_content(file_url)
         if ext in office_extensions:
             return await handle_office_document(content, ext)
         return decode_text(content)
@@ -297,3 +297,56 @@ async def get_files_json(files_list):
     for files, content in zip(files_list, contents):
         results.append({"file_path": files["path"],"file_name": files["name"], "content": str(content)})
     return results
+
+ALLOWED_EXTENSIONS = [
+  # 办公文档
+  'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
+  'numbers', 'key', 'rtf', 'odt',
+  
+  # 编程开发
+  'js', 'ts', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go', 'rs',
+  'swift', 'kt', 'dart', 'rb', 'php', 'html', 'css', 'scss', 'less',
+  'vue', 'svelte', 'jsx', 'tsx', 'json', 'xml', 'yml', 'yaml', 
+  'sql', 'sh',
+  
+  # 数据配置
+  'csv', 'tsv', 'txt', 'md', 'log', 'conf', 'ini', 'env', 'toml'
+]
+
+ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
+
+file_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_file_content",
+        "description": f"获取给定的文件URL中的内容，无论是公网URL还是服务器内部URL，支持格式：{', '.join(ALLOWED_EXTENSIONS)}",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "file_url": {
+                    "type": "string",
+                    "description": "文件URL",
+                }
+            },
+            "required": ["file_url"],
+        },
+    },
+}
+
+image_tool = {
+    "type": "function",
+    "function": {
+        "name": "get_image_content",
+        "description": f"获取给定的图片URL中的内容，无论是公网URL还是服务器内部URL，支持格式：{', '.join(ALLOWED_IMAGE_EXTENSIONS)}",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "description": "图片URL",
+                }
+            },
+            "required": ["image_url"],
+        },
+    },
+}

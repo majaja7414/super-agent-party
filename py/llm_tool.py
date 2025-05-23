@@ -49,7 +49,7 @@ async def get_llm_tool(settings):
 async def get_image_base64(image_url: str) -> str:
     """下载图片并转换为base64编码"""
     async with aiohttp.ClientSession() as session:
-        async with session.get(image_url) as response:
+        async with session.get(image_url,headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}) as response:
             if response.status != 200:
                 raise ValueError(f"Failed to download image from {image_url}")
             image_data = await response.read()

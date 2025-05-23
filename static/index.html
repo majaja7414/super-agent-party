@@ -1201,7 +1201,21 @@
                       <h3 class="kb-title">{{ t('currentTime') }}</h3>
                     </div>
                   </div>
-        
+
+                  <!-- 存储空间文件查询工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch 
+                        v-model="toolsSettings.getFile.enabled" 
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('fileGet') }}</h3>
+                    </div>
+                  </div>
+
                   <!-- 深度研究工具 -->
                   <div class="provider-card tool-card">
                     <div class="card-header">

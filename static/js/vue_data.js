@@ -129,6 +129,9 @@ let vue_data = {
       time: {
         enabled: false,
       },
+      getFile: {
+        enabled: false,
+      },
       language: {
         enabled: false, // 默认不启用
         language: 'zh-CN',
