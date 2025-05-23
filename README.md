@@ -110,7 +110,8 @@ The following content has been merged into the main branch, but has not yet been
 - enable_deep_research: Defaults to False, whether to enable the deep research mode.
 - enable_web_search: Defaulted to False, whether to enable web search.
 5. The knowledge base supports the rerank model, which can improve the retrieval results of the knowledge base.
-The MCP tool for accessing intelligent entities already supports streaming HTTP.
+6. The MCP tool for accessing intelligent entities already supports streaming HTTP.
+7. The main model configuration interface supports the configuration of additional parameters, and you can configure some custom parameters.
 
 ## Function Introduction
 
