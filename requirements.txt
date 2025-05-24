@@ -28,3 +28,4 @@ ollama
 appdirs
 aiosqlite
 rank_bm25
+fastapi_mcp
