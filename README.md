@@ -22,7 +22,7 @@
 
 ### Windows Desktop Installation
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-Setup-0.1.3.exe)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-Setup-0.1.4.exe)
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
@@ -34,11 +34,11 @@ We provide two mainstream Linux installation package formats for your convenienc
 
 `.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.AppImage)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-0.1.4-Linux.AppImage)
 
 #### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.3/Super-Agent-Party-0.1.3-Linux.deb)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-0.1.4-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
