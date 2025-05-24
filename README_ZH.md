@@ -139,11 +139,11 @@
   - 支持了rerank模型，可以提升知识库的检索效果。
   - 支持混合搜索功能，可以选择关键词搜索和语义搜索之间的比例。
 2. 联网功能，让大模型能够根据提问需求去主动联网查询信息。目前已支持：
-- [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）
-- [searxng](https://github.com/searxng/searxng)（可以docker本地部署）
-- [tavily](https://tavily.com/)（需要申请api key）
-- [jina](https://github.com/jina-ai/jina)（可以无需api key，用于网页抓取）
-- [crawl4ai](https://github.com/unclecode/crawl4ai)（可以docker本地部署，用于网页抓取）。
+  - [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）
+  - [searxng](https://github.com/searxng/searxng)（可以docker本地部署）
+  - [tavily](https://tavily.com/)（需要申请api key）
+  - [jina](https://github.com/jina-ai/jina)（可以无需api key，用于网页抓取）
+  - [crawl4ai](https://github.com/unclecode/crawl4ai)（可以docker本地部署，用于网页抓取）。
 3. [MCP](https://modelcontextprotocol.io/introduction)服务，让大模型能够根据提问需求去主动调用MCP服务。目前支持三种调用方式：标准输入输出、服务器发送事件 (SSE)、流式HTTP、websocket。
 4. [A2A](https://github.com/google/A2A)服务，让大模型能够根据提问需求去主动调用A2A服务。
 5. 深度思考，可以将推理模型的推理能力移植到可以工具调用或多模态模型中，让大模型在工具调用之前先利用推理模型进行推理分析。例如：deepseek-V3可以工具调用，但是推理模型deepseek-R1无法工具调用，那么就可以将deepseek-R1的推理能力移植到deepseek-V3中，让deepseek-V3在工具调用之前先利用deepseek-R1进行推理分析。

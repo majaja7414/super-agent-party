@@ -98,7 +98,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   print(response.choices[0].message.content)
   ```
 
-  - MCP call: After starting, you can invoke the local MCP service by writing the following content in the configuration file:
+- MCP call: After starting, you can invoke the local MCP service by writing the following content in the configuration file:
 
   ```json
   {
