@@ -22,6 +22,9 @@
       "time": {
         "enabled": false
       },
+      "getFile": {
+        "enabled": false
+      },
       "language": {
         "enabled": false,
         "language": "",

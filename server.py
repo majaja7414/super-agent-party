@@ -105,6 +105,48 @@ async def t(text: str) -> str:
     target_language = settings["systemSettings"]["language"]
     return locales[target_language].get(text, text)
 
+async def get_image_content(image_url: str) -> str:
+    import hashlib
+    settings = await load_settings()
+    base64_image = await get_image_base64(image_url)
+    media_type = await get_image_media_type(image_url)
+    url= f"data:{media_type};base64,{base64_image}"
+    image_hash = hashlib.md5(image_url.encode()).hexdigest()
+    content = ""
+    if settings['vision']['enabled']:
+        # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
+        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt")):
+            with open(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt"), "r", encoding='utf-8') as f:
+                content += f"\n\n图片(URL:{image_url} 哈希值：{image_hash})信息如下：\n\n"+str(f.read())+"\n\n"
+        else:
+            images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": url}}]
+            client = AsyncOpenAI(api_key=settings['vision']['api_key'],base_url=settings['vision']['base_url'])
+            response = await client.chat.completions.create(
+                model=settings['vision']['model'],
+                messages = [{"role": "user", "content": images_content}],
+                temperature=settings['vision']['temperature'],
+            )
+            content = f"\n\nn图片(URL:{image_url} 哈希值：{image_hash})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
+            with open(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt"), "w", encoding='utf-8') as f:
+                f.write(str(response.choices[0].message.content))
+    else:           
+        # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
+        if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt")):
+            with open(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt"), "r", encoding='utf-8') as f:
+                content += f"\n\nn图片(URL:{image_url} 哈希值：{image_hash})信息如下：\n\n"+str(f.read())+"\n\n"
+        else:
+            images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": url}}]
+            client = AsyncOpenAI(api_key=settings['api_key'],base_url=settings['base_url'])
+            response = await client.chat.completions.create(
+                model=settings['model'],
+                messages = [{"role": "user", "content": images_content}],
+                temperature=settings['temperature'],
+            )
+            content = f"\n\nn图片(URL:{image_url} 哈希值：{image_hash})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
+            with open(os.path.join(UPLOAD_FILES_DIR, f"{image_hash}.txt"), "w", encoding='utf-8') as f:
+                f.write(str(response.choices[0].message.content))
+    return content
+
 async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     global mcp_client_list,_TOOL_HOOKS
     from py.web_search import (
@@ -119,6 +161,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.a2a_tool import a2a_tool_call
     from py.llm_tool import custom_llm_tool
     from py.pollinations import pollinations_image
+    from py.load_files import get_file_content
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -130,6 +173,8 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "a2a_tool_call": a2a_tool_call,
         "custom_llm_tool": custom_llm_tool,
         "pollinations_image":pollinations_image,
+        "get_file_content":get_file_content,
+        "get_image_content": get_image_content,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -262,7 +307,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     global mcp_client_list
     images = await images_in_messages(request.messages)
     request.messages = await message_without_images(request.messages)
-    from py.load_files import get_files_content
+    from py.load_files import get_files_content,file_tool,image_tool
     from py.web_search import (
         DDGsearch_async, 
         searxng_async, 
@@ -302,6 +347,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             tools.append(get_a2a_tool_fuction)
         if settings['tools']['pollinations']['enabled']:
             tools.append(pollinations_image_tool)
+        if settings['tools']['getFile']['enabled']:
+            tools.append(file_tool)
+            tools.append(image_tool)
         source_prompt = ""
         if request.fileLinks:
             print("fileLinks",request.fileLinks)
@@ -1272,7 +1320,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
 async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
-    from py.load_files import get_files_content
+    from py.load_files import get_files_content,file_tool,image_tool
     from py.web_search import (
         DDGsearch_async, 
         searxng_async, 
@@ -1314,6 +1362,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         tools.append(get_a2a_tool_fuction)
     if settings['tools']['pollinations']['enabled']:
         tools.append(pollinations_image_tool)
+    if settings['tools']['getFile']['enabled']:
+        tools.append(file_tool)
+        tools.append(image_tool)
     search_not_done = False
     search_task = ""
     print(tools)

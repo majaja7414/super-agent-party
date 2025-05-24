@@ -18,7 +18,7 @@
 - ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
 
-## Installation Method
+## Quick Start
 
 ### Windows Desktop Installation
 
@@ -79,7 +79,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 
 - Desktop: Click the desktop icon to use immediately.
 
-- Web: Access http://localhost:3456/ after startup.
+- Web or docker: Access http://localhost:3456/ after startup.
 
 - API call: Developer-friendly, perfectly compatible with OpenAI format, can output in real-time, and does not affect the original API's response speed. No need to modify the calling code:
 
@@ -98,22 +98,65 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   print(response.choices[0].message.content)
   ```
 
-## Function Introduction
+  - MCP call: After starting, you can invoke the local MCP service by writing the following content in the configuration file:
 
-0. Switch to the calling method from the sidebar to view how to call Agent Party in OpenAI API or web mode.
-1. Knowledge base, allowing large models to answer based on information in the knowledge base. If there are multiple knowledge bases, the model will actively query the corresponding knowledge base according to the question.
-2. Internet access function, allowing large models to actively query information on the internet according to the question. Currently supported:
-- [duckduckgo](https://duckduckgo.com/) (completely free, inaccessible in Chinese network environment)
-- [searxng](https://github.com/searxng/searxng) (can be deployed locally with Docker)
-- [tavily](https://tavily.com/) (requires applying for an API key)
-- [jina](https://github.com/jina-ai/jina) (can be used without an API key for web scraping)
-- [crawl4ai](https://github.com/unclecode/crawl4ai) (can be deployed locally with Docker for web scraping).
-3. [MCP](https://modelcontextprotocol.io/introduction) service, allowing large models to actively call MCP services according to the question. Currently supports three calling methods: standard input/output, server-sent events (SSE), and WebSocket.
-4. [A2A](https://github.com/google/A2A) service, allowing large models to actively call A2A services according to the question.
-5. Deep thinking, which can transplant the reasoning ability of reasoning models to tool calls or multimodal models, allowing large models to use reasoning models for reasoning analysis before tool calls. For example, deepseek-V3 can be called by tools, but the reasoning model deepseek-R1 cannot be called by tools. Therefore, the reasoning ability of deepseek-R1 can be transplanted to deepseek-V3, allowing deepseek-V3 to use deepseek-R1 for reasoning analysis before tool calls.
-6. In-depth research, which converts user questions into tasks, analyzes and reasons step by step, calls tools, and outputs results. If the task is not completed, it will continue to analyze and reason, and call tools until the task is completed.
-7. Custom tools, any project that adapts to Ollama format or OpenAI interface can be used as a tool.
-8. Visual caching, which can be configured separately with a visual model to recognize image information, and the recognition results will be cached to save tokens. Configuring a visual model can enable some models without visual capabilities (such as most inference models) to acquire visual capabilities.
+  ```json
+  {
+    "mcpServers": {
+      "super-agent-party": {
+        "url": "http://127.0.0.1:3456/mcp",
+      }
+    }
+  }
+  ```
+
+## Recently updated
+
+The following content has been merged into the main branch, but has not yet been included in the release version.
+
+1. Add storage space management function, which allows you to view the files and images uploaded in the chat in the storage space and save them locally, thus enhancing the software's image and document storage capabilities.
+2. Adding a file/image link viewing tool allows the large model to retrieve file/image information based on the URL provided by the user.It can also be used to view files or image information inside the server, and even the tool results in chat records. Tool results will not occupy the context, but will be stored as separate files, which can be viewed by the large model at any time, realizing the memo function of the large model.
+3. The agent party's configured intelligent entities can now be invoked using MCP.
+4. The openai interface has added the following switch parameters:
+- enable_thinking: Default to False, whether to enable the thinking mode.
+- enable_deep_research: Defaults to False, whether to enable the deep research mode.
+- enable_web_search: Defaulted to False, whether to enable web search.
+5. The knowledge base supports the rerank model, which can improve the retrieval results of the knowledge base.
+6. The MCP tool for accessing intelligent entities already supports streaming HTTP.
+7. The main model configuration interface supports the configuration of additional parameters, and you can configure some custom parameters.
+8. The knowledge base supports a mixed search function, allowing you to choose the proportion between keyword search and semantic search.
+
+## Features
+
+0. Switch from the sidebar to the call method to see how to invoke Agent Party through OpenAI API, MCP server, docker, and the web interface. The OpenAI interface has added the following switch parameters:
+  - enable_thinking: The default is False, whether to enable the thinking mode.
+  - enable_deep_research: The default is False, whether to enable the deep research mode.
+  - enable_web_search: The default is False, whether to enable web search.
+1. Knowledge base, allowing the large model to answer questions based on the information in the knowledge base. And it supports the following functions:
+  - If there are multiple knowledge bases, the model will actively query the corresponding knowledge base according to the question requirements.
+  - You can choose the timing of retrieval, and you can choose to actively retrieve or passively retrieve the knowledge base.
+  - We have supported the rerank model, which can improve the retrieval effect of the knowledge base.
+  - Support mixed search function, which allows you to choose the proportion between keyword search and semantic search.
+2. Networking function, which allows the large model to actively query information online according to the needs of the question. Currently, it supports:
+  - [duckduckgo](https://duckduckgo.com/) (Completely free, but cannot be accessed in China's online environment)
+  - [searxng](https://github.com/searxng/searxng) (can be locally deployed with Docker)
+  - [tavily](https://tavily.com/)（需要申请api key）
+  - [jina](https://github.com/jina-ai/jina) (can be used for web scraping without an API key)
+  - [crawl4ai](https://github.com/unclecode/crawl4ai) (can be locally deployed with Docker, and is used for web scraping).
+3. [MCP](https://modelcontextprotocol.io/introduction) service, which allows large models to actively invoke the MCP service according to the needs of the query. Currently, it supports three invocation methods: standard input and output, server-sent events (SSE), streaming HTTP, and websocket.
+4. [A2A](https://github.com/google/A2A) service, which allows large models to actively invoke the A2A service according to the needs of the query.
+5. Deep thinking allows us to transplant the reasoning ability of the inference model into tools or multimodal models, so that the large model can use the inference model for reasoning analysis before tool invocation. For example: deepseek-V3 can be invoked by tools, but the inference model deepseek-R1 cannot be invoked by tools. In this case, we can transplant the reasoning ability of deepseek-R1 into deepseek-V3, so that deepseek-V3 can use deepseek-R1 for reasoning analysis before tool invocation.
+6. Conduct in-depth research, convert users' problems into tasks, gradually analyze and infer, then invoke tools. After outputting the results, we will recheck whether the task is completed. If the task is not completed, we will continue to analyze and infer, then invoke tools until the task is completed.
+7. Custom LLM tools can convert LLM interfaces into LLM tools, and any project that adapts to the Ollama format or the OpenAI interface can be used as a tool.
+8. Visual caching, which allows you to configure a visual model separately for recognizing image information. The recognition results will be cached to save tokens. Configuring a visual model can enable some models without visual capabilities (for example, most inference models, etc.) to acquire visual capabilities.
+9. Storage space management function, which allows you to view the files and pictures uploaded in chat in the storage space, and they are all cached locally, enhancing the software's function of image and file storage.
+10. Implemented widgets: current time, retrieving content from file/image URLs, pseudo reasoning, Pollinations image generation, enhanced rendering of LaTeX formulas, and language tone.
+  - Current time: Get the current time.
+  - Retrieve the content from the file/image URL: Retrieve the content from the file/image URL.
+  - Pseudo-reasoning: Enabling a model that doesn't have reasoning capabilities to acquire them.
+  - Pollinations image generation: Call the Pollinations image generation API to generate images. (No API key is needed.)
+  - Enhanced latex formula rendering: Control the more stable output of latex formulas in large models.
+  - Language tone: Control the more stable output language and tone of the large model.
 
 ## Disclaimer:
 This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.

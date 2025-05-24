@@ -107,7 +107,7 @@ const translations = {
       'vendor.moonshot': '月之暗面',
       'vendor.minimax': 'minimax',
       'vendor.LMstudio': 'LM studio',
-      'vendor.Gemini': 'Gemini (Google)',
+      'vendor.Gemini': 'Google(Gemini)',
       'vendor.Anthropic': 'Anthropic(claude)',
       'vendor.Grok': 'Grok (xAI)',
       'vendor.mistral': 'mistral',
@@ -323,6 +323,7 @@ const translations = {
       'noImages': '存储空间中无图片文件',
       'noVideos': '存储空间中无视频文件',
       'preview': '预览',
+      'fileGet': '获取文件/图片URL中的内容',
     },
     'en-US': {
       'chat': 'Chat',
@@ -431,7 +432,7 @@ const translations = {
       'vendor.moonshot': 'Moonshot AI',
       'vendor.minimax': 'Minimax',
       'vendor.LMstudio': 'LM Studio',
-      'vendor.Gemini': 'Gemini (Google)',
+      'vendor.Gemini': 'Google(Gemini)',
       'vendor.Anthropic': 'Anthropic(claude)',
       'vendor.Grok': 'Grok (xAI)',
       'vendor.mistral': 'Mistral AI',
@@ -647,5 +648,6 @@ const translations = {
       'noImages': 'There are no image files in the storage space',
       'noVideos': 'There are no video files in the storage space',
       'preview': 'Preview',
+      'fileGet': 'Obtaining the content of file/image URLs',
     }
   };
