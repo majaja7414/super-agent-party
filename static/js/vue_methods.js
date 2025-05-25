@@ -869,7 +869,9 @@ let vue_methods = {
     },
     // WebSocket相关
     initWebSocket() {
-      this.ws = new WebSocket(`ws://${HOST}:${PORT}/ws`);
+      const http_protocol = window.location.protocol;
+      const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+      this.ws = new WebSocket(`${ws_protocol}//${window.location.host}/ws`);
       
       this.ws.onopen = () => {
         console.log('WebSocket connection established');
