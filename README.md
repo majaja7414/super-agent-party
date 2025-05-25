@@ -155,6 +155,14 @@ Using this project for closed-source commercial purposes without written authori
 
 ## Support:
 
+### Follow us
+<a href="https://space.bilibili.com/26978344">
+  <img src="doc/image/B.png" width="100" height="100" style="border-radius: 80%; overflow: hidden;" alt="octocat"/>
+</a>
+<a href="https://www.youtube.com/@LLM-party">
+  <img src="doc/image/YT.png" width="100" height="100" style="border-radius: 80%; overflow: hidden;" alt="octocat"/>
+</a>
+
 ### Join the Community
 If you have any questions or issues with the project, you are welcome to join our community.
 
