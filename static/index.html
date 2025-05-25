@@ -652,7 +652,10 @@
                   <!-- 已有供应商磁贴 -->
                   <div class="provider-card" v-for="(provider, index) in modelProviders" :key="provider.id">
                     <div class="card-header">
-                      <el-tag type="info" class="vendor-tag">{{ provider.vendor }}</el-tag>
+                      <img 
+                        :src="getVendorLogo(provider.vendor)" 
+                        class="mini-vendor-logo"
+                      />
                       <div class="card-actions">
                         <el-button
                           @click="fetchModelsForProvider(provider)"
@@ -827,7 +830,10 @@
                             :value="provider.id"
                           >
                             <div class="provider-option">
-                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <img 
+                                :src="getVendorLogo(provider.vendor)" 
+                                class="mini-vendor-logo"
+                              />
                               <span class="model-id">{{ provider.modelId }}</span>
                             </div>
                           </el-option>
@@ -1024,7 +1030,10 @@
                             :value="provider.id"
                           >
                             <div class="provider-option">
-                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <img 
+                                :src="getVendorLogo(provider.vendor)" 
+                                class="mini-vendor-logo"
+                              />
                               <span class="model-id">{{ provider.modelId }}</span>
                             </div>
                           </el-option>
@@ -1109,7 +1118,10 @@
                             :value="provider.id"
                           >
                             <div class="provider-option">
-                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <img 
+                                :src="getVendorLogo(provider.vendor)" 
+                                class="mini-vendor-logo"
+                              />
                               <span class="model-id">{{ provider.modelId }}</span>
                             </div>
                           </el-option>
@@ -1648,7 +1660,10 @@
                             :value="provider.id"
                           >
                             <div class="provider-option">
-                              <span class="vendor-tag">{{ provider.vendor }}</span>
+                              <img 
+                                :src="getVendorLogo(provider.vendor)" 
+                                class="mini-vendor-logo"
+                              />
                               <span class="model-id">{{ provider.modelId }}</span>
                             </div>
                           </el-option>
@@ -1829,7 +1844,10 @@
                               :value="provider.id"
                             >
                               <div class="provider-option">
-                                <span class="vendor-tag">{{ provider.vendor }}</span>
+                                <img 
+                                  :src="getVendorLogo(provider.vendor)" 
+                                  class="mini-vendor-logo"
+                                />
                                 <span class="model-id">{{ provider.modelId }}</span>
                               </div>
                             </el-option>

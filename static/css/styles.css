@@ -2304,3 +2304,11 @@ border: 1px solid var(--border-color) !important;
   font-size: 14px;
   color: var(--el-text-color);
 }
+
+.mini-vendor-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border-radius: 50%;
+  margin-left: 2px;
+}

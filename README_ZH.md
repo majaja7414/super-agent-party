@@ -156,6 +156,14 @@
 
 ## 支持：
 
+### 关注我们
+<a href="https://space.bilibili.com/26978344">
+  <img src="img/B.png" width="100" height="100" style="border-radius: 80%; overflow: hidden;" alt="octocat"/>
+</a>
+<a href="https://www.youtube.com/@LLM-party">
+  <img src="img/YT.png" width="100" height="100" style="border-radius: 80%; overflow: hidden;" alt="octocat"/>
+</a>
+
 ### 加入社群
 如果项目存在问题或者您有其他的疑问，欢迎加入我们的社群。
 
