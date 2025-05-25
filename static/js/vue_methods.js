@@ -918,6 +918,8 @@ let vue_methods = {
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
           this.mcpServers = data.data.mcpServers || {};
           this.a2aServers = data.data.a2aServers || {};
+          this.memories = data.data.memories || [];
+          this.memorySettings = data.data.memorySettings || {};
           this.loadConversation(this.conversationId);
         } 
         else if (data.type === 'settings_saved') {
@@ -1335,6 +1337,8 @@ let vue_methods = {
         mcpServers: this.mcpServers,
         a2aServers: this.a2aServers,
         isdocker: this.isdocker,
+        memories: this.memories,
+        memorySettings: this.memorySettings,
       }
       this.ws.send(JSON.stringify({
         type: 'save_settings',
@@ -2356,5 +2360,50 @@ let vue_methods = {
     handleSelectVendor(vendor) {
       this.newProviderTemp.vendor = vendor;
       this.handleVendorChange(vendor);
+    },
+
+    selectMemoryProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.newMemory.model = provider.modelId;
+        this.newMemory.base_url = provider.url;
+        this.newMemory.api_key = provider.apiKey;
+      }
+    },
+    addMemory() {
+      const newMem = {
+        id: uuid.v4(),
+        name: this.newMemory.name,
+        providerId: this.newMemory.providerId,
+        model:this.newMemory.model,
+        apiKey: this.newMemory.apiKey,
+        base_url: this.newMemory.base_url,
+      };
+      this.memories.push(newMem);
+      if (this.memorySettings.selectedMemory === null){
+        this.memorySettings.selectedMemory = newMem.id;
+      }
+      this.autoSaveSettings();
+      this.showAddMemoryDialog = false;
+      this.newMemory = { 
+        name: '', 
+        providerId: null,
+        model: '',
+        apiKey: '',
+        base_url: ''
+       };
+    },
+    
+    removeMemory(id) {
+      this.memories = this.memories.filter(m => m.id !== id);
+      if (this.memorySettings.selectedMemory === id){
+        this.memorySettings.selectedMemory = null;
+      }
+      this.autoSaveSettings();
+    },
+    
+    getVendorName(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      return provider ? `${provider.vendor} - ${provider.modelId}` : '';
     }
 }
