@@ -1,6 +1,7 @@
 # -- coding: utf-8 --
 import asyncio
 import copy
+import datetime
 import json
 import os
 import re
@@ -53,7 +54,7 @@ ALLOWED_EXTENSIONS = [
 ]
 ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -323,6 +324,45 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
+    m0 = None
+    if settings["memorySettings"]["is_memory"]:
+        memoryId = settings["memorySettings"]["selectedMemory"]
+        cur_memory = None
+        for memory in settings["memories"]:
+            if memory["id"] == memoryId:
+                cur_memory = memory
+                break
+        if cur_memory:
+            from mem0 import Memory
+            config={
+                "embedder": {
+                    "provider": 'openai',
+                    "config": {
+                        "model": cur_memory['model'],
+                        "api_key": cur_memory['api_key'],
+                        "openai_base_url":cur_memory["base_url"],
+                        "embedding_dims":1024
+                    },
+                },
+                "llm": {
+                    "provider": 'openai',
+                    "config": {
+                        "model": settings['model'],
+                        "api_key": settings['api_key'],
+                        "openai_base_url":settings["base_url"]
+                    }
+                },
+                "vector_store": {
+                    "provider": "faiss",
+                    "config": {
+                        "collection_name": "agent-party",
+                        "path": os.path.join(MEMORY_CACHE_DIR,memoryId),
+                        "distance_strategy": "euclidean",
+                        "embedding_model_dims": 1024
+                    }
+                }
+            }
+            m0 = Memory.from_config(config)
     open_tag = "<think>"
     close_tag = "</think>"
     try:
@@ -364,6 +404,20 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
             source_prompt += fileLinks_message
         user_prompt = request.messages[-1]['content']
+        if m0:
+            memoryLimit = settings["memorySettings"]["memoryLimit"]
+            try:
+                print("查询记忆")
+                relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
+                relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
+                print("查询记忆结束")
+            except Exception as e:
+                print("m0.search error:",e)
+                relevant_memories = ""
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
         request = await tools_change_messages(request, settings)
         model = settings['model']
         extra_params = settings['extra_params']
@@ -1301,6 +1355,20 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         }
                         yield f"data: {json.dumps(search_chunk)}\n\n"
                         search_not_done = False
+            if m0:
+                messages=[
+                    {
+                        "role": "user",
+                        "content": user_prompt,
+                    },
+                    {
+                        "role": "assistant",
+                        "content": full_content,
+                    }
+                ]
+            async def add_async():
+                m0.add(messages, user_id=memoryId)
+            asyncio.create_task(add_async())
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(
@@ -1336,6 +1404,45 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
+    m0 = None
+    if settings["memorySettings"]["is_memory"]:
+        memoryId = settings["memorySettings"]["selectedMemory"]
+        cur_memory = None
+        for memory in settings["memories"]:
+            if memory["id"] == memoryId:
+                cur_memory = memory
+                break
+        if cur_memory:
+            from mem0 import Memory
+            config={
+                "embedder": {
+                    "provider": 'openai',
+                    "config": {
+                        "model": cur_memory['model'],
+                        "api_key": cur_memory['api_key'],
+                        "openai_base_url":cur_memory["base_url"],
+                        "embedding_dims":1024
+                    },
+                },
+                "llm": {
+                    "provider": 'openai',
+                    "config": {
+                        "model": settings['model'],
+                        "api_key": settings['api_key'],
+                        "openai_base_url":settings["base_url"]
+                    }
+                },
+                "vector_store": {
+                    "provider": "faiss",
+                    "config": {
+                        "collection_name": "agent-party",
+                        "path": os.path.join(MEMORY_CACHE_DIR,memoryId),
+                        "distance_strategy": "euclidean",
+                        "embedding_model_dims": 1024
+                    }
+                }
+            }
+            m0 = Memory.from_config(config)
     images = await images_in_messages(request.messages)
     request.messages = await message_without_images(request.messages)
     open_tag = "<think>"
@@ -1393,6 +1500,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
         kb_list = []
         user_prompt = request.messages[-1]['content']
+        if m0:
+            memoryLimit = settings["memorySettings"]["memoryLimit"]
+            try:
+                print("查询记忆")
+                relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
+                relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
+                print("查询记忆结束")
+            except Exception as e:
+                print("m0.search error:",e)
+                relevant_memories = ""
+            if request.messages and request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
                 if kb["enabled"] and kb["processingStatus"] == "completed":
@@ -1549,7 +1670,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     "unfinished_task": ""
 }}
 """
-            search_response = await client.chat.completions.create(
+            research_response = await client.chat.completions.create(
                 model=model,
                 messages=[
                     {
@@ -1560,7 +1681,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 temperature=0.5,
                 extra_body = extra_params, # 其他参数
             )
-            response_content = search_response.choices[0].message.content
+            response_content = research_response.choices[0].message.content
             print(response_content)
             # 用re 提取```json 包裹json字符串 ```
             if "```json" in response_content:
@@ -1579,7 +1700,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages.append(
                     {
                         "role": "assistant",
-                        "content": search_response.choices[0].message.content,
+                        "content": research_response.choices[0].message.content,
                     }
                 )
                 request.messages.append(
@@ -1750,7 +1871,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     "unfinished_task": ""
 }}
 """
-                search_response = await client.chat.completions.create(
+                research_response = await client.chat.completions.create(
                     model=model,
                     messages=[
                         {
@@ -1761,7 +1882,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     temperature=0.5,
                     extra_body = extra_params, # 其他参数
                 )
-                response_content = search_response.choices[0].message.content
+                response_content = research_response.choices[0].message.content
                 # 用re 提取```json 包裹json字符串 ```
                 if "```json" in response_content:
                     try:
@@ -1779,7 +1900,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     request.messages.append(
                         {
                             "role": "assistant",
-                            "content": search_response.choices[0].message.content,
+                            "content": research_response.choices[0].message.content,
                         }
                     )
                     request.messages.append(
@@ -1802,6 +1923,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 response_dict["choices"][0]['message']['content'] = re.sub(fr'{open_tag}(.*?)\{close_tag}', '', content, flags=re.DOTALL).strip()
         if settings['reasoner']['enabled'] or enable_thinking:
             response_dict["choices"][0]['message']['reasoning_content'] = reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
+        if m0:
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_prompt,
+                },
+                {
+                    "role": "assistant",
+                    "content": response_dict["choices"][0]['message']['content'],
+                }
+            ]
+        async def add_async():
+            m0.add(messages, user_id=memoryId)
+        asyncio.create_task(add_async())
         return JSONResponse(content=response_dict)
     except Exception as e:
         return JSONResponse(

@@ -2376,8 +2376,9 @@ let vue_methods = {
         name: this.newMemory.name,
         providerId: this.newMemory.providerId,
         model:this.newMemory.model,
-        apiKey: this.newMemory.apiKey,
+        api_key: this.newMemory.api_key,
         base_url: this.newMemory.base_url,
+        vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
       };
       this.memories.push(newMem);
       if (this.memorySettings.selectedMemory === null){
@@ -2390,8 +2391,9 @@ let vue_methods = {
         name: '', 
         providerId: null,
         model: '',
-        apiKey: '',
-        base_url: ''
+        api_key: '',
+        base_url: '',
+        vendor: '',
        };
     },
     
@@ -2405,6 +2407,6 @@ let vue_methods = {
     
     getVendorName(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
-      return provider ? `${provider.vendor} - ${provider.modelId}` : '';
+      return provider ? `${this.t("model")}:${provider.modelId}` : '';
     }
 }

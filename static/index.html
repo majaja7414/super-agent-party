@@ -540,6 +540,17 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('memory')" placement="top">
+              <el-button
+                @click="memorySettings.is_memory = !memorySettings.is_memory; autoSaveSettings()"
+                class="icon-btn web-search-btn"
+                :type="memorySettings.is_memory ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-brain"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('agents')" placement="top">
               <el-button
                 @click="showAgentDialog = true"
@@ -1889,17 +1900,33 @@
                   <el-tab-pane :label="t('addNewMemory')" name="add">
                     <div class="provider-grid">
                       <!-- 已有记忆磁贴 -->
-                      <div class="provider-card memory-card" v-for="memory in memories" :key="memory.id">
+                      <div class="provider-card knowledge-card" v-for="memory in memories" :key="memory.id">
                         <div class="card-header">
+                          <img 
+                            :src="getVendorLogo(memory.vendor)" 
+                            class="mini-vendor-logo"
+                          />
                           <div class="card-actions">
-                            <el-button @click="removeMemory(memory.id)" type="danger" circle size="small">
+                            <el-button
+                              @click="removeMemory(memory.id)"
+                              type="danger"
+                              circle
+                              size="small"
+                            >
                               <i class="fa-solid fa-trash"></i>
                             </el-button>
                           </div>
                         </div>
-                        <div class="memory-content">
-                          <h3>{{ memory.name }}</h3>
-                          <p>{{ getVendorName(memory.providerId) }}</p>
+                        <div class="kb-content">
+                          <h3 class="kb-title">{{memory.name }}</h3>
+                          <div class="kb-meta">
+                            <div class="kb-meta-item">
+                              <el-icon class="kb-icon">
+                                <i class="fa-solid fa-brain"></i>
+                              </el-icon>
+                              <span>{{ getVendorName(memory.providerId) }}</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                       
@@ -1965,9 +1992,17 @@
                         <el-option
                           v-for="provider in modelProviders"
                           :key="provider.id"
-                          :label="provider.vendor + ' - ' + provider.modelId"
+                          :label="provider.vendor+' - '+provider.modelId"
                           :value="provider.id"
-                        />
+                        >
+                          <div class="provider-option">
+                            <img 
+                              :src="getVendorLogo(provider.vendor)" 
+                              class="mini-vendor-logo"
+                            />
+                            <span class="model-id">{{ provider.modelId }}</span>
+                          </div>
+                        </el-option>
                       </el-select>
                     </el-form-item>
                   </el-form>

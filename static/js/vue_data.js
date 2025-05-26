@@ -317,7 +317,8 @@ let vue_data = {
       providerId: null,
       model: '',
       base_url: '',
-      api_key: ''
+      api_key: '',
+      vendor: '',
     },
     showAddMemoryDialog: false,
     memorySettings: {

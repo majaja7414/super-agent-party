@@ -87,6 +87,7 @@
     "memories": [],
     "memorySettings": {
       "selectedMemory": null,
-      "is_memory": false
+      "is_memory": false,
+      "memoryLimit": 3
     }
 }
