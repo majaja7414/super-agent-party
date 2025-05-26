@@ -66,6 +66,9 @@ else:
 
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 
+MEMORY_CACHE_DIR = os.path.join(USER_DATA_DIR, 'memory_cache')
+os.makedirs(MEMORY_CACHE_DIR, exist_ok=True)
+
 UPLOAD_FILES_DIR = os.path.join(USER_DATA_DIR, 'uploaded_files')
 os.makedirs(UPLOAD_FILES_DIR, exist_ok=True)
 

@@ -176,9 +176,6 @@ If you have any questions or issues with the project, you are welcome to join ou
 
 3. Discord: [Discord link](https://discord.gg/f2dsAKKr2V)
 
-### Follow Us
-1. If you want to keep up with the latest features of this project, please follow the Bilibili account: [Pai Jiang](https://space.bilibili.com/26978344)
-
 ### Donate
 If my work has brought value to you, please consider buying me a cup of coffee! Your support not only injects vitality into the project but also warms the creator's heart. ☕💖 Every cup counts!
 <div style="display:flex; justify-content:space-between;">

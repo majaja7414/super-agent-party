@@ -295,7 +295,8 @@ let vue_data = {
     toolkitTiles: [
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
       { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
-      { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' }
+      { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' },
+      { id: 'memory', title: 'memory', icon: 'fa-solid fa-brain'}
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
@@ -308,6 +309,22 @@ let vue_data = {
       { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
+    activeMemoryTab: 'add',
+    memories: [],
+    newMemory: { 
+      id: null,
+      name: '', 
+      providerId: null,
+      model: '',
+      base_url: '',
+      api_key: '',
+      vendor: '',
+    },
+    showAddMemoryDialog: false,
+    memorySettings: {
+      selectedMemory: null,
+      is_memory: false,
+    },
     textFiles: [],
     imageFiles: [],
     videoFiles: [],

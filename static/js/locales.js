@@ -324,6 +324,14 @@ const translations = {
       'noVideos': '存储空间中无视频文件',
       'preview': '预览',
       'fileGet': '获取文件/图片URL中的内容',
+      'memory': '记忆模块',
+      'addNewMemory': '添加新记忆',
+      'memoryConfig': '记忆配置',
+      'vectorProvider': '向量供应商', 
+      'selectMemoryPlaceholder': '请选择记忆',
+      'selectMemory': '当前记忆',
+      'memoryEnable': '启用记忆',
+      'memoryName': '记忆名称',
     },
     'en-US': {
       'chat': 'Chat',
@@ -649,5 +657,13 @@ const translations = {
       'noVideos': 'There are no video files in the storage space',
       'preview': 'Preview',
       'fileGet': 'Obtaining the content of file/image URLs',
+      'memory': 'Memory',
+      'addNewMemory': 'Add New Memory',
+      'memoryConfig': 'Memory Configuration',
+      'vectorProvider': 'Vector Provider',
+      'selectMemoryPlaceholder': 'Please select a memory',
+      'selectMemory': 'Current Memory',
+      'memoryEnable': 'Enable Memory',
+      'memoryName': 'Memory Name',
     }
   };

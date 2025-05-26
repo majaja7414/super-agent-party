@@ -540,6 +540,17 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('memory')" placement="top">
+              <el-button
+                @click="memorySettings.is_memory = !memorySettings.is_memory; autoSaveSettings()"
+                class="icon-btn web-search-btn"
+                :type="memorySettings.is_memory ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-brain"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('agents')" placement="top">
               <el-button
                 @click="showAgentDialog = true"
@@ -1882,9 +1893,134 @@
                 </el-tab-pane>
                 </el-tabs>
               </div>
+              <!--记忆-->
+              <div v-show="subMenu === 'memory'" class="page">
+                <el-tabs v-model="activeMemoryTab">
+                  <!-- 添加新记忆标签页 -->
+                  <el-tab-pane :label="t('addNewMemory')" name="add">
+                    <div class="provider-grid">
+                      <!-- 已有记忆磁贴 -->
+                      <div class="provider-card knowledge-card" v-for="memory in memories" :key="memory.id">
+                        <div class="card-header">
+                          <img 
+                            :src="getVendorLogo(memory.vendor)" 
+                            class="mini-vendor-logo"
+                          />
+                          <div class="card-actions">
+                            <el-button
+                              @click="removeMemory(memory.id)"
+                              type="danger"
+                              circle
+                              size="small"
+                            >
+                              <i class="fa-solid fa-trash"></i>
+                            </el-button>
+                          </div>
+                        </div>
+                        <div class="kb-content">
+                          <h3 class="kb-title">{{memory.name }}</h3>
+                          <div class="kb-meta">
+                            <div class="kb-meta-item">
+                              <el-icon class="kb-icon">
+                                <i class="fa-solid fa-brain"></i>
+                              </el-icon>
+                              <span>{{ getVendorName(memory.providerId) }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- 添加新记忆磁贴 -->
+                      <div class="provider-card add-tile" @click="showAddMemoryDialog = true">
+                        <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                        <div style="color: #606266; margin-top: 10px;">{{ t('addNewMemory') }}</div>
+                      </div>
+                    </div>
+                  </el-tab-pane>
+                  <!-- 记忆配置标签页 -->
+                  <el-tab-pane :label="t('memoryConfig')" name="config">
+                    <el-form :model="KBSettings" class="settings-form"  label-position="top">
+                      <div class="tool-item">
+                        <div class="tool-header">
+                          <div class="header-left">
+                            <span>
+                              <el-icon>
+                                <i class="fa-solid fa-brain"></i>
+                              </el-icon>
+                              {{ t('memory') }}
+                            </span>
+                          </div>
+                        </div>
+                        <div class="tool-content">
+                          <el-form-item :label="t('memoryEnable')" class="form-item-align" label-position="left">
+                            <el-switch
+                              v-model="memorySettings.is_memory"
+                              @change="autoSaveSettings"
+                            ></el-switch>
+                          </el-form-item>
+                          <el-form-item :label="t('selectMemory')">
+                            <el-select 
+                              v-model="memorySettings.selectedMemory" 
+                              :placeholder="t('selectMemoryPlaceholder')"
+                              class="full-width-input">
+                              <el-option
+                                v-for="memory in memories"
+                                :key="memory.id"
+                                :label="memory.name"
+                                :value="memory.id"
+                              />
+                            </el-select>
+                          </el-form-item>
+                        </div>
+                      </div>
+                    </el-form>
+                  </el-tab-pane>
+                </el-tabs>
+                <!-- 添加记忆对话框 -->
+                <el-dialog v-model="showAddMemoryDialog" :title="t('addNewMemory')" width="500px">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('memoryName')" required>
+                      <el-input v-model="newMemory.name" />
+                    </el-form-item>
+                    
+                    <el-form-item :label="t('vectorProvider')" required>
+                      <el-select 
+                        v-model="newMemory.providerId" 
+                        :placeholder="t('selectProvider')"
+                        @change="selectMemoryProvider"
+                        class="full-width-input">
+                        <el-option
+                          v-for="provider in modelProviders"
+                          :key="provider.id"
+                          :label="provider.vendor+' - '+provider.modelId"
+                          :value="provider.id"
+                        >
+                          <div class="provider-option">
+                            <img 
+                              :src="getVendorLogo(provider.vendor)" 
+                              class="mini-vendor-logo"
+                            />
+                            <span class="model-id">{{ provider.modelId }}</span>
+                          </div>
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+                  </el-form>
+                  <template #footer>
+                    <el-button @click="showAddMemoryDialog = false">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary" 
+                      @click="addMemory"
+                      :disabled="!newMemory.name || !newMemory.providerId">
+                      {{ t('confirmAdd') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
             </div>
           </div>
         </div>
+        
         <!-- 系统设置页面 -->
         <div v-show="activeMenu === 'system'" class="page tools-container">
           <el-form :model="systemSettings" class="settings-form" label-position="top">
