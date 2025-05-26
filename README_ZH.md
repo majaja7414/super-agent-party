@@ -177,9 +177,6 @@
 
 3. discord:[discord链接](https://discord.gg/f2dsAKKr2V)
 
-### 关注我们
-1. 如果想持续关注本项目的最新功能，欢迎关注B站账号：[派酱](https://space.bilibili.com/26978344)
-
 ### 捐赠支持
 如果我的工作给您带来了价值，请考虑请我喝一杯咖啡吧！您的支持不仅为项目注入活力，也温暖了创作者的心。☕💖 每一杯都有意义！
 <div style="display:flex; justify-content:space-between;">
