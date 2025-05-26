@@ -312,6 +312,7 @@ let vue_data = {
     activeMemoryTab: 'add',
     memories: [],
     newMemory: { 
+      id: null,
       name: '', 
       providerId: null,
       model: '',

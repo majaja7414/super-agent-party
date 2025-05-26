@@ -83,5 +83,10 @@
     "a2aServers": {},
     "textFiles": [],
     "imageFiles": [],
-    "videoFiles": []
+    "videoFiles": [],
+    "memories": [],
+    "memorySettings": {
+      "selectedMemory": null,
+      "is_memory": false
+    }
 }

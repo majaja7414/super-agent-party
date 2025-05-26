@@ -2386,6 +2386,7 @@ let vue_methods = {
       this.autoSaveSettings();
       this.showAddMemoryDialog = false;
       this.newMemory = { 
+        id: null,
         name: '', 
         providerId: null,
         model: '',
