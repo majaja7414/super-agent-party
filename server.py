@@ -2,6 +2,7 @@
 import asyncio
 import copy
 import datetime
+from functools import partial
 import json
 import os
 import re
@@ -414,7 +415,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 print("查询记忆")
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
                 relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
-                print("查询记忆结束")
+                print("查询记忆结束:"+ relevant_memories)
             except Exception as e:
                 print("m0.search error:",e)
                 relevant_memories = ""
@@ -1374,9 +1375,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             executor = ThreadPoolExecutor()
             async def add_async():
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(executor, m0.add, messages, memoryId)
+                # 绑定 user_id 关键字参数
+                func = partial(m0.add, user_id=memoryId)
+                # 传递 messages 作为位置参数
+                await loop.run_in_executor(executor, func, messages)
+                print("知识库更新完成")
 
             asyncio.create_task(add_async())
+            print("知识库更新任务已提交")
             return
         
         return StreamingResponse(
@@ -1945,7 +1951,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         executor = ThreadPoolExecutor()
         async def add_async():
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(executor, m0.add, messages, memoryId)
+            # 绑定 user_id 关键字参数
+            func = partial(m0.add, user_id=memoryId)
+            # 传递 messages 作为位置参数
+            await loop.run_in_executor(executor, func, messages)
+            print("知识库更新完成")
 
         asyncio.create_task(add_async())
         return JSONResponse(content=response_dict)
