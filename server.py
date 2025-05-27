@@ -410,12 +410,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             source_prompt += fileLinks_message
         user_prompt = request.messages[-1]['content']
         if m0:
+            lore_content = ""
+            if cur_memory["lorebook"]:
+                for lore in cur_memory["lorebook"]:
+                    if lore["name"] != "" and lore["name"] in user_prompt:
+                        lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
                 relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
-                print("查询记忆结束:"+ relevant_memories)
+                print("查询记忆结束")
             except Exception as e:
                 print("m0.search error:",e)
                 relevant_memories = ""
@@ -423,6 +428,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if lore_content:
+                print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
         request = await tools_change_messages(request, settings)
         model = settings['model']
         extra_params = settings['extra_params']
@@ -1515,6 +1526,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         kb_list = []
         user_prompt = request.messages[-1]['content']
         if m0:
+            lore_content = ""
+            if cur_memory["lorebook"]:
+                for lore in cur_memory["lorebook"]:
+                    if lore["name"] != "" and lore["name"] in user_prompt:
+                        lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
@@ -1528,6 +1544,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if lore_content:
+                print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
                 if kb["enabled"] and kb["processingStatus"] == "completed":

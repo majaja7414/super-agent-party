@@ -946,6 +946,7 @@
                             v-model="param.name"
                             :placeholder="t('paramName')"
                             class="param-input"
+                            @input="autoSaveSettings"
                           ></el-input>
                       
                           <el-select
@@ -1908,6 +1909,14 @@
                           />
                           <div class="card-actions">
                             <el-button
+                              @click="editMemory(memory.id)"
+                              type="default"
+                              circle
+                              size="small"
+                            >
+                              <i class="fa-solid fa-pen-to-square"></i>
+                            </el-button>
+                            <el-button
                               @click="removeMemory(memory.id)"
                               type="danger"
                               circle
@@ -2014,6 +2023,52 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
+                    <div class="param-header">
+                      <span>{{ t('worldviewSetting') }}</span>
+                      <el-button 
+                        @click="addLorebook"
+                        type="primary"
+                        circle
+                        size="small"
+                        class="header-add-btn"
+                      >
+                        <i class="fa-solid fa-plus"></i>
+                      </el-button>
+                    </div>
+                    <div class="extra-params">
+                      <div
+                        v-for="(param, index) in newMemory.lorebook"
+                        :key="index"
+                        class="param-row"
+                      >
+                        <el-input
+                          v-model="param.name"
+                          :placeholder="t('settingName')"
+                          class="param-input"
+                          @input="autoSaveSettings"
+                        ></el-input>
+
+                        <div class="value-input">
+                          <el-input
+                            v-model="param.value"
+                            :placeholder="t('settingValue')"
+                            type="textarea"  
+                            :rows="1"
+                            @input="autoSaveSettings"
+                          ></el-input>
+                        </div>
+
+                        <el-button
+                          @click="removeLorebook(index)"
+                          type="danger"
+                          circle
+                          size="small"
+                          class="remove-btn"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
                   </el-form>
                   <template #footer>
                     <el-button @click="showAddMemoryDialog = false">{{ t('cancel') }}</el-button>
