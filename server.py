@@ -20,6 +20,10 @@ from typing import List, Dict
 import shortuuid
 from py.mcp_clients import McpClient
 from contextlib import asynccontextmanager
+
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
 import argparse
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
 parser.add_argument("--host", default="127.0.0.1", help="Host for the ASGI server, default is 127.0.0.1")
@@ -1355,6 +1359,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         }
                         yield f"data: {json.dumps(search_chunk)}\n\n"
                         search_not_done = False
+            yield "data: [DONE]\n\n"
             if m0:
                 messages=[
                     {
@@ -1366,11 +1371,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "content": full_content,
                     }
                 ]
+            executor = ThreadPoolExecutor()
             async def add_async():
-                m0.add(messages, user_id=memoryId)
-            asyncio.create_task(add_async())
-            yield "data: [DONE]\n\n"
+                loop = asyncio.get_event_loop()
+                await loop.run_in_executor(executor, m0.add, messages, memoryId)
 
+            asyncio.create_task(add_async())
+            return
+        
         return StreamingResponse(
             stream_generator(user_prompt),
             media_type="text/event-stream",
@@ -1934,8 +1942,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "content": response_dict["choices"][0]['message']['content'],
                 }
             ]
+        executor = ThreadPoolExecutor()
         async def add_async():
-            m0.add(messages, user_id=memoryId)
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(executor, m0.add, messages, memoryId)
+
         asyncio.create_task(add_async())
         return JSONResponse(content=response_dict)
     except Exception as e:

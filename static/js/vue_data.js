@@ -324,6 +324,7 @@ let vue_data = {
     memorySettings: {
       selectedMemory: null,
       is_memory: false,
+      memoryLimit: 3
     },
     textFiles: [],
     imageFiles: [],
