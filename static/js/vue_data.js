@@ -320,6 +320,7 @@ let vue_data = {
       api_key: '',
       vendor: '',
       lorebook: [],
+      basic_character: '',
     },
     showAddMemoryDialog: false,
     memorySettings: {

@@ -335,6 +335,8 @@ const translations = {
       'worldviewSetting': '世界观设定',
       'settingName': '设定名称',
       'settingValue': '设定值',
+      'basicCharacter': '角色设定',
+      'inputBasicCharacter': '请输入角色设定',
     },
     'en-US': {
       'chat': 'Chat',
@@ -671,5 +673,7 @@ const translations = {
       'worldviewSetting': 'Worldview Setting',
       'settingName': 'Setting Name',
       'settingValue': 'Setting Value',
+      'basicCharacter': 'Basic Character',
+      'inputBasicCharacter': 'Please enter basic character',
     }
   };

@@ -428,6 +428,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
             if lore_content:
                 print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':
@@ -1544,6 +1550,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
             if lore_content:
                 print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':

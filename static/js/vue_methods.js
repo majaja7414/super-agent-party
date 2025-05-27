@@ -2392,6 +2392,7 @@ let vue_methods = {
           base_url: this.newMemory.base_url,
           vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
           lorebook: this.newMemory.lorebook,
+          basic_character: this.newMemory.basic_character,
         };
         this.memories.push(newMem);
         if (this.memorySettings.selectedMemory === null){
@@ -2408,6 +2409,7 @@ let vue_methods = {
           memory.base_url = this.newMemory.base_url;
           memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
           memory.lorebook = this.newMemory.lorebook;
+          memory.basic_character = this.newMemory.basic_character;
         }
       }
 
@@ -2422,6 +2424,7 @@ let vue_methods = {
         base_url: '',
         vendor: '',
         lorebook: {},
+        basic_character: "",
        };
     },
     
