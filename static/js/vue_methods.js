@@ -145,7 +145,18 @@ let vue_methods = {
       });
       this.autoSaveSettings();
     },
-    
+    addLorebook() {
+      // 在this.newMemory.lorebook的object中添加一个新的键值对
+      this.newMemory.lorebook.push({
+        name: '',
+        value: ''        // 根据类型自动初始化
+      });
+      this.autoSaveSettings();
+    },
+    removeLorebook(index) {
+      this.newMemory.lorebook.splice(index, 1);
+      this.autoSaveSettings();
+    },
     updateParamType(index) {
       const param = this.settings.extra_params[index];
       // 根据类型初始化值
@@ -1880,7 +1891,7 @@ let vue_methods = {
         }
   
         // 生成唯一的 ID
-        const kbId = Date.now();
+        const kbId = uuid.v4();
   
         // 构建新的知识库对象，使用上传后的文件链接
         const newKb = {
@@ -1977,8 +1988,17 @@ let vue_methods = {
         this.knowledgeBases = this.knowledgeBases.filter(
           item => item.id !== kb.id
         );
+        let kbId = kb.id
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
+        const Response = await fetch(`http://${HOST}:${PORT}/remove_kb`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kbId }),
+        });
+
+        if (!Response.ok) throw new Error('删除失败');
+
         // 保存 settings
         this.autoSaveSettings();
 
@@ -2371,19 +2391,37 @@ let vue_methods = {
       }
     },
     addMemory() {
-      const newMem = {
-        id: uuid.v4(),
-        name: this.newMemory.name,
-        providerId: this.newMemory.providerId,
-        model:this.newMemory.model,
-        api_key: this.newMemory.api_key,
-        base_url: this.newMemory.base_url,
-        vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
-      };
-      this.memories.push(newMem);
-      if (this.memorySettings.selectedMemory === null){
-        this.memorySettings.selectedMemory = newMem.id;
+      if (this.newMemory.id === null){
+        const newMem = {
+          id: uuid.v4(),
+          name: this.newMemory.name,
+          providerId: this.newMemory.providerId,
+          model:this.newMemory.model,
+          api_key: this.newMemory.api_key,
+          base_url: this.newMemory.base_url,
+          vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
+          lorebook: this.newMemory.lorebook,
+          basic_character: this.newMemory.basic_character,
+        };
+        this.memories.push(newMem);
+        if (this.memorySettings.selectedMemory === null){
+          this.memorySettings.selectedMemory = newMem.id;
+        }
       }
+      else {
+        const memory = this.memories.find(m => m.id === this.newMemory.id);
+        if (memory) {
+          memory.name = this.newMemory.name;
+          memory.providerId = this.newMemory.providerId;
+          memory.model = this.newMemory.model;
+          memory.api_key = this.newMemory.api_key;
+          memory.base_url = this.newMemory.base_url;
+          memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
+          memory.lorebook = this.newMemory.lorebook;
+          memory.basic_character = this.newMemory.basic_character;
+        }
+      }
+
       this.autoSaveSettings();
       this.showAddMemoryDialog = false;
       this.newMemory = { 
@@ -2394,6 +2432,8 @@ let vue_methods = {
         api_key: '',
         base_url: '',
         vendor: '',
+        lorebook: {},
+        basic_character: "",
        };
     },
     
@@ -2404,6 +2444,14 @@ let vue_methods = {
       }
       this.autoSaveSettings();
     },
+    editMemory(id) {
+      const memory = this.memories.find(m => m.id === id);
+      if (memory) {
+        this.newMemory = { ...memory };
+        this.showAddMemoryDialog = true;
+      }
+    },
+
     
     getVendorName(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);

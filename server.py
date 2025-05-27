@@ -2,9 +2,11 @@
 import asyncio
 import copy
 import datetime
+from functools import partial
 import json
 import os
 import re
+import shutil
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
@@ -58,7 +60,7 @@ ALLOWED_EXTENSIONS = [
 ]
 ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -409,6 +411,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             source_prompt += fileLinks_message
         user_prompt = request.messages[-1]['content']
         if m0:
+            lore_content = ""
+            if cur_memory["lorebook"]:
+                for lore in cur_memory["lorebook"]:
+                    if lore["name"] != "" and lore["name"] in user_prompt:
+                        lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
@@ -422,6 +429,18 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
+            if lore_content:
+                print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
         request = await tools_change_messages(request, settings)
         model = settings['model']
         extra_params = settings['extra_params']
@@ -1374,9 +1393,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             executor = ThreadPoolExecutor()
             async def add_async():
                 loop = asyncio.get_event_loop()
-                await loop.run_in_executor(executor, m0.add, messages, memoryId)
+                # 绑定 user_id 关键字参数
+                func = partial(m0.add, user_id=memoryId)
+                # 传递 messages 作为位置参数
+                await loop.run_in_executor(executor, func, messages)
+                print("知识库更新完成")
 
             asyncio.create_task(add_async())
+            print("知识库更新任务已提交")
             return
         
         return StreamingResponse(
@@ -1509,6 +1533,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         kb_list = []
         user_prompt = request.messages[-1]['content']
         if m0:
+            lore_content = ""
+            if cur_memory["lorebook"]:
+                for lore in cur_memory["lorebook"]:
+                    if lore["name"] != "" and lore["name"] in user_prompt:
+                        lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
@@ -1522,6 +1551,18 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
+            if lore_content:
+                print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
                 if kb["enabled"] and kb["processingStatus"] == "completed":
@@ -1945,7 +1986,11 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         executor = ThreadPoolExecutor()
         async def add_async():
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(executor, m0.add, messages, memoryId)
+            # 绑定 user_id 关键字参数
+            func = partial(m0.add, user_id=memoryId)
+            # 传递 messages 作为位置参数
+            await loop.run_in_executor(executor, func, messages)
+            print("知识库更新完成")
 
         asyncio.create_task(add_async())
         return JSONResponse(content=response_dict)
@@ -2384,6 +2429,29 @@ async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks
     background_tasks.add_task(process_kb, kb_id)
     
     return {"success": True, "message": "知识库处理已开始，请稍后查询状态"}
+
+@app.post("/remove_kb")
+async def remove_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
+    data = await request.json()
+    kb_id = data.get("kbId")
+
+    if not kb_id:
+        raise HTTPException(status_code=400, detail="Missing kbId")
+    try:
+        background_tasks.add_task(remove_kb, kb_id)
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    return {"success": True, "message": "知识库已删除"}
+
+# 删除知识库
+async def remove_kb(kb_id: int):
+    # 删除KB_DIR/kb_id目录
+    kb_dir = os.path.join(KB_DIR, str(kb_id))
+    if os.path.exists(kb_dir):
+        shutil.rmtree(kb_dir)
+    else:
+        print(f"KB directory {kb_dir} does not exist.")
+    return
 
 # 添加状态存储
 kb_status = {}

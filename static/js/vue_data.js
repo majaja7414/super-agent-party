@@ -319,6 +319,8 @@ let vue_data = {
       base_url: '',
       api_key: '',
       vendor: '',
+      lorebook: [],
+      basic_character: '',
     },
     showAddMemoryDialog: false,
     memorySettings: {
