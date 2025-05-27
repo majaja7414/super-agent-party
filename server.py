@@ -6,6 +6,7 @@ from functools import partial
 import json
 import os
 import re
+import shutil
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
@@ -59,7 +60,7 @@ ALLOWED_EXTENSIONS = [
 ]
 ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -428,6 +429,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
             if lore_content:
                 print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':
@@ -1544,6 +1551,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+            if cur_memory["basic_character"]:
+                print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n"})
             if lore_content:
                 print("添加世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':
@@ -2416,6 +2429,29 @@ async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks
     background_tasks.add_task(process_kb, kb_id)
     
     return {"success": True, "message": "知识库处理已开始，请稍后查询状态"}
+
+@app.post("/remove_kb")
+async def remove_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
+    data = await request.json()
+    kb_id = data.get("kbId")
+
+    if not kb_id:
+        raise HTTPException(status_code=400, detail="Missing kbId")
+    try:
+        background_tasks.add_task(remove_kb, kb_id)
+    except Exception as e:
+        return {"success": False, "message": str(e)}
+    return {"success": True, "message": "知识库已删除"}
+
+# 删除知识库
+async def remove_kb(kb_id: int):
+    # 删除KB_DIR/kb_id目录
+    kb_dir = os.path.join(KB_DIR, str(kb_id))
+    if os.path.exists(kb_dir):
+        shutil.rmtree(kb_dir)
+    else:
+        print(f"KB directory {kb_dir} does not exist.")
+    return
 
 # 添加状态存储
 kb_status = {}

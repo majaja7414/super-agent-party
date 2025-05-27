@@ -1891,7 +1891,7 @@ let vue_methods = {
         }
   
         // 生成唯一的 ID
-        const kbId = Date.now();
+        const kbId = uuid.v4();
   
         // 构建新的知识库对象，使用上传后的文件链接
         const newKb = {
@@ -1988,8 +1988,17 @@ let vue_methods = {
         this.knowledgeBases = this.knowledgeBases.filter(
           item => item.id !== kb.id
         );
+        let kbId = kb.id
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
+        const Response = await fetch(`http://${HOST}:${PORT}/remove_kb`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kbId }),
+        });
+
+        if (!Response.ok) throw new Error('删除失败');
+
         // 保存 settings
         this.autoSaveSettings();
 
@@ -2392,6 +2401,7 @@ let vue_methods = {
           base_url: this.newMemory.base_url,
           vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
           lorebook: this.newMemory.lorebook,
+          basic_character: this.newMemory.basic_character,
         };
         this.memories.push(newMem);
         if (this.memorySettings.selectedMemory === null){
@@ -2408,6 +2418,7 @@ let vue_methods = {
           memory.base_url = this.newMemory.base_url;
           memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
           memory.lorebook = this.newMemory.lorebook;
+          memory.basic_character = this.newMemory.basic_character;
         }
       }
 
@@ -2422,6 +2433,7 @@ let vue_methods = {
         base_url: '',
         vendor: '',
         lorebook: {},
+        basic_character: "",
        };
     },
     

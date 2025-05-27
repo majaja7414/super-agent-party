@@ -2023,6 +2023,15 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
+                    <el-form-item :label="t('basicCharacter')">
+                      <el-input 
+                        v-model="newMemory.basic_character" 
+                        :placeholder="t('inputBasicCharacter')"
+                        type="textarea"  
+                        :rows="4"
+                        @input="autoSaveSettings"
+                      />
+                    </el-form-item>
                     <div class="param-header">
                       <span>{{ t('worldviewSetting') }}</span>
                       <el-button 
