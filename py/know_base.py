@@ -53,7 +53,7 @@ def chunk_documents(results: List[Dict], cur_kb) -> List[Dict]:
             ))
     return all_docs
 
-def build_vector_store(docs: List[Document], kb_id: int, cur_kb: Dict, cur_vendor: str):
+def build_vector_store(docs: List[Document], kb_id, cur_kb: Dict, cur_vendor: str):
     """构建并保存双索引（参数修正版）"""
     # 参数校验
     if not isinstance(docs, list) or not all(isinstance(d, Document) for d in docs):
@@ -179,13 +179,13 @@ def query_vector_store(query: str, kb_id, cur_kb, cur_vendor):
     } for doc in docs]
 
 
-async def process_knowledge_base(kb_id: int):
+async def process_knowledge_base(kb_id):
     """异步处理知识库的完整流程"""
     # 加载配置
     settings = await load_settings()
-    
     # 查找对应知识库配置
     cur_kb = None
+    providerId = None
     for kb in settings["knowledgeBases"]:
         if kb["id"] == kb_id:
             cur_kb = kb
@@ -210,13 +210,13 @@ async def process_knowledge_base(kb_id: int):
 
     return "知识库处理完成"
 
-async def query_knowledge_base(kb_id: int, query: str):
+async def query_knowledge_base(kb_id, query: str):
     """查询知识库"""
     # 加载配置
     settings = await load_settings()
-
     # 查找对应知识库配置
     cur_kb = None
+    providerId = None
     for kb in settings["knowledgeBases"]:
         if kb["id"] == kb_id:
             cur_kb = kb
