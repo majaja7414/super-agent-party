@@ -22,7 +22,7 @@
 
 ### Windows Desktop Installation
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-Setup-0.1.4.exe)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-Setup-0.1.5.exe)
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
@@ -34,11 +34,11 @@ We provide two mainstream Linux installation package formats for your convenienc
 
 `.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-0.1.4-Linux.AppImage)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-0.1.5-Linux.AppImage)
 
 #### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.4/Super-Agent-Party-0.1.4-Linux.deb)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-0.1.5-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
@@ -134,7 +134,10 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 7. Custom LLM tools can convert LLM interfaces into LLM tools, and any project that adapts to the Ollama format or the OpenAI interface can be used as a tool.
 8. Visual caching, which allows you to configure a visual model separately for recognizing image information. The recognition results will be cached to save tokens. Configuring a visual model can enable some models without visual capabilities (for example, most inference models, etc.) to acquire visual capabilities.
 9. Storage space management function, which allows you to view the files and pictures uploaded in chat in the storage space, and they are all cached locally, enhancing the software's function of image and file storage.
-10. Implemented widgets: current time, retrieving content from file/image URLs, pseudo reasoning, Pollinations image generation, enhanced rendering of LaTeX formulas, and language tone.
+10. Added memory module, which can be viewed on the tool interface.
+- To add new memories, you need to add a word embedding model, and the agent will update the memory vector database in real time. Every time you answer, it will automatically search for relevant memories.
+The memory module can be enabled and disabled in the memory configuration, and the number of results can be adjusted to allow the agent to see more or less relevant memories.
+11. Implemented widgets: current time, retrieving content from file/image URLs, pseudo reasoning, Pollinations image generation, enhanced rendering of LaTeX formulas, and language tone.
   - Current time: Get the current time.
   - Retrieve the content from the file/image URL: Retrieve the content from the file/image URL.
   - Pseudo-reasoning: Enabling a model that doesn't have reasoning capabilities to acquire them.
