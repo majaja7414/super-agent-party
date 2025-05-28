@@ -2189,6 +2189,7 @@ let vue_methods = {
         }, 2000);
       }, 500);
     },
+
     // 在methods中添加
     async addMCPServer() {
       try {
@@ -2206,7 +2207,8 @@ let vue_methods = {
             ...servers[Object.keys(servers)[0]],
             processingStatus: 'initializing', // 新增状态字段
             disabled:true,
-            type: this.newMCPType
+            type: this.newMCPType,
+            input: input
           }
         };
         
@@ -2237,9 +2239,9 @@ let vue_methods = {
             showNotification(this.t('mcpAdded'), 'success');
           } else if (status.startsWith('failed')) {
             clearInterval(interval);
-            this.mcpServers = Object.fromEntries(
-              Object.entries(this.mcpServers).filter(([k]) => k !== mcpId)
-            );
+            this.mcpServers[mcpId].processingStatus = 'server_error';
+            this.mcpServers[mcpId].disabled = true;
+            this.autoSaveSettings();
             showNotification(this.t('mcpCreationFailed'), 'error');
           }
         }, 2000);
@@ -2252,7 +2254,11 @@ let vue_methods = {
       this.autoSaveSettings();
     },
 
-  
+    async editMCPServer(name) {
+      this.newMCPJson =  this.mcpServers[name].input
+      this.newMCPType = this.mcpServers[name].type
+      this.showAddMCPDialog = true
+    },
   
     async removeMCPServer(name) {
       this.deletingMCPName = name
