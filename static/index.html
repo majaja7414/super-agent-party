@@ -2406,9 +2406,18 @@
                           v-model="server.disabled"
                           @change="autoSaveSettings"
                           class="kb-switch"
+                          :disabled="server.processingStatus === 'server_error'"
                         ></el-switch>
                       </template>
                       <div class="card-actions">
+                        <el-button
+                          @click="editMCPServer(name)"
+                          type="default"
+                          circle
+                          size="small"
+                        >
+                          <i class="fa-solid fa-pen-to-square"></i>
+                        </el-button>
                         <el-button
                           @click="removeMCPServer(name)"
                           type="danger"
@@ -2427,7 +2436,7 @@
                   </div>
             
                   <!-- 添加新磁贴 -->
-                  <div class="provider-card add-tile" @click="showAddMCPDialog = true;updateMCPExample()">
+                  <div class="provider-card add-tile" @click="showAddMCPDialog = true; this.newMCPJson = '';updateMCPExample()">
                     <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
                     <div style="color: #606266; margin-top: 10px;">{{ t('addNewMCP') }}</div>
                   </div>
@@ -2479,7 +2488,7 @@
                     </el-form-item>
                   </el-form>
                   <template #footer>
-                    <el-button @click="showAddMCPDialog = false">{{ t('cancel') }}</el-button>
+                    <el-button @click="showAddMCPDialog = false; this.newMCPJson = ''">{{ t('cancel') }}</el-button>
                     <el-button 
                       type="primary" 
                       @click="addMCPServer"

@@ -86,13 +86,14 @@ async def lifespan(app: FastAPI):
     if settings:
         for server_name,server_config in settings['mcpServers'].items():
             mcp_client_list[server_name] = McpClient()
-            # 初始化mcp客户端，限制10秒内，否则跳过
+            # 初始化mcp客户端，限制6秒内，否则跳过
             try:
-                await asyncio.wait_for(mcp_client_list[server_name].initialize(server_name, server_config), timeout=5)
+                if not server_config['disabled']:
+                    await asyncio.wait_for(mcp_client_list[server_name].initialize(server_name, server_config), timeout=6)
             except asyncio.TimeoutError:
-                logger.error(f"Failed to initialize MCP client for {server_name} in 5 seconds")
+                logger.error(f"Failed to initialize MCP client for {server_name} in 6 seconds")
                 mcp_client_list[server_name].disabled = True
-                del settings['mcpServers'][server_name]
+                settings['mcpServers'][server_name]['disabled'] = True
         await save_settings(settings)
     yield
 
@@ -2250,19 +2251,14 @@ async def process_mcp(mcp_id: str):
         server_config = cur_settings['mcpServers'][mcp_id]
         
         # 执行初始化逻辑
-        if mcp_id not in mcp_client_list:
-            mcp_client_list[mcp_id] = McpClient()    
-            await asyncio.wait_for(mcp_client_list[mcp_id].initialize(mcp_id, server_config), timeout=10)
-        else:
-            mcp_client_list[mcp_id].disabled = False
+        mcp_client_list[mcp_id] = McpClient()    
+        await asyncio.wait_for(mcp_client_list[mcp_id].initialize(mcp_id, server_config), timeout=6)
         mcp_status[mcp_id] = "ready"
+        mcp_client_list[mcp_id].disabled = False
         
     except Exception as e:
         mcp_client_list[mcp_id].disabled = True
         mcp_status[mcp_id] = f"failed: {str(e)}"
-        # 清理失败配置
-        cur_settings['mcpServers'].pop(mcp_id, None)
-        await save_settings(cur_settings)
 
 @app.post("/api/remove_mcp")
 async def remove_mcp_server(request: Request):
