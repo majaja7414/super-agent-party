@@ -7,7 +7,7 @@
 
 ## Introduction
 
-🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.
+🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, permanent memory, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.
 
 ![image](doc/image/demo.png)
 
