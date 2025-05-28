@@ -2444,7 +2444,7 @@ async def remove_kb_endpoint(request: Request, background_tasks: BackgroundTasks
     return {"success": True, "message": "知识库已删除"}
 
 # 删除知识库
-async def remove_kb(kb_id: int):
+async def remove_kb(kb_id):
     # 删除KB_DIR/kb_id目录
     kb_dir = os.path.join(KB_DIR, str(kb_id))
     if os.path.exists(kb_dir):
@@ -2456,12 +2456,13 @@ async def remove_kb(kb_id: int):
 # 添加状态存储
 kb_status = {}
 @app.get("/kb_status/{kb_id}")
-async def get_kb_status(kb_id: int):
+async def get_kb_status(kb_id):
     status = kb_status.get(kb_id, "not_found")
+    print (f"kb_status: {kb_id} - {status}")
     return {"kb_id": kb_id, "status": status}
 
 # 修改 process_kb
-async def process_kb(kb_id: int):
+async def process_kb(kb_id):
     kb_status[kb_id] = "processing"
     try:
         from py.know_base import process_knowledge_base
@@ -2482,7 +2483,12 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_json()
             if data.get("type") == "save_settings":
                 await save_settings(data.get("data", {}))
-                await websocket.send_json({"type": "settings_saved", "success": True})
+                # 发送确认消息（携带相同 correlationId）
+                await websocket.send_json({
+                    "type": "settings_saved",
+                    "correlationId": data.get("correlationId"),
+                    "success": True
+                })
             elif data.get("type") == "get_settings":
                 settings = await load_settings()
                 await websocket.send_json({"type": "settings", "data": settings})

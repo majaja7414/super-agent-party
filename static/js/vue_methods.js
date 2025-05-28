@@ -1325,38 +1325,65 @@ let vue_methods = {
       this.isTyping = false;
       this.abortController = null;
     },
-    // 自动保存设置
-    autoSaveSettings() {
-      const payload = {
-        ...this.settings,
-        agents: this.agents,
-        mainAgent: this.mainAgent,
-        tools: this.toolsSettings,
-        llmTools: this.llmTools,
-        conversations: this.conversations,
-        conversationId: this.conversationId,
-        reasoner: this.reasonerSettings,
-        vision: this.visionSettings,
-        webSearch: this.webSearchSettings, 
-        KBSettings: this.KBSettings,
-        textFiles: this.textFiles,
-        imageFiles: this.imageFiles,
-        videoFiles: this.videoFiles,
-        knowledgeBases: this.knowledgeBases,
-        modelProviders: this.modelProviders,
-        systemSettings: this.systemSettings,
-        mcpServers: this.mcpServers,
-        a2aServers: this.a2aServers,
-        isdocker: this.isdocker,
-        memories: this.memories,
-        memorySettings: this.memorySettings,
-      }
-      this.ws.send(JSON.stringify({
-        type: 'save_settings',
-        data: payload
-      }));
+    async autoSaveSettings() {
+      return new Promise((resolve, reject) => {
+        // 构造 payload（保持原有逻辑）
+        const payload = {
+          ...this.settings,
+          agents: this.agents,
+          mainAgent: this.mainAgent,
+          tools: this.toolsSettings,
+          llmTools: this.llmTools,
+          conversations: this.conversations,
+          conversationId: this.conversationId,
+          reasoner: this.reasonerSettings,
+          vision: this.visionSettings,
+          webSearch: this.webSearchSettings, 
+          KBSettings: this.KBSettings,
+          textFiles: this.textFiles,
+          imageFiles: this.imageFiles,
+          videoFiles: this.videoFiles,
+          knowledgeBases: this.knowledgeBases,
+          modelProviders: this.modelProviders,
+          systemSettings: this.systemSettings,
+          mcpServers: this.mcpServers,
+          a2aServers: this.a2aServers,
+          isdocker: this.isdocker,
+          memories: this.memories,
+          memorySettings: this.memorySettings,
+        };
+        const correlationId = uuid.v4();
+        // 发送保存请求
+        this.ws.send(JSON.stringify({
+          type: 'save_settings',
+          data: payload,
+          correlationId: correlationId // 添加唯一请求 ID
+        }));
+        // 设置响应监听器
+        const handler = (event) => {
+          const response = JSON.parse(event.data);
+          
+          // 匹配对应请求的确认消息
+          if (response.type === 'settings_saved' && 
+              response.correlationId === correlationId) {
+            this.ws.removeEventListener('message', handler);
+            resolve();
+          }
+          
+          // 错误处理（根据后端实现）
+          if (response.type === 'save_error') {
+            this.ws.removeEventListener('message', handler);
+            reject(new Error('保存失败'));
+          }
+        };
+        // 设置 5 秒超时
+        const timeout = setTimeout(() => {
+          this.ws.removeEventListener('message', handler);
+          reject(new Error('保存超时'));
+        }, 5000);
+        this.ws.addEventListener('message', handler);
+      });
     },
-
     // 修改后的fetchModels方法
     async fetchModels() {
       this.modelsLoading = true;
@@ -1919,7 +1946,7 @@ let vue_methods = {
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
         // 保存 settings
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
         // post kbId to 后端的create_kb端口
         try {
           // 1. 触发任务
@@ -1932,29 +1959,46 @@ let vue_methods = {
           if (!startResponse.ok) throw new Error('启动失败');
           // 2. 轮询状态
           const checkStatus = async () => {
-            const statusResponse = await fetch(`http://${HOST}:${PORT}/kb_status/${kbId}`);
-            const data = await statusResponse.json();
-            console.log(data.status);
-            return data.status;
+            try {
+              const statusResponse = await fetch(`http://${HOST}:${PORT}/kb_status/${kbId}`);
+              
+              // 处理 HTTP 错误状态
+              if (!statusResponse.ok) {
+                console.error('状态检查失败:', statusResponse.status);
+                return 'failed'; // 返回明确的失败状态
+              }
+              const data = await statusResponse.json();
+              return data.status || 'unknown'; // 防止 undefined
+            } catch (error) {
+              console.error('状态检查异常:', error);
+              return 'failed';
+            }
           };
-          // 3. 每2秒检查一次状态
+          // 修改轮询逻辑
           const interval = setInterval(async () => {
-            const status = await checkStatus();
-            
-            // 找到对应的知识库对象
-            const targetKb = this.knowledgeBases.find(k => k.id === kbId);
-            
-            if (status === 'completed') {
+            try {
+              const status = await checkStatus() || ''; // 确保有默认值
+              
+              const targetKb = this.knowledgeBases.find(k => k.id === kbId);
+              if (!targetKb) {
+                clearInterval(interval);
+                return;
+              }
+              // 安全的状态判断
+              if (status === 'completed') {
+                clearInterval(interval);
+                targetKb.processingStatus = 'completed';
+                showNotification(this.t('kb_created_successfully'), 'success');
+                this.autoSaveSettings();
+              } else if (typeof status === 'string' && status.startsWith('failed')) { // 安全判断
+                clearInterval(interval);
+                this.knowledgeBases = this.knowledgeBases.filter(k => k.id !== kbId);
+                showNotification(this.t('kb_creation_failed'), 'error');
+                this.autoSaveSettings();
+              }
+            } catch (error) {
+              console.error('轮询异常:', error);
               clearInterval(interval);
-              targetKb.processingStatus = 'completed';
-              showNotification(this.t('kb_created_successfully'), 'success');
-              this.autoSaveSettings();
-            } else if (status.startsWith('failed')) {
-              clearInterval(interval);
-              // 移除失败的知识库
-              this.knowledgeBases = this.knowledgeBases.filter(k => k.id !== kbId);
-              showNotification(this.t('kb_creation_failed'), 'error');
-              this.autoSaveSettings();
             }
           }, 2000);
         } catch (error) {
