@@ -919,6 +919,7 @@ let vue_methods = {
           this.reasonerSettings = data.data.reasoner || {};
           this.visionSettings = data.data.vision || {};
           this.webSearchSettings = data.data.webSearch || {};
+          this.codeSettings = data.data.codeSettings || {};
           this.KBSettings = data.data.KBSettings || {};
           this.textFiles = data.data.textFiles || [];
           this.imageFiles = data.data.imageFiles || [];
@@ -1339,6 +1340,7 @@ let vue_methods = {
           reasoner: this.reasonerSettings,
           vision: this.visionSettings,
           webSearch: this.webSearchSettings, 
+          codeSettings: this.codeSettings,
           KBSettings: this.KBSettings,
           textFiles: this.textFiles,
           imageFiles: this.imageFiles,

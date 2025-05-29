@@ -210,6 +210,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.llm_tool import custom_llm_tool
     from py.pollinations import pollinations_image
     from py.load_files import get_file_content
+    from py.code_interpreter import e2b_code_async
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -223,6 +224,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "pollinations_image":pollinations_image,
         "get_file_content":get_file_content,
         "get_image_content": get_image_content,
+        "e2b_code_async": e2b_code_async,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -371,6 +373,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
+    from py.code_interpreter import e2b_code_tool
     m0 = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
@@ -437,6 +440,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         if settings['tools']['getFile']['enabled']:
             tools.append(file_tool)
             tools.append(image_tool)
+        if settings["codeSettings"]['enabled']:
+            if settings["codeSettings"]["engine"] == "e2b":
+                tools.append(e2b_code_tool)
         source_prompt = ""
         if request.fileLinks:
             print("fileLinks",request.fileLinks)
@@ -1431,17 +1437,17 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "content": full_content,
                     }
                 ]
-            executor = ThreadPoolExecutor()
-            async def add_async():
-                loop = asyncio.get_event_loop()
-                # 绑定 user_id 关键字参数
-                func = partial(m0.add, user_id=memoryId)
-                # 传递 messages 作为位置参数
-                await loop.run_in_executor(executor, func, messages)
-                print("知识库更新完成")
+                executor = ThreadPoolExecutor()
+                async def add_async():
+                    loop = asyncio.get_event_loop()
+                    # 绑定 user_id 关键字参数
+                    func = partial(m0.add, user_id=memoryId)
+                    # 传递 messages 作为位置参数
+                    await loop.run_in_executor(executor, func, messages)
+                    print("知识库更新完成")
 
-            asyncio.create_task(add_async())
-            print("知识库更新任务已提交")
+                asyncio.create_task(add_async())
+                print("知识库更新任务已提交")
             return
         
         return StreamingResponse(
@@ -1454,6 +1460,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             }
         )
     except Exception as e:
+        print(e)
         return JSONResponse(
             status_code=e.status_code,
             content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
@@ -1477,6 +1484,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
+    from py.code_interpreter import e2b_code_tool
     m0 = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
@@ -1545,6 +1553,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     if settings['tools']['getFile']['enabled']:
         tools.append(file_tool)
         tools.append(image_tool)
+    if settings["codeSettings"]['enabled']:
+        if settings["codeSettings"]["engine"] == "e2b":
+            tools.append(e2b_code_tool)
     search_not_done = False
     search_task = ""
     print(tools)
@@ -2024,16 +2035,16 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "content": response_dict["choices"][0]['message']['content'],
                 }
             ]
-        executor = ThreadPoolExecutor()
-        async def add_async():
-            loop = asyncio.get_event_loop()
-            # 绑定 user_id 关键字参数
-            func = partial(m0.add, user_id=memoryId)
-            # 传递 messages 作为位置参数
-            await loop.run_in_executor(executor, func, messages)
-            print("知识库更新完成")
+            executor = ThreadPoolExecutor()
+            async def add_async():
+                loop = asyncio.get_event_loop()
+                # 绑定 user_id 关键字参数
+                func = partial(m0.add, user_id=memoryId)
+                # 传递 messages 作为位置参数
+                await loop.run_in_executor(executor, func, messages)
+                print("知识库更新完成")
 
-        asyncio.create_task(add_async())
+            asyncio.create_task(add_async())
         return JSONResponse(content=response_dict)
     except Exception as e:
         return JSONResponse(
