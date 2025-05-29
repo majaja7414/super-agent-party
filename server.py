@@ -83,19 +83,59 @@ async def lifespan(app: FastAPI):
     else:
         client = AsyncOpenAI()
         reasoner_client = AsyncOpenAI()
+    mcp_init_tasks = []
+    async def init_mcp_with_timeout(server_name, server_config):
+        """带超时处理的异步初始化函数"""
+        try:
+            mcp_client = McpClient()
+            if not server_config['disabled']:
+                await asyncio.wait_for(
+                    mcp_client.initialize(server_name, server_config),
+                    timeout=6
+                )
+            return server_name, mcp_client, None
+        except asyncio.TimeoutError:
+            logger.error(f"MCP client {server_name} initialization timeout")
+            return server_name, None, "timeout"
+        except Exception as e:
+            logger.error(f"MCP client {server_name} initialization failed: {str(e)}")
+            return server_name, None, "error"
     if settings:
-        for server_name,server_config in settings['mcpServers'].items():
-            mcp_client_list[server_name] = McpClient()
-            # 初始化mcp客户端，限制6秒内，否则跳过
-            try:
-                if not server_config['disabled']:
-                    await asyncio.wait_for(mcp_client_list[server_name].initialize(server_name, server_config), timeout=6)
-            except asyncio.TimeoutError:
-                logger.error(f"Failed to initialize MCP client for {server_name} in 6 seconds")
-                mcp_client_list[server_name].disabled = True
-                settings['mcpServers'][server_name]['disabled'] = True
-        await save_settings(settings)
+        # 创建所有初始化任务
+        for server_name, server_config in settings['mcpServers'].items():
+            task = asyncio.create_task(init_mcp_with_timeout(server_name, server_config))
+            mcp_init_tasks.append(task)
+        # 立即继续执行不等待
+        # 通过回调处理结果
+        async def check_results():
+            """后台收集任务结果"""
+            for task in asyncio.as_completed(mcp_init_tasks):
+                server_name, mcp_client, error = await task
+                if error:
+                    settings['mcpServers'][server_name]['disabled'] = True
+                    settings['mcpServers'][server_name]['processingStatus'] = 'server_error'
+                    mcp_client_list[server_name] = McpClient()
+                    mcp_client_list[server_name].disabled = True
+                else:
+                    mcp_client_list[server_name] = mcp_client
+            await save_settings(settings)  # 所有任务完成后统一保存
+            await broadcast_settings_update(settings)  # 所有任务完成后统一广播
+        # 在后台运行结果收集
+        asyncio.create_task(check_results())
     yield
+# WebSocket端点增加连接管理
+active_connections = []
+# 新增广播函数
+async def broadcast_settings_update(settings):
+    """向所有WebSocket连接推送配置更新"""
+    for connection in active_connections:  # 需要维护全局连接列表
+        try:
+            await connection.send_json({
+                "type": "settings",
+                "data": settings  # 直接使用内存中的最新配置
+            })
+        except Exception as e:
+            logger.error(f"Broadcast failed: {e}")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -2467,14 +2507,16 @@ async def process_kb(kb_id):
     except Exception as e:
         kb_status[kb_id] = f"failed: {str(e)}"
 
-
+settings_lock = asyncio.Lock()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    current_settings = await load_settings()
-    await websocket.send_json({"type": "settings", "data": current_settings})
-    
+    active_connections.append(websocket)
+
     try:
+        async with settings_lock:  # 读取时加锁
+            current_settings = await load_settings()
+        await websocket.send_json({"type": "settings", "data": current_settings})
         while True:
             data = await websocket.receive_json()
             if data.get("type") == "save_settings":
@@ -2515,6 +2557,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 })
     except Exception as e:
         print(f"WebSocket error: {e}")
+    finally:
+        active_connections.remove(websocket)
 
 mcp = FastApiMCP(
     app,
