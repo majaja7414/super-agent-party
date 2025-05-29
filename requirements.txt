@@ -30,4 +30,4 @@ aiosqlite
 rank_bm25
 fastapi_mcp
 mem0ai
-e2b-code-interpreter
+pyinstaller
