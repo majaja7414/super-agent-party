@@ -2170,6 +2170,16 @@ let vue_methods = {
 
       this.autoSaveSettings();
     },
+    async handleNetworkChange(val) {
+      this.systemSettings.network = val;
+      await window.electronAPI.setNetworkVisibility(val);
+      this.showRestartDialog = true;
+      this.autoSaveSettings();
+    },
+
+    restartApp() {
+      window.electronAPI.restartApp();
+    },
 
     // 方法替换为：
     launchBrowserMode() {
