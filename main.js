@@ -60,6 +60,43 @@ if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true })
 }
 
+// 获取配置文件路径
+function getConfigPath() {
+  return path.join(app.getPath('userData'), 'config.json');
+}
+
+// 加载环境变量
+function loadEnvVariables() {
+  const configPath = getConfigPath();
+  if (fs.existsSync(configPath)) {
+    const rawData = fs.readFileSync(configPath);
+    const config = JSON.parse(rawData);
+    for (const key in config) {
+      process.env[key] = config[key];
+    }
+  }
+}
+
+loadEnvVariables();
+
+const networkVisible = process.env.networkVisible === 'global';
+const BACKEND_HOST = networkVisible ? '0.0.0.0' : HOST
+// 保存环境变量
+function saveEnvVariable(key, value) {
+  const configPath = getConfigPath();
+  let config = {};
+  if (fs.existsSync(configPath)) {
+    const rawData = fs.readFileSync(configPath);
+    config = JSON.parse(rawData);
+  }
+  config[key] = value;
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  
+  // 更新当前进程中的环境变量
+  process.env[key] = value;
+}
+
+
 // 创建骨架屏窗口
 function createSkeletonWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
@@ -119,14 +156,13 @@ function startBackend() {
       NODE_ENV: isDev ? 'development' : 'production'
     }
   }
-
   if (isDev) {
     // 开发模式使用Python启动
     const backendScript = path.join(__dirname, 'server.py')
     backendProcess = spawn('./.venv/Scripts/python.exe', [
       'server.py',
       '--port', PORT.toString(),
-      '--host', HOST,
+      '--host', BACKEND_HOST,
     ], spawnOptions)
   } else {
     // 生产模式使用编译后的可执行文件
@@ -289,8 +325,16 @@ app.whenReady().then(async () => {
     await waitForBackend()
     
     // 后端服务准备就绪后，加载完整内容
-    console.log('Backend ready, loading main content...')
+    console.log(`Backend sever is running at http://${BACKEND_HOST}:${PORT}`)
 
+    ipcMain.handle('set-env', async (event, arg) => {
+      saveEnvVariable(arg.key, arg.value);
+    });
+    //重启应用
+    ipcMain.handle('restart-app', () => {
+      app.relaunch();
+      app.exit();
+    })
     // 检查更新IPC
     ipcMain.handle('check-for-updates', async () => {
       if (isDev) {
