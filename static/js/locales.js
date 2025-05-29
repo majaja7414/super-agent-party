@@ -337,6 +337,9 @@ const translations = {
       'settingValue': '设定值',
       'basicCharacter': '角色设定',
       'inputBasicCharacter': '请输入角色设定',
+      'interpreter': '代码工具',
+      'codeEngine': '代码引擎',
+      'e2bAPIKeyPlaceholder': '请输入E2B API Key',
     },
     'en-US': {
       'chat': 'Chat',
@@ -675,5 +678,8 @@ const translations = {
       'settingValue': 'Setting Value',
       'basicCharacter': 'Basic Character',
       'inputBasicCharacter': 'Please enter basic character',
+      'interpreter': 'Code tool',
+      'codeEngine': 'Code Engine',
+      'e2bAPIKeyPlaceholder': 'Please input e2b API key',
     }
   };

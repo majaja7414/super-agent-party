@@ -37,4 +37,5 @@ dependencies = [
     "tzlocal>=5.3.1",
     "uvicorn[standard]>=0.34.2",
     "mem0ai>=0.1.101",
+    "e2b-code-interpreter>=1.5.0",
 ]

@@ -209,6 +209,11 @@ let vue_data = {
       Crawl4Ai_url: 'http://127.0.0.1:11235',
       Crawl4Ai_api_key: 'test_api_code'
     },
+    codeSettings: {
+      enabled: false,
+      engine: 'e2b',
+      e2b_api_key: '',
+    },
     knowledgeBases: [],
     KBSettings: {
       when: 'before_thinking',
@@ -296,7 +301,8 @@ let vue_data = {
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
       { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
       { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' },
-      { id: 'memory', title: 'memory', icon: 'fa-solid fa-brain'}
+      { id: 'memory', title: 'memory', icon: 'fa-solid fa-brain'},
+      { id: 'interpreter', title: 'interpreter', icon: 'fa-solid fa-code'}
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },

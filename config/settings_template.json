@@ -89,5 +89,10 @@
       "selectedMemory": null,
       "is_memory": false,
       "memoryLimit": 3
+    },
+    "codeSettings": {
+      "enabled": false,
+      "engine": "e2b",
+      "e2b_api_key": ""
     }
 }
