@@ -22,9 +22,6 @@ RUN pip install uv
 
 RUN uv venv
 
-# 进入虚拟环境
-RUN . .venv/bin/activate
-
 # uv安装Python依赖（自动读取requirements.txt）
 RUN uv sync
 
@@ -42,4 +39,4 @@ EXPOSE 3456
 ENV HOST=0.0.0.0 PORT=3456 PYTHONUNBUFFERED=1
 
 # 启动命令
-CMD ["sh", "-c", "python server.py --host $HOST --port $PORT"]
+CMD ["sh", "-c", "exec .venv/bin/python server.py --host $HOST --port $PORT"]
