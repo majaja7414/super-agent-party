@@ -27,7 +27,7 @@ e2b_code_tool = {
             "properties": {
                 "code": {
                     "type": "string",
-                    "description": "需要执行的代码，例如：print('Hello, World!')，不要包含markdown的代码块标记！只有输入可运行的代码字符串。工具会返回控制的输出结果，如果出错会返回错误信息，请将你需要查看的信息写在print中。",
+                    "description": "需要执行的代码，例如：print('Hello, World!')，不要包含markdown的代码块标记！只有输入可运行的代码字符串。工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
                 },
                 "language": {
                     "type": "string",

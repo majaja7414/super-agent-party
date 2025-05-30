@@ -1,6 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 import platform
-
+from PyInstaller.utils.hooks import collect_submodules
 # 全平台禁用签名配置
 universal_disable_sign = {
     'codesign_identity': None,
@@ -24,7 +24,8 @@ a = Analysis(
     hiddenimports=[
         'pydantic.deprecated.decorator',
         'tiktoken_ext',
-        'tiktoken_ext.openai_public'
+        'tiktoken_ext.openai_public',
+        *collect_submodules('mem0'),
     ],
     hookspath=[],
     hooksconfig={},
