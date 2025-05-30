@@ -15,15 +15,8 @@ COPY requirements.txt ./
 
 COPY package.json package-lock.json ./
 
-COPY uv.lock pyproject.toml ./
-
 # 安装Python依赖
-RUN pip install uv
-
-RUN uv venv
-
-# uv安装Python依赖（自动读取requirements.txt）
-RUN uv sync
+RUN pip install --no-cache-dir -r requirements.txt
 
 # 安装Node依赖（自动读取package-lock.json）
 RUN npm install --production --legacy-peer-deps  # 兼容性模式
@@ -39,4 +32,4 @@ EXPOSE 3456
 ENV HOST=0.0.0.0 PORT=3456 PYTHONUNBUFFERED=1
 
 # 启动命令
-CMD ["sh", "-c", "exec .venv/bin/python server.py --host $HOST --port $PORT"]
+CMD ["sh", "-c", "python server.py --host $HOST --port $PORT"]

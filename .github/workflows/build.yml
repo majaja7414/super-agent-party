@@ -32,20 +32,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv venv
-          uv sync
-
-      - name: activate Python virtual environment
-        shell: bash
-        run: |
-          case "${{ matrix.os }}" in
-            windows-latest)
-              .venv\Scripts\activate
-              ;;
-            *)
-              source .venv/bin/activate
-              ;;
-          esac
+          uv pip install --system -r requirements.txt
 
       - name: Install Node.js dependencies
         run: npm ci
