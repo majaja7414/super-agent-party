@@ -4,6 +4,19 @@ const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
+const os = require('os');
+
+let pythonExec;
+
+// 判断操作系统
+if (os.platform() === 'win32') {
+  // Windows
+  pythonExec = path.join('.venv', 'Scripts', 'python.exe');
+} else {
+  // macOS / Linux
+  pythonExec = path.join('.venv', 'bin', 'python3'); // 推荐优先使用 python3
+}
+
 let mainWindow
 let loadingWindow
 let tray = null
@@ -159,11 +172,11 @@ function startBackend() {
   if (isDev) {
     // 开发模式使用Python启动
     const backendScript = path.join(__dirname, 'server.py')
-    backendProcess = spawn('./.venv/Scripts/python.exe', [
+    backendProcess = spawn(pythonExec, [
       'server.py',
       '--port', PORT.toString(),
       '--host', BACKEND_HOST,
-    ], spawnOptions)
+    ], spawnOptions);
   } else {
     // 生产模式使用编译后的可执行文件
     let serverExecutable
