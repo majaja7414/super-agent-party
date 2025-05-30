@@ -58,6 +58,7 @@ if (isElectron) {
   // 判断协议
   const protocol = window.location.protocol;
 let vue_data = {
+    isElectron: isElectron,
     partyURL:window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`,
     downloadProgress: 0,
     updateDownloaded: false,
@@ -249,7 +250,13 @@ let vue_data = {
     systemSettings: {
       language: 'zh-CN',
       theme: 'light',
+      network:"local",
     },
+    networkOptions:[
+      { value: 'local', label: 'local' }, 
+      { value: 'global', label: 'global' },
+    ],
+    showRestartDialog: false,
     agents: {},
     showAgentForm: false,
     editingAgent: null,
@@ -329,6 +336,7 @@ let vue_data = {
       basic_character: '',
     },
     showAddMemoryDialog: false,
+    showMemoryDialog: false,
     memorySettings: {
       selectedMemory: null,
       is_memory: false,
@@ -341,7 +349,7 @@ let vue_data = {
     agentTiles: [
       { 
         id: 'agents',
-        title: 'agents',
+        title: 'agentSnapshot',
         icon: 'fa-solid fa-robot'
       },
       {
