@@ -39,14 +39,7 @@ jobs:
         run: npm ci
 
       - name: Build Python backend
-        run: .venv/bin/python -m pyinstaller server.spec
-        if: runner.os != 'Windows'
-        shell: bash
-
-      - name: Build Python backend (Windows)
-        run: .venv\Scripts\python -m pyinstaller server.spec
-        if: runner.os == 'Windows'
-        shell: cmd
+        run: uv run pyinstaller server.spec
 
       - name: Build and Publish Electron app
         shell: bash
