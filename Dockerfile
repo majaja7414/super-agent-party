@@ -15,8 +15,18 @@ COPY requirements.txt ./
 
 COPY package.json package-lock.json ./
 
+COPY uv.lock pyproject.toml ./
+
 # 安装Python依赖
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install uv
+
+RUN uv venv
+
+# 进入虚拟环境
+RUN source venv/bin/activate
+
+# uv安装Python依赖（自动读取requirements.txt）
+RUN uv sync
 
 # 安装Node依赖（自动读取package-lock.json）
 RUN npm install --production --legacy-peer-deps  # 兼容性模式

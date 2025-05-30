@@ -31,3 +31,4 @@ rank_bm25
 fastapi_mcp
 mem0ai
 pyinstaller
+e2b-code-interpreter
