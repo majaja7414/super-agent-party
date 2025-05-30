@@ -346,6 +346,10 @@ const translations = {
       'restartConfirmText': '是否确认重启以更新当前配置？',
       'restartConfirm': '重启确认',
       'confirmRestart': '确认重启',
+      'memoryDeleted': '记忆已删除',
+      'memoryDeleteFailed': '记忆删除失败',
+      'AgentDeleted': '智能体已删除',
+      'AgentDeleteFailed': '智能体删除失败',
     },
     'en-US': {
       'chat': 'Chat',
@@ -693,5 +697,9 @@ const translations = {
       'restartConfirmText': 'Do you want to confirm the restart to update the current configuration?',
       'restartConfirm': 'Restart Confirmation',
       'confirmRestart': 'Confirm Restart',
+      'memoryDeleted': 'Memory deleted',
+      'memoryDeleteFailed': 'Memory delete failed',
+      'AgentDeleted': 'Agent deleted',
+      'AgentDeleteFailed': 'Agent delete failed',
     }
   };

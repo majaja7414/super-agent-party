@@ -2341,6 +2341,36 @@ async def remove_mcp_server(request: Request):
         logger.error(f"移除MCP服务器失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/remove_memory")
+async def remove_memory_endpoint(request: Request):
+    data = await request.json()
+    memory_id = data.get("memoryId")
+    if memory_id:
+        try:
+            # 删除MEMORY_CACHE_DIR目录下的memory_id文件夹
+            memory_dir = os.path.join(MEMORY_CACHE_DIR, memory_id)
+            shutil.rmtree(memory_dir)
+            return JSONResponse({"success": True, "message": "Memory removed"})
+        except Exception as e:
+            return JSONResponse({"success": False, "message": str(e)})
+    else:
+        return JSONResponse({"success": False, "message": "No memoryId provided"})
+
+@app.post("/remove_agent")
+async def remove_agent_endpoint(request: Request):
+    data = await request.json()
+    agent_id = data.get("agentId")
+    if agent_id:
+        try:
+            # 删除AGENT_CACHE_DIR目录下的agent_id文件夹
+            agent_dir = os.path.join(AGENT_DIR, f"{agent_id}.json")
+            shutil.rmtree(agent_dir)
+            return JSONResponse({"success": True, "message": "Agent removed"})
+        except Exception as e:
+            return JSONResponse({"success": False, "message": str(e)})
+    else:
+        return JSONResponse({"success": False, "message": "No agentId provided"})
+
 @app.post("/a2a/initialize")
 async def initialize_a2a(request: Request):
     from python_a2a import A2AClient

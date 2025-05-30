@@ -2337,12 +2337,27 @@ let vue_methods = {
       navigator.clipboard.writeText(name)
       showNotification(`Agent Name: ${name} copyed`, 'success');
     },
-    removeAgent(id) {
+    async removeAgent(id) {
       if (this.agents.hasOwnProperty(id)) {
         delete this.agents[id]
         this.agents = { ...this.agents }
+        try {
+          // 向/delete_file发送请求
+          const response = await fetch(`http://${HOST}:${PORT}/remove_agent`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ agentId: id })
+          });
+          // 处理响应
+          if (response.ok) {
+            console.log('Agent deleted successfully');
+            showNotification(this.t('AgentDeleted'), 'success');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showNotification(this.t('AgentDeleteFailed'), 'error');
+        }
       }
-      showNotification(`Agent ${id} removed`, 'success');
       this.autoSaveSettings();
     },
     isValidUrl(url) {
@@ -2499,10 +2514,26 @@ let vue_methods = {
        };
     },
     
-    removeMemory(id) {
+    async removeMemory(id) {
       this.memories = this.memories.filter(m => m.id !== id);
       if (this.memorySettings.selectedMemory === id){
         this.memorySettings.selectedMemory = null;
+      }
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/remove_memory`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memoryId: id })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('memory deleted successfully');
+          showNotification(this.t('memoryDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('memoryDeleteFailed'), 'error');
       }
       this.autoSaveSettings();
     },
