@@ -22,7 +22,7 @@
 
 ### windows桌面版安装
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-Setup-0.1.5.exe)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-Setup-0.1.6.exe)
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
 
@@ -34,12 +34,12 @@
 
 `.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-0.1.5-Linux.AppImage)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Linux.AppImage)
 
 
 #### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.5/Super-Agent-Party-0.1.5-Linux.deb)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Linux.deb)
 
 ### docker部署（推荐）
 
