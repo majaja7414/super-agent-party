@@ -23,7 +23,7 @@ RUN pip install uv
 RUN uv venv
 
 # 进入虚拟环境
-RUN source .venv/bin/activate
+RUN . .venv/bin/activate
 
 # uv安装Python依赖（自动读取requirements.txt）
 RUN uv sync
