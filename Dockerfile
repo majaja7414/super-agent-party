@@ -18,6 +18,9 @@ COPY package.json package-lock.json ./
 # 安装Python依赖
 RUN pip install uv
 
+# UV创建虚拟环境
+RUN uv venv
+
 # UV同步依赖
 RUN uv sync
 
