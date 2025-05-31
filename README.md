@@ -28,7 +28,7 @@
 
 ### MacOS Desktop Installation (beta test)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac-UNSIGNED.dmg)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac.dmg)
 
 ### Linux Desktop Installation
 
