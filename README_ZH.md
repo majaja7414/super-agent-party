@@ -26,7 +26,7 @@
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
 
-### MacOS桌面版安装
+### MacOS桌面版安装（beta测试）
 
   👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac-UNSIGNED.dmg)
 
