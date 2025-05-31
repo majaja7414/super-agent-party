@@ -26,6 +26,10 @@
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
+### MacOS Desktop Installation (beta test)
+
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac-UNSIGNED.dmg)
+
 ### Linux Desktop Installation
 
 We provide two mainstream Linux installation package formats for your convenience in different scenarios.
