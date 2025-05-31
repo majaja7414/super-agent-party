@@ -9,7 +9,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     permissions:
       contents: write
@@ -40,6 +40,12 @@ jobs:
 
       - name: Build Python backend
         run: uv run pyinstaller server.spec
+
+      - name: Copy node_modules to dist/server/_internal
+        shell: bash
+        run: |
+          mkdir -p dist/server/_internal/node_modules
+          cp -r node_modules/* dist/server/_internal/node_modules/
 
       - name: Build and Publish Electron app
         shell: bash

@@ -183,3 +183,4 @@ server.build/
 server.dist/
 agents/
 super-agent-data/
+.DS_Store

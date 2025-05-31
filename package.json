@@ -95,7 +95,6 @@
       "asarUnpack": "**/*.node"
     },
     "dmg": {
-      "background": "static/source/icon.png",
       "icon": "static/source/icon.png",
       "iconSize": 100,
       "contents": [
