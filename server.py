@@ -270,7 +270,7 @@ async def message_without_images(messages: List[Dict]) -> List[Dict]:
                             break
     return messages
 
-async def images_in_messages(messages: List[Dict]) -> List[Dict]:
+async def images_in_messages(messages: List[Dict],fastapi_base_url: str) -> List[Dict]:
     import hashlib
     images = []
     index = 0
@@ -284,6 +284,9 @@ async def images_in_messages(messages: List[Dict]) -> List[Dict]:
                         # 如果item["image_url"]["url"]是http或https开头，则转换成base64
                         if item["image_url"]["url"].startswith("http"):
                             image_url = item["image_url"]["url"]
+                            # 对image_url分解出baseURL，与fastapi_base_url比较，如果相同，将image_url的baseURL替换成127.0.0.1:PORT
+                            if fastapi_base_url in image_url:
+                                image_url = image_url.replace(fastapi_base_url, f"http://127.0.0.1:{PORT}/")
                             base64_image = await get_image_base64(image_url)
                             media_type = await get_image_media_type(image_url)
                             item["image_url"]["url"] = f"data:{media_type};base64,{base64_image}"
@@ -355,7 +358,7 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
 
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
-    images = await images_in_messages(request.messages)
+    images = await images_in_messages(request.messages,fastapi_base_url)
     request.messages = await message_without_images(request.messages)
     from py.load_files import get_files_content,file_tool,image_tool
     from py.web_search import (
@@ -1524,7 +1527,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 }
             }
             m0 = Memory.from_config(config)
-    images = await images_in_messages(request.messages)
+    images = await images_in_messages(request.messages,fastapi_base_url)
     request.messages = await message_without_images(request.messages)
     open_tag = "<think>"
     close_tag = "</think>"

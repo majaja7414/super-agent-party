@@ -18,7 +18,6 @@ a = Analysis(
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
         ('static', 'static'),
-        ('node_modules', 'node_modules'),
         ('tiktoken_cache', 'tiktoken_cache')
     ],
     hiddenimports=[
@@ -30,16 +29,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[
-        'electron',  # 全局排除
-        'electron-builder',
-        'electron-updater',
-        'node_modules/electron/**',
-        'node_modules/electron-builder/**',
-        'node_modules/electron-publish/**',
-        'node_modules/electron-builder-squirrel-windows/**',
-        'node_modules/electron-updater/**'
-    ],
+    excludes=[],
     noarchive=False,
     optimize=0,
 )
