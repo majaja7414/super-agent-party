@@ -30,6 +30,12 @@
 
   👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac.dmg)
 
+⭐注意！下载后将dmg文件周的app文件拖入`/Applications`目录下，然后打开终端，执行以下命令并输入root密码，从而移除从网络下载附加的Quarantine属性：
+
+  ```shell
+  sudo xattr -dr com.apple.quarantine  /Applications/Super-Agent-Party.app
+  ```
+
 ### Linux 桌面版安装
 
 我们提供了两种主流的 Linux 安装包格式，方便你在不同场景下使用。
@@ -39,12 +45,6 @@
 `.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
 
   👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Linux.AppImage)
-
-⭐注意！下载后将dmg文件周的app文件拖入`/Applications`目录下，然后打开终端，执行以下命令并输入root密码，从而移除从网络下载附加的Quarantine属性：
-
-  ```shell
-  sudo xattr -dr com.apple.quarantine  /Applications/Super-Agent-Party.app
-  ```
 
 #### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
 
