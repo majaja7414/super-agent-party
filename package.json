@@ -86,13 +86,17 @@
       "target": ["dmg"],
       "artifactName": "${productName}-${version}-Mac.${ext}",
       "category": "public.app-category.utilities",
-      "identity": "super-agent-party", 
+      "identity": "super-agent-party",
       "hardenedRuntime": true,
-      "gatekeeperAssess": false, 
-      "entitlements": "entitlements.mac.plist", 
-      "entitlementsInherit": "entitlements.mac.plist", 
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
       "type": "distribution",
-      "asarUnpack": "**/*.node"
+      "asarUnpack": "**/*.node",
+      "extendInfo": {
+        "NSRequiresAquaSystemAppearance": false
+      },
+      "provisioningProfile": null
     },
     "dmg": {
       "icon": "static/source/icon.png",
