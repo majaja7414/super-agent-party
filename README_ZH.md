@@ -28,7 +28,7 @@
 
 ### MacOS桌面版安装（beta测试）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac-UNSIGNED.dmg)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac.dmg)
 
 ### Linux 桌面版安装
 
