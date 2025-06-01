@@ -882,12 +882,55 @@ let vue_methods = {
     initWebSocket() {
       const http_protocol = window.location.protocol;
       const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
-      this.ws = new WebSocket(`${ws_protocol}//${window.location.host}/ws`);
-      
-      this.ws.onopen = () => {
-        console.log('WebSocket connection established');
+      const ws_url = `${ws_protocol}//${window.location.host}/ws`;
+
+      this.ws = new WebSocket(ws_url);
+
+      // 设置心跳间隔和重连间隔（单位：毫秒）
+      const HEARTBEAT_INTERVAL = 10000; // 每10秒发送一次 ping
+      const RECONNECT_INTERVAL = 5000;  // 断开后每5秒尝试重连一次
+
+      let heartbeatTimer = null;
+      let reconnectTimer = null;
+
+      const startHeartbeat = () => {
+        heartbeatTimer = setInterval(() => {
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            try {
+              this.ws.send(JSON.stringify({ type: 'ping' })); // 发送心跳包
+            } catch (e) {
+              console.error('Failed to send ping:', e);
+            }
+          }
+        }, HEARTBEAT_INTERVAL);
       };
 
+      const stopHeartbeat = () => {
+        if (heartbeatTimer) {
+          clearInterval(heartbeatTimer);
+          heartbeatTimer = null;
+        }
+      };
+
+      const scheduleReconnect = () => {
+        stopHeartbeat();
+        if (!reconnectTimer) {
+          reconnectTimer = setTimeout(() => {
+            console.log('Reconnecting WebSocket...');
+            this.initWebSocket(); // 重新初始化
+            reconnectTimer = null;
+          }, RECONNECT_INTERVAL);
+        }
+      };
+
+      // WebSocket 打开事件
+      this.ws.onopen = () => {
+        console.log('WebSocket connection established');
+        stopHeartbeat(); // 防止重复心跳
+        startHeartbeat();
+      };
+
+      // 接收消息
       this.ws.onmessage = (event) => {
         let data;
         try {
@@ -897,8 +940,12 @@ let vue_methods = {
           return;
         }
 
-        if (data.type === 'settings') {
-          this.isdocker = data.data.isdocker;
+      if (data.type === 'pong') {
+        // 可以在这里处理 pong 回复，比如记录状态
+        console.log('Received pong from server.');
+      } 
+      else if (data.type === 'settings') {
+          this.isdocker = data.data.isdocker || false;
           this.settings = {
             model: data.data.model || '',
             base_url: data.data.base_url || '',
@@ -910,28 +957,28 @@ let vue_methods = {
             top_p: data.data.top_p || 1,
             extra_params: data.data.extra_params || [],
           };
-          this.conversations = data.data.conversations || [];
-          this.conversationId = data.data.conversationId || null;
-          this.agents = data.data.agents || {};
-          this.mainAgent = data.data.mainAgent || 'super-model';
-          this.toolsSettings = data.data.tools || {};
-          this.llmTools = data.data.llmTools || [];
-          this.reasonerSettings = data.data.reasoner || {};
-          this.visionSettings = data.data.vision || {};
-          this.webSearchSettings = data.data.webSearch || {};
-          this.codeSettings = data.data.codeSettings || {};
-          this.KBSettings = data.data.KBSettings || {};
-          this.textFiles = data.data.textFiles || [];
-          this.imageFiles = data.data.imageFiles || [];
-          this.videoFiles = data.data.videoFiles || [];
-          this.knowledgeBases = data.data.knowledgeBases || [];
-          this.modelProviders = data.data.modelProviders || [];
-          this.systemSettings = data.data.systemSettings || {};
+          this.conversations = data.data.conversations || this.conversations;
+          this.conversationId = data.data.conversationId || this.conversationId;
+          this.agents = data.data.agents || this.agents;
+          this.mainAgent = data.data.mainAgent || this.mainAgent;
+          this.toolsSettings = data.data.tools || this.toolsSettings;
+          this.llmTools = data.data.llmTools || this.llmTools;
+          this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
+          this.visionSettings = data.data.vision || this.visionSettings;
+          this.webSearchSettings = data.data.webSearch || this.webSearchSettings;
+          this.codeSettings = data.data.codeSettings || this.codeSettings;
+          this.KBSettings = data.data.KBSettings || this.KBSettings;
+          this.textFiles = data.data.textFiles || this.textFiles;
+          this.imageFiles = data.data.imageFiles || this.imageFiles;
+          this.videoFiles = data.data.videoFiles || this.videoFiles;
+          this.knowledgeBases = data.data.knowledgeBases || this.knowledgeBases;
+          this.modelProviders = data.data.modelProviders || this.modelProviders;
+          this.systemSettings = data.data.systemSettings || this.systemSettings;
           this.currentLanguage = this.systemSettings.language || 'zh-CN';
-          this.mcpServers = data.data.mcpServers || {};
-          this.a2aServers = data.data.a2aServers || {};
-          this.memories = data.data.memories || [];
-          this.memorySettings = data.data.memorySettings || {};
+          this.mcpServers = data.data.mcpServers || this.mcpServers;
+          this.a2aServers = data.data.a2aServers || this.a2aServers;
+          this.memories = data.data.memories || this.memories;
+          this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.loadConversation(this.conversationId);
         } 
         else if (data.type === 'settings_saved') {
@@ -941,8 +988,17 @@ let vue_methods = {
         }
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
+      // WebSocket 关闭事件
+      this.ws.onclose = (event) => {
+        console.log('WebSocket connection closed:', event.reason);
+        stopHeartbeat();
+        scheduleReconnect();
+      };
+
+      // WebSocket 错误事件
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        this.ws.close(); // 主动关闭连接，触发 onclose 事件
       };
     },
 
