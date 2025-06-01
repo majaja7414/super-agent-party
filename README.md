@@ -30,6 +30,12 @@
 
   👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.6/Super-Agent-Party-0.1.6-Mac.dmg)
 
+⭐ Note! After downloading, drag the app file from the dmg file to the `/Applications` directory. Then open the Terminal and execute the following command, entering the root password when prompted, to remove the Quarantine attribute added due to being downloaded from the internet:
+
+  ```shell
+  sudo xattr -dr com.apple.quarantine /Applications/Super-Agent-Party.app
+  ```
+
 ### Linux Desktop Installation
 
 We provide two mainstream Linux installation package formats for your convenience in different scenarios.
