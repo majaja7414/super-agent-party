@@ -353,14 +353,14 @@ const translations = {
       'sandboxURLPlaceholder': '请输入Sandbox Fusion URL',
       'addCustomHttpTool': '添加自定义HTTP工具',
       'editCustomHttpTool': '编辑自定义HTTP工具',
-      'toolName': '工具名称',
-      'toolNamePlaceholder': '请输入工具名称',
-      'description': '描述',
-      'descriptionPlaceholder': '请输入工具描述',
+      'HTTPNamePlaceholder': '请输入工具名称，只能包含英文字符',
       'url': 'URL',
       'urlPlaceholder': '请输入工具的URL',
       'headers': '请求头',
-      'headersPlaceholder': '请输入请求头，使用JSON格式',
+      'headersPlaceholder': `{
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY_HERE'
+}`,
       'body': '请求体',
       'bodyPlaceholder': `请输入请求体，使用JSON Schema格式。例如：
 {
@@ -738,14 +738,14 @@ const translations = {
       'sandboxURLPlaceholder': 'Please enter Sandbox Fusion URL',
       'addCustomHttpTool': 'Add Custom HTTP Tool',
       'editCustomHttpTool': 'Edit Custom HTTP Tool',
-      'toolName': 'Tool Name',
-      'toolNamePlaceholder': 'Enter tool name',
-      'description': 'Description',
-      'descriptionPlaceholder': 'Enter tool description',
+      'HTTPNamePlaceholder': 'Enter tool name. Can only contain English characters',
       'url': 'URL',
       'urlPlaceholder': 'Enter the tool URL',
       'headers': 'Headers',
-      'headersPlaceholder': 'Enter headers in JSON format',
+      'headersPlaceholder': `{
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY_HERE'
+}`,
       'body': 'Body',
       'bodyPlaceholder': `Enter the body in JSON Schema format. For example:
 {

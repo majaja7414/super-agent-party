@@ -2615,7 +2615,7 @@ let vue_methods = {
         // 更新现有工具
         const index = this.customHttpTools.findIndex(tool => tool.id === toolData.id);
         if (index !== -1) {
-          this.$set(this.customHttpTools, index, toolData);
+          this.customHttpTools.splice(index, 1, toolData);
         }
       } else {
         // 添加新工具
@@ -2627,11 +2627,26 @@ let vue_methods = {
       this.autoSaveSettings();
       
       // 重置表单
-      this.newCustomHttpTool = { name: '', description: '', url: '', headers: '', body: '' };
+      this.newCustomHttpTool = {
+        enabled: true,
+        name: '',
+        description: '',
+        url: '',
+        method: 'GET',
+        headers: '',
+        body: ''
+      };
       this.showCustomHttpToolForm = false;
       this.editingCustomHttpTool = false;
     },
-
+    editCustomHttpTool(id) {
+      const tool = this.customHttpTools.find(tool => tool.id === id);
+      if (tool) {
+        this.newCustomHttpTool = { ...tool };
+        this.showCustomHttpToolForm = true;
+        this.editingCustomHttpTool = true;
+      }
+    },
     removeCustomHttpTool(id) {
       this.customHttpTools = this.customHttpTools.filter(tool => tool.id !== id);
       this.autoSaveSettings();

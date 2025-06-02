@@ -195,7 +195,7 @@ async def get_image_content(image_url: str) -> str:
                 f.write(str(response.choices[0].message.content))
     return content
 
-async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
+async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str:
     global mcp_client_list,_TOOL_HOOKS
     from py.web_search import (
         DDGsearch_async, 
@@ -211,6 +211,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.pollinations import pollinations_image
     from py.load_files import get_file_content
     from py.code_interpreter import e2b_code_async,local_run_code_async
+    from py.custom_http import fetch_custom_http
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -229,6 +230,19 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
+    if "custom_http_" in tool_name:
+        tool_name = tool_name.replace("custom_http_", "")
+        print(tool_name)
+        settings_custom_http = settings['custom_http']
+        for custom in settings_custom_http:
+            if custom['name'] == tool_name:
+                tool_custom_http = custom
+                break
+        method = tool_custom_http['method']
+        url = tool_custom_http['url']
+        headers = tool_custom_http['headers']
+        result = await fetch_custom_http(method, url, headers, tool_params)
+        return str(result)
     if tool_name not in _TOOL_HOOKS:
         for server_name, mcp_client in mcp_client_list.items():
             if tool_name in mcp_client.tools_list:
@@ -449,6 +463,21 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 tools.append(e2b_code_tool)
             elif settings["codeSettings"]["engine"] == "sandbox":
                 tools.append(local_run_code_tool)
+        if settings["custom_http"]:
+            for custom_http in settings["custom_http"]:
+                if custom_http["enabled"]:
+                    if custom_http['body'] == "":
+                        custom_http['body'] = "{}"
+                    custom_http_tool = {
+                        "type": "function",
+                        "function": {
+                            "name": f"custom_http_{custom_http['name']}",
+                            "description": f"{custom_http['description']}",
+                            "parameters": json.loads(custom_http['body']),
+                        },
+                    }
+                    tools.append(custom_http_tool)
+        print(tools)
         source_prompt = ""
         if request.fileLinks:
             print("fileLinks",request.fileLinks)
@@ -1042,7 +1071,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     print(modified_data)
                     # 使用json.loads来解析修改后的字符串为列表
                     data_list = json.loads(modified_data)
-                    results = await dispatch_tool(response_content.name, data_list[0])
+                    results = await dispatch_tool(response_content.name, data_list[0],settings)
                     if results is None:
                         chunk = {
                             "id": "extra_tools",
@@ -1564,6 +1593,20 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             tools.append(e2b_code_tool)
         elif settings["codeSettings"]["engine"] == "sandbox":
             tools.append(local_run_code_tool)
+    if settings["custom_http"]:
+        for custom_http in settings["custom_http"]:
+            if custom_http["enabled"]:
+                if custom_http['body'] == "":
+                    custom_http['body'] = "{}"
+                custom_http_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": f"custom_http_{custom_http['name']}",
+                        "description": f"{custom_http['description']}",
+                        "parameters": json.loads(custom_http['body']),
+                    },
+                }
+                tools.append(custom_http_tool)
     search_not_done = False
     search_task = ""
     print(tools)
@@ -1832,7 +1875,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 # 存储处理结果
                 results = []
                 for data in data_list:
-                    result = await dispatch_tool(response_content.name, data) # 将结果添加到results列表中
+                    result = await dispatch_tool(response_content.name, data,settings) # 将结果添加到results列表中
                     if result is not None:
                         # 将结果添加到results列表中
                         results.append(json.dumps(result))
