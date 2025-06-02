@@ -1495,10 +1495,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             }
         )
     except Exception as e:
-        print(e)
+        # 如果e.status_code存在，则使用它作为HTTP状态码，否则使用500
         return JSONResponse(
-            status_code=e.status_code,
-            content={"error": {"message": e.message, "type": "api_error", "code": e.code}}
+            status_code=getattr(e, "status_code", 500),
+            content={"error": str(e)},
         )
 
 async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
