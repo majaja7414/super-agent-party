@@ -350,6 +350,40 @@ const translations = {
       'memoryDeleteFailed': '记忆删除失败',
       'AgentDeleted': '智能体已删除',
       'AgentDeleteFailed': '智能体删除失败',
+      'sandboxURLPlaceholder': '请输入Sandbox Fusion URL',
+      'addCustomHttpTool': '添加自定义HTTP工具',
+      'editCustomHttpTool': '编辑自定义HTTP工具',
+      'HTTPNamePlaceholder': '请输入工具名称，只能包含英文字符',
+      'url': 'URL',
+      'urlPlaceholder': '请输入工具的URL',
+      'headers': '请求头',
+      'headersPlaceholder': `{
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY_HERE'
+}`,
+      'body': '请求体',
+      'bodyPlaceholder': `请输入请求体，使用JSON Schema格式。例如：
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "The name of the person",
+            "default": "John Doe",
+            "enum": ["John Doe", "Jane Doe"]
+        },
+        "age": {
+            "type": "integer",
+            "description": "The age of the person",
+            "minimum": 0,
+            "maximum": 120,
+            "default": 30,
+        }
+    },
+    "required": ["name", "age"]
+}`,
+      'bodyJsonSchemaFormat': '请求体应采用JSON Schema格式',
+      'customHttpTool': 'HTTP工具',
     },
     'en-US': {
       'chat': 'Chat',
@@ -701,5 +735,39 @@ const translations = {
       'memoryDeleteFailed': 'Memory delete failed',
       'AgentDeleted': 'Agent deleted',
       'AgentDeleteFailed': 'Agent delete failed',
+      'sandboxURLPlaceholder': 'Please enter Sandbox Fusion URL',
+      'addCustomHttpTool': 'Add Custom HTTP Tool',
+      'editCustomHttpTool': 'Edit Custom HTTP Tool',
+      'HTTPNamePlaceholder': 'Enter tool name. Can only contain English characters',
+      'url': 'URL',
+      'urlPlaceholder': 'Enter the tool URL',
+      'headers': 'Headers',
+      'headersPlaceholder': `{
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_API_KEY_HERE'
+}`,
+      'body': 'Body',
+      'bodyPlaceholder': `Enter the body in JSON Schema format. For example:
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "description": "The name of the person",
+            "default": "John Doe",
+            "enum": ["John Doe", "Jane Doe"]
+        },
+        "age": {
+            "type": "integer",
+            "description": "The age of the person",
+            "minimum": 0,
+            "maximum": 120,
+            "default": 30,
+        }
+    },
+    "required": ["name", "age"]
+}`,
+      'bodyJsonSchemaFormat': 'The body should be in JSON Schema format',
+      'customHttpTool': 'HTTP Tool',
     }
   };

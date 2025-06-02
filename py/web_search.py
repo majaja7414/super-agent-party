@@ -183,7 +183,7 @@ jina_crawler_tool = {
             "properties": {
                 "original_url": {
                     "type": "string",
-                    "description": "需要爬取的原始URL地址",
+                    "description": "需要爬取的原始URL地址。",
                 },
             },
             "required": ["original_url"],
@@ -248,7 +248,7 @@ Crawl4Ai_tool = {
             "properties": {
                 "original_url": {
                     "type": "string",
-                    "description": "需要爬取的目标URL地址，必须包含协议（如https://）",
+                    "description": "需要爬取的目标URL地址。",
                 }
             },
             "required": ["original_url"],

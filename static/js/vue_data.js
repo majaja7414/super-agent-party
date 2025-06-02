@@ -213,6 +213,7 @@ let vue_data = {
       enabled: false,
       engine: 'e2b',
       e2b_api_key: '',
+      sandbox_url: 'http://127.0.0.1:8080',
     },
     knowledgeBases: [],
     KBSettings: {
@@ -365,8 +366,25 @@ let vue_data = {
         id: 'llmTool',
         title: 'llmTools',
         icon: 'fa-solid fa-network-wired'
+      },
+      {
+        id: 'customHttpTool',
+        title: 'customHttpTool',
+        icon: 'fa-solid fa-wifi'
       }
     ],
+    customHttpTools: [],  // 用于存储自定义HTTP工具的数组
+    showCustomHttpToolForm: false,
+    newCustomHttpTool: {
+      enabled: true,
+      name: '',
+      description: '',
+      url: '',
+      method: 'GET',
+      headers: '',
+      body: ''
+    },
+    editingCustomHttpTool: false,
     vendorValues: [
       'custom', 'OpenAI', 'Ollama','Vllm','LMstudio', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax', 'Gemini','Anthropic', 
