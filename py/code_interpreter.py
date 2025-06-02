@@ -52,7 +52,9 @@ e2b_code_tool = {
                 },
                 "language": {
                     "type": "string",
-                    "description": "代码语言，目前仅支持[python, js, ts, r, java, bash]，默认为python",
+                    "description": "代码语言。",
+                    "enum": ["python", "js", "ts", "r", "java", "bash"],
+                    "default": "python"
                 }
             },
             "required": ["code"],
@@ -61,27 +63,30 @@ e2b_code_tool = {
 }
 
 local_run_code_tool = {
-    "type": "function",
-    "function": {
-        "name": "local_run_code_async",
-        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案输出到stdout。",
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "需要执行的代码，例如：print('Hello, World!')，不要包含markdown的代码块标记！只有输入可运行的代码字符串。工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
-                },
-                "language": {
-                    "type": "string",
-                    "description": """
-代码语言，目前支持
-[python, cpp, nodejs, go, go_test, java, php, csharp, bash, typescript, sql, rust, cuda, lua, R, perl, D_ut, ruby, scala, julia, pytest, junit, kotlin_script, jest, verilog, python_gpu, lean, swift, racket]
-默认为python
-""",
-                }
-            },
-            "required": ["code"],
+  "type": "function",
+  "function": {
+    "name": "local_run_code_async",
+    "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案输出到stdout。",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "需要执行的代码，例如：print('Hello, World!')，不要包含markdown的代码块标记！只有输入可运行的代码字符串。工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。"
+        },
+        "language": {
+          "type": "string",
+          "description": "代码语言。",
+          "enum": [
+            "python", "cpp", "nodejs", "go", "go_test", "java", "php", "csharp",
+            "bash", "typescript", "sql", "rust", "cuda", "lua", "R", "perl",
+            "D_ut", "ruby", "scala", "julia", "pytest", "junit", "kotlin_script",
+            "jest", "verilog", "python_gpu", "lean", "swift", "racket"
+          ],
+          "default": "python"
         }
+      },
+      "required": ["code"]
     }
+  }
 }

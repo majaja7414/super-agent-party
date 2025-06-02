@@ -19,14 +19,18 @@ pollinations_image_tool = {
                 "width": {
                     "type": "number",
                     "description": "图片宽度",
+                    "default":1024
                 },
                 "height": {
                     "type": "number",
                     "description": "图片高度",
+                    "default": 1024
                 },
                 "model": {
                     "type": "string",
-                    "description": "使用的模型，默认flux，可选flux,turbo",
+                    "description": "使用的模型",
+                    "default": "flux",
+                    "enum": ["flux", "turbo"],
                 }
             },
             "required": ["prompt"],
