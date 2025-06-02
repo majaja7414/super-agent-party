@@ -2804,6 +2804,71 @@
                   </template>
                 </el-dialog>
               </div>
+              <!-- 自定义HTTP工具页面 -->
+              <div v-show="subMenu === 'customHttpTool'" class="page custom-http-tool-container">
+                <!-- 磁贴网格 -->
+                <div class="provider-grid">
+                  <div class="provider-card custom-http-tool-card" v-for="tool in customHttpTools" :key="tool.id">
+                    <div class="card-header">
+                      <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                      <div class="card-actions">
+                        <el-button @click="removeCustomHttpTool(tool.id)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="custom-http-tool-content">
+                      <h3 class="custom-http-tool-name">{{ tool.name }}</h3>
+                      <p class="custom-http-tool-description">{{ tool.description }}</p>
+                    </div>
+                  </div>
+                  <!-- 添加新自定义HTTP工具 -->
+                  <div class="provider-card add-tile" @click="showCustomHttpToolForm = true">
+                    <el-icon :size="40" color="#909399">
+                      <i class="fa-solid fa-plus"></i>
+                    </el-icon>
+                    <div>{{ t('addCustomHttpTool') }}</div>
+                  </div>
+                </div>
+
+                <!-- 添加/编辑自定义HTTP工具对话框 -->
+                <el-dialog v-model="showCustomHttpToolForm" :title="editingCustomHttpTool ? t('editCustomHttpTool') : t('addCustomHttpTool')" width="600px">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('toolName')" required>
+                      <el-input v-model="newCustomHttpTool.name" :placeholder="t('toolNamePlaceholder')"></el-input>
+                    </el-form-item>
+                    <el-form-item :label="t('description')" required>
+                      <el-input v-model="newCustomHttpTool.description" type="textarea" :rows="3" :placeholder="t('descriptionPlaceholder')"></el-input>
+                    </el-form-item>
+                    <el-form-item :label="t('URL')" required>
+                      <el-input v-model="newCustomHttpTool.url" :placeholder="t('urlPlaceholder')"></el-input>
+                    </el-form-item>
+                    <el-form-item :label="t('method')" required>
+                      <el-select v-model="newCustomHttpTool.method" placeholder="Select method">
+                        <el-option label="GET" value="GET"></el-option>
+                        <el-option label="POST" value="POST"></el-option>
+                        <el-option label="PUT" value="PUT"></el-option>
+                        <el-option label="DELETE" value="DELETE"></el-option>
+                      </el-select>
+                    </el-form-item>
+                    <el-form-item :label="t('headers')">
+                      <el-input v-model="newCustomHttpTool.headers" type="textarea" :rows="3" :placeholder="t('headersPlaceholder')"></el-input>
+                    </el-form-item>
+                    <el-form-item :label="t('body')">
+                      <el-input v-model="newCustomHttpTool.body" type="textarea" :rows="20" :placeholder="t('bodyPlaceholder')"></el-input>
+                      <el-alert type="info" :closable="false">
+                        {{ t('bodyJsonSchemaFormat') }}
+                      </el-alert>
+                    </el-form-item>
+                  </el-form>
+                  <template #footer>
+                    <el-button @click="showCustomHttpToolForm = false">{{ t('cancel') }}</el-button>
+                    <el-button type="primary" @click="saveCustomHttpTool" :disabled="!newCustomHttpTool.name || !newCustomHttpTool.url">
+                      {{ editingCustomHttpTool ? t('save') : t('createImmediately') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
             </div>
           </div>
         </div>

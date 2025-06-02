@@ -366,8 +366,24 @@ let vue_data = {
         id: 'llmTool',
         title: 'llmTools',
         icon: 'fa-solid fa-network-wired'
+      },
+      {
+        id: 'customHttpTool',
+        title: 'customHttpTool',
+        icon: 'fa-solid fa-wifi'
       }
     ],
+    customHttpTools: [],  // 用于存储自定义HTTP工具的数组
+    showCustomHttpToolForm: false,
+    newCustomHttpTool: {
+      name: '',
+      description: '',
+      url: '',
+      method: 'GET',
+      headers: '',
+      body: ''
+    },
+    editingCustomHttpTool: false,
     vendorValues: [
       'custom', 'OpenAI', 'Ollama','Vllm','LMstudio', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax', 'Gemini','Anthropic', 

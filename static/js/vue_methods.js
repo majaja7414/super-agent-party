@@ -979,6 +979,7 @@ let vue_methods = {
           this.a2aServers = data.data.a2aServers || this.a2aServers;
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
+          this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
         } 
         else if (data.type === 'settings_saved') {
@@ -1409,6 +1410,7 @@ let vue_methods = {
           isdocker: this.isdocker,
           memories: this.memories,
           memorySettings: this.memorySettings,
+          custom_http: this.customHttpTools,
         };
         const correlationId = uuid.v4();
         // 发送保存请求
@@ -2605,5 +2607,33 @@ let vue_methods = {
     getVendorName(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
       return provider ? `${this.t("model")}:${provider.modelId}` : '';
+    },
+    saveCustomHttpTool() {
+      const toolData = { ...this.newCustomHttpTool };
+      
+      if (this.editingCustomHttpTool) {
+        // 更新现有工具
+        const index = this.customHttpTools.findIndex(tool => tool.id === toolData.id);
+        if (index !== -1) {
+          this.$set(this.customHttpTools, index, toolData);
+        }
+      } else {
+        // 添加新工具
+        toolData.id = uuid.v4();
+        this.customHttpTools.push(toolData);
+      }
+      
+      // 与后端同步数据
+      this.autoSaveSettings();
+      
+      // 重置表单
+      this.newCustomHttpTool = { name: '', description: '', url: '', headers: '', body: '' };
+      this.showCustomHttpToolForm = false;
+      this.editingCustomHttpTool = false;
+    },
+
+    removeCustomHttpTool(id) {
+      this.customHttpTools = this.customHttpTools.filter(tool => tool.id !== id);
+      this.autoSaveSettings();
     }
 }
