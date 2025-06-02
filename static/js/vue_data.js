@@ -213,6 +213,7 @@ let vue_data = {
       enabled: false,
       engine: 'e2b',
       e2b_api_key: '',
+      sandbox_url: 'http://127.0.0.1:8080',
     },
     knowledgeBases: [],
     KBSettings: {

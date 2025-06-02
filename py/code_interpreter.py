@@ -17,11 +17,54 @@ async def e2b_code_async(code: str, language: str = "Python") -> str:
     result = await loop.run_in_executor(executor, run_in_sandbox)
     return str(result)
 
+import asyncio
+from aiohttp import ClientSession
+
+
+async def local_run_code_async(code: str, language: str = "python") -> str:
+    settings = await load_settings()
+    url = settings["codeSettings"]["sandbox_url"].strip("/") + "/run_code"
+    headers = {
+        "Content-Type": "application/json"
+    }
+    data = {
+        "code": code,
+        "language": language
+    }
+
+    async with ClientSession() as session:
+        async with session.post(url, json=data, headers=headers) as response:
+            # 获取响应文本
+            result = await response.text()
+            return result
+
 e2b_code_tool = {
     "type": "function",
     "function": {
         "name": "e2b_code_async",
-        "description": "执行Python代码",
+        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "description": "需要执行的代码，例如：print('Hello, World!')，不要包含markdown的代码块标记！只有输入可运行的代码字符串。",
+                },
+                "language": {
+                    "type": "string",
+                    "description": "代码语言，目前仅支持Python/JavaScript/Java/Bash/R，默认为Python",
+                }
+            },
+            "required": ["code"],
+        },
+    },
+}
+
+local_run_code_tool = {
+    "type": "function",
+    "function": {
+        "name": "local_run_code_async",
+        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -35,6 +78,6 @@ e2b_code_tool = {
                 }
             },
             "required": ["code"],
-        },
-    },
+        }
+    }
 }

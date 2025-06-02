@@ -350,6 +350,7 @@ const translations = {
       'memoryDeleteFailed': '记忆删除失败',
       'AgentDeleted': '智能体已删除',
       'AgentDeleteFailed': '智能体删除失败',
+      'sandboxURLPlaceholder': '请输入Sandbox Fusion URL',
     },
     'en-US': {
       'chat': 'Chat',
@@ -701,5 +702,6 @@ const translations = {
       'memoryDeleteFailed': 'Memory delete failed',
       'AgentDeleted': 'Agent deleted',
       'AgentDeleteFailed': 'Agent delete failed',
+      'sandboxURLPlaceholder': 'Please enter Sandbox Fusion URL',
     }
   };

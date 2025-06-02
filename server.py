@@ -210,7 +210,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
     from py.llm_tool import custom_llm_tool
     from py.pollinations import pollinations_image
     from py.load_files import get_file_content
-    from py.code_interpreter import e2b_code_async
+    from py.code_interpreter import e2b_code_async,local_run_code_async
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -225,6 +225,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict) -> str:
         "get_file_content":get_file_content,
         "get_image_content": get_image_content,
         "e2b_code_async": e2b_code_async,
+        "local_run_code_async": local_run_code_async
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -376,7 +377,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
-    from py.code_interpreter import e2b_code_tool
+    from py.code_interpreter import e2b_code_tool,local_run_code_tool
     m0 = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
@@ -446,6 +447,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         if settings["codeSettings"]['enabled']:
             if settings["codeSettings"]["engine"] == "e2b":
                 tools.append(e2b_code_tool)
+            elif settings["codeSettings"]["engine"] == "sandbox":
+                tools.append(local_run_code_tool)
         source_prompt = ""
         if request.fileLinks:
             print("fileLinks",request.fileLinks)
@@ -1487,7 +1490,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
     from py.pollinations import pollinations_image_tool
-    from py.code_interpreter import e2b_code_tool
+    from py.code_interpreter import e2b_code_tool,local_run_code_tool
     m0 = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
@@ -1559,6 +1562,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     if settings["codeSettings"]['enabled']:
         if settings["codeSettings"]["engine"] == "e2b":
             tools.append(e2b_code_tool)
+        elif settings["codeSettings"]["engine"] == "sandbox":
+            tools.append(local_run_code_tool)
     search_not_done = False
     search_task = ""
     print(tools)
