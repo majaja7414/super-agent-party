@@ -12,7 +12,9 @@
         "call":"调用",
         "tool":"工具中，请稍候...",
         "tool_result":"工具结果",
-        "KB_search":"知识库搜索中，请稍候..."
+        "KB_search":"知识库搜索中，请稍候...",
+        "enter_search_stage":"进入搜索阶段",
+        "need_more_search":"需要更多搜索"
     },
     "en-US":{
         "web_search":"Searching the Internet, please wait...",
@@ -27,6 +29,8 @@
         "call":"Call",
         "tool":"Tool, please wait...",
         "tool_result":"Tool result",
-        "KB_search":"Knowledge base search, please wait..."
+        "KB_search":"Knowledge base search, please wait...",
+        "enter_search_stage":"Enter the search stage",
+        "need_more_search":"Need more search"
     }
 }

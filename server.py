@@ -371,8 +371,31 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages.insert(0, {'role': 'system', 'content': language_message})
     return request
 
+def get_drs_stage(DRS_STAGE):
+    if DRS_STAGE == 1:
+        drs_msg = "当前阶段为明确用户需求阶段，你需要分析用户的需求，并给出明确的需求描述。如果用户的需求描述不明确，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
+    elif DRS_STAGE == 2:
+        drs_msg = "当前阶段为查询搜索阶段，利用你的知识库、互联网搜索、数据库查询工具（如果有，这些工具不一定会提供），查询完成任务所需要的所有信息。"
+    elif DRS_STAGE == 3:
+        drs_msg = "当前阶段为生成结果阶段，根据当前收集到的所有信息，完成任务，生成回答。如果用户要求你生成一个超过2000字的回答，你可以尝试将该任务拆分成多个部分，每次只完成其中一个部分。"
+    else:
+        drs_msg = "当前阶段为生成结果阶段，根据当前收集到的所有信息，完成任务，生成回答。如果用户要求你生成一个超过2000字的回答，你可以尝试将该任务拆分成多个部分，每次只完成其中一个部分。"
+    return drs_msg  
+
+def get_drs_stage_name(DRS_STAGE):
+    if DRS_STAGE == 1:
+        drs_stage_name = "明确用户需求阶段"
+    elif DRS_STAGE == 2:
+        drs_stage_name = "查询搜索阶段"
+    elif DRS_STAGE == 3:
+        drs_stage_name = "生成结果阶段"
+    else:
+        drs_stage_name = "生成结果阶段"
+    return drs_stage_name
+
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
+    DRS_STAGE = 1 # 1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
     images = await images_in_messages(request.messages,fastapi_base_url)
     request.messages = await message_without_images(request.messages)
     from py.load_files import get_files_content,file_tool,image_tool
@@ -535,8 +558,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
-        extra_params['enable_thinking'] = False
-        async def stream_generator(user_prompt):
+        async def stream_generator(user_prompt,DRS_STAGE):
             kb_list = []
             if settings["knowledgeBases"]:
                 for kb in settings["knowledgeBases"]:
@@ -679,6 +701,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 reasoner_messages = copy.deepcopy(request.messages)
                 if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    if drs_msg:
+                        reasoner_messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
                 if tools:
                     reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                 for modelProvider in settings['modelProviders']: 
@@ -775,6 +800,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             content_buffer = []
             if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                 request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
+                drs_msg = get_drs_stage(DRS_STAGE)
+                if drs_msg:
+                    request.messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
             msg = await images_add_in_messages(request.messages, images,settings)
             if tools:
                 response = await client.chat.completions.create(
@@ -892,31 +920,61 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             if tool_calls:
                 pass
             elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                drs_stage_name = get_drs_stage_name(DRS_STAGE)
                 search_prompt = f"""
-初始任务：
+# 当前状态：
+
+## 初始任务：
 {user_prompt}
 
-当前结果：
+## 当前结果：
 {full_content}
 
-请判断初始任务是否被完成或需要用户明确需求。
+## 当前阶段：
+{drs_stage_name}
 
-如果完成，请输出json字符串：
+# 深度研究一共有三个阶段：1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+
+## 如果当前阶段是明确用户需求阶段，请输出json字符串：
+
+### 如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "unfinished_task": ""
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "search",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是查询搜索阶段，请输出json字符串：
+
+### 如果需要继续查询，请输出json字符串：
+{{
+    "status": "need_more_search",
+    "unfinished_task": "这里填入继续查询的信息"
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "answer",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是生成结果阶段，请输出json字符串：
+
+如果初始任务已完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
 }}
 
-如果未完成，请输出json字符串：
+如果初始任务未完成，请输出json字符串：
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
-}}
-
-如果需要用户明确需求，请输出json字符串：
-{{
-    "status": "need_more_info",
-    "unfinished_task": ""
 }}
 """
                 response = await client.chat.completions.create(
@@ -988,6 +1046,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         }
                     )
                 elif response_content["status"] == "need_more_info":
+                    DRS_STAGE = 2
                     search_chunk = {
                         "choices": [{
                             "delta": {
@@ -997,6 +1056,79 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(search_chunk)}\n\n"
                     search_not_done = False
+                elif response_content["status"] == "search":
+                    DRS_STAGE = 2
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = True
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": full_content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": drs_msg,
+                        }
+                    )
+                elif response_content["status"] == "need_more_search":
+                    DRS_STAGE = 2
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = True
+                    search_task = response_content["unfinished_task"]
+                    task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": full_content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": task_prompt,
+                        }
+                    )
+                elif response_content["status"] == "answer":
+                    DRS_STAGE = 3
+                    search_chunk = {
+                        "choices": [{
+                            "delta": {
+                                "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                            }
+                        }]
+                    }
+                    yield f"data: {json.dumps(search_chunk)}\n\n"
+                    search_not_done = True
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": full_content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": drs_msg,
+                        }
+                    )
             reasoner_messages = copy.deepcopy(request.messages)
             while tool_calls or search_not_done:
                 full_content = ""
@@ -1355,31 +1487,61 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 if tool_calls:
                     pass
                 elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                    drs_stage_name = get_drs_stage_name(DRS_STAGE)
                     search_prompt = f"""
-初始任务：
+# 当前状态：
+
+## 初始任务：
 {user_prompt}
 
-当前结果：
+## 当前结果：
 {full_content}
 
-请判断初始任务是否被完成或需要用户明确需求。
+## 当前阶段：
+{drs_stage_name}
 
-如果完成，请输出json字符串：
+# 深度研究一共有三个阶段：1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+
+## 如果当前阶段是明确用户需求阶段，请输出json字符串：
+
+### 如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "unfinished_task": ""
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "search",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是查询搜索阶段，请输出json字符串：
+
+### 如果需要继续查询，请输出json字符串：
+{{
+    "status": "need_more_search",
+    "unfinished_task": "这里填入继续查询的信息"
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "answer",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是生成结果阶段，请输出json字符串：
+
+如果初始任务已完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
 }}
 
-如果未完成，请输出json字符串：
+如果初始任务未完成，请输出json字符串：
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
-}}
-
-如果需要用户明确需求，请输出json字符串：
-{{
-    "status": "need_more_info",
-    "unfinished_task": ""
 }}
 """
                     response = await client.chat.completions.create(
@@ -1451,15 +1613,89 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                         )
                     elif response_content["status"] == "need_more_info":
+                        DRS_STAGE = 2
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n",
+                                    "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                                 }
                             }]
                         }
                         yield f"data: {json.dumps(search_chunk)}\n\n"
                         search_not_done = False
+                    elif response_content["status"] == "search":
+                        DRS_STAGE = 2
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = True
+                        drs_msg = get_drs_stage(DRS_STAGE)
+                        request.messages.append(
+                            {
+                                "role": "assistant",
+                                "content": full_content,
+                            }
+                        )
+                        request.messages.append(
+                            {
+                                "role": "user",
+                                "content": drs_msg,
+                            }
+                        )
+                    elif response_content["status"] == "need_more_search":
+                        DRS_STAGE = 2
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = True
+                        search_task = response_content["unfinished_task"]
+                        task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
+                        request.messages.append(
+                            {
+                                "role": "assistant",
+                                "content": full_content,
+                            }
+                        )
+                        request.messages.append(
+                            {
+                                "role": "user",
+                                "content": task_prompt,
+                            }
+                        )
+                    elif response_content["status"] == "answer":
+                        DRS_STAGE = 3
+                        search_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(search_chunk)}\n\n"
+                        search_not_done = True
+                        drs_msg = get_drs_stage(DRS_STAGE)
+                        request.messages.append(
+                            {
+                                "role": "assistant",
+                                "content": full_content,
+                            }
+                        )
+                        request.messages.append(
+                            {
+                                "role": "user",
+                                "content": drs_msg,
+                            }
+                        )
             yield "data: [DONE]\n\n"
             if m0:
                 messages=[
@@ -1486,7 +1722,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             return
         
         return StreamingResponse(
-            stream_generator(user_prompt),
+            stream_generator(user_prompt, DRS_STAGE),
             media_type="text/event-stream",
             headers={
                 "Content-Type": "text/event-stream",
@@ -1503,6 +1739,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
 async def generate_complete_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
     global mcp_client_list
+    DRS_STAGE = 1 # 1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
     from py.load_files import get_files_content,file_tool,image_tool
     from py.web_search import (
         DDGsearch_async, 
@@ -1622,7 +1859,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             extra_params = {item['name']: item['value'] for item in extra_params}
         else:
             extra_params = {}
-        extra_params['enable_thinking'] = False
         if request.fileLinks:
             # 异步获取文件内容
             files_content = await get_files_content(request.fileLinks)
@@ -1730,6 +1966,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         if settings['reasoner']['enabled'] or enable_thinking:
             reasoner_messages = copy.deepcopy(request.messages)
             if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                drs_msg = get_drs_stage(DRS_STAGE)
+                if drs_msg:
+                    reasoner_messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
                 reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
             if tools:
                 reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
@@ -1766,6 +2005,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages[-1]['content'] = request.messages[-1]['content'] + "\n\n可参考的推理过程：" + reasoner_response.model_dump()['choices'][0]['message']['reasoning_content']
         if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
             request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
+            drs_msg = get_drs_stage(DRS_STAGE)
+            if drs_msg:
+                request.messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
         msg = await images_add_in_messages(request.messages, images,settings)
         if tools:
             response = await client.chat.completions.create(
@@ -1795,31 +2037,61 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         if response.choices[0].message.tool_calls:
             pass
         elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+            drs_stage_name = get_drs_stage_name(DRS_STAGE)
             search_prompt = f"""
-初始任务：
+# 当前状态：
+
+## 初始任务：
 {user_prompt}
 
-当前结果：
+## 当前结果：
 {response.choices[0].message.content}
 
-请判断初始任务是否被完成或需要用户明确需求。
+## 当前阶段：
+{drs_stage_name}
 
-如果完成，请输出json字符串：
+# 深度研究一共有三个阶段：1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+
+## 如果当前阶段是明确用户需求阶段，请输出json字符串：
+
+### 如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "unfinished_task": ""
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "search",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是查询搜索阶段，请输出json字符串：
+
+### 如果需要继续查询，请输出json字符串：
+{{
+    "status": "need_more_search",
+    "unfinished_task": "这里填入继续查询的信息"
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "answer",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是生成结果阶段，请输出json字符串：
+
+如果初始任务已完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
 }}
 
-如果未完成，请输出json字符串：
+如果初始任务未完成，请输出json字符串：
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
-}}
-
-如果需要用户明确需求，请输出json字符串：
-{{
-    "status": "need_more_info",
-    "unfinished_task": ""
 }}
 """
             research_response = await client.chat.completions.create(
@@ -1862,7 +2134,57 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     }
                 )
             elif response_content["status"] == "need_more_info":
+                DRS_STAGE = 2
                 search_not_done = False
+            elif response_content["status"] == "search":
+                DRS_STAGE = 2
+                search_not_done = True
+                drs_msg = get_drs_stage(DRS_STAGE)
+                request.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": research_response.choices[0].message.content,
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "user",
+                        "content": drs_msg,
+                    }
+                )
+            elif response_content["status"] == "need_more_search":
+                DRS_STAGE = 2
+                search_not_done = True
+                search_task = response_content["unfinished_task"]
+                task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
+                request.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": research_response.choices[0].message.content,
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "user",
+                        "content": task_prompt,
+                    }
+                )
+            elif response_content["status"] == "answer":
+                DRS_STAGE = 3
+                search_not_done = True
+                drs_msg = get_drs_stage(DRS_STAGE)
+                request.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": research_response.choices[0].message.content,
+                    }
+                )
+                request.messages.append(
+                    {
+                        "role": "user",
+                        "content": drs_msg,
+                    }
+                )
         reasoner_messages = copy.deepcopy(request.messages)
         while response.choices[0].message.tool_calls or search_not_done:
             if response.choices[0].message.tool_calls:
@@ -1996,31 +2318,61 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             if response.choices[0].message.tool_calls:
                 pass
             elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                drs_stage_name = get_drs_stage_name(DRS_STAGE)
                 search_prompt = f"""
-初始任务：
+# 当前状态：
+
+## 初始任务：
 {user_prompt}
 
-当前结果：
+## 当前结果：
 {response.choices[0].message.content}
 
-请判断初始任务是否被完成或需要用户明确需求。
+## 当前阶段：
+{drs_stage_name}
 
-如果完成，请输出json字符串：
+# 深度研究一共有三个阶段：1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+
+## 如果当前阶段是明确用户需求阶段，请输出json字符串：
+
+### 如果需要用户明确需求，请输出json字符串：
+{{
+    "status": "need_more_info",
+    "unfinished_task": ""
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "search",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是查询搜索阶段，请输出json字符串：
+
+### 如果需要继续查询，请输出json字符串：
+{{
+    "status": "need_more_search",
+    "unfinished_task": "这里填入继续查询的信息"
+}}
+
+### 如果不需要进一步明确需求，进入并进入查询搜索阶段，请输出json字符串：
+{{
+    "status": "answer",
+    "unfinished_task": ""
+}}
+
+## 如果当前阶段是生成结果阶段，请输出json字符串：
+
+如果初始任务已完成，请输出json字符串：
 {{
     "status": "done",
     "unfinished_task": ""
 }}
 
-如果未完成，请输出json字符串：
+如果初始任务未完成，请输出json字符串：
 {{
     "status": "not_done",
     "unfinished_task": "这里填入未完成的任务"
-}}
-
-如果需要用户明确需求，请输出json字符串：
-{{
-    "status": "need_more_info",
-    "unfinished_task": ""
 }}
 """
                 research_response = await client.chat.completions.create(
@@ -2062,7 +2414,57 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                         }
                     )
                 elif response_content["status"] == "need_more_info":
+                    DRS_STAGE = 2
                     search_not_done = False
+                elif response_content["status"] == "search":
+                    DRS_STAGE = 2
+                    search_not_done = True
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": research_response.choices[0].message.content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": drs_msg,
+                        }
+                    )
+                elif response_content["status"] == "need_more_search":
+                    DRS_STAGE = 2
+                    search_not_done = True
+                    search_task = response_content["unfinished_task"]
+                    task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": research_response.choices[0].message.content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": task_prompt,
+                        }
+                    )
+                elif response_content["status"] == "answer":
+                    DRS_STAGE = 3
+                    search_not_done = True
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    request.messages.append(
+                        {
+                            "role": "assistant",
+                            "content": research_response.choices[0].message.content,
+                        }
+                    )
+                    request.messages.append(
+                        {
+                            "role": "user",
+                            "content": drs_msg,
+                        }
+                    )
        # 处理响应内容
         response_dict = response.model_dump()
         content = response_dict["choices"][0]['message']['content']
