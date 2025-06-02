@@ -52,7 +52,7 @@ e2b_code_tool = {
                 },
                 "language": {
                     "type": "string",
-                    "description": "代码语言，目前仅支持Python/JavaScript/Java/Bash/R，默认为Python",
+                    "description": "代码语言，目前仅支持[python, js, ts, r, java, bash]，默认为python",
                 }
             },
             "required": ["code"],
@@ -74,7 +74,11 @@ local_run_code_tool = {
                 },
                 "language": {
                     "type": "string",
-                    "description": "代码语言，目前仅支持Python/JavaScript/Java/Bash/R，默认为Python",
+                    "description": """
+代码语言，目前支持
+[python, cpp, nodejs, go, go_test, java, php, csharp, bash, typescript, sql, rust, cuda, lua, R, perl, D_ut, ruby, scala, julia, pytest, junit, kotlin_script, jest, verilog, python_gpu, lean, swift, racket]
+默认为python
+""",
                 }
             },
             "required": ["code"],
