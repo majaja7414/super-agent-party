@@ -2563,7 +2563,9 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_json({"type": "settings", "data": current_settings})
         while True:
             data = await websocket.receive_json()
-            if data.get("type") == "save_settings":
+            if data.get("type") == "ping":
+                await websocket.send_json({"type": "pong"})
+            elif data.get("type") == "save_settings":
                 await save_settings(data.get("data", {}))
                 # 发送确认消息（携带相同 correlationId）
                 await websocket.send_json({
