@@ -42,7 +42,7 @@ e2b_code_tool = {
     "type": "function",
     "function": {
         "name": "e2b_code_async",
-        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
+        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案输出到stdout。",
         "parameters": {
             "type": "object",
             "properties": {
@@ -64,7 +64,7 @@ local_run_code_tool = {
     "type": "function",
     "function": {
         "name": "local_run_code_async",
-        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案放在print()中，不要放在其他地方。",
+        "description": "执行代码，工具只会返回stdout和stderr。请将你要查看的答案输出到stdout。",
         "parameters": {
             "type": "object",
             "properties": {
