@@ -316,13 +316,19 @@ let vue_data = {
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
       { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'docker', title: 'docker', icon: 'fa-brands fa-docker'},
-      { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
+      { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' },
+      { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
     ],
     storageTiles: [
       { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
       { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
+    qqBotConfig: {
+        appid: '',
+        secret: ''
+    },
+    isQQBotRunning: false, // QQ机器人状态
     activeMemoryTab: 'add',
     memories: [],
     newMemory: { 

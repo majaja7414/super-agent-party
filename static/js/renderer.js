@@ -105,6 +105,10 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    // 计算属性，判断配置是否有效
+    isQQBotConfigValid() {
+        return this.qqBotConfig.appid && this.qqBotConfig.secret;
+    },
     updateButtonText() {
       if (this.updateDownloaded) return this.t('installNow');
       if (this.downloadProgress > 0) return this.t('downloading');

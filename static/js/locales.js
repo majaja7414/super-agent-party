@@ -384,6 +384,13 @@ const translations = {
 }`,
       'bodyJsonSchemaFormat': '请求体应采用JSON Schema格式',
       'customHttpTool': 'HTTP工具',
+      'qqBot': 'QQ机器人',
+      "qq_bot_config": "QQ机器人配置",
+      "enter_qq_bot_app_id": "请输入QQ机器人App ID",
+      "enter_qq_bot_secret": "请输入QQ机器人Secret",
+      "start_bot": "启动机器人",
+      "stop_bot": "停止机器人",
+      "reload_config": "重载配置",
     },
     'en-US': {
       'chat': 'Chat',
@@ -769,5 +776,12 @@ const translations = {
 }`,
       'bodyJsonSchemaFormat': 'The body should be in JSON Schema format',
       'customHttpTool': 'HTTP Tool',
+      'qqBot': 'QQ Bot',
+      "qq_bot_config": "QQ Bot Configuration",
+      "enter_qq_bot_app_id": "Enter QQ Bot App ID",
+      "enter_qq_bot_secret": "Enter QQ Bot App Secret",
+      "start_bot": "Start Bot",
+      "stop_bot": "Stop Bot",
+      "reload_config": "Reload Config",
     }
   };

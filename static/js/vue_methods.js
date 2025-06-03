@@ -2650,5 +2650,64 @@ let vue_methods = {
     removeCustomHttpTool(id) {
       this.customHttpTools = this.customHttpTools.filter(tool => tool.id !== id);
       this.autoSaveSettings();
-    }
+    },
+    // 启动QQ机器人
+    async startQQBot() {
+        try {
+            const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.qqBotConfig)
+            });
+
+            if (response.ok) {
+                this.isQQBotRunning = true;
+                showNotification('QQ机器人已启动', 'success');
+            } else {
+                throw new Error('启动失败');
+            }
+        } catch (error) {
+            console.error('启动QQ机器人时出错:', error);
+            showNotification('启动QQ机器人失败', 'error');
+        }
+    },
+
+    // 停止QQ机器人
+    async stopQQBot() {
+        try {
+            const response = await fetch(`http://${HOST}:${PORT}/stop_qq_bot`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                this.isQQBotRunning = false;
+                showNotification('QQ机器人已停止', 'success');
+            } else {
+                throw new Error('停止失败');
+            }
+        } catch (error) {
+            console.error('停止QQ机器人时出错:', error);
+            showNotification('停止QQ机器人失败', 'error');
+        }
+    },
+
+    // 重载QQ机器人配置
+    async reloadQQBotConfig() {
+        try {
+            const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (response.ok) {
+                showNotification('QQ机器人配置已重载', 'success');
+            } else {
+                throw new Error('重载失败');
+            }
+        } catch (error) {
+            console.error('重载QQ机器人配置时出错:', error);
+            showNotification('重载QQ机器人配置失败', 'error');
+        }
+    },
 }
