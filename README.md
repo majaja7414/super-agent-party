@@ -14,7 +14,7 @@
 ## Why Choose Us?
 - ✅ Efficient development: Supports streaming output, does not affect the original API's response speed, and no code changes are required
 - ✅ Quick access: Avoids repeated access to multiple service providers for a single function, pre-configured with mainstream LLM manufacturer/intelligent body protocol adapters, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware instantly
-- ✅ High customization: Supports custom knowledge base, real-time networking, MCP, A2A, deep thinking control, in-depth research, custom tools, and other advanced intelligent body functions, creating a pluggable LLM enhancement platform. Customized intelligent bodies can be saved as snapshots for convenient use next time. Snapshotted intelligent bodies can be called directly using the OpenAI API.
+- ✅ High customization: Supports custom knowledge base, real-time networking, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, custom tools, and other advanced intelligent body functions, creating a pluggable LLM enhancement platform. Customized intelligent bodies can be saved as snapshots for convenient use next time. Snapshotted intelligent bodies can be called directly using the OpenAI API.
 - ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
 
@@ -145,15 +145,26 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 8. Visual caching, which allows you to configure a visual model separately for recognizing image information. The recognition results will be cached to save tokens. Configuring a visual model can enable some models without visual capabilities (for example, most inference models, etc.) to acquire visual capabilities.
 9. Storage space management function, which allows you to view the files and pictures uploaded in chat in the storage space, and they are all cached locally, enhancing the software's function of image and file storage.
 10. Added memory module, which can be viewed on the tool interface.
-- To add new memories, you need to add a word embedding model, and the agent will update the memory vector database in real time. Every time you answer, it will automatically search for relevant memories.
-The memory module can be enabled and disabled in the memory configuration, and the number of results can be adjusted to allow the agent to see more or less relevant memories.
-11. Implemented widgets: current time, retrieving content from file/image URLs, pseudo reasoning, Pollinations image generation, enhanced rendering of LaTeX formulas, and language tone.
+  - To add new memories, you need to add a word embedding model, and the agent will update the memory vector database in real time. Every time you answer, it will automatically search for relevant memories.
+  - The memory module can be enabled and disabled in the memory configuration, and the number of results can be adjusted to allow the agent to see more or less relevant memories.
+11. Added a code execution tool, supporting both cloud-based and local solutions:
+  - Cloud-based solution: Invoke the code sandbox from [e2b](https://e2b.dev/), an API key needs to be obtained.
+  - Local solution: Use the code sandbox from [bytedance/SandboxFusion](https://github.com/bytedance/SandboxFusion), requires local deployment using Docker.
+    ```shell
+    docker run -it -p 8080:8080 volcengine/sandbox-fusion:server-20241204
+    ```
+    For users in mainland China, the following mirror is provided:
+    ```shell
+    docker run -it -p 8080:8080 vemlp-cn-beijing.cr.volces.com/preset-images/code-sandbox:server-20241204
+    ```
+12. Implemented widgets: current time, retrieving content from file/image URLs, pseudo reasoning, Pollinations image generation, enhanced rendering of LaTeX formulas, and language tone.
   - Current time: Get the current time.
   - Retrieve the content from the file/image URL: Retrieve the content from the file/image URL.
   - Pseudo-reasoning: Enabling a model that doesn't have reasoning capabilities to acquire them.
   - Pollinations image generation: Call the Pollinations image generation API to generate images. (No API key is needed.)
   - Enhanced latex formula rendering: Control the more stable output of latex formulas in large models.
   - Language tone: Control the more stable output language and tone of the large model.
+13. Support for converting custom HTTP requests into agent tools has been added. You can now use any HTTP request as an agent tool, and you can add custom HTTP request tools in the Agent Toolkit interface.
 
 ## Disclaimer:
 This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.
