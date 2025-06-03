@@ -3290,11 +3290,30 @@
                         </span>
                     </div>
                     <div class="tool-content">
+                        <!-- 主智能体选择 -->
+                        <el-form-item :label="t('mainAgent')" required>
+                          <el-select 
+                            v-model="qqBotConfig.QQAgent"
+                            @change="changeQQAgent">
+                            <el-option
+                              :label="t('defaultAgent')"
+                              value="super-model"
+                            >
+                            </el-option>
+                            <el-option
+                              v-for="(agent, id) in agents"
+                              :key="id"
+                              :label="agent.name"
+                              :value="id"
+                            >
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
                         <el-form-item label="APP ID" required>
-                            <el-input v-model="qqBotConfig.appid" :placeholder="t('enter_qq_bot_app_id')"></el-input>
+                            <el-input @change="autoSaveSettings" v-model="qqBotConfig.appid" :placeholder="t('enter_qq_bot_app_id')"></el-input>
                         </el-form-item>
                         <el-form-item label="APP Secret" required>
-                            <el-input v-model="qqBotConfig.secret" :placeholder="t('enter_qq_bot_secret')" type="password"></el-input>
+                            <el-input @change="autoSaveSettings" v-model="qqBotConfig.secret" :placeholder="t('enter_qq_bot_secret')" type="password"></el-input>
                         </el-form-item>
                         <el-form-item>
                             <el-button type="primary" @click="startQQBot" :disabled="!isQQBotConfigValid">{{ t('start_bot') }}</el-button>
@@ -3305,7 +3324,6 @@
                   </div>
                 </el-form>
               </div>
-
             </div>
           </div>
         </div>

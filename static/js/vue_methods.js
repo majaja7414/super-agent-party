@@ -878,6 +878,10 @@ let vue_methods = {
       }
       this.syncSystemPromptToMessages(this.system_prompt);
     },
+    changeQQAgent(agent) {
+      this.qqBotConfig.QQAgent = agent;
+      this.autoSaveSettings();
+    },
     // WebSocket相关
     initWebSocket() {
       const http_protocol = window.location.protocol;
@@ -961,6 +965,7 @@ let vue_methods = {
           this.conversationId = data.data.conversationId || this.conversationId;
           this.agents = data.data.agents || this.agents;
           this.mainAgent = data.data.mainAgent || this.mainAgent;
+          this.qqBotConfig = data.data.qqBotConfig || this.qqBotConfig;
           this.toolsSettings = data.data.tools || this.toolsSettings;
           this.llmTools = data.data.llmTools || this.llmTools;
           this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
@@ -1390,6 +1395,7 @@ let vue_methods = {
           ...this.settings,
           agents: this.agents,
           mainAgent: this.mainAgent,
+          qqBotConfig : this.qqBotConfig,
           tools: this.toolsSettings,
           llmTools: this.llmTools,
           conversations: this.conversations,

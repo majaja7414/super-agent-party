@@ -325,8 +325,9 @@ let vue_data = {
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
     qqBotConfig: {
-        appid: '',
-        secret: ''
+      QQAgent:'super-model',
+      appid: '',
+      secret: ''
     },
     isQQBotRunning: false, // QQ机器人状态
     activeMemoryTab: 'add',
