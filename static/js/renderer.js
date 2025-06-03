@@ -12,7 +12,9 @@ const app = Vue.createApp({
     return vue_data
   },
   mounted() {
-    this.isMac = window.electron.isMac;
+    if (isElectron) {
+      this.isMac = window.electron.isMac;
+    }
     this.initWebSocket();
     this.highlightCode();
     this.initDownloadButtons();

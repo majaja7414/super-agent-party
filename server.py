@@ -25,6 +25,8 @@ from contextlib import asynccontextmanager
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import botpy
+from botpy.message import C2CMessage
 
 import argparse
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -2869,6 +2871,57 @@ async def process_kb(kb_id):
         kb_status[kb_id] = "completed"
     except Exception as e:
         kb_status[kb_id] = f"failed: {str(e)}"
+
+# 定义 QQ 机器人客户端
+class MyClient(botpy.Client):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_running = False
+
+    async def on_ready(self):
+        logger.info(f"robot 「{self.robot.name}」 on_ready!")
+        self.is_running = True
+
+    async def on_c2c_message_create(self, message: C2CMessage):
+        await message._api.post_c2c_message(
+            openid=message.author.user_openid, 
+            msg_type=0, msg_id=message.id, 
+            content=f"我收到了你的消息：{message.content}"
+        )
+
+client = MyClient(intents=botpy.Intents(public_messages=True))
+
+# 定义请求体
+class QQBotConfig(BaseModel):
+    appid: str
+    secret: str
+
+# 启动QQ机器人
+@app.post("/start_qq_bot")
+async def start_qq_bot(config: QQBotConfig):
+    if not client.is_running:
+        client.run(appid=config.appid, secret=config.secret)
+        return {"message": "QQ机器人已启动"}
+    else:
+        raise HTTPException(status_code=400, detail="QQ机器人已经在运行")
+
+# 停止QQ机器人
+@app.post("/stop_qq_bot")
+async def stop_qq_bot():
+    if client.is_running:
+        await client.close()
+        client.is_running = False
+        return {"message": "QQ机器人已停止"}
+    else:
+        raise HTTPException(status_code=400, detail="QQ机器人未在运行")
+
+# 重载QQ机器人配置
+@app.post("/reload_qq_bot")
+async def reload_qq_bot():
+    # 这里可以添加重新加载配置的逻辑
+    logger.info("重载QQ机器人配置")
+    return {"message": "QQ机器人配置已重载"}
+
 
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")
