@@ -117,6 +117,8 @@ function createSkeletonWindow() {
     width: width,
     height: height,
     frame: false,
+    titleBarStyle: 'hiddenInset', // macOS 特有：隐藏标题栏但仍显示原生按钮
+    trafficLightPosition: { x: 10, y: 12 }, // 自定义按钮位置（可选）
     show: true,
     icon: 'static/source/icon.png',
     webPreferences: {

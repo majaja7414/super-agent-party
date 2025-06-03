@@ -98,17 +98,17 @@
             <i :class="isCollapse ? 'fa-solid fa-bars' : 'fa-solid fa-bars-staggered'"></i>
           </el-icon>
         </el-button>
-        <el-button @click="minimizeWindow" class="top-bar-btn" text>
+        <el-button v-if="!isMac" @click="minimizeWindow" class="top-bar-btn" text>
           <el-icon>
             <i class="fa-solid fa-minus"></i>
           </el-icon>
         </el-button>
-        <el-button @click="toggleIcon" class="top-bar-btn" text>
+        <el-button v-if="!isMac" @click="toggleIcon" class="top-bar-btn" text>
           <el-icon>
             <i :class="iconClass"></i>
           </el-icon>
         </el-button>
-        <el-button @click="closeWindow" class="top-bar-btn" text>
+        <el-button v-if="!isMac" @click="closeWindow" class="top-bar-btn" text>
           <el-icon>
             <i class="fa-solid fa-xmark"></i>
           </el-icon>
