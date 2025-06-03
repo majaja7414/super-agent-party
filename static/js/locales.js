@@ -390,7 +390,7 @@ const translations = {
       "enter_qq_bot_secret": "请输入QQ机器人Secret",
       "start_bot": "启动机器人",
       "stop_bot": "停止机器人",
-      "reload_config": "重载配置",
+      "reload_bot": "重载机器人",
     },
     'en-US': {
       'chat': 'Chat',
@@ -782,6 +782,6 @@ const translations = {
       "enter_qq_bot_secret": "Enter QQ Bot App Secret",
       "start_bot": "Start Bot",
       "stop_bot": "Stop Bot",
-      "reload_config": "Reload Config",
+      "reload_bot": "Reload Bot",
     }
   };

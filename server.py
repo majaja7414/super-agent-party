@@ -4,9 +4,12 @@ import copy
 import datetime
 from functools import partial
 import json
+import multiprocessing
+from multiprocessing import Manager, Event
 import os
 import re
 import shutil
+import signal
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
@@ -28,7 +31,8 @@ from concurrent.futures import ThreadPoolExecutor
 import botpy
 from botpy.message import C2CMessage,GroupMessage
 import argparse
-
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
 parser.add_argument("--host", default="127.0.0.1", help="Host for the ASGI server, default is 127.0.0.1")
 parser.add_argument("--port", type=int, default=3456, help="Port for the ASGI server, default is 3456")
@@ -38,7 +42,6 @@ PORT = args.port
 
 os.environ["no_proxy"] = "localhost,127.0.0.1"
 local_timezone = None
-logger = None
 settings = None
 client = None
 reasoner_client = None
@@ -77,7 +80,6 @@ async def lifespan(app: FastAPI):
         locales = json.load(f)
     from tzlocal import get_localzone
     local_timezone = get_localzone()
-    logger = logging.getLogger(__name__)
     settings = await load_settings()
     if settings:
         client = AsyncOpenAI(api_key=settings['api_key'], base_url=settings['base_url'])
@@ -2879,21 +2881,26 @@ class QQBotConfig(BaseModel):
     appid: str
     secret: str
 
+# 全局变量，用于存储机器人进程
+qq_bot_process = None
+current_bot_config = None
+
 class MyClient(botpy.Client):
-    def __init__(self, *args, **kwargs):
+    def __init__(self,start_event, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_running = False
         self.QQAgent = "super-model"
-        self.bot_task = None
-        self._force_stop = False  # 强制停止标志
         self.memoryLimit = 10
         self.memoryList = {}
-
+        self.start_event = start_event
     async def on_ready(self):
-        logger.info(f"robot 「{self.robot.name}」 on_ready!")
         self.is_running = True
+        self.start_event.set()
 
     async def on_c2c_message_create(self, message: C2CMessage):
+        # 检查停止标志
+        if self.is_running == False:
+            return
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
@@ -2920,6 +2927,9 @@ class MyClient(botpy.Client):
         )
     
     async def on_group_at_message_create(self, message: GroupMessage):
+        # 检查停止标志
+        if self.is_running == False:
+            return
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
@@ -2945,103 +2955,231 @@ class MyClient(botpy.Client):
               msg_id=message.id,
               content=f"{res}")
 
-    async def safe_start(self, appid: str, secret: str):
-        try:
-            # 重置内部状态
-            self._force_stop = False
-            self._closed = False
-            
-            # 启动机器人
-            coro = await self.start(appid=appid, secret=secret, ret_coro=True)
-            if coro:
-                await coro
-        except asyncio.CancelledError:
-            logger.info("机器人任务被取消")
-        except Exception as e:
-            logger.error(f"机器人运行错误: {str(e)}")
-        finally:
-            self.is_running = False
-            self.bot_task = None
+def run_bot_process(config: QQBotConfig,start_event,shared_dict):
+    """在新进程中运行机器人的函数"""
+    # 配置子进程的日志系统
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    QQlogger = logging.getLogger("QQBotProcess")
+    QQlogger.info("子进程启动，开始配置机器人...")
 
-    async def close_all(self):
-        self.memory = []
-        """增强的关闭方法，处理所有连接"""
-        # 1. 关闭 HTTP 连接
-        await self.close()
+    # 移除自定义事件循环和信号处理
+    # 直接使用基类的run方法启动
+    try:
+        # 创建客户端时传入启动事件
+        QQclient = MyClient(start_event, intents=botpy.Intents(public_messages=True))
+        QQclient.QQAgent = config.QQAgent
+        QQclient.memoryLimit = config.memoryLimit
         
-        # 2. 关闭 WebSocket 连接
-        if self._connection:
-            logger.info("正在关闭 WebSocket 连接...")
-            # 这里需要根据 ConnectionSession 实际实现添加关闭逻辑
-            # 假设 ConnectionSession 有 close 方法
-            if hasattr(self._connection, 'close'):
-                await self._connection.close()
-            
-            # 重置连接状态
-            self._connection = None
-        
-        # 3. 设置强制停止标志
-        self._force_stop = True
-        self._closed = True
+        # 运行机器人
+        QQclient.run(appid=config.appid, secret=config.secret)
+    except Exception as e:
+        # 捕获异常并存入共享字典
+        shared_dict['error'] = str(e)
+        start_event.set()  # 确保事件被设置
+        QQlogger.error(f"机器人启动失败: {str(e)}")
+    finally:
+        QQclient.is_running = False
+        # 清理资源
+        QQclient.memoryList.clear()
+        QQlogger.info("机器人进程已完全停止")
 
-# 全局客户端实例
-QQclient = MyClient(intents=botpy.Intents(public_messages=True))
-
-# 启动QQ机器人
 @app.post("/start_qq_bot")
 async def start_qq_bot(config: QQBotConfig):
-    if QQclient.is_running:
-        raise HTTPException(status_code=400, detail="QQ机器人已经在运行")
+    global qq_bot_process, current_bot_config
+    
+    if qq_bot_process and qq_bot_process.is_alive():
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": "QQ机器人已经在运行"}
+        )
 
-    QQclient.QQAgent = config.QQAgent
+    # 使用Manager创建共享对象
+    with Manager() as manager:
+        shared_dict = manager.dict()
+        start_event = Event()
+        
+        # 创建并启动进程
+        qq_bot_process = multiprocessing.Process(
+            target=run_bot_process,
+            args=(config, start_event, shared_dict),
+            name="QQBotProcess"
+        )
+        
+        start_event.clear()  # 清除事件状态
+        qq_bot_process.start()
+        logger.info(f"QQ机器人进程已启动，PID: {qq_bot_process.pid}")
+        
+        # 等待启动结果（最多10秒）
+        try:
+            # 在异步环境中同步等待
+            loop = asyncio.get_event_loop()
+            event_set = await loop.run_in_executor(
+                None, 
+                lambda: start_event.wait(timeout=10.0)
+            )
+        except Exception as e:
+            qq_bot_process.terminate()
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "message": f"等待机器人启动时出错: {str(e)}"}
+            )
+        
+        # 检查启动结果
+        if 'error' in shared_dict:
+            error_msg = shared_dict['error']
+            qq_bot_process.terminate()
+            qq_bot_process.join(timeout=1.0)
+            qq_bot_process = None
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "message": f"机器人启动失败: {error_msg}"}
+            )
+        
+        if not event_set:
+            qq_bot_process.terminate()
+            qq_bot_process.join(timeout=1.0)
+            qq_bot_process = None
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "message": "机器人启动超时，请检查网络连接"}
+            )
+        
+        # 启动成功
+        current_bot_config = config
+        return {
+            "success": True,
+            "message": "QQ机器人已成功启动",
+            "pid": qq_bot_process.pid
+        }
+
+# 重新加载QQ机器人
+@app.post("/reload_qq_bot")
+async def reload_qq_bot(config: QQBotConfig):
+    """
+    重新加载QQ机器人配置
+    支持热重载：先停止当前机器人，然后用新配置启动
+    """
+    global qq_bot_process, current_bot_config
     
-    # 创建并启动机器人任务
-    QQclient.bot_task = asyncio.create_task(
-        QQclient.safe_start(appid=config.appid, secret=config.secret)
-    )
+    # 1. 检查是否需要重载
+    if current_bot_config and config == current_bot_config:
+        return {"message": "配置未变化，无需重载"}
     
-    logger.info("QQ机器人后台任务已启动")
-    return {"message": "QQ机器人已启动"}
+    # 2. 记录当前状态
+    was_running = False
+    if qq_bot_process and qq_bot_process.is_alive():
+        was_running = True
+        pid = qq_bot_process.pid
+        logger.info(f"机器人正在运行(PID: {pid})，将先停止再重新启动")
+        
+        # 停止当前机器人
+        try:
+            # 发送SIGTERM信号
+            os.kill(qq_bot_process.pid, signal.SIGTERM)
+            logger.info(f"已向机器人进程 {pid} 发送 SIGTERM 信号")
+            
+            # 等待最多3秒
+            start_time = time.time()
+            while time.time() - start_time < 3:
+                if not qq_bot_process.is_alive():
+                    break
+                await asyncio.sleep(0.1)
+            
+            if qq_bot_process.is_alive():
+                # 如果进程还在运行，强制终止
+                logger.warning(f"机器人进程 {pid} 未响应，强制终止")
+                qq_bot_process.terminate()
+                qq_bot_process.join(timeout=1.0)
+        except ProcessLookupError:
+            logger.warning("机器人进程已不存在")
+        except Exception as e:
+            logger.error(f"停止机器人时出错: {str(e)}")
+        finally:
+            qq_bot_process = None
+    
+    # 3. 保存新配置
+    current_bot_config = config
+    
+    # 4. 如果之前是运行状态，重新启动
+    if was_running:
+        # 创建并启动进程
+        qq_bot_process = multiprocessing.Process(
+            target=run_bot_process,
+            args=(config,),
+            name="QQBotProcess"
+        )
+        
+        qq_bot_process.start()
+        logger.info(f"QQ机器人已重新启动，新PID: {qq_bot_process.pid}")
+        
+        return {
+            "message": "QQ机器人配置已重载并重新启动",
+            "pid": qq_bot_process.pid,
+            "config_changed": True
+        }
+    
+    # 5. 如果之前未运行，只更新配置
+    logger.info("QQ机器人配置已更新，但未启动（机器人之前未运行）")
+    return {
+        "message": "QQ机器人配置已更新",
+        "pid": None,
+        "config_changed": True
+    }
 
 # 停止QQ机器人
 @app.post("/stop_qq_bot")
 async def stop_qq_bot():
-    if not QQclient.is_running:
-        raise HTTPException(status_code=400, detail="QQ机器人未在运行")
+    global qq_bot_process
     
+    if not qq_bot_process or not qq_bot_process.is_alive():
+        raise HTTPException(status_code=400, detail="QQ机器人未在运行")
+
     try:
-        # 增强的关闭方法
-        await QQclient.close_all()
+        # 首先尝试优雅停止（发送信号）
+        os.kill(qq_bot_process.pid, signal.SIGTERM)
+        logger.info(f"已向机器人进程 {qq_bot_process.pid} 发送 SIGTERM 信号")
         
-        # 取消机器人任务
-        if QQclient.bot_task and not QQclient.bot_task.done():
-            QQclient.bot_task.cancel()
-            
-            # 等待任务取消完成
-            with suppress(asyncio.CancelledError):
-                await QQclient.bot_task
-                
+        # 等待最多5秒
+        start_time = time.time()
+        while time.time() - start_time < 5:
+            if not qq_bot_process.is_alive():
+                break
+            await asyncio.sleep(0.1)
+        
+        if qq_bot_process.is_alive():
+            # 如果进程还在运行，强制终止
+            logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
+            qq_bot_process.terminate()
+            qq_bot_process.join(timeout=1.0)
+        print("机器人进程已停止")
+    except ProcessLookupError:
+        logger.warning("机器人进程已不存在")
     except Exception as e:
         logger.error(f"停止机器人时出错: {str(e)}")
     finally:
-        QQclient.is_running = False
-        QQclient.bot_task = None
-
+        qq_bot_process = None
+    
     return {"message": "QQ机器人已停止"}
 
-# 重载QQ机器人配置
-@app.post("/reload_qq_bot")
-async def reload_qq_bot(config: QQBotConfig):
-    logger.info("重载QQ机器人配置")
+# 检查机器人状态和配置
+@app.get("/qq_bot_status")
+async def qq_bot_status():
+    global qq_bot_process, current_bot_config
     
-    # 先停止再启动
-    if QQclient.is_running:
-        await stop_qq_bot()
-        # 添加延迟确保资源完全释放
-        await asyncio.sleep(2)
+    status = {
+        "is_running": False,
+        "pid": None,
+        "config": current_bot_config.dict() if current_bot_config else None
+    }
     
-    await start_qq_bot(config)
-    return {"message": "QQ机器人配置已重载"}
+    if qq_bot_process and qq_bot_process.is_alive():
+        status["is_running"] = True
+        status["pid"] = qq_bot_process.pid
+    
+    return status
 
 
 settings_lock = asyncio.Lock()

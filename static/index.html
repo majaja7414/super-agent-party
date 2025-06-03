@@ -3283,11 +3283,44 @@
                 <el-form class="settings-form" :model="qqBotConfig" label-position="top">
                   <div class="tool-item">
                     <!-- QQ机器人配置头部 -->
-                    <div class="tool-header">
-                        <span>
-                            <el-icon><i class="fa-brands fa-qq"></i></el-icon>
-                            {{ t('qq_bot_config') }} <!-- 本地化文本 -->
-                        </span>
+                    <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
+                      <span>
+                        <el-icon><i class="fa-brands fa-qq"></i></el-icon>
+                        {{ t('qq_bot_config') }} <!-- 本地化文本 -->
+                      </span>
+                      <div>
+                        <el-tooltip :content="t('start_bot')" placement="top">
+                          <el-button 
+                            type="primary" 
+                            @click="startQQBot" 
+                            :disabled="!isQQBotConfigValid"
+                            circle
+                          >
+                            <i class="fa-solid fa-play"></i>
+                          </el-button>
+                        </el-tooltip>
+                        
+                        <el-tooltip :content="t('stop_bot')" placement="top">
+                          <el-button 
+                            type="danger" 
+                            @click="stopQQBot" 
+                            :disabled="!isQQBotRunning"
+                            circle
+                          >
+                            <i class="fa-solid fa-stop"></i>
+                          </el-button>
+                        </el-tooltip>
+                        
+                        <el-tooltip :content="t('reload_bot')" placement="top">
+                          <el-button 
+                            @click="reloadQQBotConfig" 
+                            :disabled="!isQQBotRunning"
+                            circle
+                          >
+                            <i class="fa-solid fa-rotate"></i>
+                          </el-button>
+                        </el-tooltip>
+                      </div>
                     </div>
                     <div class="tool-content">
                         <!-- 主智能体选择 -->
@@ -3323,11 +3356,6 @@
                         </el-form-item>
                         <el-form-item label="APP Secret" required>
                             <el-input @change="autoSaveSettings" v-model="qqBotConfig.secret" :placeholder="t('enter_qq_bot_secret')" show-password class="full-width-input"></el-input>
-                        </el-form-item>
-                        <el-form-item>
-                            <el-button type="primary" @click="startQQBot" :disabled="!isQQBotConfigValid">{{ t('start_bot') }}</el-button>
-                            <el-button type="danger" @click="stopQQBot" :disabled="!isQQBotRunning">{{ t('stop_bot') }}</el-button>
-                            <el-button @click="reloadQQBotConfig" :disabled="!isQQBotRunning">{{ t('reload_config') }}</el-button>
                         </el-form-item>
                     </div>
                   </div>
