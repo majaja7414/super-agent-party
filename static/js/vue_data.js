@@ -58,6 +58,7 @@ if (isElectron) {
   // 判断协议
   const protocol = window.location.protocol;
 let vue_data = {
+    isMac: false,
     partyURL:window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`,
     downloadProgress: 0,
     updateDownloaded: false,

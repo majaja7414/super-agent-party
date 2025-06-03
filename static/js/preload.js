@@ -8,6 +8,7 @@ const PORT = 3456
 
 // 暴露基本的ipcRenderer给骨架屏页面使用
 contextBridge.exposeInMainWorld('electron', {
+  isMac: process.platform === 'darwin',
   ipcRenderer: {
     on: (channel, func) => {
       // 只允许特定的通道
