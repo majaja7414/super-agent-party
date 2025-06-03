@@ -2703,7 +2703,8 @@ let vue_methods = {
         try {
             const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.qqBotConfig)
             });
 
             if (response.ok) {
