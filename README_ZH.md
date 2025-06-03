@@ -153,7 +153,7 @@
     ```shell
     docker run -it -p 8080:8080 volcengine/sandbox-fusion:server-20241204
     ```
-    For users in mainland China, the following mirror is provided:
+    对于中国大陆的用户，提供以下镜像：
     ```shell
     docker run -it -p 8080:8080 vemlp-cn-beijing.cr.volces.com/preset-images/code-sandbox:server-20241204
     ```
