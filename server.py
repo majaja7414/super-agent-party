@@ -26,7 +26,7 @@ from contextlib import asynccontextmanager,suppress
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import botpy
-from botpy.message import C2CMessage
+from botpy.message import C2CMessage,GroupMessage
 import argparse
 
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -2887,7 +2887,7 @@ class MyClient(botpy.Client):
         self.bot_task = None
         self._force_stop = False  # 强制停止标志
         self.memoryLimit = 10
-        self.memory = []
+        self.memoryList = {}
 
     async def on_ready(self):
         logger.info(f"robot 「{self.robot.name}」 on_ready!")
@@ -2898,17 +2898,20 @@ class MyClient(botpy.Client):
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
-        self.memory.append({"role": "user", "content": f"{message.content}"})
+        c_id = message.author.user_openid
+        if c_id not in self.memoryList:
+            self.memoryList[c_id] = []
+        self.memoryList[c_id].append({"role": "user", "content": f"{message.content}"})
         response = await client.chat.completions.create(
             model=self.QQAgent,
-            messages=self.memory,
+            messages=self.memoryList[c_id],
         )
         res = response.choices[0].message.content
-        self.memory.append({"role": "assistant", "content": f"{res}"})
+        self.memoryList[c_id].append({"role": "assistant", "content": f"{res}"})
 
         if self.memoryLimit > 0:
-            while len(self.memory) > self.memoryLimit:
-                self.memory.pop(0)
+            while len(self.memoryList[c_id]) > self.memoryLimit:
+                self.memoryList[c_id].pop(0)
 
         await message._api.post_c2c_message(
             openid=message.author.user_openid, 
@@ -2916,6 +2919,32 @@ class MyClient(botpy.Client):
             content=f"{res}"
         )
     
+    async def on_group_at_message_create(self, message: GroupMessage):
+        client = AsyncOpenAI(
+            api_key="super-secret-key",
+            base_url=f"http://127.0.0.1:{PORT}/v1"
+        )
+        g_id = message.group_openid
+        if g_id not in self.memoryList:
+            self.memoryList[g_id] = []
+        self.memoryList[g_id].append({"role": "user", "content": f"{message.content}"})
+        response = await client.chat.completions.create(
+            model=self.QQAgent,
+            messages=self.memoryList[g_id],
+        )
+        res = response.choices[0].message.content
+        self.memoryList[g_id].append({"role": "assistant", "content": f"{res}"})
+
+        if self.memoryLimit > 0:
+            while len(self.memoryList[g_id]) > self.memoryLimit:
+                self.memoryList[g_id].pop(0)
+
+        await message._api.post_group_message(
+            group_openid=message.group_openid,
+              msg_type=0, 
+              msg_id=message.id,
+              content=f"{res}")
+
     async def safe_start(self, appid: str, secret: str):
         try:
             # 重置内部状态
