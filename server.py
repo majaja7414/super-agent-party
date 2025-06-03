@@ -2875,6 +2875,7 @@ async def process_kb(kb_id):
 # 定义请求体
 class QQBotConfig(BaseModel):
     QQAgent: str
+    memoryLimit: int
     appid: str
     secret: str
 
@@ -2885,6 +2886,8 @@ class MyClient(botpy.Client):
         self.QQAgent = "super-model"
         self.bot_task = None
         self._force_stop = False  # 强制停止标志
+        self.memoryLimit = 10
+        self.memory = []
 
     async def on_ready(self):
         logger.info(f"robot 「{self.robot.name}」 on_ready!")
@@ -2895,13 +2898,18 @@ class MyClient(botpy.Client):
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
+        self.memory.append({"role": "user", "content": f"{message.content}"})
         response = await client.chat.completions.create(
             model=self.QQAgent,
-            messages=[
-                {"role": "user", "content": f"{message.content}"}
-            ],
+            messages=self.memory,
         )
         res = response.choices[0].message.content
+        self.memory.append({"role": "assistant", "content": f"{res}"})
+
+        if self.memoryLimit > 0:
+            while len(self.memory) > self.memoryLimit:
+                self.memory.pop(0)
+
         await message._api.post_c2c_message(
             openid=message.author.user_openid, 
             msg_type=0, msg_id=message.id, 
@@ -2927,6 +2935,7 @@ class MyClient(botpy.Client):
             self.bot_task = None
 
     async def close_all(self):
+        self.memory = []
         """增强的关闭方法，处理所有连接"""
         # 1. 关闭 HTTP 连接
         await self.close()

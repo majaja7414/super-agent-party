@@ -326,6 +326,7 @@ let vue_data = {
     ],
     qqBotConfig: {
       QQAgent:'super-model',
+      memoryLimit: 10,
       appid: '',
       secret: ''
     },
