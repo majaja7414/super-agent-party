@@ -2891,10 +2891,21 @@ class MyClient(botpy.Client):
         self.is_running = True
 
     async def on_c2c_message_create(self, message: C2CMessage):
+        client = AsyncOpenAI(
+            api_key="super-secret-key",
+            base_url=f"http://127.0.0.1:{PORT}/v1"
+        )
+        response = await client.chat.completions.create(
+            model=self.QQAgent,
+            messages=[
+                {"role": "user", "content": f"{message.content}"}
+            ],
+        )
+        res = response.choices[0].message.content
         await message._api.post_c2c_message(
             openid=message.author.user_openid, 
             msg_type=0, msg_id=message.id, 
-            content=f"我收到了你的消息：{message.content}"
+            content=f"{res}"
         )
     
     async def safe_start(self, appid: str, secret: str):
