@@ -2893,143 +2893,325 @@ class MyClient(botpy.Client):
         self.memoryLimit = 10
         self.memoryList = {}
         self.start_event = start_event
+        self.separators = ('。', '\n', '？', '！')
+
     async def on_ready(self):
         self.is_running = True
         self.start_event.set()
 
     async def on_c2c_message_create(self, message: C2CMessage):
-        # 检查停止标志
-        if self.is_running == False:
+        if not self.is_running:
             return
+        
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
+        
         c_id = message.author.user_openid
         if c_id not in self.memoryList:
             self.memoryList[c_id] = []
-        self.memoryList[c_id].append({"role": "user", "content": f"{message.content}"})
-        response = await client.chat.completions.create(
-            model=self.QQAgent,
-            messages=self.memoryList[c_id],
-        )
-        res = response.choices[0].message.content
-        self.memoryList[c_id].append({"role": "assistant", "content": f"{res}"})
+        self.memoryList[c_id].append({"role": "user", "content": message.content})
 
-        if self.memoryLimit > 0:
-            while len(self.memoryList[c_id]) > self.memoryLimit:
-                self.memoryList[c_id].pop(0)
+        # 初始化状态管理
+        if not hasattr(self, 'msg_seq_counters'):
+            self.msg_seq_counters = {}
+        self.msg_seq_counters.setdefault(c_id, 1)
+        
+        if not hasattr(self, 'processing_states'):
+            self.processing_states = {}
+        self.processing_states[c_id] = {
+            "text_buffer": "",
+            "image_buffer": "",
+            "image_cache": []
+        }
+
+        try:
+            # 流式调用API
+            stream = await client.chat.completions.create(
+                model=self.QQAgent,
+                messages=self.memoryList[c_id],
+                stream=True
+            )
+            
+            full_response = []
+            async for chunk in stream:
+                content = chunk.choices[0].delta.content or ""
+                full_response.append(content)
                 
-        # 从res中提取所有图片链接
-        image_urls = re.findall(r'!\[.*?\]\(.*?\)', res, re.IGNORECASE)
-        count = 1
-        # 发送图片（如果有）
-        for image_url in image_urls:
+                # 更新缓冲区
+                state = self.processing_states[c_id]
+                state["text_buffer"] += content
+                state["image_buffer"] += content
+
+                # 处理文本实时发送
+                while True:
+                    # 查找分隔符（。或\n）
+                    buffer = state["text_buffer"]
+                    split_pos = -1
+                    for i, c in enumerate(buffer):
+                        if c in self.separators:
+                            split_pos = i + 1
+                            break
+                    if split_pos == -1:
+                        break
+
+                    # 分割并处理当前段落
+                    current_chunk = buffer[:split_pos]
+                    state["text_buffer"] = buffer[split_pos:]
+                    
+                    # 清洗并发送文字
+                    clean_text = self._clean_text(current_chunk)
+                    if clean_text:
+                        await self._send_text_message(message, clean_text)
+                    
+                    # 提取图片到缓存（不发送）
+                    self._extract_images_to_cache(c_id, current_chunk)
+
+            # 处理剩余文本
+            if state["text_buffer"]:
+                clean_text = self._clean_text(state["text_buffer"])
+                if clean_text:
+                    await self._send_text_message(message, clean_text)
+            
+            # 最终图片发送
+            await self._send_cached_images(message)
+
+            # 记忆管理
+            full_content = "".join(full_response)
+            self.memoryList[c_id].append({"role": "assistant", "content": full_content})
+            if self.memoryLimit > 0:
+                while len(self.memoryList[c_id]) > self.memoryLimit:
+                    self.memoryList[c_id].pop(0)
+
+        except Exception as e:
+            print(f"处理异常: {e}")
+        finally:
+            # 清理状态
+            del self.processing_states[c_id]
+
+    def _extract_images_to_cache(self, c_id, content):
+        """渐进式图片链接提取"""
+        state = self.processing_states[c_id]
+        temp_buffer = state["image_buffer"] + content
+        state["image_buffer"] = ""  # 重置缓冲区
+        
+        # 匹配完整图片链接
+        pattern = r'!\[.*?\]\((https?://[^\s\)]+)'
+        matches = re.finditer(pattern, temp_buffer)
+        for match in matches:
+            state["image_cache"].append(match.group(1))
+        
+        # 处理未闭合的图片标记
+        last_unclosed = re.search(r'!\[.*?\]\([^)]*$', temp_buffer)
+        if last_unclosed:
+            state["image_buffer"] = last_unclosed.group()
+
+    async def _send_text_message(self, message, text):
+        """发送文本消息并更新序号"""
+        c_id = message.author.user_openid
+        await message._api.post_c2c_message(
+            openid=message.author.user_openid,
+            msg_type=0,
+            msg_id=message.id,
+            content=text,
+            msg_seq=self.msg_seq_counters[c_id]
+        )
+        self.msg_seq_counters[c_id] += 1
+
+    async def _send_cached_images(self, message):
+        """批量发送缓存的图片"""
+        c_id = message.author.user_openid
+        state = self.processing_states.get(c_id, {})
+        
+        for url in state.get("image_cache", []):
             try:
-                # 将image_url中的markdown格式转换为普通URL
-                image_url = re.search(r'\((.*?)\)', image_url).group(1)
-                print(f"发送图片: {image_url}")
-                # 用requests下载图片确保图片存在
-                image_data = requests.get(image_url).content
-                uploadMedia = await message._api.post_c2c_file(
-                    openid=message.author.user_openid, 
-                    file_type=1, # 文件类型要对应上，具体支持的类型见方法说明
-                    url=image_url # 使用提取到的图片URL
+                # 链接有效性验证
+                if not re.match(r'^https?://', url):
+                    continue
+                    
+                # 上传媒体文件
+                upload_media = await message._api.post_c2c_file(
+                    openid=message.author.user_openid,
+                    file_type=1,
+                    url=url
                 )
-                # 资源上传后，会得到Media，用于发送消息
+                # 发送富媒体消息
                 await message._api.post_c2c_message(
                     openid=message.author.user_openid,
-                    msg_type=7,  # 7表示富媒体类型
-                    msg_id=message.id, 
-                    media=uploadMedia,
-                    msg_seq=count
+                    msg_type=7,
+                    msg_id=message.id,
+                    media=upload_media,
+                    msg_seq=self.msg_seq_counters[c_id]
                 )
-                count += 1
+                self.msg_seq_counters[c_id] += 1
             except Exception as e:
-                print(f"发送图片失败: {e}")
+                print(f"图片发送失败: {e}")
 
-        # 从res中移除图片标记，只保留文本内容
-        text_content = re.sub(r'!\[.*?\]\(.*?\)', '', res).strip()
-        # 从res中移除所有链接标记，只保留文本内容
-        text_content = re.sub(r'\[.*?\]\(.*?\)', '', res).strip()
-        # 从res中移除所有的URL
-        text_content = re.sub(r'http\S+', '', res).strip()
+    def _clean_text(self, text):
+        """三级内容清洗"""
+        # 移除图片标记
+        clean = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+        # 移除超链接
+        clean = re.sub(r'\[.*?\]\(.*?\)', '', clean)
+        # 移除纯URL
+        clean = re.sub(r'https?://\S+', '', clean)
+        return clean.strip()
 
-        # 如果有文本内容才发送
-        if text_content:
-            await message._api.post_c2c_message(
-                openid=message.author.user_openid, 
-                msg_type=0, msg_id=message.id, 
-                content=text_content,
-                msg_seq=count
-            )
     
     async def on_group_at_message_create(self, message: GroupMessage):
-        # 检查停止标志
-        if self.is_running == False:
+        if not self.is_running:
             return
+        
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
+        
         g_id = message.group_openid
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
-        self.memoryList[g_id].append({"role": "user", "content": f"{message.content}"})
-        response = await client.chat.completions.create(
-            model=self.QQAgent,
-            messages=self.memoryList[g_id],
+        self.memoryList[g_id].append({"role": "user", "content": message.content})
+
+        # 初始化群组状态
+        if not hasattr(self, 'group_states'):
+            self.group_states = {}
+        self.group_states[g_id] = {
+            "msg_seq": 1,
+            "text_buffer": "",
+            "image_buffer": "",
+            "image_cache": []
+        }
+
+        try:
+            # 流式API调用
+            stream = await client.chat.completions.create(
+                model=self.QQAgent,
+                messages=self.memoryList[g_id],
+                stream=True
+            )
+            
+            full_response = []
+            async for chunk in stream:
+                content = chunk.choices[0].delta.content or ""
+                full_response.append(content)
+                state = self.group_states[g_id]
+                
+                # 更新文本缓冲区
+                state["text_buffer"] += content
+                state["image_buffer"] += content
+
+                # 处理文本分段
+                while True:
+                    # 查找分隔符（。或\n）
+                    buffer = state["text_buffer"]
+                    split_pos = -1
+                    for i, c in enumerate(buffer):
+                        if c in self.separators:
+                            split_pos = i + 1
+                            break
+                    if split_pos == -1:
+                        break
+
+                    # 处理当前段落
+                    current_chunk = buffer[:split_pos]
+                    state["text_buffer"] = buffer[split_pos:]
+                    
+                    # 清洗并发送文字
+                    clean_text = self._clean_group_text(current_chunk)
+                    if clean_text:
+                        await self._send_group_text(message, clean_text, state)
+                    
+                    # 提取图片到缓存
+                    self._cache_group_images(g_id, current_chunk)
+
+            # 处理剩余文本
+            if self.group_states[g_id]["text_buffer"]:
+                clean_text = self._clean_group_text(self.group_states[g_id]["text_buffer"])
+                if clean_text:
+                    await self._send_group_text(message, clean_text, state)
+
+            # 发送缓存图片
+            await self._send_group_images(message, g_id)
+
+            # 记忆管理
+            full_content = "".join(full_response)
+            self.memoryList[g_id].append({"role": "assistant", "content": full_content})
+            if self.memoryLimit > 0:
+                while len(self.memoryList[g_id]) > self.memoryLimit:
+                    self.memoryList[g_id].pop(0)
+
+        except Exception as e:
+            print(f"群聊处理异常: {e}")
+        finally:
+            # 清理状态
+            del self.group_states[g_id]
+
+    def _cache_group_images(self, g_id, content):
+        """渐进式图片缓存"""
+        state = self.group_states[g_id]
+        temp_buffer = state["image_buffer"] + content
+        state["image_buffer"] = ""
+        
+        # 匹配完整图片链接
+        pattern = r'!\[.*?\]\((https?://[^\s\)]+)'
+        matches = re.finditer(pattern, temp_buffer)
+        for match in matches:
+            state["image_cache"].append(match.group(1))
+        
+        # 处理未闭合标记
+        last_unclosed = re.search(r'!\[.*?\]\([^)]*$', temp_buffer)
+        if last_unclosed:
+            state["image_buffer"] = last_unclosed.group()
+
+    async def _send_group_text(self, message, text, state):
+        """发送群聊文字消息"""
+        await message._api.post_group_message(
+            group_openid=message.group_openid,
+            msg_type=0,
+            msg_id=message.id,
+            content=text,
+            msg_seq=state["msg_seq"]
         )
-        res = response.choices[0].message.content
-        self.memoryList[g_id].append({"role": "assistant", "content": f"{res}"})
+        state["msg_seq"] += 1
 
-        if self.memoryLimit > 0:
-            while len(self.memoryList[g_id]) > self.memoryLimit:
-                self.memoryList[g_id].pop(0)
-
-        # 从res中提取所有图片链接
-        image_urls = re.findall(r'!\[.*?\]\(.*?\)', res, re.IGNORECASE)
-        count = 1
-        # 发送图片（如果有）
-        for image_url in image_urls:
+    async def _send_group_images(self, message, g_id):
+        """批量发送群聊图片"""
+        state = self.group_states.get(g_id, {})
+        for url in state.get("image_cache", []):
             try:
-                # 将image_url中的markdown格式转换为普通URL
-                image_url = re.search(r'\((.*?)\)', image_url).group(1)
-                print(f"发送图片: {image_url}")
-                # 用requests下载图片确保图片存在
-                image_data = requests.get(image_url).content
-                uploadMedia = await message._api.post_group_file(
-                    group_openid=message.group_openid, 
-                    file_type=1, # 文件类型要对应上，具体支持的类型见方法说明
-                    url=image_url # 使用提取到的图片URL
+                # 链接有效性验证
+                if not url.startswith(('http://', 'https://')):
+                    continue
+                    
+                # 上传群文件
+                upload_media = await message._api.post_group_file(
+                    group_openid=message.group_openid,
+                    file_type=1,
+                    url=url
                 )
-                # 资源上传后，会得到Media，用于发送消息
+                # 发送群媒体消息
                 await message._api.post_group_message(
                     group_openid=message.group_openid,
-                    msg_type=7,  # 7表示富媒体类型
-                    msg_id=message.id, 
-                    media=uploadMedia,
-                    msg_seq=count
+                    msg_type=7,
+                    msg_id=message.id,
+                    media=upload_media,
+                    msg_seq=state["msg_seq"]
                 )
-                count += 1
+                state["msg_seq"] += 1
             except Exception as e:
-                print(f"发送图片失败: {e}")
+                print(f"群图片发送失败: {e}")
 
-        # 从res中移除图片标记，只保留文本内容
-        text_content = re.sub(r'!\[.*?\]\(.*?\)', '', res).strip()
-        # 从res中移除所有链接标记，只保留文本内容
-        text_content = re.sub(r'\[.*?\]\(.*?\)', '', res).strip()
-        # 从res中移除所有的URL
-        text_content = re.sub(r'http\S+', '', res).strip()
+    def _clean_group_text(self, text):
+        """群聊文本三级清洗"""
+        # 移除图片标记
+        clean = re.sub(r'!\[.*?\]\(.*?\)', '', text)
+        # 移除超链接
+        clean = re.sub(r'\[.*?\]\(.*?\)', '', clean)
+        # 移除纯URL
+        clean = re.sub(r'https?://\S+', '', clean)
+        return clean.strip()
 
-        # 如果有文本内容才发送
-        if text_content:
-            await message._api.post_group_message(
-                group_openid=message.group_openid, 
-                msg_type=0, msg_id=message.id, 
-                content=text_content,
-                msg_seq=count
-            )
 
 def run_bot_process(config: QQBotConfig,start_event,shared_dict):
     """在新进程中运行机器人的函数"""
