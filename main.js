@@ -7,6 +7,7 @@ const fs = require('fs')
 const os = require('os');
 
 let pythonExec;
+let isQuitting = false;
 
 // 判断操作系统
 if (os.platform() === 'win32') {
@@ -436,16 +437,14 @@ app.whenReady().then(async () => {
         y: arg.y
       });
     });
-    ipcMain.handle('request-stop-qqbot', async () => {
-      try {
-        // 这里调用渲染进程的方法
-        const result = await mainWindow.webContents.executeJavaScript(`
-          window.vueApp?.requestStopQQBotIfRunning?.();
+    // 监听关闭事件
+    ipcMain.handle('request-stop-qqbot', async (event) => {
+      const win = BrowserWindow.getAllWindows()[0]; // 获取主窗口
+      if (win && !win.isDestroyed()) {
+        // 通过webContents执行渲染进程方法
+        await win.webContents.executeJavaScript(`
+          window.stopQQBotHandler && window.stopQQBotHandler()
         `);
-        return result;
-      } catch (error) {
-        console.error('调用 requestStopQQBotIfRunning 失败:', error);
-        throw error;
       }
     });
     // 其他IPC处理...
@@ -493,30 +492,46 @@ app.whenReady().then(async () => {
   }
 })
 
-app.on('before-quit', async () => {
-  app.isQuitting = true;
+
+
+// 应用退出处理
+app.on('before-quit', async (event) => {
+  // 防止重复处理退出事件
+  if (isQuitting) return;
+  
+  // 标记退出状态并阻止默认退出行为
+  isQuitting = true;
+  event.preventDefault();
   
   try {
-    // 先尝试优雅关闭机器人
-    if (!mainWindow.isDestroyed()) {
-      await Promise.race([
-        mainWindow.webContents.executeJavaScript(`
-          window.vueApp?.requestStopQQBotIfRunning?.();
-        `),
-        new Promise(resolve => setTimeout(resolve, 5000)) // 5秒超时
-      ]);
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    
+    // 1. 尝试停止QQ机器人
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      await mainWindow.webContents.executeJavaScript(`
+        if (window.stopQQBotHandler) {
+          window.stopQQBotHandler();
+        }
+      `);
+      
+      // 等待机器人停止（最多1秒）
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
-  } catch (error) {
-    console.error('关闭机器人时出错:', error);
-  } finally {
-    // 确保后端进程被终止
+    
+    // 2. 停止后端进程
     if (backendProcess) {
       if (process.platform === 'win32') {
         spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t']);
       } else {
         backendProcess.kill('SIGKILL');
       }
+      backendProcess = null;
     }
+  } catch (error) {
+    console.error('退出时发生错误:', error);
+  } finally {
+    // 3. 最终退出应用
+    app.exit(0);
   }
 });
 

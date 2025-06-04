@@ -60,9 +60,15 @@ const app = Vue.createApp({
     });
     document.documentElement.setAttribute('data-theme', this.systemSettings.theme);
     if (isElectron) {
+      window.stopQQBotHandler = this.requestStopQQBotIfRunning;
       window.electronAPI.onWindowState((_, state) => {
         this.isMaximized = state === 'maximized'
       });
+    }
+  },
+  beforeUnmount() {
+    if (isElectron) {
+      delete window.stopQQBotHandler;
     }
   },
   watch: {

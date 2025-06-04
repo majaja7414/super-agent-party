@@ -2771,6 +2771,7 @@ let vue_methods = {
         if (status.is_running) {
           // 调用 stopQQBot 来关闭机器人
           await this.stopQQBot()
+          console.log('机器人已关闭')
         }
       } catch (error) {
         console.error('检查或停止机器人失败:', error)
