@@ -2761,4 +2761,19 @@ let vue_methods = {
       console.error('检查机器人状态失败:', error);
     }
   },
+
+    // 新增的方法：供主进程请求关闭机器人
+    async requestStopQQBotIfRunning() {
+      try {
+        const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`)
+        const status = await response.json()
+
+        if (status.is_running) {
+          // 调用 stopQQBot 来关闭机器人
+          await this.stopQQBot()
+        }
+      } catch (error) {
+        console.error('检查或停止机器人失败:', error)
+      }
+    },
 }

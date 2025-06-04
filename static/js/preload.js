@@ -59,5 +59,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   //保存环境变量
   setNetworkVisibility: (visible) => ipcRenderer.invoke('set-env', { key: 'networkVisible', value: visible }), 
   //重启app
-  restartApp: () => ipcRenderer.invoke('restart-app')
+  restartApp: () => ipcRenderer.invoke('restart-app'),
+  requestStopQQBotIfRunning: () => ipcRenderer.invoke('request-stop-qqbot')
 });

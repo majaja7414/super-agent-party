@@ -2950,7 +2950,11 @@ class MyClient(botpy.Client):
 
         # 从res中移除图片标记，只保留文本内容
         text_content = re.sub(r'!\[.*?\]\(.*?\)', '', res).strip()
-        
+        # 从res中移除所有链接标记，只保留文本内容
+        text_content = re.sub(r'\[.*?\]\(.*?\)', '', res).strip()
+        # 从res中移除所有的URL
+        text_content = re.sub(r'http\S+', '', res).strip()
+
         # 如果有文本内容才发送
         if text_content:
             await message._api.post_c2c_message(
@@ -3013,7 +3017,11 @@ class MyClient(botpy.Client):
 
         # 从res中移除图片标记，只保留文本内容
         text_content = re.sub(r'!\[.*?\]\(.*?\)', '', res).strip()
-        
+        # 从res中移除所有链接标记，只保留文本内容
+        text_content = re.sub(r'\[.*?\]\(.*?\)', '', res).strip()
+        # 从res中移除所有的URL
+        text_content = re.sub(r'http\S+', '', res).strip()
+
         # 如果有文本内容才发送
         if text_content:
             await message._api.post_group_message(

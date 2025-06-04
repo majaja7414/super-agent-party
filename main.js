@@ -436,6 +436,18 @@ app.whenReady().then(async () => {
         y: arg.y
       });
     });
+    ipcMain.handle('request-stop-qqbot', async () => {
+      try {
+        // 这里调用渲染进程的方法
+        const result = await mainWindow.webContents.executeJavaScript(`
+          window.vueApp?.requestStopQQBotIfRunning?.();
+        `);
+        return result;
+      } catch (error) {
+        console.error('调用 requestStopQQBotIfRunning 失败:', error);
+        throw error;
+      }
+    });
     // 其他IPC处理...
     ipcMain.on('open-external', (event, url) => {
       shell.openExternal(url)
@@ -481,17 +493,32 @@ app.whenReady().then(async () => {
   }
 })
 
-// 应用退出处理
-app.on('before-quit', () => {
-  app.isQuitting = true
-  if (backendProcess) {
-    if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t'])
-    } else {
-      backendProcess.kill('SIGKILL')
+app.on('before-quit', async () => {
+  app.isQuitting = true;
+  
+  try {
+    // 先尝试优雅关闭机器人
+    if (!mainWindow.isDestroyed()) {
+      await Promise.race([
+        mainWindow.webContents.executeJavaScript(`
+          window.vueApp?.requestStopQQBotIfRunning?.();
+        `),
+        new Promise(resolve => setTimeout(resolve, 5000)) // 5秒超时
+      ]);
+    }
+  } catch (error) {
+    console.error('关闭机器人时出错:', error);
+  } finally {
+    // 确保后端进程被终止
+    if (backendProcess) {
+      if (process.platform === 'win32') {
+        spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t']);
+      } else {
+        backendProcess.kill('SIGKILL');
+      }
     }
   }
-})
+});
 
 // 自动退出处理
 app.on('window-all-closed', () => {
