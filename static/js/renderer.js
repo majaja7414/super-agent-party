@@ -11,7 +11,19 @@ const app = Vue.createApp({
   data() {
     return vue_data
   },
+  // 在组件销毁时清除定时器
+  beforeDestroy() {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+    }
+  },
   mounted() {
+    // 初始检查
+    this.checkQQBotStatus();
+    
+    // 每30秒检查一次状态
+    this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
+
     if (isElectron) {
       this.isMac = window.electron.isMac;
     }

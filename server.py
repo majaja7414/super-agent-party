@@ -3162,7 +3162,7 @@ async def stop_qq_bot():
     finally:
         qq_bot_process = None
     
-    return {"message": "QQ机器人已停止"}
+    return {"success": True,"message": "QQ机器人已停止"}
 
 # 检查机器人状态和配置
 @app.get("/qq_bot_status")
@@ -3172,7 +3172,7 @@ async def qq_bot_status():
     status = {
         "is_running": False,
         "pid": None,
-        "config": current_bot_config.dict() if current_bot_config else None
+        "config": current_bot_config.model_dump() if current_bot_config else None
     }
     
     if qq_bot_process and qq_bot_process.is_alive():

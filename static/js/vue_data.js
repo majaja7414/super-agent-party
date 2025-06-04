@@ -331,6 +331,9 @@ let vue_data = {
       secret: ''
     },
     isQQBotRunning: false, // QQ机器人状态
+    isStarting: false,      // 启动中状态
+    isStopping: false,      // 停止中状态
+    isReloading: false,     // 重载中状态
     activeMemoryTab: 'add',
     memories: [],
     newMemory: { 

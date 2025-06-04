@@ -2657,64 +2657,108 @@ let vue_methods = {
       this.customHttpTools = this.customHttpTools.filter(tool => tool.id !== id);
       this.autoSaveSettings();
     },
-    // 启动QQ机器人
-    async startQQBot() {
-        try {
-            const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.qqBotConfig)
-            });
+  // 启动QQ机器人
+  async startQQBot() {
+    this.isStarting = true;
+    
+    try {
+      const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.qqBotConfig)
+      });
 
-            if (response.ok) {
-                this.isQQBotRunning = true;
-                showNotification('QQ机器人已启动', 'success');
-            } else {
-                throw new Error('启动失败');
-            }
-        } catch (error) {
-            console.error('启动QQ机器人时出错:', error);
-            showNotification('启动QQ机器人失败', 'error');
+      const result = await response.json();
+      
+      if (result.success) {
+        this.isQQBotRunning = true;
+        showNotification('QQ机器人已成功启动', 'success');
+      } else {
+        // 显示具体错误信息
+        const errorMessage = result.message || '启动失败，请检查配置';
+        showNotification(`启动失败: ${errorMessage}`, 'error');
+      }
+    } catch (error) {
+      console.error('启动QQ机器人时出错:', error);
+      showNotification('启动QQ机器人失败: 网络错误或服务器未响应', 'error');
+    } finally {
+      this.isStarting = false;
+    }
+  },
+
+  // 停止QQ机器人
+  async stopQQBot() {
+    this.isStopping = true;
+    
+    try {
+      const response = await fetch(`http://${HOST}:${PORT}/stop_qq_bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        this.isQQBotRunning = false;
+        showNotification('QQ机器人已成功停止', 'success');
+      } else {
+        const errorMessage = result.message || '停止失败';
+        showNotification(`停止失败: ${errorMessage}`, 'error');
+      }
+    } catch (error) {
+      console.error('停止QQ机器人时出错:', error);
+      showNotification('停止QQ机器人失败: 网络错误或服务器未响应', 'error');
+    } finally {
+      this.isStopping = false;
+    }
+  },
+
+  // 重载QQ机器人配置
+  async reloadQQBotConfig() {
+    this.isReloading = true;
+    
+    try {
+      const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(this.qqBotConfig)
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        if (result.config_changed) {
+          showNotification('QQ机器人配置已重载并重新启动', 'success');
+        } else {
+          showNotification('QQ机器人配置已更新', 'success');
         }
-    },
-
-    // 停止QQ机器人
-    async stopQQBot() {
-        try {
-            const response = await fetch(`http://${HOST}:${PORT}/stop_qq_bot`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (response.ok) {
-                this.isQQBotRunning = false;
-                showNotification('QQ机器人已停止', 'success');
-            } else {
-                throw new Error('停止失败');
-            }
-        } catch (error) {
-            console.error('停止QQ机器人时出错:', error);
-            showNotification('停止QQ机器人失败', 'error');
-        }
-    },
-
-    // 重载QQ机器人配置
-    async reloadQQBotConfig() {
-        try {
-            const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(this.qqBotConfig)
-            });
-
-            if (response.ok) {
-                showNotification('QQ机器人配置已重载', 'success');
-            } else {
-                throw new Error('重载失败');
-            }
-        } catch (error) {
-            console.error('重载QQ机器人配置时出错:', error);
-            showNotification('重载QQ机器人配置失败', 'error');
-        }
-    },
+      } else {
+        const errorMessage = result.message || '重载失败';
+        showNotification(`重载失败: ${errorMessage}`, 'error');
+      }
+    } catch (error) {
+      console.error('重载QQ机器人配置时出错:', error);
+      showNotification('重载QQ机器人配置失败: 网络错误或服务器未响应', 'error');
+    } finally {
+      this.isReloading = false;
+    }
+  },
+  
+  // 添加状态检查方法
+  async checkQQBotStatus() {
+    try {
+      const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`);
+      const status = await response.json();
+      
+      // 更新机器人运行状态
+      this.isQQBotRunning = status.is_running;
+      
+      // 如果机器人正在运行但前端状态不一致，更新状态
+      if (status.is_running && !this.isQQBotRunning) {
+        this.isQQBotRunning = true;
+      }
+    } catch (error) {
+      console.error('检查机器人状态失败:', error);
+    }
+  },
 }

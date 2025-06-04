@@ -3289,35 +3289,53 @@
                         {{ t('qq_bot_config') }} <!-- 本地化文本 -->
                       </span>
                       <div>
+                        <!-- 启动按钮 -->
                         <el-tooltip :content="t('start_bot')" placement="top">
                           <el-button 
                             type="primary" 
                             @click="startQQBot" 
-                            :disabled="!isQQBotConfigValid"
+                            :disabled="!isQQBotConfigValid || isQQBotRunning || isStarting"
                             circle
                           >
-                            <i class="fa-solid fa-play"></i>
+                            <template v-if="isStarting">
+                              <i class="fa-solid fa-spinner fa-spin"></i>
+                            </template>
+                            <template v-else>
+                              <i class="fa-solid fa-play"></i>
+                            </template>
                           </el-button>
                         </el-tooltip>
                         
+                        <!-- 停止按钮 -->
                         <el-tooltip :content="t('stop_bot')" placement="top">
                           <el-button 
                             type="danger" 
                             @click="stopQQBot" 
-                            :disabled="!isQQBotRunning"
+                            :disabled="!isQQBotRunning || isStopping"
                             circle
                           >
-                            <i class="fa-solid fa-stop"></i>
+                            <template v-if="isStopping">
+                              <i class="fa-solid fa-spinner fa-spin"></i>
+                            </template>
+                            <template v-else>
+                              <i class="fa-solid fa-stop"></i>
+                            </template>
                           </el-button>
                         </el-tooltip>
                         
+                        <!-- 重载按钮 -->
                         <el-tooltip :content="t('reload_bot')" placement="top">
                           <el-button 
                             @click="reloadQQBotConfig" 
-                            :disabled="!isQQBotRunning"
+                            :disabled="!isQQBotRunning || isReloading"
                             circle
                           >
-                            <i class="fa-solid fa-rotate"></i>
+                            <template v-if="isReloading">
+                              <i class="fa-solid fa-rotate fa-spin"></i>
+                            </template>
+                            <template v-else>
+                              <i class="fa-solid fa-rotate"></i>
+                            </template>
                           </el-button>
                         </el-tooltip>
                       </div>
