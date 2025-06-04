@@ -25,7 +25,7 @@ from typing import List, Dict,Optional
 import shortuuid
 from py.mcp_clients import McpClient
 from contextlib import asynccontextmanager,suppress
-
+import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import botpy
@@ -2919,12 +2919,46 @@ class MyClient(botpy.Client):
         if self.memoryLimit > 0:
             while len(self.memoryList[c_id]) > self.memoryLimit:
                 self.memoryList[c_id].pop(0)
+                
+        # 从res中提取所有图片链接
+        image_urls = re.findall(r'!\[.*?\]\(.*?\)', res, re.IGNORECASE)
+        count = 1
+        # 发送图片（如果有）
+        for image_url in image_urls:
+            try:
+                # 将image_url中的markdown格式转换为普通URL
+                image_url = re.search(r'\((.*?)\)', image_url).group(1)
+                print(f"发送图片: {image_url}")
+                # 用requests下载图片确保图片存在
+                image_data = requests.get(image_url).content
+                uploadMedia = await message._api.post_c2c_file(
+                    openid=message.author.user_openid, 
+                    file_type=1, # 文件类型要对应上，具体支持的类型见方法说明
+                    url=image_url # 使用提取到的图片URL
+                )
+                # 资源上传后，会得到Media，用于发送消息
+                await message._api.post_c2c_message(
+                    openid=message.author.user_openid,
+                    msg_type=7,  # 7表示富媒体类型
+                    msg_id=message.id, 
+                    media=uploadMedia,
+                    msg_seq=count
+                )
+                count += 1
+            except Exception as e:
+                print(f"发送图片失败: {e}")
 
-        await message._api.post_c2c_message(
-            openid=message.author.user_openid, 
-            msg_type=0, msg_id=message.id, 
-            content=f"{res}"
-        )
+        # 从res中移除图片标记，只保留文本内容
+        text_content = re.sub(r'!\[.*?\]\(.*?\)', '', res).strip()
+        
+        # 如果有文本内容才发送
+        if text_content:
+            await message._api.post_c2c_message(
+                openid=message.author.user_openid, 
+                msg_type=0, msg_id=message.id, 
+                content=text_content,
+                msg_seq=count
+            )
     
     async def on_group_at_message_create(self, message: GroupMessage):
         # 检查停止标志
