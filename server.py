@@ -613,16 +613,20 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         user_prompt = request.messages[-1]['content']
         if m0:
             lore_content = ""
+            assistant_reply = ""
+            # 找出request.messages中上次的assistant回复
+            for i in range(len(request.messages)-1, -1, -1):
+                if request.messages[i]['role'] == 'assistant':
+                    assistant_reply = request.messages[i]['content']
+                    break
             if cur_memory["lorebook"]:
                 for lore in cur_memory["lorebook"]:
-                    if lore["name"] != "" and lore["name"] in user_prompt:
+                    if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
-                print("查询记忆")
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
                 relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
-                print("查询记忆结束")
             except Exception as e:
                 print("m0.search error:",e)
                 relevant_memories = ""
@@ -1859,9 +1863,15 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         user_prompt = request.messages[-1]['content']
         if m0:
             lore_content = ""
+            assistant_reply = ""
+            # 找出request.messages中上次的assistant回复
+            for i in range(len(request.messages)-1, -1, -1):
+                if request.messages[i]['role'] == 'assistant':
+                    assistant_reply = request.messages[i]['content']
+                    break
             if cur_memory["lorebook"]:
                 for lore in cur_memory["lorebook"]:
-                    if lore["name"] != "" and lore["name"] in user_prompt:
+                    if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
