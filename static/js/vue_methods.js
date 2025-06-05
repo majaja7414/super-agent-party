@@ -424,6 +424,10 @@ let vue_methods = {
         this.activeMenu = 'storage';
         this.subMenu = 'text'; // 默认显示第一个子菜单
       }
+      else if (key === 'deploy-bot') {
+        this.activeMenu = 'deploy-bot';
+        this.subMenu = 'qq_bot'; // 默认显示第一个子菜单
+      }
       else {
         this.activeMenu = key;
       }
