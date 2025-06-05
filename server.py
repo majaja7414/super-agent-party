@@ -31,6 +31,7 @@ from concurrent.futures import ThreadPoolExecutor
 import botpy
 from botpy.message import C2CMessage,GroupMessage
 import argparse
+from mem0 import Memory
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -519,7 +520,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 cur_memory = memory
                 break
         if cur_memory:
-            from mem0 import Memory
+            
             config={
                 "embedder": {
                     "provider": 'openai',
@@ -1751,7 +1752,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 cur_memory = memory
                 break
         if cur_memory:
-            from mem0 import Memory
+
             config={
                 "embedder": {
                     "provider": 'openai',
@@ -2908,11 +2909,21 @@ class MyClient(botpy.Client):
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
-        
+        user_content = []
+        if message.attachments:
+            for attachment in message.attachments:
+                if attachment.content_type.startswith("image/"):
+                    image_url = attachment.url
+                    user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+        if user_content:
+            user_content.append({"type": "text", "text": message.content})
+        else:
+            user_content = message.content
+        print(f"User content: {user_content}")
         c_id = message.author.user_openid
         if c_id not in self.memoryList:
             self.memoryList[c_id] = []
-        self.memoryList[c_id].append({"role": "user", "content": message.content})
+        self.memoryList[c_id].append({"role": "user", "content": user_content})
 
         # 初始化状态管理
         if not hasattr(self, 'msg_seq_counters'):
@@ -3032,7 +3043,8 @@ class MyClient(botpy.Client):
                 # 链接有效性验证
                 if not re.match(r'^https?://', url):
                     continue
-                    
+                # 用request获取图片，保证图片存在
+                response = requests.get(url)
                 # 上传媒体文件
                 upload_media = await message._api.post_c2c_file(
                     openid=message.author.user_openid,
@@ -3070,11 +3082,25 @@ class MyClient(botpy.Client):
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
         )
-        
+        user_content = []
+        if message.attachments:
+            for attachment in message.attachments:
+                if attachment.content_type.startswith("image/"):
+                    image_url = attachment.url
+                    try:
+                        # 用request获取图片，保证图片存在
+                        response = requests.get(image_url)
+                        user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    except Exception as e:
+                        print(f"图片获取失败: {e}")
+        if user_content:
+            user_content.append({"type": "text", "text": message.content})
+        else:
+            user_content = message.content
         g_id = message.group_openid
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
-        self.memoryList[g_id].append({"role": "user", "content": message.content})
+        self.memoryList[g_id].append({"role": "user", "content": user_content})
 
         # 初始化群组状态
         if not hasattr(self, 'group_states'):
@@ -3188,7 +3214,8 @@ class MyClient(botpy.Client):
                 # 链接有效性验证
                 if not url.startswith(('http://', 'https://')):
                     continue
-                    
+                # 用request获取图片，保证图片存在
+                response = requests.get(url)
                 # 上传群文件
                 upload_media = await message._api.post_group_file(
                     group_openid=message.group_openid,
