@@ -326,6 +326,7 @@ let vue_data = {
     ],
     defaultSeparators: [
       { label: '(。)', value: '。' },
+      { label: '(...)', value: '...' },
       { label: '(？)', value: '？' },
       { label: '(！)', value: '！' },
       { label: '(，)', value: '，' },
@@ -340,13 +341,23 @@ let vue_data = {
       { label: '( )', value: ' ' },
       // 英文标点符号
       { label: '(.)', value: '.' },
+      { label: '(…)', value: '…' },
       { label: '(?)', value: '?' },
       { label: '(!)', value: '!' },
       { label: '(,)', value: ',' },
       { label: '(;)', value: ';' },
       { label: '(:)', value: ':' },
       { label: '(")', value: '"' },
-      { label: '(\')', value: '\'' }
+      { label: '(\')', value: '\'' },
+      // 其他
+      { label: '(~)', value: '~' },
+      { label: '(*)', value: '*' },
+      { label: '(`)', value: '`' },
+      { label: '(·)', value: '·' },
+      { label: '(-)', value: '-' },
+      { label: '(—)', value: '—' },
+      { label: '(EOF)', value: 'EOF' },
+      { label: '(/)', value: '/' },
     ],
     qqBotConfig: {
       QQAgent:'super-model',
