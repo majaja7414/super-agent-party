@@ -1919,6 +1919,36 @@ body {
     }
   }
 }
+
+.memo-extra-params {
+  .param-row {
+    margin-bottom: 16px;
+    
+    .param-name-input {
+      margin-bottom: 8px;
+    }
+
+    .param-value-input {
+      margin-bottom: 8px;
+      
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      
+      .el-button {
+        margin-left: 0;
+      }
+    }
+  }
+}
+
 .remove-btn {
   margin-left: auto;
 }
@@ -1961,6 +1991,10 @@ body {
 
 /* 新版侧边导航样式 */
 .agent-suite-container {
+  height: calc(100vh - 60px);
+}
+
+.deploy-container {
   height: calc(100vh - 60px);
 }
 
@@ -2319,4 +2353,13 @@ body {
   object-fit: contain;
   border-radius: 50%;
   margin-left: 2px;
+}
+
+.spinner-rotate {
+  animation: spin 1s infinite linear;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

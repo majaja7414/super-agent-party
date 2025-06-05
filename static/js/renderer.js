@@ -11,8 +11,22 @@ const app = Vue.createApp({
   data() {
     return vue_data
   },
+  // 在组件销毁时清除定时器
+  beforeDestroy() {
+    if (this.statusInterval) {
+      clearInterval(this.statusInterval);
+    }
+  },
   mounted() {
-    this.isMac = window.electron.isMac;
+    // 初始检查
+    this.checkQQBotStatus();
+    
+    // 每30秒检查一次状态
+    this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
+
+    if (isElectron) {
+      this.isMac = window.electron.isMac;
+    }
     this.initWebSocket();
     this.highlightCode();
     this.initDownloadButtons();
@@ -46,9 +60,15 @@ const app = Vue.createApp({
     });
     document.documentElement.setAttribute('data-theme', this.systemSettings.theme);
     if (isElectron) {
+      window.stopQQBotHandler = this.requestStopQQBotIfRunning;
       window.electronAPI.onWindowState((_, state) => {
         this.isMaximized = state === 'maximized'
       });
+    }
+  },
+  beforeUnmount() {
+    if (isElectron) {
+      delete window.stopQQBotHandler;
     }
   },
   watch: {
@@ -105,6 +125,21 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    filteredSeparators() {
+      const current = this.qqBotConfig.separators;
+      const defaults = this.defaultSeparators;
+      const custom = current
+        .filter(s => !defaults.some(d => d.value === s))
+        .map(s => ({
+          label: `(${this.formatSeparator(s)})`,
+          value: s
+        }));
+      return [...this.defaultSeparators, ...custom];
+    },
+    // 计算属性，判断配置是否有效
+    isQQBotConfigValid() {
+        return this.qqBotConfig.appid && this.qqBotConfig.secret;
+    },
     updateButtonText() {
       if (this.updateDownloaded) return this.t('installNow');
       if (this.downloadProgress > 0) return this.t('downloading');

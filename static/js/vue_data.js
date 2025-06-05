@@ -316,13 +316,61 @@ let vue_data = {
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
       { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'docker', title: 'docker', icon: 'fa-brands fa-docker'},
-      { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' }
+      { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' },
     ],
     storageTiles: [
       { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
       { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
+    defaultSeparators: [
+      // 转义字符
+      { label: '\\n', value: '\n' },
+      { label: '\\n\\n', value: '\n\n' },
+      { label: '\\t', value: '\t' },
+      { label: ' ', value: ' ' },
+      // 中文标点符号
+      { label: '。', value: '。' },
+      { label: '...', value: '...' },
+      { label: '？', value: '？' },
+      { label: '！', value: '！' },
+      { label: '，', value: '，' },
+      { label: '；', value: ';' },
+      { label: '：', value: '：' },
+      { label: '～', value: '～' },
+      // 英文标点符号
+      { label: '~', value: '~' },
+      { label: '.', value: '.' },
+      { label: '…', value: '…' },
+      { label: '?', value: '?' },
+      { label: '!', value: '!' },
+      { label: ',', value: ',' },
+      { label: ';', value: ';' },
+      { label: ':', value: ':' },
+      { label: '"', value: '"' },
+      { label: '\'', value: '\'' },
+      // 其他
+      { label: '*', value: '*' },
+      { label: '`', value: '`' },
+      { label: '·', value: '·' },
+      { label: '-', value: '-' },
+      { label: '—', value: '—' },
+      { label: '/', value: '/' },
+    ],
+    qqBotConfig: {
+      QQAgent:'super-model',
+      memoryLimit: 30,
+      appid: '',
+      secret: '',
+      separators: ["。", "\n", "？", "！"]
+    },
+    deployTiles: [
+        { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
+    ],
+    isQQBotRunning: false, // QQ机器人状态
+    isStarting: false,      // 启动中状态
+    isStopping: false,      // 停止中状态
+    isReloading: false,     // 重载中状态
     activeMemoryTab: 'add',
     memories: [],
     newMemory: { 

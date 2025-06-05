@@ -7,6 +7,7 @@ const fs = require('fs')
 const os = require('os');
 
 let pythonExec;
+let isQuitting = false;
 
 // 判断操作系统
 if (os.platform() === 'win32') {
@@ -436,6 +437,16 @@ app.whenReady().then(async () => {
         y: arg.y
       });
     });
+    // 监听关闭事件
+    ipcMain.handle('request-stop-qqbot', async (event) => {
+      const win = BrowserWindow.getAllWindows()[0]; // 获取主窗口
+      if (win && !win.isDestroyed()) {
+        // 通过webContents执行渲染进程方法
+        await win.webContents.executeJavaScript(`
+          window.stopQQBotHandler && window.stopQQBotHandler()
+        `);
+      }
+    });
     // 其他IPC处理...
     ipcMain.on('open-external', (event, url) => {
       shell.openExternal(url)
@@ -481,17 +492,48 @@ app.whenReady().then(async () => {
   }
 })
 
+
+
 // 应用退出处理
-app.on('before-quit', () => {
-  app.isQuitting = true
-  if (backendProcess) {
-    if (process.platform === 'win32') {
-      spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t'])
-    } else {
-      backendProcess.kill('SIGKILL')
+app.on('before-quit', async (event) => {
+  // 防止重复处理退出事件
+  if (isQuitting) return;
+  
+  // 标记退出状态并阻止默认退出行为
+  isQuitting = true;
+  event.preventDefault();
+  
+  try {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    
+    // 1. 尝试停止QQ机器人
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      await mainWindow.webContents.executeJavaScript(`
+        if (window.stopQQBotHandler) {
+          window.stopQQBotHandler();
+        }
+      `);
+      
+      // 等待机器人停止（最多1秒）
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
+    
+    // 2. 停止后端进程
+    if (backendProcess) {
+      if (process.platform === 'win32') {
+        spawn('taskkill', ['/pid', backendProcess.pid, '/f', '/t']);
+      } else {
+        backendProcess.kill('SIGKILL');
+      }
+      backendProcess = null;
+    }
+  } catch (error) {
+    console.error('退出时发生错误:', error);
+  } finally {
+    // 3. 最终退出应用
+    app.exit(0);
   }
-})
+});
 
 // 自动退出处理
 app.on('window-all-closed', () => {

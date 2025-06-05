@@ -164,6 +164,12 @@
             </el-icon>
             <template #title>{{ t('apiGroup') }}</template>
           </el-menu-item>
+          <el-menu-item index="deploy-bot">
+              <el-icon>
+                  <i class="fa-solid fa-robot"></i>
+              </el-icon>
+              <template #title>{{ t('deployBot') }}</template>
+          </el-menu-item>
           <el-menu-item index="system">
             <el-icon>
               <i class="fa-solid fa-gear"></i>
@@ -2090,7 +2096,7 @@
                   </el-tab-pane>
                   <!-- 记忆配置标签页 -->
                   <el-tab-pane :label="t('memoryConfig')" name="config">
-                    <el-form :model="KBSettings" class="settings-form"  label-position="top">
+                    <el-form :model="memorySettings" class="settings-form"  label-position="top">
                       <div class="tool-item">
                         <div class="tool-header">
                           <div class="header-left">
@@ -2137,12 +2143,34 @@
                   </el-tab-pane>
                 </el-tabs>
                 <!-- 添加记忆对话框 -->
-                <el-dialog v-model="showAddMemoryDialog" :title="t('addNewMemory')" width="500px">
+                <el-dialog v-model="showAddMemoryDialog" :title="t('memoryConfig')" width="80%">
                   <el-form label-position="top">
                     <el-form-item :label="t('memoryName')" required>
                       <el-input v-model="newMemory.name" />
                     </el-form-item>
-                    
+                    <!-- 新增已有记忆选择框 -->
+                    <el-form-item :label="t('selectExistingMemory')">
+                      <el-select 
+                        v-model="selectedExistingMemoryId" 
+                        :placeholder="t('selectExistingMemoryPlaceholder')"
+                        @change="copyExistingMemoryData"
+                        class="full-width-input">
+                        <!-- 添加“无”选项，默认选中 -->
+                        <el-option
+                          :key="'none'"
+                          :label="t('none')"
+                          :value="null">
+                        </el-option>
+                        
+                        <el-option
+                          v-for="memory in memories"
+                          :key="memory.id"
+                          :label="memory.name"
+                          :value="memory.id">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+
                     <el-form-item :label="t('embeddingProvider')" required>
                       <el-select 
                         v-model="newMemory.providerId" 
@@ -2205,38 +2233,54 @@
                         <i class="fa-solid fa-plus"></i>
                       </el-button>
                     </div>
-                    <div class="extra-params">
-                      <div
-                        v-for="(param, index) in newMemory.lorebook"
-                        :key="index"
-                        class="param-row"
-                      >
+                    <div class="memo-extra-params">
+                      <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
+                        <!-- 第一行：参数名称 -->
                         <el-input
                           v-model="param.name"
                           :placeholder="t('settingName')"
-                          class="param-input"
+                          class="param-name-input"
                           @input="autoSaveSettings"
                         ></el-input>
 
-                        <div class="value-input">
-                          <el-input
-                            v-model="param.value"
-                            :placeholder="t('settingValue')"
-                            type="textarea"  
-                            :rows="1"
-                            @input="autoSaveSettings"
-                          ></el-input>
-                        </div>
+                        <!-- 第二行：参数内容 -->
+                        <el-input
+                          v-model="param.value"
+                          :placeholder="t('settingValue')"
+                          type="textarea"
+                          :rows="3"
+                          @input="autoSaveSettings"
+                          class="param-value-input"
+                        ></el-input>
 
-                        <el-button
-                          @click="removeLorebook(index)"
-                          type="danger"
-                          circle
-                          size="small"
-                          class="remove-btn"
-                        >
-                          <i class="fa-solid fa-trash"></i>
-                        </el-button>
+                        <!-- 第三行：操作按钮 -->
+                        <div class="action-row">
+                          <el-button
+                            @click.stop="clearParam(index)"
+                            type="default"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-eraser"></i>
+                          </el-button>
+                          <el-button
+                            @click.stop="removeLorebook(index)"
+                            type="danger"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                          <el-button 
+                            @click="addLorebook"
+                            type="primary"
+                            circle
+                            size="small"
+                            class="header-add-btn"
+                          >
+                            <i class="fa-solid fa-plus"></i>
+                          </el-button>
+                        </div>
                       </div>
                     </div>
                   </el-form>
@@ -2827,10 +2871,8 @@
                   </div>
                   <!-- 添加新自定义HTTP工具 -->
                   <div class="provider-card add-tile" @click="showCustomHttpToolForm = true">
-                    <el-icon :size="40" color="#909399">
-                      <i class="fa-solid fa-plus"></i>
-                    </el-icon>
-                    <div>{{ t('addCustomHttpTool') }}</div>
+                    <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addCustomHttpTool') }}</div>
                   </div>
                 </div>
 
@@ -3079,7 +3121,145 @@
             </div>
           </div>
         </div>
-
+        <div v-show="activeMenu === 'deploy-bot'" class="page deploy-container">
+            <div class="suite-layout">
+                <!-- 左侧导航 -->
+                <div class="suite-sidebar">
+                    <div class="tile-nav">
+                        <div 
+                            v-for="tile in deployTiles" 
+                            class="nav-item"
+                            :class="{ active: subMenu === tile.id }"
+                            @click="subMenu = tile.id">
+                            <el-icon class="nav-icon"><i :class="tile.icon"></i></el-icon>
+                            <span class="nav-text">{{ t(tile.title) }}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧内容 -->
+                <div class="suite-content">
+                  <!-- QQ机器人配置页面 -->
+                  <div v-show="subMenu === 'qq_bot'">
+                    <el-form class="settings-form" :model="qqBotConfig" label-position="top">
+                      <div class="tool-item">
+                        <!-- QQ机器人配置头部 -->
+                        <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>
+                            <el-icon><i class="fa-brands fa-qq"></i></el-icon>
+                            {{ t('qq_bot_config') }} <!-- 本地化文本 -->
+                          </span>
+                          <div>
+                            <!-- 启动按钮 -->
+                            <el-tooltip :content="t('start_bot')" placement="top">
+                              <el-button 
+                                type="primary" 
+                                @click="startQQBot" 
+                                :disabled="!isQQBotConfigValid || isQQBotRunning || isStarting"
+                                circle
+                              >
+                                <template v-if="isStarting">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-play"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                            
+                            <!-- 停止按钮 -->
+                            <el-tooltip :content="t('stop_bot')" placement="top">
+                              <el-button 
+                                type="danger" 
+                                @click="stopQQBot" 
+                                :disabled="!isQQBotRunning || isStopping"
+                                circle
+                              >
+                                <template v-if="isStopping">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-stop"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                            
+                            <!-- 重载按钮 -->
+                            <el-tooltip :content="t('reload_bot')" placement="top">
+                              <el-button 
+                                @click="reloadQQBotConfig" 
+                                :disabled="!isQQBotRunning || isReloading"
+                                circle
+                              >
+                                <template v-if="isReloading">
+                                  <i class="fa-solid fa-rotate fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-rotate"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                          </div>
+                        </div>
+                        <div class="tool-content">
+                            <!-- 主智能体选择 -->
+                            <el-form-item :label="t('mainAgent')" required>
+                              <el-select 
+                                v-model="qqBotConfig.QQAgent"
+                                @change="changeQQAgent">
+                                <el-option
+                                  :label="t('defaultAgent')"
+                                  value="super-model"
+                                >
+                                </el-option>
+                                <el-option
+                                  v-for="(agent, id) in agents"
+                                  :key="id"
+                                  :label="agent.name"
+                                  :value="id"
+                                >
+                                </el-option>
+                              </el-select>
+                            </el-form-item>
+                            <el-form-item :label="t('separators')" required>
+                              <el-select
+                                v-model="qqBotConfig.separators"
+                                multiple
+                                filterable
+                                allow-create
+                                @keyup.enter.native="handleEnter"
+                                @create="handleCreateSeparator"
+                              >
+                                <el-option
+                                  v-for="sep in filteredSeparators"
+                                  :key="sep.value"
+                                  :label="sep.label"
+                                  :value="sep.value"
+                                />
+                              </el-select>
+                            </el-form-item>
+                            <el-form-item :label="t('conversationRounds')" class="form-item-align">
+                              <el-slider
+                                v-model="qqBotConfig.memoryLimit"
+                                :min="0"
+                                :max="1000"
+                                :step="2"
+                                @input="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item label="APP ID" required>
+                                <el-input @change="autoSaveSettings" v-model="qqBotConfig.appid" :placeholder="t('enter_qq_bot_app_id')" class="full-width-input"></el-input>
+                            </el-form-item>
+                            <el-form-item label="APP Secret" required>
+                                <el-input @change="autoSaveSettings" v-model="qqBotConfig.secret" :placeholder="t('enter_qq_bot_secret')" show-password class="full-width-input"></el-input>
+                            </el-form-item>
+                        </div>
+                      </div>
+                    </el-form>
+                  </div>
+                </div>
+            </div>
+        </div>
         <div v-show="activeMenu === 'api-group'" class="page agent-suite-container">
           <div class="suite-layout">
             <!-- 左侧导航 -->
