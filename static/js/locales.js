@@ -391,6 +391,7 @@ const translations = {
       "start_bot": "启动机器人",
       "stop_bot": "停止机器人",
       "reload_bot": "重载机器人",
+      'separators': '消息分隔符',
     },
     'en-US': {
       'chat': 'Chat',
@@ -783,5 +784,6 @@ const translations = {
       "start_bot": "Start Bot",
       "stop_bot": "Stop Bot",
       "reload_bot": "Reload Bot",
+      'separators': 'Message Separators',
     }
   };

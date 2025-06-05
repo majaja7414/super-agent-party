@@ -101,6 +101,7 @@
       "QQAgent":"super-model",
       "memoryLimit":10,
       "appid": "",
-      "secret": ""
+      "secret": "",
+      "separators": ["。", "\n", "？", "！"]
     }
 }

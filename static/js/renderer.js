@@ -125,6 +125,17 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    filteredSeparators() {
+      const current = this.qqBotConfig.separators;
+      const defaults = this.defaultSeparators;
+      const custom = current
+        .filter(s => !defaults.some(d => d.value === s))
+        .map(s => ({
+          label: `(${this.formatSeparator(s)})`,
+          value: s
+        }));
+      return [...this.defaultSeparators, ...custom];
+    },
     // 计算属性，判断配置是否有效
     isQQBotConfigValid() {
         return this.qqBotConfig.appid && this.qqBotConfig.secret;

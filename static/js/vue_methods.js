@@ -2777,4 +2777,39 @@ let vue_methods = {
         console.error('检查或停止机器人失败:', error)
       }
     },
+    handleSeparatorChange(val) {
+      this.qqBotConfig.separators = val.map(s => 
+        s.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
+      );
+      this.autoSaveSettings();
+    },
+    formatSeparator(s) {
+      return s.replace(/\n/g, '\\n')
+              .replace(/\t/g, '\\t')
+              .replace(/\r/g, '\\r');
+    },
+    // 新增创建分隔符处理方法
+    handleCreateSeparator(newSeparator) {
+      const processed = this.escapeSeparator(newSeparator)
+      if (!this.qqBotConfig.separators.includes(processed)) {
+        this.qqBotConfig.separators.push(processed)
+        this.autoSaveSettings()
+      }
+    },
+
+    // 处理回车键冲突
+    handleEnter(e) {
+      if (e.target.value) {
+        e.stopPropagation()
+      }
+    },
+
+    // 移除非必要的 change 处理
+    autoSaveSettings() {
+      // 保存逻辑...
+    },
+
+    escapeSeparator(s) {
+      return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
+    }
 }

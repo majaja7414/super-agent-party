@@ -3360,6 +3360,23 @@
                             </el-option>
                           </el-select>
                         </el-form-item>
+                        <el-form-item :label="t('separators')" required>
+                          <el-select
+                            v-model="qqBotConfig.separators"
+                            multiple
+                            filterable
+                            allow-create
+                            @keyup.enter.native="handleEnter"
+                            @create="handleCreateSeparator"
+                          >
+                            <el-option
+                              v-for="sep in filteredSeparators"
+                              :key="sep.value"
+                              :label="sep.label"
+                              :value="sep.value"
+                            />
+                          </el-select>
+                        </el-form-item>
                         <el-form-item :label="t('conversationRounds')" class="form-item-align">
                           <el-slider
                             v-model="qqBotConfig.memoryLimit"

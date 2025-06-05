@@ -324,11 +324,36 @@ let vue_data = {
       { id: 'image', icon: 'fa-solid fa-image', title: 'storageImage' },
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
+    defaultSeparators: [
+      { label: '(。)', value: '。' },
+      { label: '(？)', value: '？' },
+      { label: '(！)', value: '！' },
+      { label: '(，)', value: '，' },
+      { label: '(;)', value: ';' },
+      { label: '(：)', value: '：' },
+      { label: '("")', value: '"' },
+      { label: '(\')', value: '\'' },
+      // 转义字符
+      { label: '(\\n)', value: '\\n' },
+      { label: '(\\n\\n)', value: '\\n\\n' },
+      { label: '(\\t)', value: '\\t' },
+      { label: '( )', value: ' ' },
+      // 英文标点符号
+      { label: '(.)', value: '.' },
+      { label: '(?)', value: '?' },
+      { label: '(!)', value: '!' },
+      { label: '(,)', value: ',' },
+      { label: '(;)', value: ';' },
+      { label: '(:)', value: ':' },
+      { label: '(")', value: '"' },
+      { label: '(\')', value: '\'' }
+    ],
     qqBotConfig: {
       QQAgent:'super-model',
       memoryLimit: 10,
       appid: '',
-      secret: ''
+      secret: '',
+      separators: ["。", "\n", "？", "！"]
     },
     isQQBotRunning: false, // QQ机器人状态
     isStarting: false,      // 启动中状态

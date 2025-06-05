@@ -2880,6 +2880,7 @@ class QQBotConfig(BaseModel):
     memoryLimit: int
     appid: str
     secret: str
+    separators: List[str]
 
 # 全局变量，用于存储机器人进程
 qq_bot_process = None
@@ -2893,7 +2894,7 @@ class MyClient(botpy.Client):
         self.memoryLimit = 10
         self.memoryList = {}
         self.start_event = start_event
-        self.separators = ('。', '\n', '？', '！')
+        self.separators = ['。', '\n', '？', '！']
 
     async def on_ready(self):
         self.is_running = True
@@ -2946,6 +2947,8 @@ class MyClient(botpy.Client):
 
                 # 处理文本实时发送
                 while True:
+                    if self.separators == []:
+                        break
                     # 查找分隔符（。或\n）
                     buffer = state["text_buffer"]
                     split_pos = -1
@@ -3103,6 +3106,8 @@ class MyClient(botpy.Client):
 
                 # 处理文本分段
                 while True:
+                    if self.separators == []:
+                        break
                     # 查找分隔符（。或\n）
                     buffer = state["text_buffer"]
                     split_pos = -1
@@ -3230,6 +3235,7 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
         QQclient = MyClient(start_event, intents=botpy.Intents(public_messages=True))
         QQclient.QQAgent = config.QQAgent
         QQclient.memoryLimit = config.memoryLimit
+        QQclient.separators = config.separators
         
         # 运行机器人
         QQclient.run(appid=config.appid, secret=config.secret)
