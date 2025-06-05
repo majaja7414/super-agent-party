@@ -2812,4 +2812,23 @@ let vue_methods = {
       this.newMemory.lorebook[index].value = "";
       this.autoSaveSettings();
     },
+    copyExistingMemoryData(selectedId) {
+      const existingMemory = this.memories.find(memory => memory.id === selectedId);
+      if (existingMemory) {
+        this.newMemory = { ...existingMemory };
+        this.newMemory.id = null; // 确保新记忆的ID为null，以便在创建时生成新的ID
+      } else {
+        this.newMemory = { 
+          id: null,
+          name: '', 
+          providerId: null,
+          model: '',
+          base_url: '',
+          api_key: '',
+          vendor: '',
+          lorebook: [],
+          basic_character: '',
+        };
+      }
+    },
 }

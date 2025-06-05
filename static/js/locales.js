@@ -394,6 +394,9 @@ const translations = {
       'separators': '消息分隔符',
       'deployBot': '部署机器人',
       'qqBotConfig': 'QQ机器人配置',
+      'selectExistingMemory': '从已有记忆开始',
+      'selectExistingMemoryPlaceholder': '请选择已有记忆',
+      'none': '无',
     },
     'en-US': {
       'chat': 'Chat',
@@ -789,5 +792,8 @@ const translations = {
       'separators': 'Message Separators',
       'deployBot': 'Deploy Bot',
       'qqBotConfig': 'QQ Bot Configuration',
+      'selectExistingMemory': 'Starting from existing memories',
+      'selectExistingMemoryPlaceholder': 'Please select an existing memory',
+      'none': 'None',
     }
   };

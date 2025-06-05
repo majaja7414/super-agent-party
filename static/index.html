@@ -2096,7 +2096,7 @@
                   </el-tab-pane>
                   <!-- 记忆配置标签页 -->
                   <el-tab-pane :label="t('memoryConfig')" name="config">
-                    <el-form :model="KBSettings" class="settings-form"  label-position="top">
+                    <el-form :model="memorySettings" class="settings-form"  label-position="top">
                       <div class="tool-item">
                         <div class="tool-header">
                           <div class="header-left">
@@ -2148,7 +2148,29 @@
                     <el-form-item :label="t('memoryName')" required>
                       <el-input v-model="newMemory.name" />
                     </el-form-item>
-                    
+                    <!-- 新增已有记忆选择框 -->
+                    <el-form-item :label="t('selectExistingMemory')">
+                      <el-select 
+                        v-model="selectedExistingMemoryId" 
+                        :placeholder="t('selectExistingMemoryPlaceholder')"
+                        @change="copyExistingMemoryData"
+                        class="full-width-input">
+                        <!-- 添加“无”选项，默认选中 -->
+                        <el-option
+                          :key="'none'"
+                          :label="t('none')"
+                          :value="null">
+                        </el-option>
+                        
+                        <el-option
+                          v-for="memory in memories"
+                          :key="memory.id"
+                          :label="memory.name"
+                          :value="memory.id">
+                        </el-option>
+                      </el-select>
+                    </el-form-item>
+
                     <el-form-item :label="t('embeddingProvider')" required>
                       <el-select 
                         v-model="newMemory.providerId" 
