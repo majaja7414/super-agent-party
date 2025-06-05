@@ -317,7 +317,6 @@ let vue_data = {
       { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'docker', title: 'docker', icon: 'fa-brands fa-docker'},
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' },
-      { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
     ],
     storageTiles: [
       { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
@@ -325,39 +324,38 @@ let vue_data = {
       { id: 'video', icon: 'fa-solid fa-video', title: 'storageVideo' }
     ],
     defaultSeparators: [
-      { label: '(。)', value: '。' },
-      { label: '(...)', value: '...' },
-      { label: '(？)', value: '？' },
-      { label: '(！)', value: '！' },
-      { label: '(，)', value: '，' },
-      { label: '(;)', value: ';' },
-      { label: '(：)', value: '：' },
-      { label: '("")', value: '"' },
-      { label: '(\')', value: '\'' },
       // 转义字符
-      { label: '(\\n)', value: '\\n' },
-      { label: '(\\n\\n)', value: '\\n\\n' },
-      { label: '(\\t)', value: '\\t' },
-      { label: '( )', value: ' ' },
+      { label: '\\n', value: '\n' },
+      { label: '\\n\\n', value: '\n\n' },
+      { label: '\\t', value: '\t' },
+      { label: ' ', value: ' ' },
+      // 中文标点符号
+      { label: '。', value: '。' },
+      { label: '...', value: '...' },
+      { label: '？', value: '？' },
+      { label: '！', value: '！' },
+      { label: '，', value: '，' },
+      { label: '；', value: ';' },
+      { label: '：', value: '：' },
+      { label: '～', value: '～' },
       // 英文标点符号
-      { label: '(.)', value: '.' },
-      { label: '(…)', value: '…' },
-      { label: '(?)', value: '?' },
-      { label: '(!)', value: '!' },
-      { label: '(,)', value: ',' },
-      { label: '(;)', value: ';' },
-      { label: '(:)', value: ':' },
-      { label: '(")', value: '"' },
-      { label: '(\')', value: '\'' },
+      { label: '~', value: '~' },
+      { label: '.', value: '.' },
+      { label: '…', value: '…' },
+      { label: '?', value: '?' },
+      { label: '!', value: '!' },
+      { label: ',', value: ',' },
+      { label: ';', value: ';' },
+      { label: ':', value: ':' },
+      { label: '"', value: '"' },
+      { label: '\'', value: '\'' },
       // 其他
-      { label: '(~)', value: '~' },
-      { label: '(*)', value: '*' },
-      { label: '(`)', value: '`' },
-      { label: '(·)', value: '·' },
-      { label: '(-)', value: '-' },
-      { label: '(—)', value: '—' },
-      { label: '(EOF)', value: 'EOF' },
-      { label: '(/)', value: '/' },
+      { label: '*', value: '*' },
+      { label: '`', value: '`' },
+      { label: '·', value: '·' },
+      { label: '-', value: '-' },
+      { label: '—', value: '—' },
+      { label: '/', value: '/' },
     ],
     qqBotConfig: {
       QQAgent:'super-model',
@@ -366,6 +364,9 @@ let vue_data = {
       secret: '',
       separators: ["。", "\n", "？", "！"]
     },
+    deployTiles: [
+        { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
+    ],
     isQQBotRunning: false, // QQ机器人状态
     isStarting: false,      // 启动中状态
     isStopping: false,      // 停止中状态

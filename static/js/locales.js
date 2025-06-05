@@ -392,6 +392,8 @@ const translations = {
       "stop_bot": "停止机器人",
       "reload_bot": "重载机器人",
       'separators': '消息分隔符',
+      'deployBot': '部署机器人',
+      'qqBotConfig': 'QQ机器人配置',
     },
     'en-US': {
       'chat': 'Chat',
@@ -785,5 +787,7 @@ const translations = {
       "stop_bot": "Stop Bot",
       "reload_bot": "Reload Bot",
       'separators': 'Message Separators',
+      'deployBot': 'Deploy Bot',
+      'qqBotConfig': 'QQ Bot Configuration',
     }
   };
