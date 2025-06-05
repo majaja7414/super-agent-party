@@ -2143,7 +2143,7 @@
                   </el-tab-pane>
                 </el-tabs>
                 <!-- 添加记忆对话框 -->
-                <el-dialog v-model="showAddMemoryDialog" :title="t('addNewMemory')" width="500px">
+                <el-dialog v-model="showAddMemoryDialog" :title="t('addNewMemory')" width="80%">
                   <el-form label-position="top">
                     <el-form-item :label="t('memoryName')" required>
                       <el-input v-model="newMemory.name" />
@@ -2211,38 +2211,54 @@
                         <i class="fa-solid fa-plus"></i>
                       </el-button>
                     </div>
-                    <div class="extra-params">
-                      <div
-                        v-for="(param, index) in newMemory.lorebook"
-                        :key="index"
-                        class="param-row"
-                      >
+                    <div class="memo-extra-params">
+                      <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
+                        <!-- 第一行：参数名称 -->
                         <el-input
                           v-model="param.name"
                           :placeholder="t('settingName')"
-                          class="param-input"
+                          class="param-name-input"
                           @input="autoSaveSettings"
                         ></el-input>
 
-                        <div class="value-input">
-                          <el-input
-                            v-model="param.value"
-                            :placeholder="t('settingValue')"
-                            type="textarea"  
-                            :rows="1"
-                            @input="autoSaveSettings"
-                          ></el-input>
-                        </div>
+                        <!-- 第二行：参数内容 -->
+                        <el-input
+                          v-model="param.value"
+                          :placeholder="t('settingValue')"
+                          type="textarea"
+                          :rows="3"
+                          @input="autoSaveSettings"
+                          class="param-value-input"
+                        ></el-input>
 
-                        <el-button
-                          @click="removeLorebook(index)"
-                          type="danger"
-                          circle
-                          size="small"
-                          class="remove-btn"
-                        >
-                          <i class="fa-solid fa-trash"></i>
-                        </el-button>
+                        <!-- 第三行：操作按钮 -->
+                        <div class="action-row">
+                          <el-button
+                            @click.stop="clearParam(index)"
+                            type="default"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-eraser"></i>
+                          </el-button>
+                          <el-button
+                            @click.stop="removeLorebook(index)"
+                            type="danger"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                          <el-button 
+                            @click="addLorebook"
+                            type="primary"
+                            circle
+                            size="small"
+                            class="header-add-btn"
+                          >
+                            <i class="fa-solid fa-plus"></i>
+                          </el-button>
+                        </div>
                       </div>
                     </div>
                   </el-form>

@@ -110,15 +110,15 @@ let vue_methods = {
     }
     return originalUrl;
   },
-  resetMessage(index) {
+  async resetMessage(index) {
     this.messages[index].content = this.t('defaultSystemPrompt');
     this.system_prompt = this.t('defaultSystemPrompt');
-    this.autoSaveSettings();
+    await this.autoSaveSettings();
   },
 
-  deleteMessage(index) {
+  async deleteMessage(index) {
     this.messages.splice(index, 1);
-    this.autoSaveSettings();
+    await this.autoSaveSettings();
   },
 
   openEditDialog(type, content, index = null) {
@@ -127,37 +127,37 @@ let vue_methods = {
     this.editIndex = index;
     this.showEditDialog = true;
   },
-  saveEdit() {
+  async saveEdit() {
     if (this.editType === 'system') {
       this.system_prompt = this.editContent;
     }
     if (this.editIndex !== null) {
       this.messages[this.editIndex].content = this.editContent;
     }
-    this.autoSaveSettings();
+    await this.autoSaveSettings();
     this.showEditDialog = false;
   },
-    addParam() {
+    async addParam() {
       this.settings.extra_params.push({
         name: '',
         type: 'string',  // 默认类型
         value: ''        // 根据类型自动初始化
       });
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
-    addLorebook() {
+    async addLorebook() {
       // 在this.newMemory.lorebook的object中添加一个新的键值对
       this.newMemory.lorebook.push({
         name: '',
         value: ''        // 根据类型自动初始化
       });
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
-    removeLorebook(index) {
+    async removeLorebook(index) {
       this.newMemory.lorebook.splice(index, 1);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
-    updateParamType(index) {
+    async updateParamType(index) {
       const param = this.settings.extra_params[index];
       // 根据类型初始化值
       switch(param.type) {
@@ -171,11 +171,11 @@ let vue_methods = {
         default:
           param.value = '';
       }
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
-    removeParam(index) {
+    async removeParam(index) {
       this.settings.extra_params.splice(index, 1);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     switchTollmTools() {
       this.activeMenu = 'agent_group';
@@ -324,9 +324,9 @@ let vue_methods = {
       }
       
       this.conversations = this.conversations.filter(c => c.id !== convId);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
-    loadConversation(convId) {
+    async loadConversation(convId) {
       const conversation = this.conversations.find(c => c.id === convId);
       if (conversation) {
         this.conversationId = convId;
@@ -341,7 +341,7 @@ let vue_methods = {
         this.messages = [{ role: 'system', content: this.system_prompt }];
       }
       this.scrollToBottom();
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     switchToagents() {
       this.activeMenu = 'agent_group';
@@ -351,7 +351,7 @@ let vue_methods = {
       this.activeMenu = 'agent_group';
       this.subMenu = 'a2a';
     },
-    syncProviderConfig(targetConfig) {
+    async syncProviderConfig(targetConfig) {
       // 当有选中供应商时执行同步
       if (targetConfig.selectedProvider) {
         // 在供应商列表中查找匹配项
@@ -378,7 +378,7 @@ let vue_methods = {
           targetConfig.base_url = '';
           targetConfig.api_key = '';
         }
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
     updateMCPExample() {
@@ -878,9 +878,9 @@ let vue_methods = {
       }
       this.syncSystemPromptToMessages(this.system_prompt);
     },
-    changeQQAgent(agent) {
+    async changeQQAgent(agent) {
       this.qqBotConfig.QQAgent = agent;
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     // WebSocket相关
     initWebSocket() {
@@ -1028,7 +1028,7 @@ let vue_methods = {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     },  
-    syncSystemPromptToMessages(newPrompt) {
+    async syncSystemPromptToMessages(newPrompt) {
       // 情况 1: 新提示词为空
       if (!newPrompt) {
         if (this.messages.length > 0 && this.messages[0].role === 'system') {
@@ -1051,7 +1051,7 @@ let vue_methods = {
         content: newPrompt
       });
       console.log('Added system message:', this.messages[0]);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     // 发送消息
     async sendMessage() { 
@@ -1089,7 +1089,7 @@ let vue_methods = {
                 fileLinks = data.fileLinks;
                 // data.textFiles 添加到 this.textFiles
                 this.textFiles = [...this.textFiles, ...data.textFiles];
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
             } else {
                 showNotification(this.t('file_upload_failed'), 'error');
             }
@@ -1130,7 +1130,7 @@ let vue_methods = {
                 imageLinks = data.fileLinks;
                 // data.imageFiles 添加到 this.imageFiles
                 this.imageFiles = [...this.imageFiles, ...data.imageFiles];
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
               }
@@ -1232,7 +1232,7 @@ let vue_methods = {
           conv.system_prompt = this.system_prompt;
         }
       }
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
@@ -1366,7 +1366,7 @@ let vue_methods = {
         this.isSending = false;
         this.isTyping = false;
         this.abortController = null;
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
     stopGenerate() {
@@ -1514,14 +1514,14 @@ let vue_methods = {
     handleHeaderClick(section) {
       this.toggleSection(section)
     },
-    clearMessages() {
+    async clearMessages() {
       this.stopGenerate();
       this.messages = [{ role: 'system', content: this.system_prompt }];
       this.conversationId = null;
       this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态
       this.scrollToBottom();    // 触发界面更新
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     async sendFiles() {
       this.showUploadDialog = true;
@@ -1694,7 +1694,7 @@ let vue_methods = {
         this.initCopyButtons();
       });
     },
-    addProvider() {
+    async addProvider() {
       this.modelProviders.push({
         id: Date.now(),
         vendor: this.newProviderTemp.vendor,
@@ -1704,7 +1704,7 @@ let vue_methods = {
         isNew: true
       });
       this.newProviderTemp = { vendor: '', url: '', apiKey: '', modelId: '' };
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     async fetchModelsForProvider(provider) {
       try {
@@ -1728,7 +1728,7 @@ let vue_methods = {
       }
     },
     // 找到原有的 removeProvider 方法，替换为以下代码
-    removeProvider(index) {
+    async removeProvider(index) {
       // 获取被删除的供应商信息
       const removedProvider = this.modelProviders[index];
       
@@ -1755,7 +1755,7 @@ let vue_methods = {
       }
 
       // 触发自动保存
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     confirmAddProvider() {
       if (!this.newProviderTemp.vendor) {
@@ -1830,44 +1830,44 @@ let vue_methods = {
       }
     },
     // rerank供应商
-    selectRankProvider(providerId) {
+    async selectRankProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
       if (provider) {
         this.KBSettings.model = provider.modelId;
         this.KBSettings.base_url = provider.url;
         this.KBSettings.api_key = provider.apiKey;
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
 
     // 主模型供应商选择
-    selectMainProvider(providerId) {
+    async selectMainProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
       if (provider) {
         this.settings.model = provider.modelId;
         this.settings.base_url = provider.url;
         this.settings.api_key = provider.apiKey;
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
 
     // 推理模型供应商选择
-    selectReasonerProvider(providerId) {
+    async selectReasonerProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
       if (provider) {
         this.reasonerSettings.model = provider.modelId;
         this.reasonerSettings.base_url = provider.url;
         this.reasonerSettings.api_key = provider.apiKey;
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
-    selectVisionProvider(providerId) {
+    async selectVisionProvider(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
       if (provider) {
         this.visionSettings.model = provider.modelId;
         this.visionSettings.base_url = provider.url;
         this.visionSettings.api_key = provider.apiKey;
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       }
     },
 
@@ -1931,7 +1931,7 @@ let vue_methods = {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
                 // data.textFiles 添加到 this.textFiles
                 this.textFiles = [...this.textFiles, ...data.textFiles];
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -1970,7 +1970,7 @@ let vue_methods = {
                 uploadedFiles = data.fileLinks; // 获取上传后的文件链接
                 // data.textFiles 添加到 this.textFiles
                 this.textFiles = [...this.textFiles, ...data.textFiles];
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
               } else {
                 showNotification(this.t('file_upload_failed'), 'error');
                 return;
@@ -2055,12 +2055,12 @@ let vue_methods = {
                 clearInterval(interval);
                 targetKb.processingStatus = 'completed';
                 showNotification(this.t('kb_created_successfully'), 'success');
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
               } else if (typeof status === 'string' && status.startsWith('failed')) { // 安全判断
                 clearInterval(interval);
                 this.knowledgeBases = this.knowledgeBases.filter(k => k.id !== kbId);
                 showNotification(this.t('kb_creation_failed'), 'error');
-                this.autoSaveSettings();
+                await this.autoSaveSettings();
               }
             } catch (error) {
               console.error('轮询异常:', error);
@@ -2110,7 +2110,7 @@ let vue_methods = {
         if (!Response.ok) throw new Error('删除失败');
 
         // 保存 settings
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
 
         showNotification(this.t('kb_deleted_successfully'), 'success');
       } catch (error) {
@@ -2132,7 +2132,7 @@ let vue_methods = {
           //手动触发modelProviders更新，从而能够实时与后端同步
           this.modelProviders = this.modelProviders
           // 保存 settings
-          this.autoSaveSettings();
+          await this.autoSaveSettings();
           showNotification(this.t('kb')+` ${kb.name} ${kb.enabled ? this.t('enabled')  : this.t('disabled')}`, 'success');
         }
       } catch (error) {
@@ -2219,26 +2219,26 @@ let vue_methods = {
     t(key) {
       return this.translations[this.currentLanguage][key] || key;
     },
-    handleSystemLanguageChange(val) {
+    async handleSystemLanguageChange(val) {
       this.currentLanguage = val;
       this.systemSettings.language = val;
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       this.$forceUpdate();
     },
     // renderer.js 增强方法
-    handleThemeChange(val) {
+    async handleThemeChange(val) {
       // 更新根属性
       document.documentElement.setAttribute('data-theme', val);
       
       this.systemSettings.theme = val;
 
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     async handleNetworkChange(val) {
       this.systemSettings.network = val;
       await window.electronAPI.setNetworkVisibility(val);
       this.showRestartDialog = true;
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
 
     restartApp() {
@@ -2290,7 +2290,7 @@ let vue_methods = {
         
         this.showAddMCPDialog = false;
         this.newMCPJson = '';
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
         // 触发后台任务
         const response = await fetch(`http://${HOST}:${PORT}/create_mcp`, {
           method: 'POST',
@@ -2311,23 +2311,23 @@ let vue_methods = {
             clearInterval(interval);
             this.mcpServers[mcpId].processingStatus = 'ready';
             this.mcpServers[mcpId].disabled = false;
-            this.autoSaveSettings();
+            await this.autoSaveSettings();
             showNotification(this.t('mcpAdded'), 'success');
           } else if (status.startsWith('failed')) {
             clearInterval(interval);
             this.mcpServers[mcpId].processingStatus = 'server_error';
             this.mcpServers[mcpId].disabled = true;
-            this.autoSaveSettings();
+            await this.autoSaveSettings();
             showNotification(this.t('mcpCreationFailed'), 'error');
           }
         }, 2000);
         
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       } catch (error) {
         console.error('MCP服务器添加失败:', error);
         showNotification(error.message, 'error');
       }
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
 
     async editMCPServer(name) {
@@ -2361,8 +2361,8 @@ let vue_methods = {
         delete newServers[name]
         this.mcpServers = newServers
         
-        this.$nextTick(() => {
-          this.autoSaveSettings();
+        this.$nextTick(async () => {
+          await this.autoSaveSettings();
         })
         
         showNotification(this.t('mcpDeleted'), 'success')
@@ -2422,7 +2422,7 @@ let vue_methods = {
           showNotification(this.t('AgentDeleteFailed'), 'error');
         }
       }
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     isValidUrl(url) {
       try {
@@ -2443,7 +2443,7 @@ let vue_methods = {
             status: 'initializing',
           }
         };
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
         const response = await fetch(`http://${HOST}:${PORT}/a2a/initialize`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -2456,17 +2456,17 @@ let vue_methods = {
           ...data
         }
 
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
       } catch (error) {
         console.error('A2A初始化失败:', error);
         this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== newurl));
-        this.autoSaveSettings();
+        await this.autoSaveSettings();
         showNotification(this.t('a2aInitFailed'), 'error');
       }
     },
-    removeA2AServer(url) {
+    async removeA2AServer(url) {
       this.a2aServers = Object.fromEntries(Object.entries(this.a2aServers).filter(([k]) => k !== url));
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     formatDate(date) {
       // 时间戳转日期
@@ -2475,7 +2475,7 @@ let vue_methods = {
     async deleteFile(file) {
       console.log('deleteFile:', file);
       this.textFiles = this.textFiles.filter(f => f !== file);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       fileName = file.unique_filename
       try {
         // 向/delete_file发送请求
@@ -2496,7 +2496,7 @@ let vue_methods = {
     },
     async deleteImage(img) {
       this.imageFiles = this.imageFiles.filter(i => i !== img);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       fileName = img.unique_filename
       try {
         // 向/delete_file发送请求
@@ -2531,7 +2531,7 @@ let vue_methods = {
         this.newMemory.api_key = provider.apiKey;
       }
     },
-    addMemory() {
+    async addMemory() {
       if (this.newMemory.id === null){
         const newMem = {
           id: uuid.v4(),
@@ -2563,7 +2563,7 @@ let vue_methods = {
         }
       }
 
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       this.showAddMemoryDialog = false;
       this.newMemory = { 
         id: null,
@@ -2599,7 +2599,7 @@ let vue_methods = {
         console.error('Error:', error);
         showNotification(this.t('memoryDeleteFailed'), 'error');
       }
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     editMemory(id) {
       const memory = this.memories.find(m => m.id === id);
@@ -2614,7 +2614,7 @@ let vue_methods = {
       const provider = this.modelProviders.find(p => p.id === providerId);
       return provider ? `${this.t("model")}:${provider.modelId}` : '';
     },
-    saveCustomHttpTool() {
+    async saveCustomHttpTool() {
       const toolData = { ...this.newCustomHttpTool };
       
       if (this.editingCustomHttpTool) {
@@ -2630,7 +2630,7 @@ let vue_methods = {
       }
       
       // 与后端同步数据
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
       
       // 重置表单
       this.newCustomHttpTool = {
@@ -2653,9 +2653,9 @@ let vue_methods = {
         this.editingCustomHttpTool = true;
       }
     },
-    removeCustomHttpTool(id) {
+    async removeCustomHttpTool(id) {
       this.customHttpTools = this.customHttpTools.filter(tool => tool.id !== id);
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
   // 启动QQ机器人
   async startQQBot() {
@@ -2777,11 +2777,11 @@ let vue_methods = {
         console.error('检查或停止机器人失败:', error)
       }
     },
-    handleSeparatorChange(val) {
+    async handleSeparatorChange(val) {
       this.qqBotConfig.separators = val.map(s => 
         s.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
       );
-      this.autoSaveSettings();
+      await this.autoSaveSettings();
     },
     formatSeparator(s) {
       return s.replace(/\n/g, '\\n')
@@ -2789,11 +2789,11 @@ let vue_methods = {
               .replace(/\r/g, '\\r');
     },
     // 新增创建分隔符处理方法
-    handleCreateSeparator(newSeparator) {
+    async handleCreateSeparator(newSeparator) {
       const processed = this.escapeSeparator(newSeparator)
       if (!this.qqBotConfig.separators.includes(processed)) {
         this.qqBotConfig.separators.push(processed)
-        this.autoSaveSettings()
+        await this.autoSaveSettings()
       }
     },
 
@@ -2804,12 +2804,12 @@ let vue_methods = {
       }
     },
 
-    // 移除非必要的 change 处理
-    autoSaveSettings() {
-      // 保存逻辑...
-    },
-
     escapeSeparator(s) {
       return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t')
-    }
+    },
+    clearParam(index) {
+      this.newMemory.lorebook[index].name = "";
+      this.newMemory.lorebook[index].value = "";
+      this.autoSaveSettings();
+    },
 }

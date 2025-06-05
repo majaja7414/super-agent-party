@@ -1919,6 +1919,36 @@ body {
     }
   }
 }
+
+.memo-extra-params {
+  .param-row {
+    margin-bottom: 16px;
+    
+    .param-name-input {
+      margin-bottom: 8px;
+    }
+
+    .param-value-input {
+      margin-bottom: 8px;
+      
+      textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+    }
+
+    .action-row {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      
+      .el-button {
+        margin-left: 0;
+      }
+    }
+  }
+}
+
 .remove-btn {
   margin-left: auto;
 }
