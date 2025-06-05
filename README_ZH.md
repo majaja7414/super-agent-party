@@ -7,7 +7,7 @@
 
 ## 简介
 
-🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、自定义工具等高阶功能，打造可插拔的LLM增强中台。
+🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、自定义工具等高阶功能，打造可插拔的LLM增强中台。与此同时，还可以将你的智能体配置，一键部署到社交软件上（已实现QQ官方机器人）。
 
 ![image](doc/image/demo.png)
 
@@ -17,18 +17,19 @@
 - ✅高度定制：支持自定义知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、自定义工具等高级智能体功能，打造可插拔的LLM增强中台。自定义后的智能体可以快照保存，方便下次使用。快照后的智能体可以使用openai API直接调用。
 - ✅数据安全：支持本地知识库、本地模型接入等，数据不外泄，确保企业数据安全。所有的文件将缓存到本地，不会上传到任何地方。
 - ✅团队协作：支持团队协作，多人共享知识库、模型服务、工具、MCP、A2A等资源，提高团队协作效率。聊天记录或知识库中的所有文件、图片都被存放到本地，可以作为内网文件床、图床使用。
+- ✅一键部署：支持一键部署到社交软件上，如QQ等，方便用户随时随地使用智能体。
 
 ## 快速开始
 
 ### windows桌面版安装
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-Setup-0.1.7.exe)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-Setup-0.1.8.exe)
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
 
 ### MacOS桌面版安装（beta测试）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Mac.dmg)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Mac.dmg)
 
 ⭐注意！下载后将dmg文件周的app文件拖入`/Applications`目录下，然后打开终端，执行以下命令并输入root密码，从而移除从网络下载附加的Quarantine属性：
 
@@ -44,11 +45,11 @@
 
 `.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Linux.AppImage)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.AppImage)
 
 #### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Linux.deb)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.deb)
 
 ### docker部署（推荐）
 
@@ -165,6 +166,12 @@
   - latex公式渲染增强：控制大模型更稳定的输出latex公式。
   - 语言语气：控制大模型更稳定的输出语言和语气。
 13. 支持了自定义http请求转换成智能体工具，现在可以将任意http请求作为智能体工具使用，可以在智能体套件界面添加自定义http请求工具。
+14. 支持了一键部署QQ官方机器人：
+  - 本次更新实现了QQ机器人，可以将你配置好智能体链接到QQ官方机器人上，无封号风险
+  - QQ机器人支持自定义消息分隔符，默认分隔符为["。", "\n", "？", "！"]，会将智能体的流式输出逐条发送到QQ
+  - QQ机器人支持私聊和群聊
+  - QQ机器人支持查看文本和图片消息（图片需要模型本身支持视觉或开启了视觉模型），也可以开启Pollinations 图像生成，实现文生图
+  - 支持对话轮数调节，默认为30轮，会逐渐丢弃旧的对话记录，防止上下文溢出，可以配置记忆模块，实现角色人设固定和永久记忆。
 
 ## 免责声明：
 本开源项目及其内容（以下简称“项目”）仅供参考之用，并不意味着任何明示或暗示的保证。项目贡献者不对项目的完整性、准确性、可靠性或适用性承担任何责任。任何依赖项目内容的行为均需自行承担风险。在任何情况下，项目贡献者均不对因使用项目内容而产生的任何间接、特殊或附带的损失或损害承担责任。

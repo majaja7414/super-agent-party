@@ -7,7 +7,7 @@
 
 ## Introduction
 
-🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, permanent memory, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.
+🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, permanent memory, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.At the same time, you can also configure your intelligent entity and deploy it to social software with just one click (QQ official robot has already been implemented).
 
 ![image](doc/image/demo.png)
 
@@ -17,18 +17,19 @@
 - ✅ High customization: Supports custom knowledge base, real-time networking, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, custom tools, and other advanced intelligent body functions, creating a pluggable LLM enhancement platform. Customized intelligent bodies can be saved as snapshots for convenient use next time. Snapshotted intelligent bodies can be called directly using the OpenAI API.
 - ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
+- ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the intelligent entity anytime and anywhere.
 
 ## Quick Start
 
 ### Windows Desktop Installation
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-Setup-0.1.7.exe)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-Setup-0.1.8.exe)
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
 ### MacOS Desktop Installation (beta test)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Mac.dmg)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Mac.dmg)
 
 ⭐ Note! After downloading, drag the app file from the dmg file to the `/Applications` directory. Then open the Terminal and execute the following command, entering the root password when prompted, to remove the Quarantine attribute added due to being downloaded from the internet:
 
@@ -44,11 +45,11 @@ We provide two mainstream Linux installation package formats for your convenienc
 
 `.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Linux.AppImage)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.AppImage)
 
 #### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.7/Super-Agent-Party-0.1.7-Linux.deb)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
@@ -165,6 +166,12 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   - Enhanced latex formula rendering: Control the more stable output of latex formulas in large models.
   - Language tone: Control the more stable output language and tone of the large model.
 13. Support for converting custom HTTP requests into agent tools has been added. You can now use any HTTP request as an agent tool, and you can add custom HTTP request tools in the Agent Toolkit interface.
+14. Supported one-click deployment of QQ official robots:
+  - This update has implemented QQ robots, allowing you to configure your intelligent entity and link it to the official QQ robots without the risk of getting your account banned.
+  - QQ robot supports custom message delimiter, the default delimiter is ["。", "\ n ", "？", "！"]， will send the agent's streaming output to QQ one by one
+  - QQ robots support private chats and group chats.
+  - QQ robots support viewing text and image messages (images need to be supported by the model itself or have the visual model turned on), and you can also enable Pollinations image generation to achieve text-to-image conversion.
+  - Supports adjusting the number of dialogue rounds, with the default being 30 rounds. It will gradually discard old dialogue records to prevent context overflow. You can configure the memory module to achieve the fixation of character settings and permanent memory.
 
 ## Disclaimer:
 This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.
