@@ -2990,8 +2990,8 @@ class MyClient(botpy.Client):
                     if clean_text:
                         await self._send_text_message(message, clean_text)
                     
-                    # 提取图片到缓存（不发送）
-                    self._extract_images_to_cache(c_id, current_chunk)
+            # 提取图片到缓存（不发送）
+            self._extract_images_to_cache(c_id)
 
             # 处理剩余文本
             if state["text_buffer"]:
@@ -3015,10 +3015,10 @@ class MyClient(botpy.Client):
             # 清理状态
             del self.processing_states[c_id]
 
-    def _extract_images_to_cache(self, c_id, content):
+    def _extract_images_to_cache(self, c_id):
         """渐进式图片链接提取"""
         state = self.processing_states[c_id]
-        temp_buffer = state["image_buffer"] + content
+        temp_buffer = state["image_buffer"]
         state["image_buffer"] = ""  # 重置缓冲区
         
         # 匹配完整图片链接
@@ -3056,6 +3056,8 @@ class MyClient(botpy.Client):
                     continue
                 # 用request获取图片，保证图片存在
                 response = requests.get(url)
+
+                print(f"发送图片: {url}")
                 # 上传媒体文件
                 upload_media = await message._api.post_c2c_file(
                     openid=message.author.user_openid,
@@ -3164,8 +3166,8 @@ class MyClient(botpy.Client):
                     if clean_text:
                         await self._send_group_text(message, clean_text, state)
                     
-                    # 提取图片到缓存
-                    self._cache_group_images(g_id, current_chunk)
+            # 提取图片到缓存
+            self._cache_group_images(g_id)
 
             # 处理剩余文本
             if self.group_states[g_id]["text_buffer"]:
@@ -3189,10 +3191,10 @@ class MyClient(botpy.Client):
             # 清理状态
             del self.group_states[g_id]
 
-    def _cache_group_images(self, g_id, content):
+    def _cache_group_images(self, g_id):
         """渐进式图片缓存"""
         state = self.group_states[g_id]
-        temp_buffer = state["image_buffer"] + content
+        temp_buffer = state["image_buffer"]
         state["image_buffer"] = ""
         
         # 匹配完整图片链接
@@ -3227,6 +3229,8 @@ class MyClient(botpy.Client):
                     continue
                 # 用request获取图片，保证图片存在
                 response = requests.get(url)
+
+                print(f"发送图片: {url}")
                 # 上传群文件
                 upload_media = await message._api.post_group_file(
                     group_openid=message.group_openid,
