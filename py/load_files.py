@@ -12,6 +12,8 @@ from striprtf.striprtf import rtf_to_text
 from odf import text
 from odf.opendocument import load  # ODF 处理移动到这里避免重复导入
 from pptx import Presentation
+from urllib.parse import urlparse, urlunparse
+from py.get_setting  import get_host,get_port
 
 # 平台检测
 IS_WINDOWS = sys.platform == 'win32'
@@ -47,14 +49,37 @@ FILE_FILTERS = [
 office_extensions = {ext for group in FILE_FILTERS if group['name'] == '办公文档' for ext in group['extensions']}
 
 async def handle_url(url):
-    """异步处理URL输入"""
+    """异步处理URL输入，优先尝试替换 host:port 的内部URL，失败后回退到原始URL"""
+    parsed_url = urlparse(url)
+    original_url = url  # 保存原始URL用于回退
+    modified_url = url  # 默认使用原URL
+
+    # 如果路径包含 'uploaded_files'，则替换 host:port
+    if 'uploaded_files' in parsed_url.path:
+        HOST = get_host()
+        PORT = get_port()
+        if HOST == '0.0.0.0':
+            HOST = '127.0.0.1'
+        modified_parsed_url = parsed_url._replace(netloc=f'{HOST}:{PORT}')
+        modified_url = urlunparse(modified_parsed_url)
+
+    # 尝试使用修改后的URL请求
     async with aiohttp.ClientSession() as session:
-        async with session.get(url,headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}) as response:
-            response.raise_for_status()
-            content = await response.read()
-            path = urlparse(url).path
-            ext = os.path.splitext(path)[1].lstrip('.').lower()
-            return content, ext
+        for try_url in [modified_url, original_url]:  # 最多两次尝试：先改写URL，再原始URL
+            try:
+                async with session.get(try_url, headers={
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+                }) as response:
+                    response.raise_for_status()
+                    content = await response.read()
+                    ext = os.path.splitext(parsed_url.path)[1].lstrip('.').lower()
+                    return content, ext
+            except (aiohttp.ClientError, OSError) as e:
+                print(f"请求失败（{try_url}）: {e}")
+                if try_url == original_url:
+                    raise  # 如果是最后一次尝试失败，抛出异常
+                else:
+                    continue  # 否则继续尝试原始URL
 
 async def handle_local_file(file_path):
     """异步处理本地文件"""
