@@ -713,6 +713,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
                 if kb_list:
                     kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+                    print(kb_list_message)
                     if request.messages and request.messages[0]['role'] == 'system':
                         request.messages[0]['content'] += kb_list_message
                     else:

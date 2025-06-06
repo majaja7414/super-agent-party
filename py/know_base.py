@@ -327,7 +327,7 @@ kb_tool = {
                     "description": "需要搜索的问题。",
                 },
                 "kb_id": {
-                    "type": "integer",
+                    "type": "string",
                     "description": "知识库的ID。"
                 }
             },
