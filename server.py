@@ -3387,18 +3387,17 @@ async def reload_qq_bot(config: QQBotConfig):
             os.kill(qq_bot_process.pid, signal.SIGTERM)
             logger.info(f"已向机器人进程 {pid} 发送 SIGTERM 信号")
             
-            # 等待最多3秒
+            # 等待最多2秒
             start_time = time.time()
-            while time.time() - start_time < 3:
+            while time.time() - start_time < 2:
                 if not qq_bot_process.is_alive():
                     break
                 await asyncio.sleep(0.1)
             
-            if qq_bot_process.is_alive():
-                # 如果进程还在运行，强制终止
-                logger.warning(f"机器人进程 {pid} 未响应，强制终止")
-                qq_bot_process.terminate()
-                qq_bot_process.join(timeout=1.0)
+            # 如果进程还在运行，强制终止
+            logger.warning(f"机器人进程 {pid} 未响应，强制终止")
+            qq_bot_process.terminate()
+            qq_bot_process.join(timeout=1.0)
         except ProcessLookupError:
             logger.warning("机器人进程已不存在")
         except Exception as e:
@@ -3455,11 +3454,10 @@ async def stop_qq_bot():
                 break
             await asyncio.sleep(0.1)
         
-        if qq_bot_process.is_alive():
-            # 如果进程还在运行，强制终止
-            logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
-            qq_bot_process.terminate()
-            qq_bot_process.join(timeout=1.0)
+        # 如果进程还在运行，强制终止
+        logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
+        qq_bot_process.terminate()
+        qq_bot_process.join(timeout=1.0)
         print("机器人进程已停止")
     except ProcessLookupError:
         logger.warning("机器人进程已不存在")
