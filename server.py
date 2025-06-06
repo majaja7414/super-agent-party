@@ -3444,9 +3444,9 @@ async def stop_qq_bot():
         os.kill(qq_bot_process.pid, signal.SIGTERM)
         logger.info(f"已向机器人进程 {qq_bot_process.pid} 发送 SIGTERM 信号")
         
-        # 等待最多5秒
+        # 等待最多2秒
         start_time = time.time()
-        while time.time() - start_time < 5:
+        while time.time() - start_time < 2:
             if not qq_bot_process.is_alive():
                 break
             await asyncio.sleep(0.1)
