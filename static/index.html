@@ -2383,17 +2383,27 @@
                     </el-form-item>
                     <div class="param-header">
                       <span>{{ t('worldviewSetting') }}</span>
-                      <el-button 
-                        @click="addLorebook"
-                        type="primary"
-                        circle
-                        size="small"
-                        class="header-add-btn"
-                      >
-                        <i class="fa-solid fa-plus"></i>
-                      </el-button>
+                      <div class="action-row">
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isWorldviewSettingsExpanded = !isWorldviewSettingsExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isWorldviewSettingsExpanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+                        </el-button>
+                        <el-button 
+                          @click="addLorebook"
+                          type="primary"
+                          circle
+                          size="small"
+                        >
+                          <i class="fa-solid fa-plus"></i>
+                        </el-button>
+                      </div>
                     </div>
-                    <div class="memo-extra-params">
+                    <div v-show="isWorldviewSettingsExpanded" class="memo-extra-params">
                       <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
                         <!-- 第一行：参数名称 -->
                         <el-input

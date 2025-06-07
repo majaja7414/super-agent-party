@@ -394,6 +394,7 @@ let vue_data = {
     imageFiles: [],
     videoFiles: [],
     subMenu: '', // 新增子菜单状态
+    isWorldviewSettingsExpanded: true,
     text2imgSettings: {
       enabled: false,
       engine: 'pollinations',

@@ -1958,6 +1958,15 @@ body {
   align-items: center;          /* Vertically center */
   margin-bottom: 10px;         /* Add spacing below the header */
   padding: 0px;             /* Add some padding */
+  .action-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    
+    .el-button {
+      margin-left: 0;
+    }
+  }
 }
 
 .message-actions {
