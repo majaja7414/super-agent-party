@@ -3021,6 +3021,9 @@ class MyClient(botpy.Client):
 
         except Exception as e:
             print(f"处理异常: {e}")
+            clean_text = self._clean_text(str(e))
+            if clean_text:
+                await self._send_text_message(message, clean_text)
         finally:
             # 清理状态
             del self.processing_states[c_id]
@@ -3085,6 +3088,9 @@ class MyClient(botpy.Client):
                 self.msg_seq_counters[c_id] += 1
             except Exception as e:
                 print(f"图片发送失败: {e}")
+                clean_text = self._clean_text(str(e))
+                if clean_text:
+                    await self._send_text_message(message, clean_text)
 
     def _clean_text(self, text):
         """三级内容清洗"""
@@ -3205,6 +3211,9 @@ class MyClient(botpy.Client):
 
         except Exception as e:
             print(f"群聊处理异常: {e}")
+            clean_text = self._clean_group_text(str(e))
+            if clean_text:
+                self._send_group_text(message, clean_text, state)
         finally:
             # 清理状态
             del self.group_states[g_id]
@@ -3266,6 +3275,9 @@ class MyClient(botpy.Client):
                 state["msg_seq"] += 1
             except Exception as e:
                 print(f"群图片发送失败: {e}")
+                clean_text = self._clean_group_text(str(e))
+                if clean_text:
+                    self._send_group_text(message, clean_text, state)
 
     def _clean_group_text(self, text):
         """群聊文本三级清洗"""
