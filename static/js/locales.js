@@ -408,6 +408,9 @@ const translations = {
       'auto': '自动',
       'text2img': '文生图',
       'randomSetting': '随机设定',
+      'worldviewSettingNote': '世界观设定：类似与lorebook，当用户提及或智能体上次对话提及某个设定名称时，智能体会在对话中看到设定值。',
+      'basicCharacterNote': '角色设定：所有信息都会直接添加到系统提示中，智能体会根据角色设定进行对话。',
+      'randomSettingNote': '随机设定：开启一个新的对话后，一个随机设定会被添加到系统提示中，智能体会根据随机设定进行对话。',
     },
     'en-US': {
       'chat': 'Chat',
@@ -817,5 +820,8 @@ const translations = {
       'auto': 'Auto',
       'text2img': 'Text2Image',
       'randomSetting': 'Random Setting',
+      'worldviewSettingNote': 'Worldview setting: similar to a lorebook, when a user mentions or the intelligent entity mentions a setting name in the last conversation, the intelligent entity will see the setting value in the conversation.',
+      'basicCharacterNote': 'Character setting: All information will be directly added to the system prompt, and the intelligent experience will conduct a dialogue according to the character setting.',
+      'randomSettingNote': 'Random setting: After opening a new conversation, a random setting will be added to the system prompt, and the AI will conduct a conversation according to the random setting.',
     }
   };

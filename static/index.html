@@ -2375,6 +2375,16 @@
                     <div class="param-header">
                       <span>{{ t('basicCharacter') }}</span>
                       <div class="action-row">
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('basicCharacterNote')" placement="top">
+                          <el-button 
+                            type="info"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
                         <!-- 添加展开/收起按钮 -->
                         <el-button 
                           @click="isBasicCharacterExpanded = !isBasicCharacterExpanded" 
@@ -2398,6 +2408,16 @@
                     <div class="param-header">
                       <span>{{ t('worldviewSetting') }}</span>
                       <div class="action-row">
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('worldviewSettingNote')" placement="top">
+                          <el-button 
+                            type="info"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
                         <el-button 
                           @click="addLorebook"
                           type="primary"
@@ -2470,6 +2490,16 @@
                     <div class="param-header">
                       <span>{{ t('randomSetting') }}</span>
                       <div class="action-row">
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('randomSettingNote')" placement="top">
+                          <el-button 
+                            type="info"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
                         <el-button 
                           @click="addRandom"
                           type="primary"
