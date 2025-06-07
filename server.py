@@ -50,7 +50,7 @@ reasoner_client = None
 mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
-
+cur_random = []
 ALLOWED_EXTENSIONS = [
   # 办公文档
   'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
@@ -515,6 +515,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.pollinations import pollinations_image_tool,openai_image_tool,siliconflow_image_tool
     from py.code_interpreter import e2b_code_tool,local_run_code_tool
     m0 = None
+    memoryId = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
         cur_memory = None
@@ -632,7 +633,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
-
+            global cur_random 
             # 如果request.messages中不包含assistant回复，说明是首次提问，触发随机设定
             if not assistant_reply:
                 # 如果 cur_memory 中有 random 条目
@@ -640,12 +641,15 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     # 随机选择一个 random 条目
                     random_entry = random.choice(cur_memory["random"])
                     if random_entry.get("value"):
-                        lore_content += f"\n\n{random_entry['value']}"
-                        cur_memory["cur_random"] = random_entry['value']
-                        await save_settings(settings)
+                        lore_content = lore_content + "\n\n" + f"{random_entry['value']}"
+                        cur_random.append({"id":memoryId,"value":random_entry["value"]})
+                        print("新随机设定：",{"id":memoryId,"value":random_entry["value"]})
             else:
-                if cur_memory.get("cur_random"):
-                    lore_content += f"\n\n{cur_memory['cur_random']}"
+                for item in cur_random:
+                    if item["id"] == memoryId:
+                        lore_content = lore_content + "\n\n" + f"{item['value']}"
+                        print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
+                        break 
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
@@ -1903,6 +1907,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
+            global cur_random 
             # 如果request.messages中不包含assistant回复，说明是首次提问，触发随机设定
             if not assistant_reply:
                 # 如果 cur_memory 中有 random 条目
@@ -1910,12 +1915,15 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     # 随机选择一个 random 条目
                     random_entry = random.choice(cur_memory["random"])
                     if random_entry.get("value"):
-                        lore_content += f"\n\n{random_entry['value']}"
-                        cur_memory["cur_random"] = random_entry['value']
-                        await save_settings(settings)
+                        lore_content = lore_content + "\n\n" + f"{random_entry['value']}"
+                        cur_random.append({"id":memoryId,"value":random_entry["value"]})
+                        print("新随机设定：",{"id":memoryId,"value":random_entry["value"]})
             else:
-                if cur_memory.get("cur_random"):
-                    lore_content += f"\n\n{cur_memory['cur_random']}"
+                for item in cur_random:
+                    if item["id"] == memoryId:
+                        lore_content = lore_content + "\n\n" + f"{item['value']}"
+                        print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
+                        break  
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
