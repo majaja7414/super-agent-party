@@ -988,6 +988,7 @@ let vue_methods = {
           this.a2aServers = data.data.a2aServers || this.a2aServers;
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
+          this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
         } 
@@ -1420,6 +1421,7 @@ let vue_methods = {
           isdocker: this.isdocker,
           memories: this.memories,
           memorySettings: this.memorySettings,
+          text2imgSettings: this.text2imgSettings,
           custom_http: this.customHttpTools,
         };
         const correlationId = uuid.v4();

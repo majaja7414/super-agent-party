@@ -572,8 +572,9 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_a2a_tool_fuction = await get_a2a_tool(settings)
         if get_a2a_tool_fuction:
             tools.append(get_a2a_tool_fuction)
-        if settings['tools']['pollinations']['enabled']:
-            tools.append(pollinations_image_tool)
+        if settings['text2imgSettings']['enabled']:
+            if settings['text2imgSettings']['engine'] == 'pollinations':
+                tools.append(pollinations_image_tool)
         if settings['tools']['getFile']['enabled']:
             tools.append(file_tool)
             tools.append(image_tool)
@@ -1811,8 +1812,9 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     get_a2a_tool_fuction = await get_a2a_tool(settings)
     if get_a2a_tool_fuction:
         tools.append(get_a2a_tool_fuction)
-    if settings['tools']['pollinations']['enabled']:
-        tools.append(pollinations_image_tool)
+    if settings['text2imgSettings']['enabled']:
+        if settings['text2imgSettings']['engine'] == 'pollinations':
+            tools.append(pollinations_image_tool)
     if settings['tools']['getFile']['enabled']:
         tools.append(file_tool)
         tools.append(image_tool)

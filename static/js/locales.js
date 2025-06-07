@@ -398,6 +398,9 @@ const translations = {
       'selectExistingMemoryPlaceholder': '请选择已有记忆',
       'none': '无',
       'reasoningVisibleEnable': '推理过程可见',
+      'text2imgModel': '文生图模型',
+      'width': '宽度',
+      'height': '高度',
     },
     'en-US': {
       'chat': 'Chat',
@@ -796,6 +799,9 @@ const translations = {
       'selectExistingMemory': 'Starting from existing memories',
       'selectExistingMemoryPlaceholder': 'Please select an existing memory',
       'none': 'None',
-      'reasoningVisibleEnable': 'Reasoning Process Visible'
+      'reasoningVisibleEnable': 'Reasoning Process Visible',
+      'text2imgModel': 'Text2Image Model',
+      'width': 'Width',
+      'height': 'Height',
     }
   };

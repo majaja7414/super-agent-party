@@ -1,8 +1,21 @@
-async def pollinations_image(prompt: str,width=1024,height=1024,model="flux"):
-    # 把prompt转换成可以插入URL的格式
+from py.get_setting import load_settings
+
+async def pollinations_image(prompt: str, width=512, height=512, model="flux"):
+    settings = await load_settings()
+    
+    # Check if the provided values are default ones, if so, override them with settings
+    if width == 512:
+        width = settings["text2imgSettings"]["pollinations_width"]
+    if height == 512:
+        height = settings["text2imgSettings"]["pollinations_height"]
+    if model == "flux":
+        model = settings["text2imgSettings"]["pollinations_model"]
+    
+    # Convert prompt into a URL-compatible format
     prompt = prompt.replace(" ", "%20")
     url = f"https://image.pollinations.ai/prompt/{prompt}?width={width}&height={height}&model={model}&nologo=true&enhance=true&private=true&safe=true"
-    return f"![image]({url})"
+    
+    return f"[image]({url})"
 
 pollinations_image_tool = {
     "type": "function",
@@ -19,12 +32,12 @@ pollinations_image_tool = {
                 "width": {
                     "type": "number",
                     "description": "图片宽度",
-                    "default":1024
+                    "default":512
                 },
                 "height": {
                     "type": "number",
                     "description": "图片高度",
-                    "default": 1024
+                    "default": 512
                 },
                 "model": {
                     "type": "string",

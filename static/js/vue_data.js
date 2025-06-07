@@ -146,9 +146,6 @@ let vue_data = {
       },
       formula: {
         enabled: true
-      },
-      pollinations: {
-        enabled: false, // 默认不启用
       }
     },
     mcpServers: {},
@@ -303,7 +300,8 @@ let vue_data = {
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
       { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' },
-      { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'}
+      { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'},
+      { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-image' },
     ],
     toolkitTiles: [
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
@@ -396,6 +394,13 @@ let vue_data = {
     imageFiles: [],
     videoFiles: [],
     subMenu: '', // 新增子菜单状态
+    text2imgSettings: {
+      enabled: false,
+      engine: 'pollinations',
+      pollinations_model: 'flux',
+      pollinations_width: 512,
+      pollinations_height: 512,
+    },
     agentTiles: [
       { 
         id: 'agents',
