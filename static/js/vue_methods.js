@@ -146,6 +146,10 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async addLorebook() {
+      // 如果this.newMemory.lorebook未定义，则初始化为空数组
+      if (!this.newMemory.lorebook) {
+        this.newMemory.lorebook = [];
+      }
       // 在this.newMemory.lorebook的object中添加一个新的键值对
       this.newMemory.lorebook.push({
         name: '',
@@ -155,6 +159,20 @@ let vue_methods = {
     },
     async removeLorebook(index) {
       this.newMemory.lorebook.splice(index, 1);
+      await this.autoSaveSettings();
+    },
+    async addRandom(){
+      // 如果this.newMemory.random未定义，则初始化为空数组
+      if (!this.newMemory.random) {
+        this.newMemory.random = [];
+      }
+      this.newMemory.random.push({
+        value: ''        // 根据类型自动初始化
+      });
+      await this.autoSaveSettings();
+    },
+    async removeRandom(index) {
+      this.newMemory.random.splice(index, 1);
       await this.autoSaveSettings();
     },
     async updateParamType(index) {
@@ -2570,6 +2588,7 @@ let vue_methods = {
           base_url: this.newMemory.base_url,
           vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
           lorebook: this.newMemory.lorebook,
+          random: this.newMemory.random,
           basic_character: this.newMemory.basic_character,
         };
         this.memories.push(newMem);
@@ -2587,6 +2606,7 @@ let vue_methods = {
           memory.base_url = this.newMemory.base_url;
           memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
           memory.lorebook = this.newMemory.lorebook;
+          memory.random = this.newMemory.random;
           memory.basic_character = this.newMemory.basic_character;
         }
       }
@@ -2601,7 +2621,8 @@ let vue_methods = {
         api_key: '',
         base_url: '',
         vendor: '',
-        lorebook: {},
+        lorebook: [],
+        random: [],
         basic_character: "",
        };
     },
@@ -2840,6 +2861,10 @@ let vue_methods = {
       this.newMemory.lorebook[index].value = "";
       this.autoSaveSettings();
     },
+    clearRandom(index) {
+      this.newMemory.random[index].value = "";
+      this.autoSaveSettings();
+    },
     copyExistingMemoryData(selectedId) {
       const existingMemory = this.memories.find(memory => memory.id === selectedId);
       if (existingMemory) {
@@ -2855,6 +2880,7 @@ let vue_methods = {
           api_key: '',
           vendor: '',
           lorebook: [],
+          random: [],
           basic_character: '',
         };
       }

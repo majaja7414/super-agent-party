@@ -407,6 +407,7 @@ const translations = {
       'size': '尺寸',
       'auto': '自动',
       'text2img': '文生图',
+      'randomSetting': '随机设定',
     },
     'en-US': {
       'chat': 'Chat',
@@ -815,5 +816,6 @@ const translations = {
       'size': 'Size',
       'auto': 'Auto',
       'text2img': 'Text2Image',
+      'randomSetting': 'Random Setting',
     }
   };

@@ -2453,6 +2453,70 @@
                         </div>
                       </div>
                     </div>
+                    <div class="param-header">
+                      <span>{{ t('randomSetting') }}</span>
+                      <div class="action-row">
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isRandomSettingsExpanded = !isRandomSettingsExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isRandomSettingsExpanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
+                        </el-button>
+                        <el-button 
+                          @click="addRandom"
+                          type="primary"
+                          circle
+                          size="small"
+                        >
+                          <i class="fa-solid fa-plus"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div v-show="isRandomSettingsExpanded" class="memo-extra-params">
+                      <div v-for="(param, index) in newMemory.random" :key="index" class="param-row">
+                        <!-- 第1行：参数内容 -->
+                        <el-input
+                          v-model="param.value"
+                          :placeholder="t('settingValue')"
+                          type="textarea"
+                          :rows="3"
+                          @input="autoSaveSettings"
+                          class="param-value-input"
+                        ></el-input>
+
+                        <!-- 第2行：操作按钮 -->
+                        <div class="action-row">
+                          <el-button
+                            @click.stop="clearRandom(index)"
+                            type="default"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-eraser"></i>
+                          </el-button>
+                          <el-button
+                            @click.stop="removeRandom(index)"
+                            type="danger"
+                            size="small"
+                            circle
+                          >
+                            <i class="fa-solid fa-trash"></i>
+                          </el-button>
+                          <el-button 
+                            @click="addRandom"
+                            type="primary"
+                            circle
+                            size="small"
+                            class="header-add-btn"
+                          >
+                            <i class="fa-solid fa-plus"></i>
+                          </el-button>
+                        </div>
+                      </div>
+                    </div>
                   </el-form>
                   <template #footer>
                     <el-button @click="showAddMemoryDialog = false">{{ t('cancel') }}</el-button>

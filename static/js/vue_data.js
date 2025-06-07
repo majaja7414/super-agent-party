@@ -381,6 +381,7 @@ let vue_data = {
       api_key: '',
       vendor: '',
       lorebook: [],
+      random: [],
       basic_character: '',
     },
     showAddMemoryDialog: false,
@@ -395,6 +396,7 @@ let vue_data = {
     videoFiles: [],
     subMenu: '', // 新增子菜单状态
     isWorldviewSettingsExpanded: true,
+    isRandomSettingsExpanded: true,
     text2imgSettings: {
       enabled: false,
       engine: 'pollinations',
