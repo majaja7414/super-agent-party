@@ -1876,6 +1876,21 @@ let vue_methods = {
         await this.autoSaveSettings();
       }
     },
+    async selectText2imgProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.text2imgSettings.model = provider.modelId;
+        this.text2imgSettings.base_url = provider.url;
+        this.text2imgSettings.api_key = provider.apiKey;
+        await this.autoSaveSettings();
+      }
+    },
+
+    handleText2imgProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectText2imgProvider(this.text2imgSettings.selectedProvider);
+      }
+    },
 
     handleRankProviderVisibleChange(visible) {
       if (!visible) {

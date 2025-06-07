@@ -400,6 +400,10 @@ let vue_data = {
       pollinations_model: 'flux',
       pollinations_width: 512,
       pollinations_height: 512,
+      selectedProvider: null,
+      model: '',
+      base_url: '',
+      api_key: '',
     },
     agentTiles: [
       { 
