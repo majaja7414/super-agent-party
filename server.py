@@ -7,6 +7,7 @@ import json
 import multiprocessing
 from multiprocessing import Manager, Event
 import os
+import random
 import re
 import shutil
 import signal
@@ -631,6 +632,12 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
+            # 如果 cur_memory 中有 random 条目
+            if cur_memory.get("random"):
+                # 随机选择一个 random 条目
+                random_entry = random.choice(cur_memory["random"])
+                if random_entry.get("value"):
+                    lore_content += f"\n\n{random_entry['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
@@ -1888,6 +1895,12 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
+            # 如果 cur_memory 中有 random 条目
+            if cur_memory.get("random"):
+                # 随机选择一个 random 条目
+                random_entry = random.choice(cur_memory["random"])
+                if random_entry.get("value"):
+                    lore_content += f"\n\n{random_entry['value']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
