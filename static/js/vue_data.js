@@ -401,9 +401,11 @@ let vue_data = {
       pollinations_width: 512,
       pollinations_height: 512,
       selectedProvider: null,
+      vendor: 'OpenAI',
       model: '',
       base_url: '',
       api_key: '',
+      size: '1024x1024',
     },
     agentTiles: [
       { 

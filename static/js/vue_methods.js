@@ -1882,6 +1882,13 @@ let vue_methods = {
         this.text2imgSettings.model = provider.modelId;
         this.text2imgSettings.base_url = provider.url;
         this.text2imgSettings.api_key = provider.apiKey;
+        this.text2imgSettings.vendor = provider.vendor;
+        if (this.text2imgSettings.vendor === 'siliconflow') {
+          this.text2imgSettings.size = '1024x1024';
+        }
+        else {
+          this.text2imgSettings.size = 'auto';
+        }
         await this.autoSaveSettings();
       }
     },

@@ -1348,6 +1348,35 @@
                           </el-option>
                         </el-select>
                       </el-form-item>
+                      <el-form-item :label="t('size')" class="form-item-align">
+                        <el-select
+                          v-model="text2imgSettings.size"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                          v-if="text2imgSettings.vendor == 'siliconflow'"
+                        >
+                          <el-option label="1024x1024" value="1024x1024" ></el-option>
+                          <el-option label="960x1280" value="960x1280" ></el-option>
+                          <el-option label="768x1024" value="768x1024" ></el-option>
+                          <el-option label="720x1440" value="720x1440" ></el-option>
+                          <el-option label="720x1280" value="720x1280" ></el-option>
+                        </el-select>
+                        <el-select
+                          v-model="text2imgSettings.size"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                          v-else
+                        >
+                          <el-option :label="t('auto')" value="auto" ></el-option>
+                          <el-option label="1024x1024" value="1024x1024" ></el-option>
+                          <el-option label="1536x1024" value="1536x1024" ></el-option>
+                          <el-option label="1024x1536" value="1024x1536" ></el-option>
+                          <el-option label="256x256" value="256x256" ></el-option>
+                          <el-option label="512x512" value="512x512" ></el-option>
+                          <el-option label="1792x1024" value="1792x1024" ></el-option>
+                          <el-option label="1024x1792" value="1024x1792" ></el-option>                          
+                        </el-select>                        
+                      </el-form-item>
                     </div>
                     <el-alert
                       type="info"

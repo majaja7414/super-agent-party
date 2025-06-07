@@ -402,8 +402,10 @@ const translations = {
       'width': '宽度',
       'height': '高度',
       'openaiLike': '类OpenAI接口',
-      'addText2imgNotice': '添加供应商后，请返回此页面并选择【文生图模型】以继续。文生图模型名称中一般包含“img”、“image”等关键词。目前仅支持openai风格的接口调用。',
+      'addText2imgNotice': '添加供应商后，请返回此页面并选择【文生图模型】以继续。文生图模型名称中一般包含“img”、“image”等关键词。目前仅支持openai/硅基流动供应商。',
       'text2imgModelProvider': '文生图模型供应商',
+      'size': '尺寸',
+      'auto': '自动',
     },
     'en-US': {
       'chat': 'Chat',
@@ -807,7 +809,9 @@ const translations = {
       'width': 'Width',
       'height': 'Height',
       'openaiLike': 'OpenAI-like interface',
-      'addText2imgNotice': 'After adding a vendor, please return to this page and select 【Text-to-Image Model】 to continue. Text-to-Image model names generally contain keywords such as "img" and "image". Currently only OpenAI-style interface calls are supported.',
+      'addText2imgNotice': 'After adding a vendor, please return to this page and select 【Text-to-Image Model】 to continue. Text-to-Image model names generally contain keywords such as "img" and "image". Currently only OpenAI/siliconflow vendor are supported.',
       'text2imgModelProvider': 'Text2Image Model Provider',
+      'size': 'Size',
+      'auto': 'Auto',
     }
   };
