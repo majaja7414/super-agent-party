@@ -641,6 +641,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     random_entry = random.choice(cur_memory["random"])
                     if random_entry.get("value"):
                         lore_content += f"\n\n{random_entry['value']}"
+                        cur_memory["cur_random"] = random_entry['value']
+                        await save_settings(settings)
+            else:
+                if cur_memory.get("cur_random"):
+                    lore_content += f"\n\n{cur_memory['cur_random']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
@@ -1898,12 +1903,19 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
-            # 如果 cur_memory 中有 random 条目
-            if cur_memory.get("random") and len(cur_memory["random"]) > 0:
-                # 随机选择一个 random 条目
-                random_entry = random.choice(cur_memory["random"])
-                if random_entry.get("value"):
-                    lore_content += f"\n\n{random_entry['value']}"
+            # 如果request.messages中不包含assistant回复，说明是首次提问，触发随机设定
+            if not assistant_reply:
+                # 如果 cur_memory 中有 random 条目
+                if cur_memory.get("random") and len(cur_memory["random"]) > 0:
+                    # 随机选择一个 random 条目
+                    random_entry = random.choice(cur_memory["random"])
+                    if random_entry.get("value"):
+                        lore_content += f"\n\n{random_entry['value']}"
+                        cur_memory["cur_random"] = random_entry['value']
+                        await save_settings(settings)
+            else:
+                if cur_memory.get("cur_random"):
+                    lore_content += f"\n\n{cur_memory['cur_random']}"
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
