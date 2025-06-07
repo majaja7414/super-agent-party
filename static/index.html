@@ -2372,7 +2372,21 @@
                         </div>
                       </template>
                     </el-alert>
-                    <el-form-item :label="t('basicCharacter')">
+                    <div class="param-header">
+                      <span>{{ t('basicCharacter') }}</span>
+                      <div class="action-row">
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isBasicCharacterExpanded = !isBasicCharacterExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isBasicCharacterExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <el-form-item v-show="isBasicCharacterExpanded">
                       <el-input 
                         v-model="newMemory.basic_character" 
                         :placeholder="t('inputBasicCharacter')"
@@ -2384,15 +2398,6 @@
                     <div class="param-header">
                       <span>{{ t('worldviewSetting') }}</span>
                       <div class="action-row">
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isWorldviewSettingsExpanded = !isWorldviewSettingsExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isWorldviewSettingsExpanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
-                        </el-button>
                         <el-button 
                           @click="addLorebook"
                           type="primary"
@@ -2400,6 +2405,15 @@
                           size="small"
                         >
                           <i class="fa-solid fa-plus"></i>
+                        </el-button>
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isWorldviewSettingsExpanded = !isWorldviewSettingsExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isWorldviewSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
                         </el-button>
                       </div>
                     </div>
@@ -2456,15 +2470,6 @@
                     <div class="param-header">
                       <span>{{ t('randomSetting') }}</span>
                       <div class="action-row">
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isRandomSettingsExpanded = !isRandomSettingsExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isRandomSettingsExpanded ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down'"></i>
-                        </el-button>
                         <el-button 
                           @click="addRandom"
                           type="primary"
@@ -2472,6 +2477,15 @@
                           size="small"
                         >
                           <i class="fa-solid fa-plus"></i>
+                        </el-button>
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isRandomSettingsExpanded = !isRandomSettingsExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isRandomSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
                         </el-button>
                       </div>
                     </div>

@@ -155,6 +155,7 @@ let vue_methods = {
         name: '',
         value: ''        // 根据类型自动初始化
       });
+      this.isWorldviewSettingsExpanded = true;
       await this.autoSaveSettings();
     },
     async removeLorebook(index) {
@@ -169,6 +170,7 @@ let vue_methods = {
       this.newMemory.random.push({
         value: ''        // 根据类型自动初始化
       });
+      this.isRandomSettingsExpanded = true;
       await this.autoSaveSettings();
     },
     async removeRandom(index) {

@@ -1953,22 +1953,28 @@ body {
   margin-left: auto;
 }
 .param-header {
-  display: flex;
-  justify-content: space-between; /* Align items to ends */
-  align-items: center;          /* Vertically center */
-  margin-bottom: 10px;         /* Add spacing below the header */
-  padding: 0px;             /* Add some padding */
-  .action-row {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    
-    .el-button {
-      margin-left: 0;
-    }
-  }
+    display: flex; /* 使用 flexbox */
+    justify-content: space-between; /* 左右对齐 */
+    align-items: center; /* 垂直居中对齐 */
+    background-color: var(--el-bg-color-page); /* 背景颜色 */
+    padding: 10px; /* 内边距 */
+    margin-bottom: 20px; /* 底部外边距 */
+    border: 2px solid var(--card-border);
+    box-shadow: 2px 2px 5px var(--card-shadow); /* 阴影效果 */
+    border-radius: 8px; /* 圆角 */
 }
 
+.action-row {
+    display: flex;
+    justify-content: flex-end; /* 按钮靠右对齐 */
+    gap: 8px; /* 按钮之间的间距 */
+}
+
+.param-header span {
+    font-size: 18px; /* 字体大小 */
+    font-weight: bold; /* 加粗 */
+    color: var(--el-text-color);
+}
 .message-actions {
   display: flex;
   justify-content: flex-end;

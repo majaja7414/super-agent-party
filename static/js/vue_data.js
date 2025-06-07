@@ -397,6 +397,7 @@ let vue_data = {
     subMenu: '', // 新增子菜单状态
     isWorldviewSettingsExpanded: true,
     isRandomSettingsExpanded: true,
+    isBasicCharacterExpanded: true,
     text2imgSettings: {
       enabled: false,
       engine: 'pollinations',
