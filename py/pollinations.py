@@ -1,4 +1,6 @@
-from py.get_setting import load_settings
+import base64
+from py.get_setting import load_settings,get_host,get_port,UPLOAD_FILES_DIR
+from openai import AsyncClient
 
 async def pollinations_image(prompt: str, width=512, height=512, model="flux"):
     settings = await load_settings()
@@ -49,4 +51,114 @@ pollinations_image_tool = {
             "required": ["prompt"],
         },
     },
+}
+
+async def openai_image(prompt: str, size="auto"):
+    settings = await load_settings()
+
+    # Check if the provided values are default ones, if so, override them with settings
+    if size == "auto":
+        size = settings["text2imgSettings"]["size"]
+
+    model = settings["text2imgSettings"]["model"]
+
+    base_url = settings["text2imgSettings"]["base_url"]
+    api_key = settings["text2imgSettings"]["api_key"]
+    try:
+        client = AsyncClient(api_key=api_key,base_url=base_url)
+    
+        response = await client.images.generate(prompt=prompt, size=size, model=model)
+    except Exception as e:
+        print(e)
+        return f"ERROR: {e}"
+    
+    res_url = response.data[0].url
+    res = f"![image]({res_url})"
+    print(res)
+    if res_url is None:
+        res = response.data[0].b64_json
+        HOST = get_host()
+        if HOST == '0.0.0.0':
+            HOST = '127.0.0.1'
+        PORT = get_port()
+        prompt = prompt.replace(" ", "%20")
+        # 将图片保存到本地UPLOAD_FILES_DIR，文件名为prompt，返回本地文件路径
+        with open(f"{UPLOAD_FILES_DIR}/{prompt}.png", "wb") as f:
+            f.write(base64.b64decode(res))
+        res = f"![image](http://{HOST}:{PORT}/uploaded_files/{prompt}.png)"
+        print(res)
+    return res
+        
+openai_image_tool = {
+    "type": "function",
+    "function": {
+        "name": "openai_image",
+        "description": "通过英文prompt生成图片，并返回markdown格式的图片链接，你可以直接以原markdown格式发给用户即可，用户将会直接看到图片",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "需要生成图片的英文prompt，例如：A little girl in a red hat。你可以尽可能的丰富你的prompt，以获得更好的效果",
+                },
+                "size": {
+                    "type": "string",
+                    "description": "图片大小",
+                    "default": "auto",
+                    "enum": ["auto", "1024x1024", "1536x1024", "1024x1536", "256x256", "512x512", "1792x1024", "1024x1792"],
+                }
+            },
+            "required": ["prompt"],
+        },
+    },
+}
+
+async def siliconflow_image(prompt: str, size="1024x1024"):
+    settings = await load_settings()
+
+    # Check if the provided values are default ones, if so, override them with settings
+    if size == "1024x1024":
+        size = settings["text2imgSettings"]["size"]
+
+    model = settings["text2imgSettings"]["model"]
+
+    base_url = settings["text2imgSettings"]["base_url"]
+    api_key = settings["text2imgSettings"]["api_key"]
+    try:
+        client = AsyncClient(api_key=api_key,base_url=base_url)
+    
+        response = await client.images.generate(prompt=prompt, size=size, model=model)
+    except Exception as e:
+        print(e)
+        return f"ERROR: {e}"
+    
+    try:
+        res = f"![image]({response.data[0].url})"
+    except Exception as e:
+        print(e)
+        return f"ERROR: {e}"
+    return res
+
+siliconflow_image_tool = {
+    "type": "function",
+    "function": {
+        "name": "siliconflow_image",
+        "description": "通过英文prompt生成图片，并返回markdown格式的图片链接，你可以直接以原markdown格式发给用户即可，用户将会直接看到图片",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "prompt": {
+                    "type": "string",
+                    "description": "需要生成图片的英文prompt，例如：A little girl in a red hat。你可以尽可能的丰富你的prompt，以获得更好的效果",
+                },
+                "size": {
+                    "type": "string",
+                    "description": "图片大小",
+                    "default": "1024x1024", 
+                    "enum": ["1024x1024", "960x1280", "768x1024", "720x1440", "720x1280"],
+                }
+            },
+            "required": ["prompt"],
+        },
+    }
 }
