@@ -548,6 +548,17 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('text2img')" placement="top">
+              <el-button
+                @click="text2imgSettings.enabled = !text2imgSettings.enabled; autoSaveSettings()"
+                class="icon-btn text2img-btn"
+                :type="text2imgSettings.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-pencil"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('deepThinking')" placement="top">
               <el-button
                 @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
