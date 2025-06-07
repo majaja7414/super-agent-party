@@ -301,7 +301,7 @@ let vue_data = {
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
       { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' },
       { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'},
-      { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-image' },
+      { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
     ],
     toolkitTiles: [
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
