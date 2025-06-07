@@ -397,6 +397,7 @@ const translations = {
       'selectExistingMemory': '从已有记忆开始',
       'selectExistingMemoryPlaceholder': '请选择已有记忆',
       'none': '无',
+      'reasoningVisibleEnable': '推理过程可见',
     },
     'en-US': {
       'chat': 'Chat',
@@ -795,5 +796,6 @@ const translations = {
       'selectExistingMemory': 'Starting from existing memories',
       'selectExistingMemoryPlaceholder': 'Please select an existing memory',
       'none': 'None',
+      'reasoningVisibleEnable': 'Reasoning Process Visible'
     }
   };

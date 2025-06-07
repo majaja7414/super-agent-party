@@ -102,6 +102,7 @@
       "memoryLimit":30,
       "appid": "",
       "secret": "",
-      "separators": ["。", "\n", "？", "！"]
+      "separators": ["。", "\n", "？", "！"],
+      "reasoningVisible": true
     }
 }

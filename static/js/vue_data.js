@@ -362,7 +362,8 @@ let vue_data = {
       memoryLimit: 30,
       appid: '',
       secret: '',
-      separators: ["。", "\n", "？", "！"]
+      separators: ["。", "\n", "？", "！"],
+      reasoningVisible: true,
     },
     deployTiles: [
         { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }

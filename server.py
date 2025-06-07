@@ -2893,6 +2893,7 @@ class QQBotConfig(BaseModel):
     appid: str
     secret: str
     separators: List[str]
+    reasoningVisible: bool
 
 # 全局变量，用于存储机器人进程
 qq_bot_process = None
@@ -2907,6 +2908,7 @@ class MyClient(botpy.Client):
         self.memoryList = {}
         self.start_event = start_event
         self.separators = ['。', '\n', '？', '！']
+        self.reasoningVisible = False
 
     async def on_ready(self):
         self.is_running = True
@@ -2959,7 +2961,15 @@ class MyClient(botpy.Client):
             
             full_response = []
             async for chunk in stream:
+                reasoning_content = ""
+                if chunk.choices:
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0].get("delta", {})
+                    if delta:
+                        reasoning_content = delta.get("reasoning_content", "") 
                 content = chunk.choices[0].delta.content or ""
+                if reasoning_content and self.reasoningVisible:
+                    content = reasoning_content
                 full_response.append(content)
                 
                 # 更新缓冲区
@@ -3135,7 +3145,15 @@ class MyClient(botpy.Client):
             
             full_response = []
             async for chunk in stream:
+                reasoning_content = ""
+                if chunk.choices:
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0].get("delta", {})
+                    if delta:
+                        reasoning_content = delta.get("reasoning_content", "")
                 content = chunk.choices[0].delta.content or ""
+                if reasoning_content and self.reasoningVisible:
+                    content = reasoning_content
                 full_response.append(content)
                 state = self.group_states[g_id]
                 
@@ -3278,6 +3296,7 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
         QQclient.QQAgent = config.QQAgent
         QQclient.memoryLimit = config.memoryLimit
         QQclient.separators = config.separators
+        QQclient.reasoningVisible = config.reasoningVisible
         
         # 运行机器人
         QQclient.run(appid=config.appid, secret=config.secret)
