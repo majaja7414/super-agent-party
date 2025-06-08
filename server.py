@@ -3089,11 +3089,6 @@ class MyClient(botpy.Client):
         matches = re.finditer(pattern, temp_buffer)
         for match in matches:
             state["image_cache"].append(match.group(1))
-        
-        # 处理未闭合的图片标记
-        last_unclosed = re.search(r'!\[.*?\]\([^)]*$', temp_buffer)
-        if last_unclosed:
-            state["image_buffer"] = last_unclosed.group()
 
     async def _send_text_message(self, message, text):
         """发送文本消息并更新序号"""
@@ -3279,11 +3274,6 @@ class MyClient(botpy.Client):
         matches = re.finditer(pattern, temp_buffer)
         for match in matches:
             state["image_cache"].append(match.group(1))
-        
-        # 处理未闭合标记
-        last_unclosed = re.search(r'!\[.*?\]\([^)]*$', temp_buffer)
-        if last_unclosed:
-            state["image_buffer"] = last_unclosed.group()
 
     async def _send_group_text(self, message, text, state):
         """发送群聊文字消息"""
