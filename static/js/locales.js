@@ -412,6 +412,8 @@ const translations = {
       'basicCharacterNote': '角色设定：所有信息都会直接添加到系统提示中，智能体会根据角色设定进行对话。',
       'randomSettingNote': '随机设定：开启一个新的对话后，一个随机设定会被添加到系统提示中，智能体会根据随机设定进行对话。',
       'text2imgEngine': '文生图接口',
+      'autoUpdateSetting': '自动更新设定',
+      'autoUpdateNote': '自动更新设定：会跟随对话内容，动态更新一个记忆库。对话时，会根据用户的提问，将相关的记忆返回给智能体。',
     },
     'en-US': {
       'chat': 'Chat',
@@ -825,5 +827,7 @@ const translations = {
       'basicCharacterNote': 'Character setting: All information will be directly added to the system prompt, and the intelligent experience will conduct a dialogue according to the character setting.',
       'randomSettingNote': 'Random setting: After opening a new conversation, a random setting will be added to the system prompt, and the AI will conduct a conversation according to the random setting.',
       'text2imgEngine': 'Text-to-image interface',
+      'autoUpdateSetting': 'Auto Update Setting',
+      'autoUpdateNote': 'Automatic update setting: It will dynamically update a memory database according to the content of the conversation. During the conversation, it will return relevant memories to the intelligent entity based on the user questions.',
     }
   };

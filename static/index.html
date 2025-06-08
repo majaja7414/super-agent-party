@@ -2330,7 +2330,21 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
-
+                    <div class="param-header">
+                      <span>{{ t('autoUpdateSetting') }}</span>
+                      <div class="action-row">
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('autoUpdateNote')" placement="top">
+                          <el-button 
+                            type="default"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
+                      </div>
+                    </div>
                     <el-form-item :label="t('embeddingProvider')" required>
                       <el-select 
                         v-model="newMemory.providerId" 
@@ -2375,6 +2389,15 @@
                     <div class="param-header">
                       <span>{{ t('basicCharacter') }}</span>
                       <div class="action-row">
+                        <!-- 添加展开/收起按钮 -->
+                        <el-button 
+                          @click="isBasicCharacterExpanded = !isBasicCharacterExpanded" 
+                          type="default" 
+                          circle 
+                          size="small" 
+                        >
+                          <i :class="isBasicCharacterExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
+                        </el-button>
                         <!-- 问号圆圆的按钮 -->
                         <el-tooltip class="item" :content="t('basicCharacterNote')" placement="top">
                           <el-button 
@@ -2385,15 +2408,6 @@
                             <i class="fa-solid fa-question"></i>
                           </button>
                         </el-tooltip>
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isBasicCharacterExpanded = !isBasicCharacterExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isBasicCharacterExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
-                        </el-button>
                       </div>
                     </div>
                     <el-form-item v-show="isBasicCharacterExpanded">
@@ -2408,16 +2422,6 @@
                     <div class="param-header">
                       <span>{{ t('worldviewSetting') }}</span>
                       <div class="action-row">
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('worldviewSettingNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
                         <el-button 
                           @click="addLorebook"
                           type="primary"
@@ -2435,6 +2439,16 @@
                         >
                           <i :class="isWorldviewSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
                         </el-button>
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('worldviewSettingNote')" placement="top">
+                          <el-button 
+                            type="default"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
                       </div>
                     </div>
                     <div v-show="isWorldviewSettingsExpanded" class="memo-extra-params">
@@ -2490,16 +2504,6 @@
                     <div class="param-header">
                       <span>{{ t('randomSetting') }}</span>
                       <div class="action-row">
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('randomSettingNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
                         <el-button 
                           @click="addRandom"
                           type="primary"
@@ -2517,6 +2521,16 @@
                         >
                           <i :class="isRandomSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
                         </el-button>
+                        <!-- 问号圆圆的按钮 -->
+                        <el-tooltip class="item" :content="t('randomSettingNote')" placement="top">
+                          <el-button 
+                            type="default"
+                            circle
+                            size="small"
+                          >
+                            <i class="fa-solid fa-question"></i>
+                          </button>
+                        </el-tooltip>
                       </div>
                     </div>
                     <div v-show="isRandomSettingsExpanded" class="memo-extra-params">
