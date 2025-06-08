@@ -139,6 +139,7 @@ const translations = {
       'theme.midnight': '午夜',
       'theme.desert': '沙漠',
       'theme.neon': '霓虹',
+      'theme.dopamine': '多巴胺',
       'copy_success': '已复制到剪贴板',
       'copy_fail': '复制失败',
       'settings_save_failed': '保存设置失败',
