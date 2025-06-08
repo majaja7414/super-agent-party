@@ -7,8 +7,7 @@
 
 ## Introduction
 
-🚀 Zero Intrusion · Minimalist Expansion · Empower LLM APIs with Enterprise-Grade Capabilities  
-Without modifying a single line of code, seamlessly add advanced features to your LLM interfaces, including knowledge base integration, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual understanding, image generation, custom tools, and more. Build a plug-and-play LLM enhancement middleware platform. At the same time, you can deploy your agent configuration to social platforms with just one click (official QQ bot is already supported).
+🚀 Zero Intrusion · Minimalist Expansion · Empower LLM APIs with Enterprise-Grade Capabilities without modifying a single line of code, seamlessly add advanced features to your LLM interfaces, including knowledge base integration, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual understanding, image generation, custom tools, and more. Build a plug-and-play LLM enhancement middleware platform. At the same time, you can deploy your agent configuration to social platforms with just one click (official QQ bot is already supported).
 
 ![image](doc/image/demo.png)
 
