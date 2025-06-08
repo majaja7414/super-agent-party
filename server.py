@@ -3258,7 +3258,7 @@ class MyClient(botpy.Client):
             print(f"群聊处理异常: {e}")
             clean_text = self._clean_group_text(str(e))
             if clean_text:
-                self._send_group_text(message, clean_text, state)
+                await self._send_group_text(message, clean_text, state)
         finally:
             # 清理状态
             del self.group_states[g_id]
