@@ -266,6 +266,83 @@
     --hljs-attr: #8a9b52;           /* 沙漠绿 */
 }
 
+[data-theme="neon"] {
+  /* 基础三色 - 深空蓝紫渐变 */
+  --bg-color: linear-gradient(135deg, #0c0e2b 0%, #1a1c3d 100%);
+  --text-color: #e0e0ff;
+  --border-color: rgba(128, 102, 255, 0.3);
+  
+  /* 主色调 - 霓虹青紫渐变 */
+  --el-color-primary: #8a2be2; /* 蓝紫色 */
+  --el-color-primary-light-3: #9370db;
+  --el-color-primary-light-5: #a991f0;
+  --el-color-primary-light-7: #c5b3f6;
+  --el-color-primary-rgb: 138, 43, 226 !important;
+  
+  /* 背景系统 */
+  --el-bg-color: #121230 !important;
+  --el-bg-color-page: #0c0e2b !important;
+  --el-bg-color-overlay: #1a1c3d !important;
+  
+  /* 文字系统 */
+  --el-text-color-primary: var(--text-color) !important;
+  --el-text-color-regular: #b0b0ff !important;
+  --el-text-color-secondary: #8888cc !important;
+  
+  /* 边框系统 - 半透明霓虹效果 */
+  --el-border-color: rgba(128, 102, 255, 0.4) !important;
+  --el-border-color-light: rgba(102, 153, 255, 0.3) !important;
+  
+  /* 组件特定 */
+  --el-button-bg-color: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%) !important;
+  --el-input-bg-color: rgba(26, 28, 61, 0.7) !important;
+  --el-menu-bg-color: rgba(18, 18, 48, 0.85) !important;
+  --el-table-bg-color: rgba(12, 14, 43, 0.6) !important;
+  --el-tag-bg-color: rgba(138, 43, 226, 0.15) !important;
+  
+  /* 霓虹状态色 */
+  --el-color-success: #00e676 !important;      /* 霓虹绿 */
+  --el-color-warning: #ffea00 !important;      /* 霓虹黄 */
+  --el-color-danger: #ff2d75 !important;       /* 霓虹粉红 */
+  --el-color-info: #18ffff !important;         /* 霓虹青 */
+  
+  /* 发光阴影效果 */
+  --el-box-shadow-light: 
+    0 0 8px rgba(102, 51, 255, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  --card-shadow: 
+    0 0 12px rgba(106, 17, 203, 0.4),
+    0 4px 20px rgba(0, 0, 0, 0.3);
+  
+  /* 输入框系统 */
+  --el-input-text-color: #d0d0ff;
+  --el-input-placeholder-color: #6666aa;
+  --el-input-hover-border-color: #9370db;
+  --el-input-focus-border-color: #a991f0;
+  
+  /* 代码块 */
+  --code-bg: rgba(26, 28, 61, 0.8);
+  --code-border: rgba(128, 102, 255, 0.5);
+}
+
+/* 霓虹极光代码高亮 */
+[data-theme="neon"] {
+  --hljs-text: #e0e0ff;
+  --hljs-bg: rgba(26, 28, 61, 0.8);
+  --hljs-border: rgba(106, 17, 203, 0.4);
+  --hljs-keyword: #ff2d75;        /* 霓虹粉红 */
+  --hljs-string: #00e676;         /* 霓虹绿 */
+  --hljs-number: #ffea00;         /* 霓虹黄 */
+  --hljs-comment: #6666aa;        /* 紫灰色 */
+  --hljs-title: #18ffff;          /* 霓虹青 */
+  --hljs-built_in: #9370db;       /* 薰衣草紫 */
+  --hljs-literal: #ff9d00;        /* 琥珀色 */
+  --hljs-class: #a991f0;          /* 浅紫 */
+  --hljs-function: #6a11cb;       /* 深紫 */
+  --hljs-params: #d0d0ff;         /* 淡紫白 */
+  --hljs-attr: #2575fc;           /* 亮蓝色 */
+}
+
 /* 修改默认按钮基础样式 */
 .el-button--default {
   /* 通用样式 */
