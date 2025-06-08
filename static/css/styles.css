@@ -347,6 +347,171 @@
     --hljs-attr: #2ca58d;           /* 海藻绿 */
 }
 
+/* 火山主题 */
+[data-theme="volcano"] {
+    /* 基础三色 */
+    --bg-color: #1a1a1a;         /* 火山岩黑色背景 */
+    --text-color: #f0f0f0;       /* 火山灰白色文字 */
+    --border-color: #4d2c1d;     /* 火山岩棕色边框 */
+    
+    /* 主色调 - 岩浆红 */
+    --el-color-primary: #ff4500; /* 岩浆红 */
+    --el-color-primary-light-3: #ff6a33;
+    --el-color-primary-light-5: #ff8f66;
+    --el-color-primary-light-7: #ffb599;
+    --el-color-primary-rgb: 255, 69, 0 !important;
+    
+    /* 背景系统 */
+    --el-bg-color: var(--bg-color) !important;
+    --el-bg-color-page: #262626 !important;      /* 深火山灰 */
+    --el-bg-color-overlay: #331e15 !important;   /* 火山岩棕色 */
+    
+    /* 文字系统 */
+    --el-text-color-primary: var(--text-color) !important;
+    --el-text-color-regular: #d9b8a9 !important; /* 火山灰粉 */
+    --el-text-color-secondary: #a67a6d !important; /* 火山岩灰 */
+    
+    /* 边框系统 */
+    --el-border-color: var(--border-color) !important;
+    --el-border-color-light: #663326 !important; /* 熔岩橙 */
+    --el-border-color-lighter: #994c33 !important;
+    
+    /* 组件特定 */
+    --el-button-bg-color: #ff4500 !important;     /* 岩浆红按钮 */
+    --el-input-bg-color: #331e15 !important;      /* 火山岩棕色背景 */
+    --el-menu-bg-color: #262626 !important;       /* 深火山灰 */
+    --el-table-bg-color: #1a1a1a !important;      /* 火山岩黑 */
+    --el-tag-bg-color: rgba(255, 69, 0, 0.15) !important; /* 半透明岩浆色 */
+    
+    /* 状态颜色 - 火山元素 */
+    --el-color-success: #4caf50 !important;       /* 火山绿（代表火山岛植被） */
+    --el-color-warning: #ff9800 !important;       /* 熔岩橙 */
+    --el-color-danger: #f44336 !important;        /* 炽热红 */
+    --el-color-info: #9e9e9e !important;          /* 火山灰 */
+    
+    /* 阴影效果 - 发光效果 */
+    --el-box-shadow-light: 0 0 15px rgba(255, 69, 0, 0.4) !important;
+    --card-shadow: 0 4px 20px rgba(255, 69, 0, 0.25);
+    
+    /* 输入框系统 */
+    --el-input-text-color: var(--text-color);
+    --el-input-placeholder-color: #a67a6d;
+    --el-input-hover-border-color: var(--el-color-primary-light-3);
+    --el-input-focus-border-color: var(--el-color-primary);
+    --el-input-disabled-bg-color: #331e15;
+    
+    /* 代码块 */
+    --code-bg: #262626;
+    --code-border: #663326;
+    
+    /* 特殊火山色 */
+    --lava-red: #ff4500;
+    --magma-orange: #ff6a33;
+    --volcanic-rock: #4d2c1d;
+    --volcanic-ash: #9e9e9e;
+}
+
+/* 火山主题代码高亮 */
+[data-theme="volcano"] {
+    --hljs-text: #f0f0f0;
+    --hljs-bg: #262626;
+    --hljs-border: rgba(255, 69, 0, 0.3);
+    --hljs-keyword: #ff9800;        /* 熔岩橙 */
+    --hljs-string: #ff4500;         /* 岩浆红 */
+    --hljs-number: #ff6a33;         /* 岩浆亮橙 */
+    --hljs-comment: #9e9e9e;        /* 火山灰 */
+    --hljs-title: #ff8f66;          /* 岩浆粉 */
+    --hljs-built_in: #ff6a33;       /* 岩浆亮橙 */
+    --hljs-literal: #f44336;        /* 炽热红 */
+    --hljs-class: #ff4500;          /* 岩浆红 */
+    --hljs-function: #ff9800;       /* 熔岩橙 */
+    --hljs-params: #d9b8a9;         /* 火山灰粉 */
+    --hljs-attr: #4caf50;           /* 火山绿 */
+}
+
+/* 森林主题 */
+[data-theme="forest"] {
+    /* 基础三色 */
+    --bg-color: #1a2a1a;         /* 森林深绿背景 */
+    --text-color: #e8f5e9;       /* 嫩叶白文字 */
+    --border-color: #3d5e3d;     /* 森林绿边框 */
+    
+    /* 主色调 - 森林绿 */
+    --el-color-primary: #4caf50; /* 生机绿 */
+    --el-color-primary-light-3: #66bb6a;
+    --el-color-primary-light-5: #81c784;
+    --el-color-primary-light-7: #a5d6a7;
+    --el-color-primary-rgb: 76, 175, 80 !important;
+    
+    /* 背景系统 */
+    --el-bg-color: var(--bg-color) !important;
+    --el-bg-color-page: #223322 !important;      /* 森林暗绿 */
+    --el-bg-color-overlay: #2a422a !important;   /* 苔藓绿 */
+    
+    /* 文字系统 */
+    --el-text-color-primary: var(--text-color) !important;
+    --el-text-color-regular: #c8e6c9 !important; /* 浅叶绿 */
+    --el-text-color-secondary: #a5d6a7 !important; /* 森林灰绿 */
+    
+    /* 边框系统 */
+    --el-border-color: var(--border-color) !important;
+    --el-border-color-light: #4d7c4d !important; /* 阳光绿叶 */
+    --el-border-color-lighter: #5d9c5d !important;
+    
+    /* 组件特定 */
+    --el-button-bg-color: #4caf50 !important;     /* 生机绿按钮 */
+    --el-input-bg-color: #2a422a !important;      /* 输入框背景 */
+    --el-menu-bg-color: #1a2a1a !important;       /* 菜单背景 */
+    --el-table-bg-color: #223322 !important;      /* 表格背景 */
+    --el-tag-bg-color: rgba(76, 175, 80, 0.15) !important; /* 半透明绿叶色 */
+    
+    /* 状态颜色 - 森林元素 */
+    --el-color-success: #4caf50 !important;       /* 森林绿 */
+    --el-color-warning: #ffb74d !important;       /* 秋叶橙 */
+    --el-color-danger: #ef9a9a !important;        /* 浆果红 */
+    --el-color-info: #90a4ae !important;          /* 树皮灰 */
+    
+    /* 阴影效果 */
+    --el-box-shadow-light: 0 2px 10px rgba(76, 175, 80, 0.2) !important;
+    --card-shadow: 0 4px 12px rgba(61, 94, 61, 0.3);
+    
+    /* 输入框系统 */
+    --el-input-text-color: var(--text-color);
+    --el-input-placeholder-color: #81c784;
+    --el-input-hover-border-color: var(--el-color-primary-light-3);
+    --el-input-focus-border-color: var(--el-color-primary);
+    --el-input-disabled-bg-color: #2a422a;
+    
+    /* 代码块 */
+    --code-bg: #2a422a;
+    --code-border: #4d7c4d;
+    
+    /* 特殊森林色 */
+    --forest-green: #4caf50;
+    --moss-green: #66bb6a;
+    --tree-bark: #5d4037;
+    --sunlight-yellow: #ffd54f;
+    --forest-water: #80deea;
+}
+
+/* 森林主题代码高亮 */
+[data-theme="forest"] {
+    --hljs-text: #e8f5e9;
+    --hljs-bg: #2a422a;
+    --hljs-border: rgba(129, 199, 132, 0.3);
+    --hljs-keyword: #ffb74d;        /* 秋叶橙 */
+    --hljs-string: #80deea;         /* 森林水蓝 */
+    --hljs-number: #4caf50;         /* 森林绿 */
+    --hljs-comment: #a5d6a7;        /* 森林灰绿 */
+    --hljs-title: #81c784;          /* 苔藓绿 */
+    --hljs-built_in: #66bb6a;       /* 苔藓绿 */
+    --hljs-literal: #ef9a9a;        /* 浆果红 */
+    --hljs-class: #4caf50;          /* 森林绿 */
+    --hljs-function: #81c784;       /* 苔藓绿 */
+    --hljs-params: #c8e6c9;         /* 浅叶绿 */
+    --hljs-attr: #ffd54f;           /* 阳光黄 */
+}
+
 /* 修改默认按钮基础样式 */
 .el-button--default {
   /* 通用样式 */
