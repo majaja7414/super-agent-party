@@ -11,6 +11,7 @@ import random
 import re
 import shutil
 import signal
+import sys
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
@@ -3330,7 +3331,7 @@ class MyClient(botpy.Client):
         return clean.strip()
 
 
-def run_bot_process(config: QQBotConfig,start_event,shared_dict):
+def run_bot_process(config: QQBotConfig, start_event, shared_dict):
     """在新进程中运行机器人的函数"""
     # 配置子进程的日志系统
     logging.basicConfig(
@@ -3339,6 +3340,44 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
     )
     QQlogger = logging.getLogger("QQBotProcess")
     QQlogger.info("子进程启动，开始配置机器人...")
+
+    # 提前声明 QQclient，确保在信号处理函数中可用
+    QQclient = None
+
+    # 统一的信号处理函数
+    def handle_signal(signum, frame):
+        QQlogger.info(f"接收到终止信号 {signum}, 准备停止机器人...")
+        # 尝试关闭机器人连接
+        if QQclient and hasattr(QQclient, 'close'):
+            try:
+                QQlogger.info("正在关闭机器人连接...")
+                QQclient.close()
+            except Exception as e:
+                QQlogger.error(f"关闭机器人连接时出错: {str(e)}")
+        QQlogger.info("机器人进程退出")
+        sys.exit(0)
+    
+    # 注册信号处理器 (Unix系统)
+    if sys.platform != 'win32':
+        # Unix/Linux/macOS 系统
+        for sig in [signal.SIGTERM, signal.SIGINT]:
+            try:
+                signal.signal(sig, handle_signal)
+                QQlogger.debug(f"已注册 {signal.Signals(sig).name} 信号处理器")
+            except AttributeError:
+                # 某些信号在特定平台可能不可用
+                pass
+    
+    # 对于Windows，使用atexit注册退出处理
+    if sys.platform == 'win32':
+        import atexit
+        QQlogger.debug("Windows系统，注册atexit退出处理")
+        
+        def windows_exit_handler():
+            QQlogger.info("Windows退出处理被调用")
+            handle_signal(signal.SIGTERM, None)
+        
+        atexit.register(windows_exit_handler)
 
     # 移除自定义事件循环和信号处理
     # 直接使用基类的run方法启动
@@ -3350,6 +3389,8 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
         QQclient.separators = config.separators
         QQclient.reasoningVisible = config.reasoningVisible
         
+        QQlogger.info("机器人配置完成，开始运行...")
+        
         # 运行机器人
         QQclient.run(appid=config.appid, secret=config.secret)
     except Exception as e:
@@ -3357,10 +3398,21 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
         shared_dict['error'] = str(e)
         start_event.set()  # 确保事件被设置
         QQlogger.error(f"机器人启动失败: {str(e)}")
+        # 记录完整异常信息
+        QQlogger.exception("机器人启动异常详情:")
     finally:
-        QQclient.is_running = False
         # 清理资源
-        QQclient.memoryList.clear()
+        if QQclient:
+            QQlogger.info("清理机器人资源...")
+            try:
+                QQclient.is_running = False
+                # 确保内存被正确清理
+                if hasattr(QQclient, 'memoryList') and isinstance(QQclient.memoryList, list):
+                    QQclient.memoryList.clear()
+                    QQlogger.debug("内存列表已清空")
+            except Exception as e:
+                QQlogger.error(f"清理资源时出错: {str(e)}")
+        
         QQlogger.info("机器人进程已完全停止")
 
 @app.post("/start_qq_bot")
@@ -3438,70 +3490,188 @@ async def reload_qq_bot(config: QQBotConfig):
     """
     重新加载QQ机器人配置
     支持热重载：先停止当前机器人，然后用新配置启动
+    改进：增强跨平台和Docker兼容性
     """
     global qq_bot_process, current_bot_config
     
     # 1. 检查是否需要重载
     if current_bot_config and config == current_bot_config:
-        return {"message": "配置未变化，无需重载"}
+        logger.info("配置未变化，无需重载")
+        return {
+            "success": True,
+            "message": "配置未变化，无需重载",
+            "pid": qq_bot_process.pid if qq_bot_process and qq_bot_process.is_alive() else None,
+            "config_changed": False
+        }
     
     # 2. 记录当前状态
     was_running = False
+    old_pid = None
     if qq_bot_process and qq_bot_process.is_alive():
         was_running = True
-        pid = qq_bot_process.pid
-        logger.info(f"机器人正在运行(PID: {pid})，将先停止再重新启动")
+        old_pid = qq_bot_process.pid
+        logger.info(f"机器人正在运行(PID: {old_pid})，将先停止再重新启动")
         
-        # 停止当前机器人
+        # 使用改进的停止逻辑
         try:
-            # 发送SIGTERM信号
-            os.kill(qq_bot_process.pid, signal.SIGTERM)
-            logger.info(f"已向机器人进程 {pid} 发送 SIGTERM 信号")
+            # 特殊处理Docker容器中的PID 1问题
+            in_docker = os.path.exists('/.dockerenv')
             
-            # 等待最多2秒
+            # 发送终止信号
+            if in_docker and old_pid == 1:
+                # Docker中PID 1需要特殊处理
+                logger.info("在Docker容器中发送SIGINT到PID 1")
+                os.kill(old_pid, signal.SIGINT)
+            else:
+                # 标准终止信号
+                if sys.platform == 'win32':
+                    qq_bot_process.terminate()
+                else:
+                    os.kill(old_pid, signal.SIGTERM)
+            
+            # 等待进程结束 (增加超时时间)
+            timeout = 10.0  # 最多等待10秒
             start_time = time.time()
-            while time.time() - start_time < 2:
+            
+            while time.time() - start_time < timeout:
                 if not qq_bot_process.is_alive():
                     break
-                await asyncio.sleep(0.1)
+                # 更精确的等待
+                await asyncio.sleep(0.5)
+                # 二次检查防止竞争条件
+                if not qq_bot_process.is_alive():
+                    break
+                
+                # 每2秒记录一次状态
+                if int(time.time() - start_time) % 2 == 0:
+                    logger.info(f"等待进程 {old_pid} 停止...")
             
-            # 如果进程还在运行，强制终止
-            logger.warning(f"机器人进程 {pid} 未响应，强制终止")
-            qq_bot_process.terminate()
-            qq_bot_process.join(timeout=1.0)
+            # 如果进程仍在运行，强制终止
+            if qq_bot_process.is_alive():
+                logger.warning(f"进程 {old_pid} 未响应，强制终止")
+                try:
+                    if sys.platform == 'win32':
+                        qq_bot_process.kill()
+                    else:
+                        os.kill(old_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass  # 进程可能在我们检查后退出
+                
+                # 等待最终确认
+                qq_bot_process.join(timeout=2.0)
+            
+            logger.info(f"旧机器人进程 {old_pid} 已停止")
         except ProcessLookupError:
-            logger.warning("机器人进程已不存在")
+            logger.warning(f"机器人进程 {old_pid} 已不存在")
         except Exception as e:
             logger.error(f"停止机器人时出错: {str(e)}")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "success": False,
+                    "message": f"停止现有机器人失败: {str(e)}",
+                    "config_changed": False
+                }
+            )
         finally:
-            qq_bot_process = None
+            # 确保进程对象被清理
+            if qq_bot_process:
+                if not qq_bot_process.is_alive():
+                    qq_bot_process.close()
+                qq_bot_process = None
     
     # 3. 保存新配置
     current_bot_config = config
+    logger.info("QQ机器人配置已更新")
     
     # 4. 如果之前是运行状态，重新启动
     if was_running:
-        # 创建并启动进程
-        qq_bot_process = multiprocessing.Process(
-            target=run_bot_process,
-            args=(config,),
-            name="QQBotProcess"
-        )
+        # 添加额外延迟确保进程完全终止
+        await asyncio.sleep(1.0)
         
-        qq_bot_process.start()
-        logger.info(f"QQ机器人已重新启动，新PID: {qq_bot_process.pid}")
-        
-        return {
-            "message": "QQ机器人配置已重载并重新启动",
-            "pid": qq_bot_process.pid,
-            "config_changed": True
-        }
+        # 使用Manager创建共享对象
+        with Manager() as manager:
+            shared_dict = manager.dict()
+            start_event = Event()
+            
+            # 创建并启动进程
+            qq_bot_process = multiprocessing.Process(
+                target=run_bot_process,
+                args=(config, start_event, shared_dict),
+                name="QQBotProcess"
+            )
+            
+            start_event.clear()  # 清除事件状态
+            qq_bot_process.start()
+            new_pid = qq_bot_process.pid
+            logger.info(f"QQ机器人进程已重新启动，新PID: {new_pid}")
+            
+            # 等待启动结果（最多10秒）
+            try:
+                # 在异步环境中同步等待
+                loop = asyncio.get_event_loop()
+                event_set = await loop.run_in_executor(
+                    None, 
+                    lambda: start_event.wait(timeout=10.0)
+                )
+            except Exception as e:
+                qq_bot_process.terminate()
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "success": False,
+                        "message": f"等待机器人启动时出错: {str(e)}",
+                        "pid": None,
+                        "config_changed": True
+                    }
+                )
+            
+            # 检查启动结果
+            if 'error' in shared_dict:
+                error_msg = shared_dict['error']
+                qq_bot_process.terminate()
+                qq_bot_process.join(timeout=1.0)
+                qq_bot_process = None
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "success": False,
+                        "message": f"机器人启动失败: {error_msg}",
+                        "pid": None,
+                        "config_changed": True
+                    }
+                )
+            
+            if not event_set:
+                qq_bot_process.terminate()
+                qq_bot_process.join(timeout=1.0)
+                qq_bot_process = None
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "success": False,
+                        "message": "机器人启动超时，请检查网络连接",
+                        "pid": None,
+                        "config_changed": True
+                    }
+                )
+            
+            # 启动成功
+            return {
+                "success": True,
+                "message": "QQ机器人配置已重载并重新启动",
+                "pid": new_pid,
+                "old_pid": old_pid,
+                "config_changed": True
+            }
     
     # 5. 如果之前未运行，只更新配置
     logger.info("QQ机器人配置已更新，但未启动（机器人之前未运行）")
     return {
+        "success": True,
         "message": "QQ机器人配置已更新",
         "pid": None,
+        "old_pid": old_pid,
         "config_changed": True
     }
 
@@ -3512,32 +3682,76 @@ async def stop_qq_bot():
     
     if not qq_bot_process or not qq_bot_process.is_alive():
         raise HTTPException(status_code=400, detail="QQ机器人未在运行")
-
+    
+    pid = qq_bot_process.pid
+    logger.info(f"开始停止机器人进程 (PID: {pid})")
+    
     try:
-        # 首先尝试优雅停止（发送信号）
-        os.kill(qq_bot_process.pid, signal.SIGTERM)
-        logger.info(f"已向机器人进程 {qq_bot_process.pid} 发送 SIGTERM 信号")
+        # 特殊处理Docker容器中的PID 1问题
+        in_docker = os.path.exists('/.dockerenv')
         
-        # 等待最多2秒
+        # 发送终止信号
+        try:
+            if in_docker and pid == 1:
+                # Docker中PID 1需要特殊处理
+                logger.info("在Docker容器中发送SIGINT到PID 1")
+                os.kill(pid, signal.SIGINT)
+            else:
+                # 标准终止信号
+                if sys.platform == 'win32':
+                    qq_bot_process.terminate()
+                else:
+                    os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            logger.warning(f"进程 {pid} 已不存在")
+            qq_bot_process = None
+            return {"success": True, "message": "进程已终止"}
+        
+        # 等待进程结束 (增加超时时间)
+        timeout = 10.0  # 最多等待10秒
         start_time = time.time()
-        while time.time() - start_time < 2:
+        
+        while time.time() - start_time < timeout:
             if not qq_bot_process.is_alive():
                 break
-            await asyncio.sleep(0.1)
+            # 更精确的等待
+            await asyncio.sleep(0.5)
+            # 二次检查防止竞争条件
+            if not qq_bot_process.is_alive():
+                break
+            
+            # 每2秒记录一次状态
+            if int(time.time() - start_time) % 2 == 0:
+                logger.info(f"等待进程 {pid} 停止...")
         
-        # 如果进程还在运行，强制终止
-        logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
-        qq_bot_process.terminate()
-        qq_bot_process.join(timeout=1.0)
-        print("机器人进程已停止")
-    except ProcessLookupError:
-        logger.warning("机器人进程已不存在")
+        # 如果进程仍在运行，强制终止
+        if qq_bot_process.is_alive():
+            logger.warning(f"进程 {pid} 未响应，强制终止")
+            try:
+                if sys.platform == 'win32':
+                    qq_bot_process.kill()
+                else:
+                    os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass  # 进程可能在我们检查后退出
+            
+            # 等待最终确认
+            qq_bot_process.join(timeout=2.0)
+    
     except Exception as e:
         logger.error(f"停止机器人时出错: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"停止机器人失败: {str(e)}"}
+        )
     finally:
+        # 确保进程对象被清理
+        if qq_bot_process and not qq_bot_process.is_alive():
+            qq_bot_process.close()
         qq_bot_process = None
     
-    return {"success": True,"message": "QQ机器人已停止"}
+    logger.info(f"机器人进程 {pid} 已成功停止")
+    return {"success": True, "message": "QQ机器人已停止"}
 
 # 检查机器人状态和配置
 @app.get("/qq_bot_status")
