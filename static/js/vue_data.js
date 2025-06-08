@@ -268,7 +268,7 @@ let vue_data = {
     editingAgent: false,
     currentLanguage: 'zh-CN',
     translations: translations,
-    themeValues: ['light', 'dark','midnight','desert','ocean','volcano','forest'],
+    themeValues: ['light', 'dark','midnight','desert'],
     browserBtnColor: '#409EFF',
     isBrowserOpening: false,
     expandedSections: {
