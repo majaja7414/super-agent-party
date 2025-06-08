@@ -146,15 +146,35 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async addLorebook() {
+      // 如果this.newMemory.lorebook未定义，则初始化为空数组
+      if (!this.newMemory.lorebook) {
+        this.newMemory.lorebook = [];
+      }
       // 在this.newMemory.lorebook的object中添加一个新的键值对
       this.newMemory.lorebook.push({
         name: '',
         value: ''        // 根据类型自动初始化
       });
+      this.isWorldviewSettingsExpanded = true;
       await this.autoSaveSettings();
     },
     async removeLorebook(index) {
       this.newMemory.lorebook.splice(index, 1);
+      await this.autoSaveSettings();
+    },
+    async addRandom(){
+      // 如果this.newMemory.random未定义，则初始化为空数组
+      if (!this.newMemory.random) {
+        this.newMemory.random = [];
+      }
+      this.newMemory.random.push({
+        value: ''        // 根据类型自动初始化
+      });
+      this.isRandomSettingsExpanded = true;
+      await this.autoSaveSettings();
+    },
+    async removeRandom(index) {
+      this.newMemory.random.splice(index, 1);
       await this.autoSaveSettings();
     },
     async updateParamType(index) {
@@ -988,6 +1008,7 @@ let vue_methods = {
           this.a2aServers = data.data.a2aServers || this.a2aServers;
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
+          this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
         } 
@@ -1420,6 +1441,7 @@ let vue_methods = {
           isdocker: this.isdocker,
           memories: this.memories,
           memorySettings: this.memorySettings,
+          text2imgSettings: this.text2imgSettings,
           custom_http: this.customHttpTools,
         };
         const correlationId = uuid.v4();
@@ -1872,6 +1894,28 @@ let vue_methods = {
         this.visionSettings.base_url = provider.url;
         this.visionSettings.api_key = provider.apiKey;
         await this.autoSaveSettings();
+      }
+    },
+    async selectText2imgProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.text2imgSettings.model = provider.modelId;
+        this.text2imgSettings.base_url = provider.url;
+        this.text2imgSettings.api_key = provider.apiKey;
+        this.text2imgSettings.vendor = provider.vendor;
+        if (this.text2imgSettings.vendor === 'siliconflow') {
+          this.text2imgSettings.size = '1024x1024';
+        }
+        else {
+          this.text2imgSettings.size = 'auto';
+        }
+        await this.autoSaveSettings();
+      }
+    },
+
+    handleText2imgProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectText2imgProvider(this.text2imgSettings.selectedProvider);
       }
     },
 
@@ -2546,6 +2590,7 @@ let vue_methods = {
           base_url: this.newMemory.base_url,
           vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
           lorebook: this.newMemory.lorebook,
+          random: this.newMemory.random,
           basic_character: this.newMemory.basic_character,
         };
         this.memories.push(newMem);
@@ -2563,6 +2608,7 @@ let vue_methods = {
           memory.base_url = this.newMemory.base_url;
           memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
           memory.lorebook = this.newMemory.lorebook;
+          memory.random = this.newMemory.random;
           memory.basic_character = this.newMemory.basic_character;
         }
       }
@@ -2577,7 +2623,8 @@ let vue_methods = {
         api_key: '',
         base_url: '',
         vendor: '',
-        lorebook: {},
+        lorebook: [],
+        random: [],
         basic_character: "",
        };
     },
@@ -2816,6 +2863,10 @@ let vue_methods = {
       this.newMemory.lorebook[index].value = "";
       this.autoSaveSettings();
     },
+    clearRandom(index) {
+      this.newMemory.random[index].value = "";
+      this.autoSaveSettings();
+    },
     copyExistingMemoryData(selectedId) {
       const existingMemory = this.memories.find(memory => memory.id === selectedId);
       if (existingMemory) {
@@ -2831,6 +2882,7 @@ let vue_methods = {
           api_key: '',
           vendor: '',
           lorebook: [],
+          random: [],
           basic_character: '',
         };
       }

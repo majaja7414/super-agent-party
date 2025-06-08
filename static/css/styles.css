@@ -109,6 +109,240 @@
   --card-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.3);
 }
 
+/* 新增 Ocean Midnight 主题 */
+[data-theme="midnight"] {
+  /* 基础三色 */
+  --bg-color: #0f172a;         /* 深海军蓝背景 */
+  --text-color: #e2e8f0;       /* 柔和灰白色文字 */
+  --border-color: #334155;     /* 中灰蓝色边框 */
+
+  /* 主色调 - 青蓝色 */
+  --el-color-primary: #0ea5e9; /* 明亮青蓝色 */
+  --el-color-primary-light-3: #38bdf8;
+  --el-color-primary-light-5: #7dd3fc;
+  --el-color-primary-light-7: #bae6fd;
+  --el-color-primary-rgb: 14, 165, 233 !important;
+  
+  /* 背景系统 */
+  --el-bg-color: var(--bg-color) !important;
+  --el-bg-color-page: #1e293b !important;      /* 稍浅页面背景 */
+  --el-bg-color-overlay: #1e293b !important;   /* 浮层背景 */
+
+  /* 文字系统 */
+  --el-text-color-primary: var(--text-color) !important;
+  --el-text-color-regular: #cbd5e1 !important; /* 次级文字 */
+  --el-text-color-secondary: #94a3b8 !important; /* 三级文字 */
+  
+  /* 边框系统 */
+  --el-border-color: var(--border-color) !important;
+  --el-border-color-light: #475569 !important; /* 更浅边框 */
+  --el-border-color-lighter: #64748b !important;
+
+  /* 组件特定 */
+  --el-button-bg-color: #1e40af !important;     /* 深蓝色按钮 */
+  --el-input-bg-color: #1e293b !important;      /* 输入框背景 */
+  --el-menu-bg-color: #0f172a !important;       /* 菜单背景 */
+  --el-table-bg-color: #0f172a !important;      /* 表格背景 */
+  --el-tag-bg-color: rgba(14, 165, 233, 0.15) !important; /* 半透明标签 */
+  
+  /* 状态颜色 */
+  --el-color-success: #22c55e !important;       /* 鲜绿色 */
+  --el-color-warning: #f59e0b !important;       /* 琥珀色 */
+  --el-color-danger: #ef4444 !important;        /* 亮红色 */
+  --el-color-info: #8b5cf6 !important;          /* 紫罗兰色 */
+  
+  /* 阴影效果 */
+  --el-box-shadow-light: 0 4px 16px rgba(2, 132, 199, 0.2) !important; /* 蓝色调阴影 */
+  --card-shadow: 0 4px 12px rgba(14, 165, 233, 0.15); /* 卡片发光效果 */
+
+  /* 输入框系统 */
+  --el-input-text-color: var(--text-color);
+  --el-input-placeholder-color: #94a3b8;
+  --el-input-hover-border-color: var(--el-color-primary-light-5);
+  --el-input-focus-border-color: var(--el-color-primary);
+  --el-input-disabled-bg-color: #1e293b;
+
+  /* 代码块 */
+  --code-bg: #1e293b;
+  --code-border: #334155;
+}
+
+/* 配套代码高亮主题 */
+[data-theme="midnight"] {
+  --hljs-text: #e2e8f0;
+  --hljs-bg: #1e293b;
+  --hljs-border: rgba(99, 102, 241, 0.2);
+  --hljs-keyword: #818cf8;        /* 薰衣草紫 */
+  --hljs-string: #0ea5e9;         /* 主色青蓝 */
+  --hljs-number: #22d3ee;         /* 青色 */
+  --hljs-comment: #94a3b8;        /* 灰蓝色 */
+  --hljs-title: #67e8f9;          /* 亮青色 */
+  --hljs-built_in: #c084fc;       /* 浅紫色 */
+  --hljs-literal: #f472b6;        /* 粉红色 */
+  --hljs-class: #38bdf8;          /* 浅青蓝 */
+  --hljs-function: #60a5fa;       /* 钴蓝色 */
+  --hljs-params: #a5f3fc;         /* 水青色 */
+  --hljs-attr: #34d399;           /* 翡翠绿 */
+}
+
+/* 沙漠主题 */
+[data-theme="desert"] {
+    /* 基础三色 */
+    --bg-color: #f9f2e7;         /* 浅沙色背景 */
+    --text-color: #5c3d2e;       /* 深棕色文字 */
+    --border-color: #d7b98e;     /* 浅褐色边框 */
+    
+    /* 主色调 - 沙丘金/陶土橙 */
+    --el-color-primary: #d98236; /* 陶土橙 */
+    --el-color-primary-light-3: #e39e5d;
+    --el-color-primary-light-5: #edba84;
+    --el-color-primary-light-7: #f7d6ac;
+    --el-color-primary-rgb: 217, 130, 54 !important;
+    
+    /* 背景系统 */
+    --el-bg-color: var(--bg-color) !important;
+    --el-bg-color-page: #f5e8c9 !important;      /* 浅沙色 */
+    --el-bg-color-overlay: #f0e0b5 !important;   /* 稍深沙色 */
+    
+    /* 文字系统 */
+    --el-text-color-primary: var(--text-color) !important;
+    --el-text-color-regular: #7d5c3f !important; /* 次级文字 */
+    --el-text-color-secondary: #9e7e5f !important; /* 三级文字 */
+    
+    /* 边框系统 */
+    --el-border-color: var(--border-color) !important;
+    --el-border-color-light: #c9a87c !important; /* 更浅边框 */
+    --el-border-color-lighter: #bb9662 !important;
+    
+    /* 组件特定 */
+    --el-button-bg-color: #d98236 !important;     /* 陶土橙按钮 */
+    --el-input-bg-color: #f5e8c9 !important;      /* 输入框背景 */
+    --el-menu-bg-color: #f0e0b5 !important;       /* 菜单背景 */
+    --el-table-bg-color: #f9f2e7 !important;      /* 表格背景 */
+    --el-tag-bg-color: rgba(217, 130, 54, 0.15) !important; /* 半透明标签 */
+    
+    /* 状态颜色 */
+    --el-color-success: #8a9b52 !important;       /* 沙漠绿 */
+    --el-color-warning: #e6a23c !important;       /* 琥珀色 */
+    --el-color-danger: #c4564a !important;        /* 砖红色 */
+    --el-color-info: #a87c52 !important;          /* 胡桃木色 */
+    
+    /* 阴影效果 */
+    --el-box-shadow-light: 0 2px 10px rgba(217, 130, 54, 0.2) !important;
+    --card-shadow: 0 4px 12px rgba(187, 150, 98, 0.15);
+    
+    /* 输入框系统 */
+    --el-input-text-color: var(--text-color);
+    --el-input-placeholder-color: #9e7e5f;
+    --el-input-hover-border-color: var(--el-color-primary-light-3);
+    --el-input-focus-border-color: var(--el-color-primary);
+    --el-input-disabled-bg-color: #f0e0b5;
+    
+    /* 代码块 */
+    --code-bg: #f5e8c9;
+    --code-border: #d7b98e;
+    
+    /* 特殊装饰色 */
+    --sunset-red: #c4564a;
+    --sunset-orange: #e39e5d;
+    --cactus-green: #8a9b52;
+}
+
+/* 沙漠主题代码高亮 */
+[data-theme="desert"] {
+    --hljs-text: #5c3d2e;
+    --hljs-bg: #f5e8c9;
+    --hljs-border: rgba(187, 150, 98, 0.3);
+    --hljs-keyword: #c4564a;        /* 日落红 */
+    --hljs-string: #8a9b52;         /* 仙人掌绿 */
+    --hljs-number: #d98236;         /* 主色陶土橙 */
+    --hljs-comment: #9e7e5f;        /* 胡桃木色 */
+    --hljs-title: #a87c52;          /* 胡桃木深色 */
+    --hljs-built_in: #bb9662;      /* 沙丘金 */
+    --hljs-literal: #e39e5d;        /* 日落橙 */
+    --hljs-class: #d98236;          /* 主色 */
+    --hljs-function: #bb9662;       /* 沙丘金 */
+    --hljs-params: #7d5c3f;         /* 深棕色 */
+    --hljs-attr: #8a9b52;           /* 沙漠绿 */
+}
+
+[data-theme="neon"] {
+  /* 基础三色 - 深空蓝紫渐变 */
+  --bg-color: linear-gradient(135deg, #0c0e2b 0%, #1a1c3d 100%);
+  --text-color: #e0e0ff;
+  --border-color: rgba(128, 102, 255, 0.3);
+  
+  /* 主色调 - 霓虹青紫渐变 */
+  --el-color-primary: #8a2be2; /* 蓝紫色 */
+  --el-color-primary-light-3: #9370db;
+  --el-color-primary-light-5: #a991f0;
+  --el-color-primary-light-7: #c5b3f6;
+  --el-color-primary-rgb: 138, 43, 226 !important;
+  
+  /* 背景系统 */
+  --el-bg-color: #121230 !important;
+  --el-bg-color-page: #0c0e2b !important;
+  --el-bg-color-overlay: #1a1c3d !important;
+  
+  /* 文字系统 */
+  --el-text-color-primary: var(--text-color) !important;
+  --el-text-color-regular: #b0b0ff !important;
+  --el-text-color-secondary: #8888cc !important;
+  
+  /* 边框系统 - 半透明霓虹效果 */
+  --el-border-color: rgba(128, 102, 255, 0.4) !important;
+  --el-border-color-light: rgba(102, 153, 255, 0.3) !important;
+  
+  /* 组件特定 */
+  --el-button-bg-color: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%) !important;
+  --el-input-bg-color: rgba(26, 28, 61, 0.7) !important;
+  --el-menu-bg-color: rgba(18, 18, 48, 0.85) !important;
+  --el-table-bg-color: rgba(12, 14, 43, 0.6) !important;
+  --el-tag-bg-color: rgba(138, 43, 226, 0.15) !important;
+  
+  /* 霓虹状态色 */
+  --el-color-success: #00e676 !important;      /* 霓虹绿 */
+  --el-color-warning: #ffea00 !important;      /* 霓虹黄 */
+  --el-color-danger: #ff2d75 !important;       /* 霓虹粉红 */
+  --el-color-info: #18ffff !important;         /* 霓虹青 */
+  
+  /* 发光阴影效果 */
+  --el-box-shadow-light: 
+    0 0 8px rgba(102, 51, 255, 0.5),
+    0 4px 16px rgba(0, 0, 0, 0.5) !important;
+  --card-shadow: 
+    0 0 12px rgba(106, 17, 203, 0.4),
+    0 4px 20px rgba(0, 0, 0, 0.3);
+  
+  /* 输入框系统 */
+  --el-input-text-color: #d0d0ff;
+  --el-input-placeholder-color: #6666aa;
+  --el-input-hover-border-color: #9370db;
+  --el-input-focus-border-color: #a991f0;
+  
+  /* 代码块 */
+  --code-bg: rgba(26, 28, 61, 0.8);
+  --code-border: rgba(128, 102, 255, 0.5);
+}
+
+/* 霓虹极光代码高亮 */
+[data-theme="neon"] {
+  --hljs-text: #e0e0ff;
+  --hljs-bg: rgba(26, 28, 61, 0.8);
+  --hljs-border: rgba(106, 17, 203, 0.4);
+  --hljs-keyword: #ff2d75;        /* 霓虹粉红 */
+  --hljs-string: #00e676;         /* 霓虹绿 */
+  --hljs-number: #ffea00;         /* 霓虹黄 */
+  --hljs-comment: #6666aa;        /* 紫灰色 */
+  --hljs-title: #18ffff;          /* 霓虹青 */
+  --hljs-built_in: #9370db;       /* 薰衣草紫 */
+  --hljs-literal: #ff9d00;        /* 琥珀色 */
+  --hljs-class: #a991f0;          /* 浅紫 */
+  --hljs-function: #6a11cb;       /* 深紫 */
+  --hljs-params: #d0d0ff;         /* 淡紫白 */
+  --hljs-attr: #2575fc;           /* 亮蓝色 */
+}
+
 /* 修改默认按钮基础样式 */
 .el-button--default {
   /* 通用样式 */
@@ -1953,13 +2187,28 @@ body {
   margin-left: auto;
 }
 .param-header {
-  display: flex;
-  justify-content: space-between; /* Align items to ends */
-  align-items: center;          /* Vertically center */
-  margin-bottom: 10px;         /* Add spacing below the header */
-  padding: 0px;             /* Add some padding */
+    display: flex; /* 使用 flexbox */
+    justify-content: space-between; /* 左右对齐 */
+    align-items: center; /* 垂直居中对齐 */
+    background-color: var(--el-bg-color-page); /* 背景颜色 */
+    padding: 10px; /* 内边距 */
+    margin-bottom: 20px; /* 底部外边距 */
+    border: 2px solid var(--card-border);
+    box-shadow: 2px 2px 5px var(--card-shadow); /* 阴影效果 */
+    border-radius: 8px; /* 圆角 */
 }
 
+.action-row {
+    display: flex;
+    justify-content: flex-end; /* 按钮靠右对齐 */
+    gap: 8px; /* 按钮之间的间距 */
+}
+
+.param-header span {
+    font-size: 18px; /* 字体大小 */
+    font-weight: bold; /* 加粗 */
+    color: var(--el-text-color);
+}
 .message-actions {
   display: flex;
   justify-content: flex-end;

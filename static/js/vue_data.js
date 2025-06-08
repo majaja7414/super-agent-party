@@ -146,9 +146,6 @@ let vue_data = {
       },
       formula: {
         enabled: true
-      },
-      pollinations: {
-        enabled: false, // 默认不启用
       }
     },
     mcpServers: {},
@@ -271,7 +268,7 @@ let vue_data = {
     editingAgent: false,
     currentLanguage: 'zh-CN',
     translations: translations,
-    themeValues: ['light', 'dark'],
+    themeValues: ['light', 'dark','midnight','desert','neon'],
     browserBtnColor: '#409EFF',
     isBrowserOpening: false,
     expandedSections: {
@@ -303,7 +300,8 @@ let vue_data = {
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
       { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' },
-      { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'}
+      { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'},
+      { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
     ],
     toolkitTiles: [
       { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
@@ -362,7 +360,8 @@ let vue_data = {
       memoryLimit: 30,
       appid: '',
       secret: '',
-      separators: ["。", "\n", "？", "！"]
+      separators: ["。", "\n", "？", "！"],
+      reasoningVisible: true,
     },
     deployTiles: [
         { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
@@ -382,6 +381,7 @@ let vue_data = {
       api_key: '',
       vendor: '',
       lorebook: [],
+      random: [],
       basic_character: '',
     },
     showAddMemoryDialog: false,
@@ -395,6 +395,22 @@ let vue_data = {
     imageFiles: [],
     videoFiles: [],
     subMenu: '', // 新增子菜单状态
+    isWorldviewSettingsExpanded: true,
+    isRandomSettingsExpanded: true,
+    isBasicCharacterExpanded: true,
+    text2imgSettings: {
+      enabled: false,
+      engine: 'pollinations',
+      pollinations_model: 'flux',
+      pollinations_width: 512,
+      pollinations_height: 512,
+      selectedProvider: null,
+      vendor: 'OpenAI',
+      model: '',
+      base_url: '',
+      api_key: '',
+      size: '1024x1024',
+    },
     agentTiles: [
       { 
         id: 'agents',

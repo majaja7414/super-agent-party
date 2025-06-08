@@ -7,6 +7,7 @@ import json
 import multiprocessing
 from multiprocessing import Manager, Event
 import os
+import random
 import re
 import shutil
 import signal
@@ -49,7 +50,7 @@ reasoner_client = None
 mcp_client_list = {}
 locales = {}
 _TOOL_HOOKS = {}
-
+cur_random = []
 ALLOWED_EXTENSIONS = [
   # 办公文档
   'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'pdf', 'pages', 
@@ -213,7 +214,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
     from py.agent_tool import agent_tool_call
     from py.a2a_tool import a2a_tool_call
     from py.llm_tool import custom_llm_tool
-    from py.pollinations import pollinations_image
+    from py.pollinations import pollinations_image,openai_image,siliconflow_image
     from py.load_files import get_file_content
     from py.code_interpreter import e2b_code_async,local_run_code_async
     from py.custom_http import fetch_custom_http
@@ -231,7 +232,9 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         "get_file_content":get_file_content,
         "get_image_content": get_image_content,
         "e2b_code_async": e2b_code_async,
-        "local_run_code_async": local_run_code_async
+        "local_run_code_async": local_run_code_async,
+        "openai_image": openai_image,
+        "siliconflow_image": siliconflow_image,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -509,9 +512,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
-    from py.pollinations import pollinations_image_tool
+    from py.pollinations import pollinations_image_tool,openai_image_tool,siliconflow_image_tool
     from py.code_interpreter import e2b_code_tool,local_run_code_tool
     m0 = None
+    memoryId = None
     if settings["memorySettings"]["is_memory"]:
         memoryId = settings["memorySettings"]["selectedMemory"]
         cur_memory = None
@@ -572,8 +576,14 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         get_a2a_tool_fuction = await get_a2a_tool(settings)
         if get_a2a_tool_fuction:
             tools.append(get_a2a_tool_fuction)
-        if settings['tools']['pollinations']['enabled']:
-            tools.append(pollinations_image_tool)
+        if settings['text2imgSettings']['enabled']:
+            if settings['text2imgSettings']['engine'] == 'pollinations':
+                tools.append(pollinations_image_tool)
+            elif settings['text2imgSettings']['engine'] == 'openai':
+                if settings['text2imgSettings']['vendor'] == 'siliconflow':
+                    tools.append(siliconflow_image_tool)
+                else:
+                    tools.append(openai_image_tool)
         if settings['tools']['getFile']['enabled']:
             tools.append(file_tool)
             tools.append(image_tool)
@@ -623,6 +633,23 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
+            global cur_random 
+            # 如果request.messages中不包含assistant回复，说明是首次提问，触发随机设定
+            if not assistant_reply:
+                # 如果 cur_memory 中有 random 条目
+                if cur_memory.get("random") and len(cur_memory["random"]) > 0:
+                    # 随机选择一个 random 条目
+                    random_entry = random.choice(cur_memory["random"])
+                    if random_entry.get("value"):
+                        lore_content = lore_content + "\n\n" + f"{random_entry['value']}"
+                        cur_random.append({"id":memoryId,"value":random_entry["value"]})
+                        print("新随机设定：",{"id":memoryId,"value":random_entry["value"]})
+            else:
+                for item in cur_random:
+                    if item["id"] == memoryId:
+                        lore_content = lore_content + "\n\n" + f"{item['value']}"
+                        print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
+                        break 
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
@@ -1746,7 +1773,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     from py.agent_tool import get_agent_tool
     from py.a2a_tool import get_a2a_tool
     from py.llm_tool import get_llm_tool
-    from py.pollinations import pollinations_image_tool
+    from py.pollinations import pollinations_image_tool,openai_image_tool,siliconflow_image_tool
     from py.code_interpreter import e2b_code_tool,local_run_code_tool
     m0 = None
     if settings["memorySettings"]["is_memory"]:
@@ -1811,8 +1838,14 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
     get_a2a_tool_fuction = await get_a2a_tool(settings)
     if get_a2a_tool_fuction:
         tools.append(get_a2a_tool_fuction)
-    if settings['tools']['pollinations']['enabled']:
-        tools.append(pollinations_image_tool)
+    if settings['text2imgSettings']['enabled']:
+        if settings['text2imgSettings']['engine'] == 'pollinations':
+            tools.append(pollinations_image_tool)
+        elif settings['text2imgSettings']['engine'] == 'openai':
+            if settings['text2imgSettings']['vendor'] == 'siliconflow':
+                tools.append(siliconflow_image_tool)
+            else:
+                tools.append(openai_image_tool)
     if settings['tools']['getFile']['enabled']:
         tools.append(file_tool)
         tools.append(image_tool)
@@ -1874,6 +1907,23 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 for lore in cur_memory["lorebook"]:
                     if lore["name"] != "" and (lore["name"] in user_prompt or lore["name"] in assistant_reply):
                         lore_content = lore_content + "\n\n" + f"{lore['name']}：{lore['value']}"
+            global cur_random 
+            # 如果request.messages中不包含assistant回复，说明是首次提问，触发随机设定
+            if not assistant_reply:
+                # 如果 cur_memory 中有 random 条目
+                if cur_memory.get("random") and len(cur_memory["random"]) > 0:
+                    # 随机选择一个 random 条目
+                    random_entry = random.choice(cur_memory["random"])
+                    if random_entry.get("value"):
+                        lore_content = lore_content + "\n\n" + f"{random_entry['value']}"
+                        cur_random.append({"id":memoryId,"value":random_entry["value"]})
+                        print("新随机设定：",{"id":memoryId,"value":random_entry["value"]})
+            else:
+                for item in cur_random:
+                    if item["id"] == memoryId:
+                        lore_content = lore_content + "\n\n" + f"{item['value']}"
+                        print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
+                        break  
             memoryLimit = settings["memorySettings"]["memoryLimit"]
             try:
                 print("查询记忆")
@@ -2893,6 +2943,7 @@ class QQBotConfig(BaseModel):
     appid: str
     secret: str
     separators: List[str]
+    reasoningVisible: bool
 
 # 全局变量，用于存储机器人进程
 qq_bot_process = None
@@ -2907,6 +2958,7 @@ class MyClient(botpy.Client):
         self.memoryList = {}
         self.start_event = start_event
         self.separators = ['。', '\n', '？', '！']
+        self.reasoningVisible = False
 
     async def on_ready(self):
         self.is_running = True
@@ -2959,7 +3011,15 @@ class MyClient(botpy.Client):
             
             full_response = []
             async for chunk in stream:
+                reasoning_content = ""
+                if chunk.choices:
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0].get("delta", {})
+                    if delta:
+                        reasoning_content = delta.get("reasoning_content", "") 
                 content = chunk.choices[0].delta.content or ""
+                if reasoning_content and self.reasoningVisible:
+                    content = reasoning_content
                 full_response.append(content)
                 
                 # 更新缓冲区
@@ -2990,8 +3050,8 @@ class MyClient(botpy.Client):
                     if clean_text:
                         await self._send_text_message(message, clean_text)
                     
-                    # 提取图片到缓存（不发送）
-                    self._extract_images_to_cache(c_id, current_chunk)
+            # 提取图片到缓存（不发送）
+            self._extract_images_to_cache(c_id)
 
             # 处理剩余文本
             if state["text_buffer"]:
@@ -3011,14 +3071,17 @@ class MyClient(botpy.Client):
 
         except Exception as e:
             print(f"处理异常: {e}")
+            clean_text = self._clean_text(str(e))
+            if clean_text:
+                await self._send_text_message(message, clean_text)
         finally:
             # 清理状态
             del self.processing_states[c_id]
 
-    def _extract_images_to_cache(self, c_id, content):
+    def _extract_images_to_cache(self, c_id):
         """渐进式图片链接提取"""
         state = self.processing_states[c_id]
-        temp_buffer = state["image_buffer"] + content
+        temp_buffer = state["image_buffer"]
         state["image_buffer"] = ""  # 重置缓冲区
         
         # 匹配完整图片链接
@@ -3056,6 +3119,8 @@ class MyClient(botpy.Client):
                     continue
                 # 用request获取图片，保证图片存在
                 response = requests.get(url)
+
+                print(f"发送图片: {url}")
                 # 上传媒体文件
                 upload_media = await message._api.post_c2c_file(
                     openid=message.author.user_openid,
@@ -3073,6 +3138,9 @@ class MyClient(botpy.Client):
                 self.msg_seq_counters[c_id] += 1
             except Exception as e:
                 print(f"图片发送失败: {e}")
+                clean_text = self._clean_text(str(e))
+                if clean_text:
+                    await self._send_text_message(message, clean_text)
 
     def _clean_text(self, text):
         """三级内容清洗"""
@@ -3133,7 +3201,15 @@ class MyClient(botpy.Client):
             
             full_response = []
             async for chunk in stream:
+                reasoning_content = ""
+                if chunk.choices:
+                    chunk_dict = chunk.model_dump()
+                    delta = chunk_dict["choices"][0].get("delta", {})
+                    if delta:
+                        reasoning_content = delta.get("reasoning_content", "")
                 content = chunk.choices[0].delta.content or ""
+                if reasoning_content and self.reasoningVisible:
+                    content = reasoning_content
                 full_response.append(content)
                 state = self.group_states[g_id]
                 
@@ -3164,8 +3240,8 @@ class MyClient(botpy.Client):
                     if clean_text:
                         await self._send_group_text(message, clean_text, state)
                     
-                    # 提取图片到缓存
-                    self._cache_group_images(g_id, current_chunk)
+            # 提取图片到缓存
+            self._cache_group_images(g_id)
 
             # 处理剩余文本
             if self.group_states[g_id]["text_buffer"]:
@@ -3185,14 +3261,17 @@ class MyClient(botpy.Client):
 
         except Exception as e:
             print(f"群聊处理异常: {e}")
+            clean_text = self._clean_group_text(str(e))
+            if clean_text:
+                self._send_group_text(message, clean_text, state)
         finally:
             # 清理状态
             del self.group_states[g_id]
 
-    def _cache_group_images(self, g_id, content):
+    def _cache_group_images(self, g_id):
         """渐进式图片缓存"""
         state = self.group_states[g_id]
-        temp_buffer = state["image_buffer"] + content
+        temp_buffer = state["image_buffer"]
         state["image_buffer"] = ""
         
         # 匹配完整图片链接
@@ -3227,6 +3306,8 @@ class MyClient(botpy.Client):
                     continue
                 # 用request获取图片，保证图片存在
                 response = requests.get(url)
+
+                print(f"发送图片: {url}")
                 # 上传群文件
                 upload_media = await message._api.post_group_file(
                     group_openid=message.group_openid,
@@ -3244,6 +3325,9 @@ class MyClient(botpy.Client):
                 state["msg_seq"] += 1
             except Exception as e:
                 print(f"群图片发送失败: {e}")
+                clean_text = self._clean_group_text(str(e))
+                if clean_text:
+                    self._send_group_text(message, clean_text, state)
 
     def _clean_group_text(self, text):
         """群聊文本三级清洗"""
@@ -3274,6 +3358,7 @@ def run_bot_process(config: QQBotConfig,start_event,shared_dict):
         QQclient.QQAgent = config.QQAgent
         QQclient.memoryLimit = config.memoryLimit
         QQclient.separators = config.separators
+        QQclient.reasoningVisible = config.reasoningVisible
         
         # 运行机器人
         QQclient.run(appid=config.appid, secret=config.secret)
@@ -3383,18 +3468,17 @@ async def reload_qq_bot(config: QQBotConfig):
             os.kill(qq_bot_process.pid, signal.SIGTERM)
             logger.info(f"已向机器人进程 {pid} 发送 SIGTERM 信号")
             
-            # 等待最多3秒
+            # 等待最多2秒
             start_time = time.time()
-            while time.time() - start_time < 3:
+            while time.time() - start_time < 2:
                 if not qq_bot_process.is_alive():
                     break
                 await asyncio.sleep(0.1)
             
-            if qq_bot_process.is_alive():
-                # 如果进程还在运行，强制终止
-                logger.warning(f"机器人进程 {pid} 未响应，强制终止")
-                qq_bot_process.terminate()
-                qq_bot_process.join(timeout=1.0)
+            # 如果进程还在运行，强制终止
+            logger.warning(f"机器人进程 {pid} 未响应，强制终止")
+            qq_bot_process.terminate()
+            qq_bot_process.join(timeout=1.0)
         except ProcessLookupError:
             logger.warning("机器人进程已不存在")
         except Exception as e:
@@ -3444,18 +3528,17 @@ async def stop_qq_bot():
         os.kill(qq_bot_process.pid, signal.SIGTERM)
         logger.info(f"已向机器人进程 {qq_bot_process.pid} 发送 SIGTERM 信号")
         
-        # 等待最多5秒
+        # 等待最多2秒
         start_time = time.time()
-        while time.time() - start_time < 5:
+        while time.time() - start_time < 2:
             if not qq_bot_process.is_alive():
                 break
             await asyncio.sleep(0.1)
         
-        if qq_bot_process.is_alive():
-            # 如果进程还在运行，强制终止
-            logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
-            qq_bot_process.terminate()
-            qq_bot_process.join(timeout=1.0)
+        # 如果进程还在运行，强制终止
+        logger.warning(f"机器人进程 {qq_bot_process.pid} 未响应，强制终止")
+        qq_bot_process.terminate()
+        qq_bot_process.join(timeout=1.0)
         print("机器人进程已停止")
     except ProcessLookupError:
         logger.warning("机器人进程已不存在")

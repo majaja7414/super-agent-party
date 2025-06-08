@@ -102,6 +102,20 @@
       "memoryLimit":30,
       "appid": "",
       "secret": "",
-      "separators": ["。", "\n", "？", "！"]
+      "separators": ["。", "\n", "？", "！"],
+      "reasoningVisible": true
+    },
+    "text2imgSettings": {
+      "enabled": false,
+      "engine": "pollinations",
+      "pollinations_model": "flux",
+      "pollinations_width": 512,
+      "pollinations_height": 512,
+      "selectedProvider": null,
+      "vendor": "OpenAI",
+      "model": "",
+      "base_url": "",
+      "api_key": "",
+      "size": "1024x1024"
     }
 }
