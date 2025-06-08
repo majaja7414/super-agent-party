@@ -3018,9 +3018,9 @@ class MyClient(botpy.Client):
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "") 
                 content = chunk.choices[0].delta.content or ""
+                full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
-                full_response.append(content)
                 
                 # 更新缓冲区
                 state = self.processing_states[c_id]
@@ -3208,9 +3208,9 @@ class MyClient(botpy.Client):
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "")
                 content = chunk.choices[0].delta.content or ""
+                full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
-                full_response.append(content)
                 state = self.group_states[g_id]
                 
                 # 更新文本缓冲区
