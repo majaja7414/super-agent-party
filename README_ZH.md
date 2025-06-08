@@ -23,13 +23,13 @@
 
 ### windows桌面版安装
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-Setup-0.1.8.exe)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-Setup-0.1.9.exe)
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
 
 ### MacOS桌面版安装（beta测试）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Mac.dmg)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Mac.dmg)
 
 ⭐注意！下载后将dmg文件周的app文件拖入`/Applications`目录下，然后打开终端，执行以下命令并输入root密码，从而移除从网络下载附加的Quarantine属性：
 
@@ -45,11 +45,11 @@
 
 `.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.AppImage)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.AppImage)
 
 #### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.deb)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.deb)
 
 ### docker部署（推荐）
 
@@ -148,6 +148,7 @@
 10. 添加了记忆模块，可以在工具界面查看。
   - 添加新的记忆，需要添加词嵌入模型，智能体会实时更新记忆向量数据库，每次回答时，会自动搜索相关记忆。
   - 记忆配置中可以启用和禁用记忆模块，可以调节结果数量，让智能体看到更多或者更少的相关记忆。
+  - 记忆配置被划分成了四个部分：自动更新设定、角色设定、世界观设定和随机设定。
 11. 添加了代码执行工具，支持调用云端方案和本地方案：
   - 云端方案：调用[e2b](https://e2b.dev/)的代码沙盒，需要申请api key。
   - 本地方案：调用[bytedance/SandboxFusion](https://github.com/bytedance/SandboxFusion)的代码沙盒，需要使用docker本地部署。
@@ -162,7 +163,6 @@
   - 当前时间：获取当前时间。
   - 获取文件/图片URL中的内容：获取文件/图片URL中的内容。
   - 伪推理：让没有推理能力的模型获得推理能力。
-  - Pollinations 图像生成：调用Pollinations 图像生成API，生成图片。（无需API key）
   - latex公式渲染增强：控制大模型更稳定的输出latex公式。
   - 语言语气：控制大模型更稳定的输出语言和语气。
 13. 支持了自定义http请求转换成智能体工具，现在可以将任意http请求作为智能体工具使用，可以在智能体套件界面添加自定义http请求工具。
@@ -170,8 +170,10 @@
   - 本次更新实现了QQ机器人，可以将你配置好智能体链接到QQ官方机器人上，无封号风险
   - QQ机器人支持自定义消息分隔符，默认分隔符为["。", "\n", "？", "！"]，会将智能体的流式输出逐条发送到QQ
   - QQ机器人支持私聊和群聊
-  - QQ机器人支持查看文本和图片消息（图片需要模型本身支持视觉或开启了视觉模型），也可以开启Pollinations 图像生成，实现文生图
+  - QQ机器人支持查看文本和图片消息（图片需要模型本身支持视觉或开启了视觉模型），也可以开启文生图模型，发送图片
   - 支持对话轮数调节，默认为30轮，会逐渐丢弃旧的对话记录，防止上下文溢出，可以配置记忆模块，实现角色人设固定和永久记忆。
+  - 实现了QQ机器人能返回思考过程和调用工具的过程，可以配置是否开启。
+15. 文生图模型，除了原先支持的pollinations，还支持openai接口的模型，例如：dall-e-2、 dall-e-3 或 gpt-image-1。也可以接入其他兼容openai绘图接口的模型，例如：硅基流动上的kolors、FLUX等。
 
 ## 免责声明：
 本开源项目及其内容（以下简称“项目”）仅供参考之用，并不意味着任何明示或暗示的保证。项目贡献者不对项目的完整性、准确性、可靠性或适用性承担任何责任。任何依赖项目内容的行为均需自行承担风险。在任何情况下，项目贡献者均不对因使用项目内容而产生的任何间接、特殊或附带的损失或损害承担责任。

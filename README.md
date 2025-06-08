@@ -23,13 +23,13 @@
 
 ### Windows Desktop Installation
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-Setup-0.1.8.exe)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-Setup-0.1.9.exe)
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
 ### MacOS Desktop Installation (beta test)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Mac.dmg)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Mac.dmg)
 
 ⭐ Note! After downloading, drag the app file from the dmg file to the `/Applications` directory. Then open the Terminal and execute the following command, entering the root password when prompted, to remove the Quarantine attribute added due to being downloaded from the internet:
 
@@ -45,11 +45,11 @@ We provide two mainstream Linux installation package formats for your convenienc
 
 `.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.AppImage)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.AppImage)
 
 #### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.8/Super-Agent-Party-0.1.8-Linux.deb)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
@@ -148,6 +148,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
 10. Added memory module, which can be viewed on the tool interface.
   - To add new memories, you need to add a word embedding model, and the agent will update the memory vector database in real time. Every time you answer, it will automatically search for relevant memories.
   - The memory module can be enabled and disabled in the memory configuration, and the number of results can be adjusted to allow the agent to see more or less relevant memories.
+  - The memory configuration is divided into four sections: Auto-update Settings, Role Settings, Worldview Settings, and Random Settings.
 11. Added a code execution tool, supporting both cloud-based and local solutions:
   - Cloud-based solution: Invoke the code sandbox from [e2b](https://e2b.dev/), an API key needs to be obtained.
   - Local solution: Use the code sandbox from [bytedance/SandboxFusion](https://github.com/bytedance/SandboxFusion), requires local deployment using Docker.
@@ -166,12 +167,14 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   - Enhanced latex formula rendering: Control the more stable output of latex formulas in large models.
   - Language tone: Control the more stable output language and tone of the large model.
 13. Support for converting custom HTTP requests into agent tools has been added. You can now use any HTTP request as an agent tool, and you can add custom HTTP request tools in the Agent Toolkit interface.
-14. Supported one-click deployment of QQ official robots:
-  - This update has implemented QQ robots, allowing you to configure your intelligent entity and link it to the official QQ robots without the risk of getting your account banned.
-  - QQ robot supports custom message delimiter, the default delimiter is ["。", "\ n ", "？", "！"]， will send the agent's streaming output to QQ one by one
-  - QQ robots support private chats and group chats.
-  - QQ robots support viewing text and image messages (images need to be supported by the model itself or have the visual model turned on), and you can also enable Pollinations image generation to achieve text-to-image conversion.
-  - Supports adjusting the number of dialogue rounds, with the default being 30 rounds. It will gradually discard old dialogue records to prevent context overflow. You can configure the memory module to achieve the fixation of character settings and permanent memory.
+14. Supported one-click deployment for the official QQ bot:  
+  - This update implements a QQ bot that allows you to link your configured agent to the official QQ bot, with no risk of account suspension.  
+  - The QQ bot supports custom message delimiters; the default delimiters are `["。", "\n", "？", "！"]`, which split the agent's streaming output into individual messages sent to QQ.  
+  - The QQ bot supports both private and group chats.  
+  - The QQ bot supports viewing text and image messages (images require the model to support vision or have a vision model enabled). You can also enable an image generation model to send images.  
+  - Conversation round limit is adjustable, defaulting to 30 rounds. Older conversation records will be gradually discarded to prevent context overflow. You can configure the memory module to maintain fixed character settings and permanent memory.  
+  - The QQ bot can return its thinking process and tool-calling process; this feature can be enabled or disabled via configuration.
+15. For image generation models, in addition to the previously supported Pollinations, we now also support OpenAI interface models such as: `dall-e-2`, `dall-e-3`, and `gpt-image-1`. It can also integrate with other image generation models compatible with the OpenAI drawing API, for example: Kolors or FLUX on SiliconFlow.  
 
 ## Disclaimer:
 This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.
