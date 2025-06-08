@@ -7,14 +7,16 @@
 
 ## Introduction
 
-🚀 Zero-invasive, ultra-simple extension, and empower LLM API with enterprise-level capabilities without modifying a single line of code. Seamlessly attach knowledge bases, real-time internet access, permanent memory, MCP, A2A, deep thinking control, in-depth research, and custom tools to your LLM interface, creating a plug-and-play LLM enhancement platform.At the same time, you can also configure your intelligent entity and deploy it to social software with just one click (QQ official robot has already been implemented).
+🚀 Zero Intrusion · Minimalist Expansion · Empower LLM APIs with Enterprise-Grade Capabilities  
+Without modifying a single line of code, seamlessly add advanced features to your LLM interfaces, including knowledge base integration, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual understanding, image generation, custom tools, and more. Build a plug-and-play LLM enhancement middleware platform. At the same time, you can deploy your agent configuration to social platforms with just one click (official QQ bot is already supported).
 
 ![image](doc/image/demo.png)
 
 ## Why Choose Us?
 - ✅ Efficient development: Supports streaming output, does not affect the original API's response speed, and no code changes are required
 - ✅ Quick access: Avoids repeated access to multiple service providers for a single function, pre-configured with mainstream LLM manufacturer/intelligent body protocol adapters, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware instantly
-- ✅ High customization: Supports custom knowledge base, real-time networking, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, custom tools, and other advanced intelligent body functions, creating a pluggable LLM enhancement platform. Customized intelligent bodies can be saved as snapshots for convenient use next time. Snapshotted intelligent bodies can be called directly using the OpenAI API.
+- ✅ High customization: Supports advanced agent features such as custom knowledge base, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual capabilities, image generation, and custom tools, allowing you to build a plug-and-play LLM enhancement middleware platform.  
+Customized agents can be saved as snapshots for easy reuse in the future. The snapshot agents can be directly called using the OpenAI API.
 - ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
 - ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the intelligent entity anytime and anywhere.

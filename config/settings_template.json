@@ -13,7 +13,7 @@
     "extra_params":[],
     "systemSettings": {
       "language": "zh-CN",
-      "theme": "light"
+      "theme": "desert"
     },
     "mainAgent":"super-model",
     "mcpServers": {},
