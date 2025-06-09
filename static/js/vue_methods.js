@@ -2887,4 +2887,39 @@ let vue_methods = {
         };
       }
     },
+    colorBlend(color1, color2, ratio) {
+        // 确保ratio在0-1范围内
+        ratio = Math.max(0, Math.min(1, ratio));
+        
+        // 解析十六进制颜色值
+        const parseHex = (hex) => {
+          hex = hex.replace(/^#/, '');
+          // 处理3位简写格式
+          if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+          }
+          return {
+            r: parseInt(hex.substring(0, 2), 16),
+            g: parseInt(hex.substring(2, 4), 16),
+            b: parseInt(hex.substring(4, 6), 16)
+          };
+        };
+
+        // 转换为两位十六进制字符串
+        const toHex = (value) => {
+          const hex = Math.round(value).toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        };
+
+        const rgb1 = parseHex(color1);
+        const rgb2 = parseHex(color2);
+
+        // 计算混合后的RGB值
+        const r = rgb1.r * ratio + rgb2.r * (1 - ratio);
+        const g = rgb1.g * ratio + rgb2.g * (1 - ratio);
+        const b = rgb1.b * ratio + rgb2.b * (1 - ratio);
+
+        // 组合成十六进制颜色
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      },
 }
