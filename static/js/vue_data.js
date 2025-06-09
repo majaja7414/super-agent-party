@@ -362,6 +362,7 @@ let vue_data = {
       secret: '',
       separators: ["。", "\n", "？", "！"],
       reasoningVisible: true,
+      quickRestart: true,
     },
     deployTiles: [
         { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }

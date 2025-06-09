@@ -103,7 +103,8 @@
       "appid": "",
       "secret": "",
       "separators": ["。", "\n", "？", "！"],
-      "reasoningVisible": true
+      "reasoningVisible": true,
+      "quickRestart": true
     },
     "text2imgSettings": {
       "enabled": false,

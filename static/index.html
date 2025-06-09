@@ -3545,6 +3545,12 @@
                                 @change="autoSaveSettings"
                               ></el-switch>
                             </el-form-item>
+                            <el-form-item :label="t('quickRestartEnable')" class="form-item-align" label-position="left">
+                              <el-switch
+                                v-model="qqBotConfig.quickRestart"
+                                @change="autoSaveSettings"
+                              ></el-switch>
+                            </el-form-item>
                             <el-form-item label="APP ID" required>
                                 <el-input @change="autoSaveSettings" v-model="qqBotConfig.appid" :placeholder="t('enter_qq_bot_app_id')" class="full-width-input"></el-input>
                             </el-form-item>

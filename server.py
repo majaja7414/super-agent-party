@@ -2945,6 +2945,7 @@ class QQBotConfig(BaseModel):
     secret: str
     separators: List[str]
     reasoningVisible: bool
+    quickRestart: bool
 
 # 全局变量，用于存储机器人进程
 qq_bot_process = None
@@ -2960,6 +2961,7 @@ class MyClient(botpy.Client):
         self.start_event = start_event
         self.separators = ['。', '\n', '？', '！']
         self.reasoningVisible = False
+        self.quickRestart = True
 
     async def on_ready(self):
         self.is_running = True
@@ -2968,7 +2970,6 @@ class MyClient(botpy.Client):
     async def on_c2c_message_create(self, message: C2CMessage):
         if not self.is_running:
             return
-        
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{PORT}/v1"
@@ -2987,6 +2988,9 @@ class MyClient(botpy.Client):
         c_id = message.author.user_openid
         if c_id not in self.memoryList:
             self.memoryList[c_id] = []
+        if self.quickRestart:
+            if "/restart" in message.content or "/重启" in message.content:
+                self.memoryList[c_id] = []
         self.memoryList[c_id].append({"role": "user", "content": user_content})
 
         # 初始化状态管理
@@ -3175,6 +3179,9 @@ class MyClient(botpy.Client):
         g_id = message.group_openid
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
+        if self.quickRestart:
+            if "/restart" in message.content or "/重启" in message.content:
+                self.memoryList[g_id] = []
         self.memoryList[g_id].append({"role": "user", "content": user_content})
 
         # 初始化群组状态
@@ -3388,6 +3395,7 @@ def run_bot_process(config: QQBotConfig, start_event, shared_dict):
         QQclient.memoryLimit = config.memoryLimit
         QQclient.separators = config.separators
         QQclient.reasoningVisible = config.reasoningVisible
+        QQclient.quickRestart = config.quickRestart
         
         QQlogger.info("机器人配置完成，开始运行...")
         
