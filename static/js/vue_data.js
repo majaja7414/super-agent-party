@@ -254,6 +254,9 @@ let vue_data = {
       { value: 'local', label: 'local' }, 
       { value: 'global', label: 'global' },
     ],
+    imgHostOptions:[
+      { value: 'easyImage2', label: 'easyImage2' },
+    ],
     showRestartDialog: false,
     agents: {},
     showAgentForm: false,
@@ -364,8 +367,15 @@ let vue_data = {
       reasoningVisible: true,
       quickRestart: true,
     },
+    BotConfig: {
+      enabled: false,
+      imgHost: 'easyImage2',
+      EI2_base_url: '',
+      EI2_api_key: '',
+    },
     deployTiles: [
-        { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' }
+      { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
+      { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
     isQQBotRunning: false, // QQ机器人状态
     isStarting: false,      // 启动中状态

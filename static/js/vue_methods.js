@@ -210,6 +210,10 @@ let vue_methods = {
       this.newLLMTool.api_key = this.defaultApikey
       this.fetchModelsForType(val)
     },
+    changeImgHost(val) {
+      this.BotConfig.img_host = val;
+      this.autoSaveSettings()
+    },
     // 获取模型列表
     async fetchModelsForType(type) {
       try {
@@ -990,6 +994,7 @@ let vue_methods = {
           this.agents = data.data.agents || this.agents;
           this.mainAgent = data.data.mainAgent || this.mainAgent;
           this.qqBotConfig = data.data.qqBotConfig || this.qqBotConfig;
+          this.BotConfig = data.data.BotConfig || this.BotConfig;
           this.toolsSettings = data.data.tools || this.toolsSettings;
           this.llmTools = data.data.llmTools || this.llmTools;
           this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
@@ -1421,6 +1426,7 @@ let vue_methods = {
           agents: this.agents,
           mainAgent: this.mainAgent,
           qqBotConfig : this.qqBotConfig,
+          BotConfig: this.BotConfig,
           tools: this.toolsSettings,
           llmTools: this.llmTools,
           conversations: this.conversations,

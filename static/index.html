@@ -3431,6 +3431,53 @@
                 
                 <!-- 右侧内容 -->
                 <div class="suite-content">
+                  <!-- 通用配置页面 -->
+                  <div v-show="subMenu === 'bot_config'">
+                    <el-form class="settings-form" :model="BotConfig" label-position="top">
+                      <div class="tool-item">
+                        <!-- 通用配置头部 -->
+                        <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>
+                            <el-icon><i class="fa-solid fa-robot"></i></el-icon>
+                            {{ t('bot_config') }} <!-- 本地化文本 -->
+                          </span>
+                          <el-switch v-model="BotConfig.enabled" @click.stop @change="autoSaveSettings"/>
+                        </div>
+                        <div class="tool-content">
+                            <!-- 图床/文件床配置 -->
+                            <el-form-item :label="t('imgHost')">
+                              <el-select 
+                                v-model="BotConfig.imgHost"
+                                @change="changeImgHost">
+                                <el-option
+                                  v-for="option in imgHostOptions"ß
+                                  :key="option.value"
+                                  :label="option.label"
+                                  :value="option.value"
+                                >
+                                </el-option>
+                              </el-select>
+                            </el-form-item>
+                            <!--easyimage2图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'easyImage2'" :label="t('baseURL')">
+                              <el-input
+                                v-model="BotConfig.EI2_base_url"
+                                placeholder="https://png.cm/api/index.php"
+                                class="full-width-input"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'easyImage2'"  :label="t('apiKey')">
+                              <el-input
+                                v-model="BotConfig.EI2_api_key"
+                                :placeholder="t('apiKeyPlaceholder')"
+                                class="full-width-input"
+                                show-password
+                              />
+                            </el-form-item>
+                        </div>
+                      </div>
+                    </el-form>
+                  </div>
                   <!-- QQ机器人配置页面 -->
                   <div v-show="subMenu === 'qq_bot'">
                     <el-form class="settings-form" :model="qqBotConfig" label-position="top">
