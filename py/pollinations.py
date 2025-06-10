@@ -87,28 +87,6 @@ async def openai_image(prompt: str, size="auto"):
         # 将图片保存到本地UPLOAD_FILES_DIR，文件名为image_id，返回本地文件路径
         with open(f"{UPLOAD_FILES_DIR}/{image_id}.png", "wb") as f:
             f.write(base64.b64decode(res))
-        # 判断是否开启了图床功能
-        if settings["BotConfig"]["imgHost_enabled"]:
-            if settings["BotConfig"]["imgHost"] == "easyImage2":
-                url = settings["BotConfig"]["EI2_base_url"]
-                token = settings["BotConfig"]["EI2_api_key"]
-                file_path = f"{UPLOAD_FILES_DIR}/{image_id}.png"
-                print(file_path)
-                data = {
-                    "token": token
-                }
-                with open(file_path, "rb") as f:
-                    files = {
-                        "image": (file_path, f)
-                    }
-                    response = requests.post(url, data=data, files=files)
-                if response.status_code == 200:
-                    # 打印返回的 JSON 数据中的url字段
-                    res_url = response.json().get("url")
-                    print(res_url)
-                    return f"![image]({res_url})"
-                else:
-                    print("上传失败")
         res = f"![image](http://{HOST}:{PORT}/uploaded_files/{image_id}.png)"
     return res
         
