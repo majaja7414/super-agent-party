@@ -2952,6 +2952,31 @@ class QQBotConfig(BaseModel):
 qq_bot_process = None
 current_bot_config = None
 
+async def upload_image_host(url):
+    settings = await load_settings()
+    # 判断是否开启了图床功能
+    if settings["BotConfig"]["imgHost_enabled"] and 'uploaded_files' in url:
+        if settings["BotConfig"]["imgHost"] == "easyImage2":
+            EI2_url = settings["BotConfig"]["EI2_base_url"]
+            EI2_token = settings["BotConfig"]["EI2_api_key"]
+            # 上传图片到图床
+            file_name = url.split("/")[-1]
+            file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
+            data = {
+                "token": EI2_token
+            }
+            with open(file_path, "rb") as f:
+                files = {
+                    "image": (file_path, f)
+                }
+                response = requests.post(EI2_url, data=data, files=files)
+            if response.status_code == 200:
+                # 打印返回的 JSON 数据中的url字段
+                url = response.json().get("url")
+            else:
+                print("上传失败")
+    return url
+
 class MyClient(botpy.Client):
     def __init__(self,start_event, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -3109,7 +3134,6 @@ class MyClient(botpy.Client):
         self.msg_seq_counters[c_id] += 1
 
     async def _send_cached_images(self, message):
-        settings = await load_settings()
         """批量发送缓存的图片"""
         c_id = message.author.user_openid
         state = self.processing_states.get(c_id, {})
@@ -3120,26 +3144,7 @@ class MyClient(botpy.Client):
                 if not re.match(r'^https?://', url):
                     continue
                 # 判断是否开启了图床功能
-                if settings["BotConfig"]["imgHost_enabled"] and 'uploaded_files' in url:
-                    if settings["BotConfig"]["imgHost"] == "easyImage2":
-                        EI2_url = settings["BotConfig"]["EI2_base_url"]
-                        EI2_token = settings["BotConfig"]["EI2_api_key"]
-                        # 上传图片到图床
-                        file_name = url.split("/")[-1]
-                        file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
-                        data = {
-                            "token": EI2_token
-                        }
-                        with open(file_path, "rb") as f:
-                            files = {
-                                "image": (file_path, f)
-                            }
-                            response = requests.post(EI2_url, data=data, files=files)
-                        if response.status_code == 200:
-                            # 打印返回的 JSON 数据中的url字段
-                            url = response.json().get("url")
-                        else:
-                            print("上传失败")
+                url = await upload_image_host(url)
                 # 用request获取图片，保证图片存在
                 res = requests.get(url)
 
@@ -3318,7 +3323,6 @@ class MyClient(botpy.Client):
         state["msg_seq"] += 1
 
     async def _send_group_images(self, message, g_id):
-        settings = await load_settings()
         """批量发送群聊图片"""
         state = self.group_states.get(g_id, {})
         for url in state.get("image_cache", []):
@@ -3327,26 +3331,7 @@ class MyClient(botpy.Client):
                 if not url.startswith(('http://', 'https://')):
                     continue
                 # 判断是否开启了图床功能
-                if settings["BotConfig"]["imgHost_enabled"] and 'uploaded_files' in url:
-                    if settings["BotConfig"]["imgHost"] == "easyImage2":
-                        EI2_url = settings["BotConfig"]["EI2_base_url"]
-                        EI2_token = settings["BotConfig"]["EI2_api_key"]
-                        # 上传图片到图床
-                        file_name = url.split("/")[-1]
-                        file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
-                        data = {
-                            "token": EI2_token
-                        }
-                        with open(file_path, "rb") as f:
-                            files = {
-                                "image": (file_path, f)
-                            }
-                            response = requests.post(EI2_url, data=data, files=files)
-                        if response.status_code == 200:
-                            # 打印返回的 JSON 数据中的url字段
-                            url = response.json().get("url")
-                        else:
-                            print("上传失败")
+                url = await upload_image_host(url)
                 # 用request获取图片，保证图片存在
                 res = requests.get(url)
                 print(f"发送图片: {url}")
