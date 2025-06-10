@@ -3441,11 +3441,19 @@
                             <el-icon><i class="fa-solid fa-robot"></i></el-icon>
                             {{ t('bot_config') }} <!-- 本地化文本 -->
                           </span>
-                          <el-switch v-model="BotConfig.enabled" @click.stop @change="autoSaveSettings"/>
                         </div>
-                        <div class="tool-content">
+                        <div class="tool-item">
+                          <div class="tool-header">
+                            <div class="header-left">
+                              <span>
+                                {{t('imgHost')}}
+                              </span>
+                            </div>
+                            <el-switch v-model="BotConfig.imgHost_enabled" @click.stop @change="autoSaveSettings"/>
+                          </div>
+                          <div class="tool-content">
                             <!-- 图床/文件床配置 -->
-                            <el-form-item :label="t('imgHost')">
+                            <el-form-item :label="t('imgHostType')">
                               <el-select 
                                 v-model="BotConfig.imgHost"
                                 @change="changeImgHost">
@@ -3474,6 +3482,7 @@
                                 show-password
                               />
                             </el-form-item>
+                          </div>
                         </div>
                       </div>
                     </el-form>

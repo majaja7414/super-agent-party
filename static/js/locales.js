@@ -420,7 +420,8 @@ const translations = {
       'autoUpdateNote': '自动更新设定：会跟随对话内容，动态更新一个记忆库。对话时，会根据用户的提问，将相关的记忆返回给智能体。',
       'quickRestartEnable': '启用后，当输入`/重启`时，会清空对话历史',
       'bot_config': '机器人通用配置',
-      'imgHost': '图床/文件床'
+      'imgHost': '图床/文件床',
+      'imgHostType': '图床/文件床类型',
     },
     'en-US': {
       'chat': 'Chat',
@@ -842,5 +843,6 @@ const translations = {
       'quickRestartEnable': 'When enabled, the conversation history is cleared when you type `/restart`',
       'bot_config': 'Bot General Config',
       'imgHost': 'Image Host / Flie Host',
+      'imgHostType': 'Image Host / Flie Host Type',
     }
   };

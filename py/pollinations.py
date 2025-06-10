@@ -81,6 +81,9 @@ async def openai_image(prompt: str, size="auto"):
             HOST = '127.0.0.1'
         PORT = get_port()
         image_id = str(uuid.uuid4())
+        # 判断是否开启了图床功能
+        if settings["BotConfig"]["imgHost_enabled"]:
+            pass
         # 将图片保存到本地UPLOAD_FILES_DIR，文件名为image_id，返回本地文件路径
         with open(f"{UPLOAD_FILES_DIR}/{image_id}.png", "wb") as f:
             f.write(base64.b64decode(res))

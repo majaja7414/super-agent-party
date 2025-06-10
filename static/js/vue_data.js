@@ -368,7 +368,7 @@ let vue_data = {
       quickRestart: true,
     },
     BotConfig: {
-      enabled: false,
+      imgHost_enabled: false,
       imgHost: 'easyImage2',
       EI2_base_url: '',
       EI2_api_key: '',
