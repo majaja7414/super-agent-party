@@ -255,7 +255,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         return str(result)
     if tool_name not in _TOOL_HOOKS:
         for server_name, mcp_client in mcp_client_list.items():
-            if tool_name in mcp_client.tools_list:
+            if tool_name in mcp_client._conn.tools:
                 result = await mcp_client.call_tool(tool_name, tool_params)
                 return str(result.model_dump())
         return None
@@ -2721,6 +2721,8 @@ async def remove_mcp_server(request: Request):
             # 从mcp_client_list中移除
             if server_name in mcp_client_list:
                 mcp_client_list[server_name].disabled = True
+                await mcp_client_list[server_name].close()
+                print(f"关闭MCP服务器: {server_name}")
 
             return JSONResponse({"success": True, "removed": server_name})
         else:
