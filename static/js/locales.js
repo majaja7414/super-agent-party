@@ -422,6 +422,8 @@ const translations = {
       'bot_config': '机器人通用配置',
       'imgHost': '图床/文件床',
       'imgHostType': '图床/文件床类型',
+      'mcpDeleted': 'MCP已删除',
+      'mcpDeleteFailed': 'MCP删除失败',
     },
     'en-US': {
       'chat': 'Chat',
@@ -844,5 +846,7 @@ const translations = {
       'bot_config': 'Bot General Config',
       'imgHost': 'Image Host / Flie Host',
       'imgHostType': 'Image Host / Flie Host Type',
+      'mcpDeleted': 'Memory Control Panel deleted',
+      'mcpDeleteFailed': 'Memory Control Panel delete failed',
     }
   };

@@ -2722,6 +2722,7 @@ async def remove_mcp_server(request: Request):
             if server_name in mcp_client_list:
                 mcp_client_list[server_name].disabled = True
                 await mcp_client_list[server_name].close()
+                del mcp_client_list[server_name]
                 print(f"关闭MCP服务器: {server_name}")
 
             return JSONResponse({"success": True, "removed": server_name})
