@@ -1805,16 +1805,16 @@ body {
 }
 
 .browser-mode-btn {
-  width: 60%;
+  width: 40%;
   text-align: center;
   transition: all 0.3s ease;
-  background: linear-gradient(45deg, #409EFF, #79bbff);
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+  background: linear-gradient(45deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  box-shadow: 0 4px 12px var(--el-color-primary-light-9);
   border: none;
   
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+    box-shadow: 0 6px 16px var(--el-color-primary-light-9);
   }
   
   &:active {
