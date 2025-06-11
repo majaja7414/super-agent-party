@@ -56,7 +56,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
   onDownloadProgress: (callback) => ipcRenderer.on('download-progress', callback),
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
-  showContextMenu: (menu) => ipcRenderer.invoke('show-context-menu', menu),
+  showContextMenu: (menuType, data) => ipcRenderer.invoke('show-context-menu', { menuType, data }),
   //保存环境变量
   setNetworkVisibility: (visible) => ipcRenderer.invoke('set-env', { key: 'networkVisible', value: visible }), 
   //重启app

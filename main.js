@@ -1,5 +1,6 @@
 const remoteMain = require('@electron/remote/main')
 const { app, BrowserWindow, ipcMain, screen, shell, dialog, Tray, Menu } = require('electron')
+const { clipboard, nativeImage } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { spawn } = require('child_process')
@@ -33,6 +34,8 @@ const locales = {
     cut: '剪切',
     copy: '复制',
     paste: '粘贴',
+    copyImage: '复制图片',
+    copyImageLink: '复制图片链接',
     supportedFiles: '支持的文件',
     allFiles: '所有文件',
     supportedimages: '支持的图片',
@@ -43,6 +46,8 @@ const locales = {
     cut: 'Cut',
     copy: 'Copy',
     paste: 'Paste',
+    copyImage: 'Copy Image',
+    copyImageLink: 'Copy Image Link',
     supportedFiles: 'Supported Files',
     allFiles: 'All Files',
     supportedimages: 'Supported Images',
@@ -430,12 +435,50 @@ app.whenReady().then(async () => {
       }
       return true
     })
-    ipcMain.handle('show-context-menu', (event, arg) => {
-      // 弹出上下文菜单
-      menu.popup({
-        x: arg.x,
-        y: arg.y
-      });
+    // 修改 show-context-menu 的 IPC 处理
+    ipcMain.handle('show-context-menu', async (event, { menuType, data }) => {
+      let menuTemplate;
+      
+      if (menuType === 'image') {
+        menuTemplate = [
+          {
+            label: locales[currentLanguage].copyImageLink,
+            click: () => clipboard.writeText(data.src)
+          },
+          {
+            label: locales[currentLanguage].copyImage,
+            click: async () => {
+              try {
+                // 处理网络图片
+                if (data.src.startsWith('http')) {
+                  const response = await fetch(data.src);
+                  const blob = await response.blob();
+                  const buffer = await blob.arrayBuffer();
+                  const image = nativeImage.createFromBuffer(Buffer.from(buffer));
+                  clipboard.writeImage(image);
+                }
+                // 处理本地图片
+                else {
+                  const image = nativeImage.createFromPath(data.src);
+                  clipboard.writeImage(image);
+                }
+              } catch (error) {
+                console.error('复制图片失败:', error);
+              }
+            }
+          }
+        ];
+      } else {
+        // 原有基础菜单
+        menuTemplate = [
+          { label: locales[currentLanguage].cut, role: 'cut' },
+          { label: locales[currentLanguage].copy, role: 'copy' },
+          { label: locales[currentLanguage].paste, role: 'paste' }
+        ];
+      }
+
+      menu = Menu.buildFromTemplate(menuTemplate);
+      menu.popup(BrowserWindow.fromWebContents(event.sender));
     });
     // 监听关闭事件
     ipcMain.handle('request-stop-qqbot', async (event) => {

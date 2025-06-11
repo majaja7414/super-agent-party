@@ -1,16 +1,19 @@
 const isElectron = window.electronAPI ? true : false;
 // 事件监听改造
 if (isElectron) {
-    document.addEventListener('contextmenu', ev => {
-      // 阻止默认行为
-      ev.preventDefault();
-      // 获取鼠标位置
-      const client = {
-        x: ev.clientX,
-        y: ev.clientY
-      };
-      // 把鼠标位置发送到主进程
-      window.electronAPI.showContextMenu(client);
+    document.addEventListener('contextmenu', (e) => {
+      const imgTarget = e.target.closest('img');
+      
+      if (imgTarget) {
+        e.preventDefault();
+        window.electronAPI.showContextMenu('image', { 
+          src: imgTarget.src,
+          x: e.x,
+          y: e.y
+        });
+      } else {
+        window.electronAPI.showContextMenu('default');
+      }
     });
   
     HOST = "127.0.0.1"
