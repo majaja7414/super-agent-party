@@ -159,6 +159,7 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async removeLorebook(index) {
+      if (index === 0) return; // 禁止删除第一个记忆
       this.newMemory.lorebook.splice(index, 1);
       await this.autoSaveSettings();
     },
@@ -174,6 +175,7 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async removeRandom(index) {
+      if (index === 0) return; // 禁止删除第一个随机记忆
       this.newMemory.random.splice(index, 1);
       await this.autoSaveSettings();
     },
@@ -209,6 +211,10 @@ let vue_methods = {
       this.newLLMTool.base_url = this.defaultBaseURL
       this.newLLMTool.api_key = this.defaultApikey
       this.fetchModelsForType(val)
+    },
+    changeImgHost(val) {
+      this.BotConfig.img_host = val;
+      this.autoSaveSettings()
     },
     // 获取模型列表
     async fetchModelsForType(type) {
@@ -990,6 +996,7 @@ let vue_methods = {
           this.agents = data.data.agents || this.agents;
           this.mainAgent = data.data.mainAgent || this.mainAgent;
           this.qqBotConfig = data.data.qqBotConfig || this.qqBotConfig;
+          this.BotConfig = data.data.BotConfig || this.BotConfig;
           this.toolsSettings = data.data.tools || this.toolsSettings;
           this.llmTools = data.data.llmTools || this.llmTools;
           this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
@@ -1421,6 +1428,7 @@ let vue_methods = {
           agents: this.agents,
           mainAgent: this.mainAgent,
           qqBotConfig : this.qqBotConfig,
+          BotConfig: this.BotConfig,
           tools: this.toolsSettings,
           llmTools: this.llmTools,
           conversations: this.conversations,
@@ -2887,4 +2895,39 @@ let vue_methods = {
         };
       }
     },
+    colorBlend(color1, color2, ratio) {
+        // 确保ratio在0-1范围内
+        ratio = Math.max(0, Math.min(1, ratio));
+        
+        // 解析十六进制颜色值
+        const parseHex = (hex) => {
+          hex = hex.replace(/^#/, '');
+          // 处理3位简写格式
+          if (hex.length === 3) {
+            hex = hex.split('').map(char => char + char).join('');
+          }
+          return {
+            r: parseInt(hex.substring(0, 2), 16),
+            g: parseInt(hex.substring(2, 4), 16),
+            b: parseInt(hex.substring(4, 6), 16)
+          };
+        };
+
+        // 转换为两位十六进制字符串
+        const toHex = (value) => {
+          const hex = Math.round(value).toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        };
+
+        const rgb1 = parseHex(color1);
+        const rgb2 = parseHex(color2);
+
+        // 计算混合后的RGB值
+        const r = rgb1.r * ratio + rgb2.r * (1 - ratio);
+        const g = rgb1.g * ratio + rgb2.g * (1 - ratio);
+        const b = rgb1.b * ratio + rgb2.b * (1 - ratio);
+
+        // 组合成十六进制颜色
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+      },
 }

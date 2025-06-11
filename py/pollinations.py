@@ -1,4 +1,6 @@
 import base64
+
+import requests
 from py.get_setting import load_settings,get_host,get_port,UPLOAD_FILES_DIR
 from openai import AsyncClient
 import uuid
@@ -74,6 +76,7 @@ async def openai_image(prompt: str, size="auto"):
     
     res_url = response.data[0].url
     res = f"![image]({res_url})"
+    print(res)
     if res_url is None:
         res = response.data[0].b64_json
         HOST = get_host()

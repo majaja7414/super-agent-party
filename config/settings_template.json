@@ -103,7 +103,8 @@
       "appid": "",
       "secret": "",
       "separators": ["。", "\n", "？", "！"],
-      "reasoningVisible": true
+      "reasoningVisible": true,
+      "quickRestart": true
     },
     "text2imgSettings": {
       "enabled": false,
@@ -117,5 +118,11 @@
       "base_url": "",
       "api_key": "",
       "size": "1024x1024"
+    },
+    "BotConfig": {
+      "imgHost_enabled":false,
+      "imgHost": "easyImage2",
+      "EI2_base_url": "",
+      "EI2_api_key": ""
     }
 }

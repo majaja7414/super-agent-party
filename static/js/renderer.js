@@ -100,20 +100,48 @@ const app = Vue.createApp({
     'systemSettings.theme': {
       handler(newVal) {
         document.documentElement.setAttribute('data-theme', newVal);
+        
+        // 更新 mermaid 主题
         mermaid.initialize({
           startOnLoad: false,
           securityLevel: 'loose',
-          theme: newVal === 'dark' ? 'dark' : 'default'
+          theme: newVal === 'dark' || newVal === 'midnight' || newVal === 'neon' ? 'dark' : 'default'
         });
-        // 强制更新 Element Plus 主题
-        const themeColor = newVal === 'dark' ? '#1668dc' : '#409eff';
+
+        // 完整的主题色映射
+        const themeColors = {
+          light: '#409eff',      // 默认蓝色
+          dark: '#1668dc',       // 深蓝色
+          midnight: '#0ea5e9',   // 午夜蓝
+          desert: '#d98236',     // 沙漠黄
+          neon: '#ff2d95'        // 霓虹粉
+        };
+
+        // 获取当前主题色
+        const themeColor = themeColors[newVal] || themeColors.light;
         const root = document.documentElement;
-        root.style.setProperty('--el-color-primary', themeColor, 'important');
+
+        // 设置主色及其衍生色（Element Plus 需要完整的色系）
+        root.style.setProperty('--el-color-primary', themeColor);
+        root.style.setProperty('--el-color-primary-light-9', this.colorBlend(themeColor, '#ffffff', 0.1));
+        root.style.setProperty('--el-color-primary-light-8', this.colorBlend(themeColor, '#ffffff', 0.2));
+        root.style.setProperty('--el-color-primary-light-7', this.colorBlend(themeColor, '#ffffff', 0.3));
+        root.style.setProperty('--el-color-primary-light-6', this.colorBlend(themeColor, '#ffffff', 0.4));
+        root.style.setProperty('--el-color-primary-light-5', this.colorBlend(themeColor, '#ffffff', 0.5));
+        root.style.setProperty('--el-color-primary-light-4', this.colorBlend(themeColor, '#ffffff', 0.6));
+        root.style.setProperty('--el-color-primary-light-3', this.colorBlend(themeColor, '#ffffff', 0.7));
+        root.style.setProperty('--el-color-primary-light-2', this.colorBlend(themeColor, '#ffffff', 0.8));
+        root.style.setProperty('--el-color-primary-light-1', this.colorBlend(themeColor, '#ffffff', 0.9));
+        root.style.setProperty('--el-color-primary-dark-1', this.colorBlend(themeColor, '#000000', 0.3));
+        root.style.setProperty('--el-color-primary-dark-2', this.colorBlend(themeColor, '#000000', 0.2));
+        root.style.setProperty('--el-color-primary-dark-3', this.colorBlend(themeColor, '#000000', 0.1));
+
+        // 强制刷新 Element Plus 主题
         if (window.__ELEMENT_PLUS_INSTANCE__) {
           window.__ELEMENT_PLUS_INSTANCE__.config.globalProperties.$ELEMENT.reload();
         }
       },
-      immediate: true // 立即执行一次以应用初始值
+      immediate: true
     },
     'systemSettings.language': {
       handler(newVal) {
