@@ -454,6 +454,7 @@ let vue_data = {
     ],
     customHttpTools: [],  // 用于存储自定义HTTP工具的数组
     showCustomHttpToolForm: false,
+    isInputExpanded: false,
     newCustomHttpTool: {
       enabled: true,
       name: '',

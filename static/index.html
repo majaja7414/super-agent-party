@@ -493,6 +493,16 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="isInputExpanded ? t('collapseInput') : t('expandInput')" placement="top">
+                <el-button 
+                    @click="toggleInputExpand"
+                    class="icon-btn expand-btn"
+                    :type="isInputExpanded ? 'primary' : 'default'"
+                    circle>
+                    <i :class="isInputExpanded ? 'fa-solid fa-down-left-and-up-right-to-center' : 'fa-solid fa-up-right-and-down-left-from-center'"></i>
+                </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('chatHistory')" placement="top">
               <el-button
                 @click="showHistoryDialog = true"
@@ -689,14 +699,13 @@
               </div>
             </div>
             <el-input
-              v-model="userInput"
-              type="textarea"
-              :rows="4"
-              :placeholder="t('inputMessage')"
-              resize="none"
-              @keydown="handleKeydown"
-              class="input-box"
-            >
+                v-model="userInput"
+                type="textarea"
+                :rows="isInputExpanded ? 16 : 4"
+                :placeholder="t('inputMessage')"
+                resize="none"
+                @keydown="handleKeydown"
+                class="input-box">
             </el-input>
           </div>
         </div>

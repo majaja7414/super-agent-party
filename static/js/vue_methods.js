@@ -2930,4 +2930,7 @@ let vue_methods = {
         // 组合成十六进制颜色
         return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
       },
+      toggleInputExpand() {
+        this.isInputExpanded = !this.isInputExpanded
+    },
 }

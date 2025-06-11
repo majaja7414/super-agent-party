@@ -425,6 +425,8 @@ const translations = {
       'mcpDeleted': 'MCP已删除',
       'mcpDeleteFailed': 'MCP删除失败',
       'gotoEasyImage2Github': '获取EasyImage2 Github文档',
+      'collapseInput': '收起输入框',
+      'expandInput': '展开输入框',
     },
     'en-US': {
       'chat': 'Chat',
@@ -850,5 +852,7 @@ const translations = {
       'mcpDeleted': 'Memory Control Panel deleted',
       'mcpDeleteFailed': 'Memory Control Panel delete failed',
       'gotoEasyImage2Github': 'Get the EasyImage2 GitHub documentation',
+      'collapseInput': 'Collapse Input',
+      'expandInput': 'Expand Input',
     }
   };

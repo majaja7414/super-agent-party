@@ -2613,3 +2613,20 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+.input-container.expanded-input {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: var(--el-bg-color);
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.input-container.expanded-input .input-box textarea {
+    height: calc(100vh - 100px) !important;
+    min-height: auto !important;
+}
