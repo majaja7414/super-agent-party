@@ -159,6 +159,7 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async removeLorebook(index) {
+      if (index === 0) return; // 禁止删除第一个记忆
       this.newMemory.lorebook.splice(index, 1);
       await this.autoSaveSettings();
     },
@@ -174,6 +175,7 @@ let vue_methods = {
       await this.autoSaveSettings();
     },
     async removeRandom(index) {
+      if (index === 0) return; // 禁止删除第一个随机记忆
       this.newMemory.random.splice(index, 1);
       await this.autoSaveSettings();
     },

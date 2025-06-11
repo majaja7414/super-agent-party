@@ -2308,6 +2308,7 @@
                     <el-form-item :label="t('memoryName')" required>
                       <el-input v-model="newMemory.name" />
                     </el-form-item>
+                    
                     <!-- 新增已有记忆选择框 -->
                     <el-form-item :label="t('selectExistingMemory')">
                       <el-select 
@@ -2330,252 +2331,184 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
-                    <div class="param-header">
-                      <span>{{ t('autoUpdateSetting') }}</span>
-                      <div class="action-row">
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('autoUpdateNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
-                      </div>
-                    </div>
-                    <el-form-item :label="t('embeddingProvider')" required>
-                      <el-select 
-                        v-model="newMemory.providerId" 
-                        :placeholder="t('selectProvider')"
-                        @change="selectMemoryProvider"
-                        class="full-width-input">
-                        <el-option
-                          v-for="provider in modelProviders"
-                          :key="provider.id"
-                          :label="provider.vendor+' - '+provider.modelId"
-                          :value="provider.id"
-                        >
-                          <div class="provider-option">
-                            <img 
-                              :src="getVendorLogo(provider.vendor)" 
-                              class="mini-vendor-logo"
-                            />
-                            <span class="model-id">{{ provider.modelId }}</span>
+
+                    <el-tabs type="border-card">
+                      <!-- 自动更新设定选项卡 -->
+                      <el-tab-pane>
+                        <template #label>
+                          <el-tooltip :content="t('autoUpdateNote')" placement="top">
+                            <span>{{ t('autoUpdateSetting') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <el-form-item :label="t('embeddingProvider')" required>
+                          <el-select 
+                            v-model="newMemory.providerId" 
+                            :placeholder="t('selectProvider')"
+                            @change="selectMemoryProvider"
+                            class="full-width-input">
+                            <el-option
+                              v-for="provider in modelProviders"
+                              :key="provider.id"
+                              :label="provider.vendor+' - '+provider.modelId"
+                              :value="provider.id"
+                            >
+                              <div class="provider-option">
+                                <img 
+                                  :src="getVendorLogo(provider.vendor)" 
+                                  class="mini-vendor-logo"
+                                />
+                                <span class="model-id">{{ provider.modelId }}</span>
+                              </div>
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                        <el-alert type="info" :closable="false" class="mb-2">
+                          <template #default>
+                            <div class="alert-content">
+                              {{ t('firstTimeUse') }}
+                              <el-link
+                                type="primary"
+                                :underline="false"
+                                class="font-medium"
+                                @click="switchToApiBox"
+                              >
+                                <el-icon class="mr-1">
+                                  <i class="fa-solid fa-key"></i>
+                                </el-icon>{{ t('keyBoxInterface') }}
+                              </el-link>
+                              {{ t('addProviderReturnSelect') }}
+                              {{ t('addemdNotice') }}
+                            </div>
+                          </template>
+                        </el-alert>
+                      </el-tab-pane>
+
+                      <!-- 角色设定选项卡 -->
+                      <el-tab-pane>
+                        <template #label>
+                          <el-tooltip :content="t('basicCharacterNote')" placement="top">
+                            <span>{{ t('basicCharacter') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <el-form-item>
+                          <el-input 
+                            v-model="newMemory.basic_character" 
+                            :placeholder="t('inputBasicCharacter')"
+                            type="textarea"  
+                            :rows="4"
+                            @input="autoSaveSettings"
+                          />
+                        </el-form-item>
+                      </el-tab-pane>
+
+                      <!-- 世界观设定选项卡 -->
+                      <el-tab-pane>
+                        <template #label>
+                          <el-tooltip :content="t('worldviewSettingNote')" placement="top">
+                            <span>{{ t('worldviewSetting') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <div class="memo-extra-params">
+                          <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
+                            <el-input
+                              v-model="param.name"
+                              :placeholder="t('settingName')"
+                              class="param-name-input"
+                              @input="autoSaveSettings"
+                            ></el-input>
+                            <el-input
+                              v-model="param.value"
+                              :placeholder="t('settingValue')"
+                              type="textarea"
+                              :rows="3"
+                              @input="autoSaveSettings"
+                              class="param-value-input"
+                            ></el-input>
+                            <div class="action-row">
+                              <el-button
+                                @click.stop="clearParam(index)"
+                                type="default"
+                                size="small"
+                                circle
+                              >
+                                <i class="fa-solid fa-eraser"></i>
+                              </el-button>
+                              <!-- 第一个条目不显示删除按钮 -->
+                              <el-button
+                                v-if="index !== 0"
+                                @click.stop="removeLorebook(index)"
+                                type="danger"
+                                size="small"
+                                circle
+                              >
+                                <i class="fa-solid fa-trash"></i>
+                              </el-button>
+                              <el-button 
+                                @click="addLorebook"
+                                type="primary"
+                                circle
+                                size="small"
+                                class="header-add-btn"
+                              >
+                                <i class="fa-solid fa-plus"></i>
+                              </el-button>
+                            </div>
                           </div>
-                        </el-option>
-                      </el-select>
-                    </el-form-item>
-                    <el-alert type="info" :closable="false" class="mb-2">
-                      <template #default>
-                        <div class="alert-content">
-                          {{ t('firstTimeUse') }}
-                          <el-link
-                            type="primary"
-                            :underline="false"
-                            class="font-medium"
-                            @click="switchToApiBox"
-                          >
-                            <el-icon class="mr-1">
-                              <i class="fa-solid fa-key"></i>
-                            </el-icon>{{ t('keyBoxInterface') }}
-                          </el-link>
-                          {{ t('addProviderReturnSelect') }}
-                          {{ t('addemdNotice') }}
                         </div>
-                      </template>
-                    </el-alert>
-                    <div class="param-header">
-                      <span>{{ t('basicCharacter') }}</span>
-                      <div class="action-row">
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isBasicCharacterExpanded = !isBasicCharacterExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isBasicCharacterExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
-                        </el-button>
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('basicCharacterNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
-                      </div>
-                    </div>
-                    <el-form-item v-show="isBasicCharacterExpanded">
-                      <el-input 
-                        v-model="newMemory.basic_character" 
-                        :placeholder="t('inputBasicCharacter')"
-                        type="textarea"  
-                        :rows="4"
-                        @input="autoSaveSettings"
-                      />
-                    </el-form-item>
-                    <div class="param-header">
-                      <span>{{ t('worldviewSetting') }}</span>
-                      <div class="action-row">
-                        <el-button 
-                          @click="addLorebook"
-                          type="primary"
-                          circle
-                          size="small"
-                        >
-                          <i class="fa-solid fa-plus"></i>
-                        </el-button>
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isWorldviewSettingsExpanded = !isWorldviewSettingsExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isWorldviewSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
-                        </el-button>
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('worldviewSettingNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
-                      </div>
-                    </div>
-                    <div v-show="isWorldviewSettingsExpanded" class="memo-extra-params">
-                      <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
-                        <!-- 第一行：参数名称 -->
-                        <el-input
-                          v-model="param.name"
-                          :placeholder="t('settingName')"
-                          class="param-name-input"
-                          @input="autoSaveSettings"
-                        ></el-input>
+                      </el-tab-pane>
 
-                        <!-- 第二行：参数内容 -->
-                        <el-input
-                          v-model="param.value"
-                          :placeholder="t('settingValue')"
-                          type="textarea"
-                          :rows="3"
-                          @input="autoSaveSettings"
-                          class="param-value-input"
-                        ></el-input>
-
-                        <!-- 第三行：操作按钮 -->
-                        <div class="action-row">
-                          <el-button
-                            @click.stop="clearParam(index)"
-                            type="default"
-                            size="small"
-                            circle
-                          >
-                            <i class="fa-solid fa-eraser"></i>
-                          </el-button>
-                          <el-button
-                            @click.stop="removeLorebook(index)"
-                            type="danger"
-                            size="small"
-                            circle
-                          >
-                            <i class="fa-solid fa-trash"></i>
-                          </el-button>
-                          <el-button 
-                            @click="addLorebook"
-                            type="primary"
-                            circle
-                            size="small"
-                            class="header-add-btn"
-                          >
-                            <i class="fa-solid fa-plus"></i>
-                          </el-button>
+                      <!-- 随机设定选项卡 -->
+                      <el-tab-pane>
+                        <template #label>
+                          <el-tooltip :content="t('randomSettingNote')" placement="top">
+                            <span>{{ t('randomSetting') }}</span>
+                          </el-tooltip>
+                        </template>
+                        <div class="memo-extra-params">
+                          <div v-for="(param, index) in newMemory.random" :key="index" class="param-row">
+                            <el-input
+                              v-model="param.value"
+                              :placeholder="t('settingValue')"
+                              type="textarea"
+                              :rows="3"
+                              @input="autoSaveSettings"
+                              class="param-value-input"
+                            ></el-input>
+                            <div class="action-row">
+                              <el-button
+                                @click.stop="clearRandom(index)"
+                                type="default"
+                                size="small"
+                                circle
+                              >
+                                <i class="fa-solid fa-eraser"></i>
+                              </el-button>
+                              <!-- 第一个条目不显示删除按钮 -->
+                              <el-button
+                                v-if="index !== 0"
+                                @click.stop="removeRandom(index)"
+                                type="danger"
+                                size="small"
+                                circle
+                              >
+                                <i class="fa-solid fa-trash"></i>
+                              </el-button>
+                              <el-button 
+                                @click="addRandom"
+                                type="primary"
+                                circle
+                                size="small"
+                                class="header-add-btn"
+                              >
+                                <i class="fa-solid fa-plus"></i>
+                              </el-button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    <div class="param-header">
-                      <span>{{ t('randomSetting') }}</span>
-                      <div class="action-row">
-                        <el-button 
-                          @click="addRandom"
-                          type="primary"
-                          circle
-                          size="small"
-                        >
-                          <i class="fa-solid fa-plus"></i>
-                        </el-button>
-                        <!-- 添加展开/收起按钮 -->
-                        <el-button 
-                          @click="isRandomSettingsExpanded = !isRandomSettingsExpanded" 
-                          type="default" 
-                          circle 
-                          size="small" 
-                        >
-                          <i :class="isRandomSettingsExpanded ? 'fa-solid fa-caret-up' : 'fa-solid fa-caret-down'"></i>
-                        </el-button>
-                        <!-- 问号圆圆的按钮 -->
-                        <el-tooltip class="item" :content="t('randomSettingNote')" placement="top">
-                          <el-button 
-                            type="default"
-                            circle
-                            size="small"
-                          >
-                            <i class="fa-solid fa-question"></i>
-                          </button>
-                        </el-tooltip>
-                      </div>
-                    </div>
-                    <div v-show="isRandomSettingsExpanded" class="memo-extra-params">
-                      <div v-for="(param, index) in newMemory.random" :key="index" class="param-row">
-                        <!-- 第1行：参数内容 -->
-                        <el-input
-                          v-model="param.value"
-                          :placeholder="t('settingValue')"
-                          type="textarea"
-                          :rows="3"
-                          @input="autoSaveSettings"
-                          class="param-value-input"
-                        ></el-input>
-
-                        <!-- 第2行：操作按钮 -->
-                        <div class="action-row">
-                          <el-button
-                            @click.stop="clearRandom(index)"
-                            type="default"
-                            size="small"
-                            circle
-                          >
-                            <i class="fa-solid fa-eraser"></i>
-                          </el-button>
-                          <el-button
-                            @click.stop="removeRandom(index)"
-                            type="danger"
-                            size="small"
-                            circle
-                          >
-                            <i class="fa-solid fa-trash"></i>
-                          </el-button>
-                          <el-button 
-                            @click="addRandom"
-                            type="primary"
-                            circle
-                            size="small"
-                            class="header-add-btn"
-                          >
-                            <i class="fa-solid fa-plus"></i>
-                          </el-button>
-                        </div>
-                      </div>
-                    </div>
+                      </el-tab-pane>
+                    </el-tabs>
                   </el-form>
+
                   <template #footer>
                     <el-button @click="showAddMemoryDialog = false">{{ t('cancel') }}</el-button>
                     <el-button 
@@ -2766,7 +2699,7 @@
                         :placeholder="t('systemPromptPlaceholder')"/>
                     </el-form-item>
                       <!-- 新增标签页 -->
-                      <el-tabs v-model="agentTabActive" class="agent-config-tabs">
+                      <el-tabs v-model="agentTabActive" type="border-card">
                         <!-- 知识库 -->
                         <el-tab-pane :label="t('knowledgeBase')" name="knowledge">
                           <div class="knowledge-dialog-content">
@@ -3454,6 +3387,22 @@
                           <div class="tool-content">
                             <!-- 图床/文件床配置 -->
                             <el-form-item :label="t('imgHostType')">
+                              <template #label>
+                                  <span>
+                                    {{ t('imgHostType') }}
+                                    <el-link
+                                      v-if="BotConfig.imgHost === 'easyImage2'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://github.com/icret/EasyImages2.0" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoEasyImage2Github') }}
+                                    </el-link>
+                                  </span>
+                              </template>
                               <el-select 
                                 v-model="BotConfig.imgHost"
                                 @change="changeImgHost">

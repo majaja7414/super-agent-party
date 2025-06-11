@@ -107,8 +107,8 @@ const translations = {
       'vendor.moonshot': '月之暗面',
       'vendor.minimax': 'minimax',
       'vendor.LMstudio': 'LM studio',
-      'vendor.Gemini': 'Google(Gemini)',
-      'vendor.Anthropic': 'Anthropic(claude)',
+      'vendor.Gemini': 'Google',
+      'vendor.Anthropic': 'Anthropic',
       'vendor.Grok': 'Grok (xAI)',
       'vendor.mistral': 'mistral',
       'vendor.lingyi': '零一万物',
@@ -424,6 +424,7 @@ const translations = {
       'imgHostType': '图床/文件床类型',
       'mcpDeleted': 'MCP已删除',
       'mcpDeleteFailed': 'MCP删除失败',
+      'gotoEasyImage2Github': '获取EasyImage2 Github文档',
     },
     'en-US': {
       'chat': 'Chat',
@@ -532,8 +533,8 @@ const translations = {
       'vendor.moonshot': 'Moonshot AI',
       'vendor.minimax': 'Minimax',
       'vendor.LMstudio': 'LM Studio',
-      'vendor.Gemini': 'Google(Gemini)',
-      'vendor.Anthropic': 'Anthropic(claude)',
+      'vendor.Gemini': 'Google',
+      'vendor.Anthropic': 'Anthropic',
       'vendor.Grok': 'Grok (xAI)',
       'vendor.mistral': 'Mistral AI',
       'vendor.lingyi': '01.AI',
@@ -848,5 +849,6 @@ const translations = {
       'imgHostType': 'Image Host / Flie Host Type',
       'mcpDeleted': 'Memory Control Panel deleted',
       'mcpDeleteFailed': 'Memory Control Panel delete failed',
+      'gotoEasyImage2Github': 'Get the EasyImage2 GitHub documentation',
     }
   };

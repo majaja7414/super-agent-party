@@ -394,8 +394,8 @@ let vue_data = {
       base_url: '',
       api_key: '',
       vendor: '',
-      lorebook: [],
-      random: [],
+      lorebook: [{ name: '', value: '' }], // 默认至少一个条目
+      random: [{ value: '' }], // 默认至少一个条目
       basic_character: '',
     },
     showAddMemoryDialog: false,
