@@ -3,7 +3,7 @@ import json
 import os
 import time
 from bs4 import BeautifulSoup
-from duckduckgo_search import DDGS
+from langchain_community.tools import DuckDuckGoSearchResults
 import requests
 from tavily import TavilyClient
 from py.get_setting import load_settings
@@ -13,9 +13,8 @@ async def DDGsearch_async(query):
     def sync_search():
         max_results = settings['webSearch']['duckduckgo_max_results'] or 10
         try:
-            with DDGS() as ddg:
-                results = ddg.text(query, max_results=max_results)
-            json.dumps(results, indent=2, ensure_ascii=False)
+            dds = DuckDuckGoSearchResults(num_results=max_results,output_format="json")
+            results = dds.invoke(query)
             return results
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -144,6 +143,29 @@ tavily_tool = {
         },
     },
 }
+
+from langchain_community.utilities import BingSearchAPIWrapper
+
+async def Bing_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['bing_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('bing_api_key', "")
+            bing_search_url = settings['webSearch'].get('bing_search_url', "")
+            client = BingSearchAPIWrapper(bing_subscription_key=api_key,bing_search_url=bing_search_url)
+            response = client.results(query=query,num_results=max_results)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Bing search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
 
 async def jina_crawler_async(original_url):
     settings = await load_settings()

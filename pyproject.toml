@@ -10,7 +10,6 @@ dependencies = [
     "appdirs>=1.4.4",
     "bs4>=0.0.2",
     "docstring-parser>=0.16",
-    "duckduckgo-search>=8.0.1",
     "faiss-cpu>=1.10.0",
     "fastapi-mcp>=0.3.4",
     "fastapi>=0.115.12",
@@ -39,4 +38,6 @@ dependencies = [
     "mem0ai>=0.1.101",
     "e2b-code-interpreter>=1.5.0",
     "qq-botpy>=1.2.1",
+    "duckduckgo-search>=8.0.3",
+    "langchain-google-community>=2.0.7",
 ]

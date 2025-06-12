@@ -71,7 +71,10 @@
       "tavily_api_key": "",
       "jina_api_key": "",
       "Crawl4Ai_url": "http://127.0.0.1:11235",
-      "Crawl4Ai_api_key": "test_api_code"
+      "Crawl4Ai_api_key": "test_api_code",
+      "bing_max_results": 10,
+      "bing_api_key": "",
+      "bing_search_url": "https://api.bing.microsoft.com/v7.0/search"
     },
     "knowledgeBases": [],
     "KBSettings": {
