@@ -1819,7 +1819,8 @@ body {
 }
 
 .browser-mode-btn {
-  width: 40%;
+  width: 90%;
+  max-width: 300px;
   text-align: center;
   transition: all 0.3s ease;
   background: linear-gradient(45deg, var(--el-color-primary), var(--el-color-primary-light-3));
@@ -2674,26 +2675,28 @@ body {
 @media (max-width: 768px) {
   .suite-content {
     padding: 10px;
+    /* 隐藏横向滚动条 */
+    overflow-x: hidden;
   }
   .suite-sidebar {
-    padding-left: 0!important;
-    padding-right: 0%!important;
-    margin-left: 0!important;
-    margin-right: 0!important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
     width: 50px !important; /* 缩小侧边栏宽度 */
   }
   .tile-nav {
-    padding-left: 0!important;
-    padding-right: 0%!important;
-    margin-left: 0!important;
-    margin-right: 0!important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
     width: 45px !important; /* 缩小导航栏宽度 */
   }
   .nav-text {
-    padding-left: 0!important;
-    padding-right: 0%!important;
-    margin-left: 0!important;
-    margin-right: 0!important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
     width: 0 !important;
     padding: auto;
     margin: auto;
@@ -2701,18 +2704,90 @@ body {
     display: none !important; /* 隐藏文字 */
   }
   .nav-icon {
-    padding-left: 0!important;
-    padding-right: 0%!important;
-    margin-left: 0!important;
-    margin-right: 0!important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
     width: 40px !important;
     font-size: 20px !important; /* 调整图标大小 */
   }
   .nav-item {
-    padding-left: 0!important;
-    padding-right: 0%!important;
-    margin-left: 0!important;
-    margin-right: 0!important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
     width: 40px !important;
+  }
+  .settings-form{
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+  }
+  .file-list {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+  }
+  .page .text-container {
+    min-width: 0px!important;
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .file-item {
+    width: auto !important;
+    padding: 3px!important;
+    max-width: 230px!important;
+    min-width: 0px!important;
+    .file-info {
+      width: auto!important;
+      padding-left: 1px!important;
+      padding-right: 1px!important;
+      margin-left: 1px!important;
+      margin-right: 1px!important;
+      min-width: 0px!important;
+      max-width: 40%!important;
+    }
+    .file-actions {
+      gap: 1px!important;
+      margin-left: 1px!important;
+      padding-left: 1px!important;
+      padding-right: 1px!important;
+      margin-left: 1px!important;
+      margin-right: 1px!important;
+      min-width: 0px!important;
+    }
+  }
+  .page .image-container {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .image-item {
+    min-width: 0px!important;
+  }
+  .page .video-container {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .video-item {
+    min-width: 0px!important;
+  }
+  .el-dialog {
+    width: 250px !important;
   }
 }

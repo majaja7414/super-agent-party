@@ -76,7 +76,7 @@
 <body>
   <div id="app">
     <!-- 顶部栏 -->
-    <el-header v-if="isElectron" class="top-bar" height="30px">
+    <el-header v-if="isElectron || isMobile" class="top-bar" height="30px">
       <div class="window-controls">
       <el-button 
         v-if="updateDownloaded"
@@ -110,17 +110,17 @@
             <i :class="isCollapse ? 'fa-solid fa-bars' : 'fa-solid fa-bars-staggered'"></i>
           </el-icon>
         </el-button>
-        <el-button v-if="!isMac" @click="minimizeWindow" class="top-bar-btn" text>
+        <el-button v-if="!isMac&&!isMobile" @click="minimizeWindow" class="top-bar-btn" text>
           <el-icon>
             <i class="fa-solid fa-minus"></i>
           </el-icon>
         </el-button>
-        <el-button v-if="!isMac" @click="toggleIcon" class="top-bar-btn" text>
+        <el-button v-if="!isMac&&!isMobile" @click="toggleIcon" class="top-bar-btn" text>
           <el-icon>
             <i :class="iconClass"></i>
           </el-icon>
         </el-button>
-        <el-button v-if="!isMac" @click="closeWindow" class="top-bar-btn" text>
+        <el-button v-if="!isMac&&!isMobile" @click="closeWindow" class="top-bar-btn" text>
           <el-icon>
             <i class="fa-solid fa-xmark"></i>
           </el-icon>
