@@ -16,11 +16,13 @@ const app = Vue.createApp({
     if (this.statusInterval) {
       clearInterval(this.statusInterval);
     }
+    window.removeEventListener('resize', this.checkMobile);
   },
   mounted() {
     // 初始检查
     this.checkQQBotStatus();
-    
+    this.checkMobile();
+    window.addEventListener('resize', this.checkMobile);
     // 每30秒检查一次状态
     this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
 
@@ -153,6 +155,13 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    sidebarStyle() {
+      return {
+        width: this.isMobile ? 
+          (this.sidebarVisible ? '200px' : '0') : 
+          (this.isCollapse ? '64px' : '200px')
+      }
+    },
     filteredSeparators() {
       const current = this.qqBotConfig.separators;
       const defaults = this.defaultSeparators;

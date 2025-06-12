@@ -2933,4 +2933,9 @@ let vue_methods = {
       toggleInputExpand() {
         this.isInputExpanded = !this.isInputExpanded
     },
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 768;
+      if(this.isMobile) this.sidebarVisible = false;
+    },
+
 }

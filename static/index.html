@@ -88,8 +88,20 @@
         </el-icon>
         {{ t('installNow') }}
       </el-button>
+      <!-- 添加移动端菜单按钮 -->
+      <el-button 
+      class="top-bar-btn"
+       v-if="isMobile" 
+       @click="isCollapse = sidebarVisible;sidebarVisible = !sidebarVisible"
+       text
+       :title="isCollapse ? t('expandAside') : t('collapseAside')">
+          <el-icon>
+            <i :class="!sidebarVisible ? 'fa-solid fa-bars' : 'fa-solid fa-bars-staggered'"></i>
+          </el-icon>
+      </el-button>
         <!-- 新增展开/收起按钮 -->
         <el-button 
+          v-if="!isMobile"
           @click="isCollapse = !isCollapse"
           class="top-bar-btn"
           text
@@ -120,9 +132,11 @@
     <el-container class="main-container">
       <!-- 侧边栏 -->
       <el-aside 
-        :width="isCollapse ? '64px' : '200px'" 
+        :width="sidebarStyle.width"
         class="sidebar"
-        @dblclick="isCollapse = !isCollapse"> 
+        :class="{ 'mobile-sidebar': isMobile }"
+        @dblclick="isCollapse = !isCollapse"
+        v-show="!isMobile || sidebarVisible">
         <el-menu
           :collapse="isCollapse"
           :default-active="activeMenu"
@@ -184,7 +198,10 @@
           </el-menu-item>
         </el-menu>
       </el-aside>
-
+      <div 
+        class="sidebar-mask"
+        v-show="isMobile && sidebarVisible"
+        @click="sidebarVisible = false"></div>
       <!-- 内容区 -->
       <el-main class="content">
         <!-- 聊天界面保持不变 -->
