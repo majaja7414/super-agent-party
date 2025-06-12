@@ -279,7 +279,7 @@
             <el-dialog
               v-model="showUploadDialog"
               :title="currentUploadType==='file' ? t('uploadFile') : t('uploadImage')"
-              width="30%"
+              width="600px"
               :before-close="() => showUploadDialog = false">
 
               <div class="upload-container">
@@ -298,7 +298,7 @@
             <el-dialog
               v-model="showKnowledgeDialog"
               :title="t('knowledgeBaseSelection')"
-              width="30%">
+              width="600px">
               <div class="knowledge-dialog-content">
                 <div v-for="kb in knowledgeBases" :key="kb.id" class="knowledge-item">
                   <el-switch v-model="kb.enabled" @change="autoSaveSettings"></el-switch>
@@ -317,7 +317,7 @@
           <el-dialog
             v-model="showMemoryDialog"
             :title="t('llmToolsManagement')"
-            width="30%">
+            width="600px">
             <div class="knowledge-dialog-content">
               <el-form-item :label="t('memoryEnable')" class="form-item-align" label-position="left">
                 <el-switch
@@ -352,7 +352,7 @@
           <el-dialog
             v-model="showAgentDialog"
             :title="t('agentSettings')"
-            width="30%">
+            width="600px">
             <div class="agent-dialog-content">
               <!-- 主智能体选择 -->
               <div class="agent-section">
@@ -400,7 +400,7 @@
           <el-dialog
             v-model="showMCPServerDialog"
             :title="t('mcpServersManagement')"
-            width="30%">
+            width="600px">
             <div class="knowledge-dialog-content">
               <!-- 服务器列表 -->
               <div v-for="(server, name) in mcpServers" :key="name" class="knowledge-item">
@@ -424,7 +424,7 @@
           <el-dialog
             v-model="showA2AServerDialog"
             :title="t('a2aServersManagement')"
-            width="30%">
+            width="600px">
             <div class="knowledge-dialog-content">
               <div v-for="(server, url) in a2aServers" :key="url" class="knowledge-item">
                 <el-switch v-model="server.enabled" @change="autoSaveSettings"></el-switch>
@@ -443,7 +443,7 @@
           <el-dialog
             v-model="showLLMToolsDialog"
             :title="t('llmToolsManagement')"
-            width="30%">
+            width="600px">
             <div class="knowledge-dialog-content">
               <div v-for="(tool, index) in llmTools" :key="index" class="knowledge-item">
                 <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
@@ -469,7 +469,7 @@
           <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
-            width="30%">
+            width="600px">
             <div class="knowledge-dialog-content">
               <!-- 对话记录列表 -->
               <div v-for="conv in sortedConversations" 
@@ -2635,7 +2635,7 @@
           <el-dialog
             :title="t('restartConfirm')"
             v-model="showRestartDialog"
-            width="30%">
+            width="600px">
             <span>{{ t('restartConfirmText') }}</span>
             <template #footer>
               <span class="dialog-footer">

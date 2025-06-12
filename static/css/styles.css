@@ -2316,16 +2316,6 @@ body {
     .nav-icon {
       color: var(--el-color-primary);
     }
-    
-    &::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      height: 24px;
-      width: 3px;
-      background: var(--el-color-primary);
-      border-radius: 2px;
-    }
   }
 }
 
@@ -2678,5 +2668,51 @@ body {
   
   .main-container {
     margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .suite-content {
+    padding: 10px;
+  }
+  .suite-sidebar {
+    padding-left: 0!important;
+    padding-right: 0%!important;
+    margin-left: 0!important;
+    margin-right: 0!important;
+    width: 50px !important; /* 缩小侧边栏宽度 */
+  }
+  .tile-nav {
+    padding-left: 0!important;
+    padding-right: 0%!important;
+    margin-left: 0!important;
+    margin-right: 0!important;
+    width: 45px !important; /* 缩小导航栏宽度 */
+  }
+  .nav-text {
+    padding-left: 0!important;
+    padding-right: 0%!important;
+    margin-left: 0!important;
+    margin-right: 0!important;
+    width: 0 !important;
+    padding: auto;
+    margin: auto;
+    font-size: 0 !important;
+    display: none !important; /* 隐藏文字 */
+  }
+  .nav-icon {
+    padding-left: 0!important;
+    padding-right: 0%!important;
+    margin-left: 0!important;
+    margin-right: 0!important;
+    width: 40px !important;
+    font-size: 20px !important; /* 调整图标大小 */
+  }
+  .nav-item {
+    padding-left: 0!important;
+    padding-right: 0%!important;
+    margin-left: 0!important;
+    margin-right: 0!important;
+    width: 40px !important;
   }
 }
