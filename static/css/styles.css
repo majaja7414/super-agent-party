@@ -2871,4 +2871,20 @@ body {
   .el-dialog {
     width: 250px !important;
   }
+  .page .logo-container{
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .license-notice {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
 }
