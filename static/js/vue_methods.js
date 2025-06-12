@@ -2629,8 +2629,8 @@ let vue_methods = {
         api_key: '',
         base_url: '',
         vendor: '',
-        lorebook: [],
-        random: [],
+        lorebook: [{ name: '', value: '' }], // 默认至少一个条目
+        random: [{ value: '' }], // 默认至少一个条目
         basic_character: "",
        };
     },
@@ -2887,8 +2887,8 @@ let vue_methods = {
           base_url: '',
           api_key: '',
           vendor: '',
-          lorebook: [],
-          random: [],
+          lorebook: [{ name: '', value: '' }], // 默认至少一个条目
+          random: [{ value: '' }], // 默认至少一个条目
           basic_character: '',
         };
       }
