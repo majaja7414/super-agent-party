@@ -886,7 +886,7 @@ let vue_methods = {
         const container = this.$refs.messagesContainer;
         if (container) {
           // 定义一个阈值，用来判断是否接近底部
-          const threshold = 100; // 阈值可以根据实际情况调整
+          const threshold = 200; // 阈值可以根据实际情况调整
           const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
     
           if (isAtBottom) {
