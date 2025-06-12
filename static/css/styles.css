@@ -263,6 +263,87 @@
   --hljs-attr: #05d9e8;          /* 青蓝 */
 }
 
+/* 棉花糖主题 */
+[data-theme="marshmallow"] {
+  /* 基础三要素 */
+  --bg-color: #e6f7ff;         /* 极浅水蓝背景 */
+  --text-color: #2e2a36;       /* 深紫灰色文字 */
+  --border-color: #c2d6e3;     /* 浅灰蓝色边框 */
+
+  /* 主色调 - 樱花粉 */
+  --el-color-primary: #f5a5c3 !important;
+  --el-color-primary-light-3: #f8bbd3;
+  --el-color-primary-light-5: #fad1e1;
+  --el-color-primary-light-7: #fde8f0;
+  --el-color-primary-rgb: 245, 165, 195 !important;
+  
+  /* 辅助色 - 浅水蓝 */
+  --el-color-info: #99d8e0 !important;
+  --el-color-info-light-3: #b3e3e8;
+  --el-color-info-light-5: #cceef0;
+  
+  /* 背景系统 */
+  --el-bg-color: var(--bg-color) !important;
+  --el-bg-color-page: #d4f1f5 !important;      /* 更亮的水蓝 */
+  --el-bg-color-overlay: #ffffff !important;   /* 纯白浮层 */
+
+  /* 文字系统 */
+  --el-text-color-primary: #3a2e4a !important;  /* 深紫罗兰 */
+  --el-text-color-regular: #5a4e6a !important;
+  --el-text-color-secondary: #8c7b99 !important;
+  
+  /* 边框系统 */
+  --el-border-color: #e0c4d3 !important;       /* 浅粉灰 */
+  --el-border-color-light: #f0dde6 !important;
+  --el-border-color-lighter: #f8eef3 !important;
+
+  /* 组件设计 */
+  --el-button-bg-color: var(--el-color-primary) !important;
+  --el-input-bg-color: #ffffff !important;      /* 纯白输入框 */
+  --el-menu-bg-color: #f9f2f5 !important;       /* 极浅粉背景 */
+  --el-table-bg-color: #ffffff !important;
+  --el-tag-bg-color: rgba(245, 165, 195, 0.15) !important;
+  
+  /* 状态颜色（增强对比） */
+  --el-color-success: #8bd48d !important;       /* 薄荷绿 */
+  --el-color-warning: #ffd166 !important;       /* 奶油黄 */
+  --el-color-danger: #ff6b6b !important;        /* 珊瑚红 */
+  
+  /* 阴影效果 */
+  --el-box-shadow-light: 0 4px 16px rgba(245, 165, 195, 0.2) !important;
+  --card-shadow: 0 4px 12px rgba(153, 216, 224, 0.15); /* 水蓝阴影 */
+
+  /* 输入框系统 */
+  --el-input-text-color: #4a3b5a;
+  --el-input-placeholder-color: #c0a4b8;
+  --el-input-hover-border-color: var(--el-color-primary-light-3);
+  --el-input-focus-border-color: var(--el-color-primary);
+  --el-input-disabled-bg-color: #f8f5fa;
+
+  /* 代码块 */
+  --code-bg: #ffffff;
+  --code-border: #f0dde6;
+}
+
+/* 配套糖果色代码高亮 */
+[data-theme="marshmallow"] {
+  --hljs-text: #4a3b5a;
+  --hljs-bg: #fff5f9;
+  --hljs-border: #f8d7e6;
+  --hljs-keyword: #f5a5c3;        /* 主色粉 */
+  --hljs-string: #99d8e0;         /* 水蓝色 */
+  --hljs-number: #ff9aa2;         /* 珊瑚粉 */
+  --hljs-comment: #c0a4b8;        /* 灰紫色 */
+  --hljs-title: #8bd48d;          /* 薄荷绿 */
+  --hljs-built_in: #ffd166;       /* 奶油黄 */
+  --hljs-literal: #ff6b6b;        /* 珊瑚红 */
+  --hljs-class: #c9a2e0;          /* 淡紫色 */
+  --hljs-function: #a5d8f5;       /* 浅天蓝 */
+  --hljs-params: #7b8c9d;         /* 灰蓝色 */
+  --hljs-attr: #76c893;           /* 翡翠绿 */
+}
+
+
 /* 沙漠主题 */
 [data-theme="desert"] {
     /* 基础三色 */
@@ -953,11 +1034,25 @@ body {
   overflow: auto;
 }
 
-/* 修改原有样式 */
 .button-group {
   display: flex;
-  justify-content: flex-start; /* 从 flex-end 改为 flex-start */
+  flex-wrap: wrap; /* 允许换行 */
+  justify-content: flex-start;
 }
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .button-group {
+    row-gap: 8px; /* 行间距 */
+    column-gap: 6px; /* 列间距 */
+  }
+  
+  .button-group .el-button {
+    flex-shrink: 0; /* 防止按钮缩小 */
+    margin: 2px !important; /* 覆盖可能存在的边距 */
+  }
+}
+
 
 /* 打字指示器样式 */
 .typing-indicator {
@@ -1805,7 +1900,8 @@ body {
 }
 
 .browser-mode-btn {
-  width: 40%;
+  width: 90%;
+  max-width: 300px;
   text-align: center;
   transition: all 0.3s ease;
   background: linear-gradient(45deg, var(--el-color-primary), var(--el-color-primary-light-3));
@@ -2302,16 +2398,6 @@ body {
     .nav-icon {
       color: var(--el-color-primary);
     }
-    
-    &::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      height: 24px;
-      width: 3px;
-      background: var(--el-color-primary);
-      border-radius: 2px;
-    }
   }
 }
 
@@ -2612,4 +2698,193 @@ body {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.input-container.expanded-input {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    background: var(--el-bg-color);
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+}
+
+.input-container.expanded-input .input-box textarea {
+    height: calc(100vh - 100px) !important;
+    min-height: auto !important;
+}
+
+/* 添加移动端样式 */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed !important;
+    left: 0;
+    top: 30px;
+    height: calc(100vh - 30px) !important;
+    z-index: 2000;
+    transition: transform 0.3s ease;
+  }
+  
+  .mobile-sidebar:not(.el-menu--collapse) {
+    width: 200px !important;
+  }
+  
+  .sidebar-mask {
+    position: fixed;
+    top: 30px;
+    left: 0;
+    width: 100vw;
+    height: calc(100vh - 30px);
+    background: rgba(0,0,0,0.5);
+    z-index: 1999;
+  }
+  
+  .mobile-menu {
+    padding: 0 12px;
+    cursor: pointer;
+    color: var(--el-text-color-regular);
+  }
+  
+  .main-container {
+    margin-left: 0 !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .suite-content {
+    padding: 10px;
+    /* 隐藏横向滚动条 */
+    overflow-x: hidden;
+  }
+  .suite-sidebar {
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    width: 50px !important; /* 缩小侧边栏宽度 */
+  }
+  .tile-nav {
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    width: 45px !important; /* 缩小导航栏宽度 */
+  }
+  .nav-text {
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    width: 0 !important;
+    padding: auto;
+    margin: auto;
+    font-size: 0 !important;
+    display: none !important; /* 隐藏文字 */
+  }
+  .nav-icon {
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    width: 40px !important;
+    font-size: 20px !important; /* 调整图标大小 */
+  }
+  .nav-item {
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    width: 40px !important;
+  }
+  .settings-form{
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+  }
+  .file-list {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+  }
+  .page .text-container {
+    min-width: 0px!important;
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .file-item {
+    width: auto !important;
+    padding: 3px!important;
+    max-width: 230px!important;
+    min-width: 0px!important;
+    .file-info {
+      width: auto!important;
+      padding-left: 1px!important;
+      padding-right: 1px!important;
+      margin-left: 1px!important;
+      margin-right: 1px!important;
+      min-width: 0px!important;
+      max-width: 40%!important;
+    }
+    .file-actions {
+      gap: 1px!important;
+      margin-left: 1px!important;
+      padding-left: 1px!important;
+      padding-right: 1px!important;
+      margin-left: 1px!important;
+      margin-right: 1px!important;
+      min-width: 0px!important;
+    }
+  }
+  .page .image-container {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .image-item {
+    min-width: 0px!important;
+  }
+  .page .video-container {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .video-item {
+    min-width: 0px!important;
+  }
+  .el-dialog {
+    width: 250px !important;
+  }
+  .page .logo-container{
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
+  .license-notice {
+    width: 100% !important;
+    padding-left: 1px!important;
+    padding-right: 1px!important;
+    margin-left: 1px!important;
+    margin-right: 1px!important;
+    min-width: 0px!important;
+  }
 }

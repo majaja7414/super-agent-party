@@ -16,11 +16,13 @@ const app = Vue.createApp({
     if (this.statusInterval) {
       clearInterval(this.statusInterval);
     }
+    window.removeEventListener('resize', this.checkMobile);
   },
   mounted() {
     // 初始检查
     this.checkQQBotStatus();
-    
+    this.checkMobile();
+    window.addEventListener('resize', this.checkMobile);
     // 每30秒检查一次状态
     this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
 
@@ -114,7 +116,8 @@ const app = Vue.createApp({
           dark: '#1668dc',       // 深蓝色
           midnight: '#0ea5e9',   // 午夜蓝
           desert: '#d98236',     // 沙漠黄
-          neon: '#ff2d95'        // 霓虹粉
+          neon: '#ff2d95' ,       // 霓虹粉
+          marshmallow: '#f5a5c3'  // Marshmallow 粉色
         };
 
         // 获取当前主题色
@@ -153,6 +156,13 @@ const app = Vue.createApp({
     },
   },
   computed: {
+    sidebarStyle() {
+      return {
+        width: this.isMobile ? 
+          (this.sidebarVisible ? '200px' : '0') : 
+          (this.isCollapse ? '64px' : '200px')
+      }
+    },
     filteredSeparators() {
       const current = this.qqBotConfig.separators;
       const defaults = this.defaultSeparators;

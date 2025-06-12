@@ -274,8 +274,7 @@ let vue_data = {
     editingAgent: false,
     currentLanguage: 'zh-CN',
     translations: translations,
-    themeValues: ['light', 'dark','midnight','desert','neon'],
-    browserBtnColor: '#409EFF',
+    themeValues: ['light', 'dark','midnight','desert','neon','marshmallow'],
     isBrowserOpening: false,
     expandedSections: {
       settingsBase: true,
@@ -454,6 +453,9 @@ let vue_data = {
     ],
     customHttpTools: [],  // 用于存储自定义HTTP工具的数组
     showCustomHttpToolForm: false,
+    isInputExpanded: false,
+    sidebarVisible: false,
+    isMobile: false,
     newCustomHttpTool: {
       enabled: true,
       name: '',
@@ -564,7 +566,10 @@ let vue_data = {
     selectedCodeLang: 'python',
     previewClickHandler: null,
     dockerExamples: `docker pull ailm32442/super-agent-party:latest
-docker run -d -p 3456:3456 -v ./super-agent-data:/app/data ailm32442/super-agent-party:latest
+docker run -d \\
+  -p 3456:3456 \\
+  -v ./super-agent-data:/app/data \\
+  ailm32442/super-agent-party:latest
 `,
     codeExamples: {
       python: `from openai import OpenAI
