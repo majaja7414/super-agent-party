@@ -263,6 +263,87 @@
   --hljs-attr: #05d9e8;          /* 青蓝 */
 }
 
+/* 棉花糖主题 */
+[data-theme="marshmallow"] {
+  /* 基础三要素 */
+  --bg-color: #e6f7ff;         /* 极浅水蓝背景 */
+  --text-color: #2e2a36;       /* 深紫灰色文字 */
+  --border-color: #c2d6e3;     /* 浅灰蓝色边框 */
+
+  /* 主色调 - 樱花粉 */
+  --el-color-primary: #f5a5c3 !important;
+  --el-color-primary-light-3: #f8bbd3;
+  --el-color-primary-light-5: #fad1e1;
+  --el-color-primary-light-7: #fde8f0;
+  --el-color-primary-rgb: 245, 165, 195 !important;
+  
+  /* 辅助色 - 浅水蓝 */
+  --el-color-info: #99d8e0 !important;
+  --el-color-info-light-3: #b3e3e8;
+  --el-color-info-light-5: #cceef0;
+  
+  /* 背景系统 */
+  --el-bg-color: var(--bg-color) !important;
+  --el-bg-color-page: #d4f1f5 !important;      /* 更亮的水蓝 */
+  --el-bg-color-overlay: #ffffff !important;   /* 纯白浮层 */
+
+  /* 文字系统 */
+  --el-text-color-primary: #3a2e4a !important;  /* 深紫罗兰 */
+  --el-text-color-regular: #5a4e6a !important;
+  --el-text-color-secondary: #8c7b99 !important;
+  
+  /* 边框系统 */
+  --el-border-color: #e0c4d3 !important;       /* 浅粉灰 */
+  --el-border-color-light: #f0dde6 !important;
+  --el-border-color-lighter: #f8eef3 !important;
+
+  /* 组件设计 */
+  --el-button-bg-color: var(--el-color-primary) !important;
+  --el-input-bg-color: #ffffff !important;      /* 纯白输入框 */
+  --el-menu-bg-color: #f9f2f5 !important;       /* 极浅粉背景 */
+  --el-table-bg-color: #ffffff !important;
+  --el-tag-bg-color: rgba(245, 165, 195, 0.15) !important;
+  
+  /* 状态颜色（增强对比） */
+  --el-color-success: #8bd48d !important;       /* 薄荷绿 */
+  --el-color-warning: #ffd166 !important;       /* 奶油黄 */
+  --el-color-danger: #ff6b6b !important;        /* 珊瑚红 */
+  
+  /* 阴影效果 */
+  --el-box-shadow-light: 0 4px 16px rgba(245, 165, 195, 0.2) !important;
+  --card-shadow: 0 4px 12px rgba(153, 216, 224, 0.15); /* 水蓝阴影 */
+
+  /* 输入框系统 */
+  --el-input-text-color: #4a3b5a;
+  --el-input-placeholder-color: #c0a4b8;
+  --el-input-hover-border-color: var(--el-color-primary-light-3);
+  --el-input-focus-border-color: var(--el-color-primary);
+  --el-input-disabled-bg-color: #f8f5fa;
+
+  /* 代码块 */
+  --code-bg: #ffffff;
+  --code-border: #f0dde6;
+}
+
+/* 配套糖果色代码高亮 */
+[data-theme="marshmallow"] {
+  --hljs-text: #4a3b5a;
+  --hljs-bg: #fff5f9;
+  --hljs-border: #f8d7e6;
+  --hljs-keyword: #f5a5c3;        /* 主色粉 */
+  --hljs-string: #99d8e0;         /* 水蓝色 */
+  --hljs-number: #ff9aa2;         /* 珊瑚粉 */
+  --hljs-comment: #c0a4b8;        /* 灰紫色 */
+  --hljs-title: #8bd48d;          /* 薄荷绿 */
+  --hljs-built_in: #ffd166;       /* 奶油黄 */
+  --hljs-literal: #ff6b6b;        /* 珊瑚红 */
+  --hljs-class: #c9a2e0;          /* 淡紫色 */
+  --hljs-function: #a5d8f5;       /* 浅天蓝 */
+  --hljs-params: #7b8c9d;         /* 灰蓝色 */
+  --hljs-attr: #76c893;           /* 翡翠绿 */
+}
+
+
 /* 沙漠主题 */
 [data-theme="desert"] {
     /* 基础三色 */

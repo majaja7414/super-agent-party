@@ -2304,7 +2304,6 @@ let vue_methods = {
     // 方法替换为：
     launchBrowserMode() {
       this.isBrowserOpening = true;
-      this.browserBtnColor = '#67c23a'; // 按钮颜色变化
       
       setTimeout(() => {
         const url = `http://${HOST}:${PORT}`;
@@ -2317,7 +2316,6 @@ let vue_methods = {
         // 2秒后恢复状态
         setTimeout(() => {
           this.isBrowserOpening = false;
-          this.browserBtnColor = '#409EFF';
         }, 2000);
       }, 500);
     },

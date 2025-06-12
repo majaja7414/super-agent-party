@@ -116,7 +116,8 @@ const app = Vue.createApp({
           dark: '#1668dc',       // 深蓝色
           midnight: '#0ea5e9',   // 午夜蓝
           desert: '#d98236',     // 沙漠黄
-          neon: '#ff2d95'        // 霓虹粉
+          neon: '#ff2d95' ,       // 霓虹粉
+          marshmallow: '#f5a5c3'  // Marshmallow 粉色
         };
 
         // 获取当前主题色
