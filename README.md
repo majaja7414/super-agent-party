@@ -24,13 +24,13 @@ Customized agents can be saved as snapshots for easy reuse in the future. The sn
 
 ### Windows Desktop Installation
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-Setup-0.1.9.exe)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-Setup-0.2.0.exe)
 
 ⭐ Note! Choose to install only for the current user during installation, otherwise, administrator privileges will be required to start.
 
 ### MacOS Desktop Installation (beta test)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Mac.dmg)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Mac.dmg)
 
 ⭐ Note! After downloading, drag the app file from the dmg file to the `/Applications` directory. Then open the Terminal and execute the following command, entering the root password when prompted, to remove the Quarantine attribute added due to being downloaded from the internet:
 
@@ -46,11 +46,11 @@ We provide two mainstream Linux installation package formats for your convenienc
 
 `.AppImage` is a Linux application format that does not require installation and can be used immediately. Suitable for most Linux distributions.
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.AppImage)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Linux.AppImage)
 
 #### 2. Install using `.deb` package (Suitable for Ubuntu/Debian systems)
 
-  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.1.9/Super-Agent-Party-0.1.9-Linux.deb)
+  👉 [Click to download](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Linux.deb)
 
 ### Docker Deployment (Recommended)
 
