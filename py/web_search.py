@@ -103,6 +103,81 @@ searxng_tool = {
 }
 
 
+async def bochaai_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['bochaai_max_results'] or 10
+        api_key = settings['webSearch'].get('bochaai_api_key', "")
+        
+        if not api_key:
+            return "API key未配置"
+
+        url = "https://api.bochaai.com/v1/web-search"
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        payload = json.dumps({
+            "query": query,
+            "summary": True,
+            "count": max_results
+        })
+
+        try:
+            response = requests.post(url, headers=headers, data=payload, timeout=30)
+            if response.status_code == 200:
+                result_data = response.json()
+                
+                # 解析新版API返回格式
+                formatted_results = []
+                search_results = result_data.get('data', {}).get('webPages', {}).get('value', [])
+                
+                for item in search_results:
+                    # 构建更丰富的结果信息
+                    formatted_item = {
+                        'title': item.get('name', '无标题'),
+                        'link': item.get('url', ''),
+                        'displayUrl': item.get('displayUrl', ''),
+                        'snippet': item.get('snippet', '无内容摘要'),
+                        'siteName': item.get('siteName', '未知来源'),
+                    }
+                    # 自动生成简洁的来源名称
+                    if not formatted_item['siteName']:
+                        formatted_item['siteName'] = formatted_item['displayUrl'].split('//')[-1].split('/')[0]
+                    formatted_results.append(formatted_item)
+                
+                return json.dumps(formatted_results, indent=2, ensure_ascii=False)
+            else:
+                return f"请求失败，状态码：{response.status_code}，响应内容：{response.text}"
+        except Exception as e:
+            print(f"博查得搜索错误: {str(e)}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"异步执行错误: {e}")
+        return ""
+
+bochaai_tool = {
+    "type": "function",
+    "function": {
+        "name": "bochaai_search_async",
+        "description": "通过博查得智能搜索API获取网络信息，支持深度语义理解。回答时，在回答的最下方按照以下格式标注信息来源：[网站名称](链接地址)，注意：1.链接地址直接使用原始URL 2.不要添加任何空格 3.多个来源换行排列",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的自然语言查询语句，支持复杂语义和长句（示例：阿里巴巴最新财报要点）",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
 async def Tavily_search_async(query):
     settings = await load_settings()
     def sync_search():
