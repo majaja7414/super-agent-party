@@ -5,6 +5,13 @@
   <a href="./README.md"><img src="https://img.shields.io/badge/English-d9d9d9"></a>
 </div>
 
+<div align="center">
+  <a href="https://space.bilibili.com/26978344">B站</a> ·
+  <a href="https://www.youtube.com/@LLM-party">youtube</a> ·
+  <a href="https://gcnij7egmcww.feishu.cn/wiki/DPRKwdetCiYBhPkPpXWcugujnRc">中文文档</a> ·
+  <a href="https://temporal-lantern-7e8.notion.site/super-agent-party-211b2b2cb6f180c899d1c27a98c4965d">英文文档</a> 
+</div>
+
 ## 简介
 
 🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、视觉能力、绘图能力、自定义工具等高阶功能，打造可插拔的LLM增强中台。与此同时，还可以将你的智能体配置，一键部署到社交软件上（已实现QQ官方机器人）。
@@ -83,8 +90,6 @@
   chmod +x start_with_dev.sh
   ./start_with_dev.sh
   ```
-
-详细部署方法请参考[部署和使用文档](doc/install_config_ZH.md)
 
 ## 使用方法
 
