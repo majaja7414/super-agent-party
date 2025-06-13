@@ -1694,6 +1694,7 @@
                           <el-option label="Brave" value="brave" ></el-option>
                           <el-option label="Exa" value="exa" ></el-option>
                           <el-option label="Serper" value="serper" ></el-option>
+                          <el-option label="Bochaai" value="bochaai" ></el-option>
                         </el-select>
                       </el-form-item>
                       <el-form-item :label="t('webCrawling')" class="form-item-align">
@@ -2053,6 +2054,49 @@
                         <el-input
                           v-model="webSearchSettings.serper_api_key"
                           :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <!-- Bochaai 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'bochaai'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Bochaai
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://open.bochaai.com/overview"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.bochaai_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.bochaai_api_key"
+                          :placeholder="t('bochaaiAPIKeyPlaceholder')"
                           show-password
                           @input="autoSaveSettings"
                           class="full-width-input"
