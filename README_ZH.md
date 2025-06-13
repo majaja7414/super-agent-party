@@ -128,66 +128,9 @@
 
 ## 功能
 
-0. 从侧边栏切换到调用方法，可以查看怎么以Openai API、MCP服务器、docker、web端方式调用Agent Party。openai接口添加了如下开关参数：
-  - enable_thinking: 默认为False，是否启用思考模式
-  - enable_deep_research: 默认为False，是否启用深度研究模式
-  - enable_web_search: 默认为False，是否启用网络搜索
-1. 知识库，让大模型能够根据知识库中的信息进行回答。并支持如下功能：
-  - 如果有多个知识库，模型会根据提问需求去主动查询对应的知识库。
-  - 可以选择检索时机，可以选择主动检索或者被动检索知识库。
-  - 支持了rerank模型，可以提升知识库的检索效果。
-  - 支持混合搜索功能，可以选择关键词搜索和语义搜索之间的比例。
-2. 联网功能，让大模型能够根据提问需求去主动联网查询信息。目前已支持：
-  - **搜索引擎**
-    - [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）
-    - [searxng](https://github.com/searxng/searxng)（可以docker本地部署）
-    - [tavily](https://tavily.com/)（需要申请api key）
-    - [bing](https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/create-bing-search-service-resource)（需要申请api key）
-    - [google](https://console.cloud.google.com/apis/credentials)（需要申请api key）
-    - [brave](https://brave.com/search/api/)（需要申请api key）
-    - [exa](https://www.exa.app/)（需要申请api key）
-    - [serper](https://serper.dev/)（需要申请api key）
-    - [博查](https://bochaai.com/)（需要申请api key）
-  - **网页抓取**
-    - [jina](https://github.com/jina-ai/jina)（可以无需api key，用于网页抓取）
-    - [crawl4ai](https://github.com/unclecode/crawl4ai)（可以docker本地部署，用于网页抓取）。
-3. [MCP](https://modelcontextprotocol.io/introduction)服务，让大模型能够根据提问需求去主动调用MCP服务。目前支持三种调用方式：标准输入输出、服务器发送事件 (SSE)、流式HTTP、websocket。
-4. [A2A](https://github.com/google/A2A)服务，让大模型能够根据提问需求去主动调用A2A服务。
-5. 深度思考，可以将推理模型的推理能力移植到可以工具调用或多模态模型中，让大模型在工具调用之前先利用推理模型进行推理分析。例如：deepseek-V3可以工具调用，但是推理模型deepseek-R1无法工具调用，那么就可以将deepseek-R1的推理能力移植到deepseek-V3中，让deepseek-V3在工具调用之前先利用deepseek-R1进行推理分析。
-6. 深度研究，将用户的问题转化成任务，逐步分析推理后调用工具，输出结果后会重新检查任务是否完成，如果任务未完成，则继续分析推理后调用工具，直到任务完成。
-7. 自定义LLM工具，可以将LLM接口转换成LLM工具，任何适配ollama格式或者openai接口的项目，都可以作为工具使用。
-8. 视觉缓存，可以单独配置视觉模型，用于识别图片信息，识别的结果将被缓存，以节省token。配置视觉模型可以让一些无视觉能力的模型（例如大部分的推理模型等）获得视觉能力。
-9. 存储空间管理功能，可以在存储空间查看聊天时上传的文件和图片，均缓存在本地，增强了软件的图床和文件床功能。
-10. 添加了记忆模块，可以在工具界面查看。
-  - 添加新的记忆，需要添加词嵌入模型，智能体会实时更新记忆向量数据库，每次回答时，会自动搜索相关记忆。
-  - 记忆配置中可以启用和禁用记忆模块，可以调节结果数量，让智能体看到更多或者更少的相关记忆。
-  - 记忆配置被划分成了四个部分：自动更新设定、角色设定、世界观设定和随机设定。
-11. 添加了代码执行工具，支持调用云端方案和本地方案：
-  - 云端方案：调用[e2b](https://e2b.dev/)的代码沙盒，需要申请api key。
-  - 本地方案：调用[bytedance/SandboxFusion](https://github.com/bytedance/SandboxFusion)的代码沙盒，需要使用docker本地部署。
-    ```shell
-    docker run -it -p 8080:8080 volcengine/sandbox-fusion:server-20241204
-    ```
-    对于中国大陆的用户，提供以下镜像：
-    ```shell
-    docker run -it -p 8080:8080 vemlp-cn-beijing.cr.volces.com/preset-images/code-sandbox:server-20241204
-    ```
-12. 已实现的小工具：当前时间、获取文件/图片URL中的内容、伪推理、Pollinations 图像生成、latex公式渲染增强、语言语气。
-  - 当前时间：获取当前时间。
-  - 获取文件/图片URL中的内容：获取文件/图片URL中的内容。
-  - 伪推理：让没有推理能力的模型获得推理能力。
-  - latex公式渲染增强：控制大模型更稳定的输出latex公式。
-  - 语言语气：控制大模型更稳定的输出语言和语气。
-13. 支持了自定义http请求转换成智能体工具，现在可以将任意http请求作为智能体工具使用，可以在智能体套件界面添加自定义http请求工具。
-14. 支持了一键部署QQ官方机器人：
-  - 本次更新实现了QQ机器人，可以将你配置好智能体链接到QQ官方机器人上，无封号风险
-  - QQ机器人支持自定义消息分隔符，默认分隔符为["。", "\n", "？", "！"]，会将智能体的流式输出逐条发送到QQ
-  - QQ机器人支持私聊和群聊
-  - QQ机器人支持查看文本和图片消息（图片需要模型本身支持视觉或开启了视觉模型），也可以开启文生图模型，发送图片
-  - 支持对话轮数调节，默认为30轮，会逐渐丢弃旧的对话记录，防止上下文溢出，可以配置记忆模块，实现角色人设固定和永久记忆。
-  - 实现了QQ机器人能返回思考过程和调用工具的过程，可以配置是否开启。
-15. 文生图模型，除了原先支持的pollinations，还支持openai接口的模型，例如：dall-e-2、 dall-e-3 或 gpt-image-1。也可以接入其他兼容openai绘图接口的模型，例如：硅基流动上的kolors、FLUX等。
-16. 给出了机器人向外发送图片时，如果返回为base64的解决方案，可以在机器人通用配置中添加图床，未来会给出更多图床选择，目前只支持[easyimage2](https://github.com/icret/EasyImages2.0)。
+主要功能请移步以下文档查看：
+  - 👉 [中文文档](https://gcnij7egmcww.feishu.cn/wiki/DPRKwdetCiYBhPkPpXWcugujnRc)
+  - 👉 [英文文档](https://temporal-lantern-7e8.notion.site/super-agent-party-211b2b2cb6f180c899d1c27a98c4965d)
 
 ## 免责声明：
 本开源项目及其内容（以下简称“项目”）仅供参考之用，并不意味着任何明示或暗示的保证。项目贡献者不对项目的完整性、准确性、可靠性或适用性承担任何责任。任何依赖项目内容的行为均需自行承担风险。在任何情况下，项目贡献者均不对因使用项目内容而产生的任何间接、特殊或附带的损失或损害承担责任。
