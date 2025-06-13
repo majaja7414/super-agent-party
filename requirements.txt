@@ -18,6 +18,8 @@ bs4
 langchain_openai
 langchain_ollama
 langchain_community
+langchain-google-community
+langchain-exa
 faiss-cpu
 mcp
 nest_asyncio

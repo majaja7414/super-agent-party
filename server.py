@@ -209,6 +209,12 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         DDGsearch_async, 
         searxng_async, 
         Tavily_search_async,
+        Bing_search_async,
+        Google_search_async,
+        Brave_search_async,
+        Exa_search_async,
+        Serper_search_async,
+        bochaai_search_async,
         jina_crawler_async,
         Crawl4Ai_search_async, 
     )
@@ -237,6 +243,12 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         "local_run_code_async": local_run_code_async,
         "openai_image": openai_image,
         "siliconflow_image": siliconflow_image,
+        "Bing_search_async": Bing_search_async,
+        "Google_search_async": Google_search_async,
+        "Brave_search_async": Brave_search_async,
+        "Exa_search_async": Exa_search_async,
+        "Serper_search_async": Serper_search_async,
+        "bochaai_search_async": bochaai_search_async,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -504,9 +516,21 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         DDGsearch_async, 
         searxng_async, 
         Tavily_search_async,
+        Bing_search_async,
+        Google_search_async,
+        Brave_search_async,
+        Exa_search_async,
+        Serper_search_async,
+        bochaai_search_async,
         duckduckgo_tool, 
         searxng_tool, 
         tavily_tool, 
+        bing_tool,
+        google_tool,
+        brave_tool,
+        exa_tool,
+        serper_tool,
+        bochaai_tool,
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
@@ -772,6 +796,18 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         results = await searxng_async(user_prompt)
                     elif settings['webSearch']['engine'] == 'tavily':
                         results = await Tavily_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'bing':
+                        results = await Bing_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'google':
+                        results = await Google_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'brave':
+                        results = await Brave_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'exa':
+                        results = await Exa_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'serper':
+                        results = await Serper_search_async(user_prompt)
+                    elif settings['webSearch']['engine'] == 'bochaai':
+                        results = await bochaai_search_async(user_prompt)
                     if results:
                         request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
                         # 获取时间戳和uuid
@@ -799,6 +835,19 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tools.append(searxng_tool)
                     elif settings['webSearch']['engine'] == 'tavily':
                         tools.append(tavily_tool)
+                    elif settings['webSearch']['engine'] == 'bing':
+                        tools.append(bing_tool)
+                    elif settings['webSearch']['engine'] == 'google':
+                        tools.append(google_tool)
+                    elif settings['webSearch']['engine'] == 'brave':
+                        tools.append(brave_tool)
+                    elif settings['webSearch']['engine'] == 'exa':
+                        tools.append(exa_tool)
+                    elif settings['webSearch']['crawler'] == 'serper':
+                        tools.append(serper_tool)
+                    elif settings['webSearch']['crawler'] == 'bochaai':
+                        tools.append(bochaai_tool)
+
                     if settings['webSearch']['crawler'] == 'jina':
                         tools.append(jina_crawler_tool)
                     elif settings['webSearch']['crawler'] == 'crawl4ai':
@@ -1209,7 +1258,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 full_content = ""
                 if tool_calls:
                     response_content = tool_calls[0].function
-                    if response_content.name in  ["DDGsearch_async","searxng_async", "Tavily_search_async"]:
+                    if response_content.name in  ["DDGsearch_async","searxng_async", "Bing_search_async", "Google_search_async", "Brave_search_async", "Exa_search_async", "Serper_search_async","bochaai_search_async"]:
                         chunk_dict = {
                             "id": "webSearch",
                             "choices": [
@@ -1765,9 +1814,21 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
         DDGsearch_async, 
         searxng_async, 
         Tavily_search_async,
+        Bing_search_async,
+        Google_search_async,
+        Brave_search_async,
+        Exa_search_async,
+        Serper_search_async,
+        bochaai_search_async,
         duckduckgo_tool, 
         searxng_tool, 
         tavily_tool, 
+        bing_tool,
+        google_tool,
+        brave_tool,
+        exa_tool,
+        serper_tool,
+        bochaai_tool,
         jina_crawler_tool, 
         Crawl4Ai_tool
     )
@@ -1985,6 +2046,18 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     results = await searxng_async(user_prompt)
                 elif settings['webSearch']['engine'] == 'tavily':
                     results = await Tavily_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'bing':
+                    results = await Bing_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'google':
+                    results = await Google_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'brave':
+                    results = await Brave_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'exa':
+                    results = await Exa_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'serper':
+                    results = await Serper_search_async(user_prompt)
+                elif settings['webSearch']['engine'] == 'bochaai':
+                    results = await bochaai_search_async(user_prompt)
                 if results:
                     request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}"
             if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
@@ -1994,6 +2067,19 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     tools.append(searxng_tool)
                 elif settings['webSearch']['engine'] == 'tavily':
                     tools.append(tavily_tool)
+                elif settings['webSearch']['engine'] == 'bing':
+                    tools.append(bing_tool)
+                elif settings['webSearch']['engine'] == 'google':
+                    tools.append(google_tool)
+                elif settings['webSearch']['engine'] == 'brave':
+                    tools.append(brave_tool)
+                elif settings['webSearch']['engine'] == 'exa':
+                    tools.append(exa_tool)
+                elif settings['webSearch']['crawler'] == 'serper':
+                    tools.append(serper_tool)
+                elif settings['webSearch']['crawler'] == 'bochaai':
+                    tools.append(bochaai_tool)
+
                 if settings['webSearch']['crawler'] == 'jina':
                     tools.append(jina_crawler_tool)
                 elif settings['webSearch']['crawler'] == 'crawl4ai':
