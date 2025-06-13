@@ -92,8 +92,6 @@ We provide two mainstream Linux installation package formats for your convenienc
   ./start_with_dev.sh
   ```
 
-For detailed deployment methods, please refer to the [Deployment and Usage Documentation](doc/install_config_ZH.md)
-
 ## Usage
 
 - Desktop: Click the desktop icon to use immediately.
