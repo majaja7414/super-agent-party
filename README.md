@@ -6,9 +6,9 @@
 </div>
 
 <div align="center">
-  <a href="https://space.bilibili.com/26978344">bilibili</a> ·
+  <a href="https://space.bilibili.com/26978344">B站</a> ·
   <a href="https://www.youtube.com/@LLM-party">youtube</a> ·
-  <a href="https://gcnij7egmcww.feishu.cn/wiki/DPRKwdetCiYBhPkPpXWcugujnRc">Chinese doc</a> ·
+  <a href="https://gcnij7egmcww.feishu.cn/wiki/DPRKwdetCiYBhPkPpXWcugujnRc">中文文档</a> ·
   <a href="https://temporal-lantern-7e8.notion.site/super-agent-party-211b2b2cb6f180c899d1c27a98c4965d">English doc</a> 
 </div>
 
