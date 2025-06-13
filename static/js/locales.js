@@ -428,6 +428,7 @@ const translations = {
       'collapseInput': '收起输入框',
       'expandInput': '展开输入框',
       'googleCSEIdPlaceholder':'请输入Google Custom Search Engine ID',
+      'searchEndpoint': '搜索接口URL',
     },
     'en-US': {
       'chat': 'Chat',
@@ -857,5 +858,6 @@ const translations = {
       'collapseInput': 'Collapse Input',
       'expandInput': 'Expand Input',
       'googleCSEIdPlaceholder': 'Please enter Google Custom Search Engine ID',
+      'searchEndpoint': 'Search Endpoint',
     }
   };
