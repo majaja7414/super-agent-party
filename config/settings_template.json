@@ -74,7 +74,10 @@
       "Crawl4Ai_api_key": "test_api_code",
       "bing_max_results": 10,
       "bing_api_key": "",
-      "bing_search_url": "https://api.bing.microsoft.com/v7.0/search"
+      "bing_search_url": "https://api.bing.microsoft.com/v7.0/search",
+      "google_max_results": 10,
+      "google_api_key": "",
+      "google_cse_id": "https://www.googleapis.com/customsearch/v1"
     },
     "knowledgeBases": [],
     "KBSettings": {

@@ -212,6 +212,10 @@ let vue_data = {
       bing_max_results: 10, // 默认值
       bing_api_key: '',
       bing_search_url: 'https://api.bing.microsoft.com/v7.0/search',
+      google_max_results: 10, // 默认值
+      google_api_key: '',
+      google_cse_id: '',
+
     },
     codeSettings: {
       enabled: false,

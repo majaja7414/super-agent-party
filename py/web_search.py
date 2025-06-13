@@ -167,6 +167,70 @@ async def Bing_search_async(query):
         print(f"Async execution error: {e}")
         return ""
 
+
+bing_tool = {
+    "type": "function",
+    "function": {
+        "name": "Bing_search_async",
+        "description": "通过Bing搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
+from langchain_google_community import GoogleSearchAPIWrapper
+
+async def Google_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['google_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('google_api_key', "")
+            google_cse_id = settings['webSearch'].get('google_cse_id', "")
+            client = GoogleSearchAPIWrapper(google_api_key=api_key,google_cse_id=google_cse_id)
+            response = client.results(query=query,num_results=max_results)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Google search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+
+google_tool = {
+    "type": "function",
+    "function": {
+        "name": "Google_search_async",
+        "description": "通过Google搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        }
+    }
+}
+
+
+
+
 async def jina_crawler_async(original_url):
     settings = await load_settings()
     def sync_crawler():
