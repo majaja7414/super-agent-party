@@ -79,7 +79,9 @@
       "google_api_key": "",
       "google_cse_id": "https://www.googleapis.com/customsearch/v1",
       "brave_max_results": 10,
-      "brave_api_key": ""
+      "brave_api_key": "",
+      "exa_max_results": 10,
+      "exa_api_key": ""
     },
     "knowledgeBases": [],
     "KBSettings": {

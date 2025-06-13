@@ -217,6 +217,8 @@ let vue_data = {
       google_cse_id: '',
       brave_max_results: 10, // 默认值
       brave_api_key: '',
+      exa_max_results:10,
+      exa_api_key: '',
     },
     codeSettings: {
       enabled: false,
