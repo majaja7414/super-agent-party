@@ -24,6 +24,8 @@ a = Analysis(
         'pydantic.deprecated.decorator',
         'tiktoken_ext',
         'tiktoken_ext.openai_public',
+        'multiprocessing',
+        'botpy',
         *collect_submodules('mem0'),
     ],
     hookspath=[],

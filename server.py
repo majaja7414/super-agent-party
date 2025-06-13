@@ -35,6 +35,8 @@ import botpy
 from botpy.message import C2CMessage,GroupMessage
 import argparse
 from mem0 import Memory
+if sys.platform.startswith('win'):
+    multiprocessing.freeze_support()
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -3965,5 +3967,6 @@ app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_m
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")
 
 if __name__ == "__main__":
+    multiprocessing.set_start_method('spawn')
     import uvicorn
     uvicorn.run(app, host=HOST, port=PORT)
