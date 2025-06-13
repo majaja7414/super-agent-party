@@ -228,6 +228,46 @@ google_tool = {
     }
 }
 
+from langchain_community.tools import BraveSearch
+
+async def Brave_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['brave_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('brave_api_key', "")
+            client = BraveSearch.from_api_key(api_key=api_key, search_kwargs={"count": max_results})
+            response = client.run(query)
+            return response
+        except Exception as e:
+            print(f"Brave search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+    
+brave_tool = {
+    "type": "function",
+    "function": {
+        "name": "Brave_search_async",
+        "description": "通过Brave搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
 
 
 

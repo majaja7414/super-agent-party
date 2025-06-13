@@ -417,6 +417,22 @@ wheels = [
 ]
 
 [[package]]
+name = "exa-py"
+version = "1.14.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "openai" },
+    { name = "pydantic" },
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/54/1f/669764eb56c4544d85e816169e8e2ed58436c5013d117ac47fc86b338513/exa_py-1.14.6.tar.gz", hash = "sha256:0b798e23310ab0ca03cad86a120e20b7333d11f95940d2c1e1a69786aead4c6a", size = 28585, upload-time = "2025-06-09T16:23:08.869Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/6a/69da5972260f655cc79c636630cbb5b4236243c916417c20db023c52f9f3/exa_py-1.14.6-py3-none-any.whl", hash = "sha256:8fa3783966b8d3be758dbb67f9faa40394ff311fbb17e5f698ea372463a65620", size = 36004, upload-time = "2025-06-09T16:23:06.866Z" },
+]
+
+[[package]]
 name = "faiss-cpu"
 version = "1.11.0"
 source = { registry = "https://pypi.org/simple" }
@@ -967,6 +983,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b9/0a/b71a9a5d42e743d6876cce23d803e284b191ed4d6544e2f7fe1b37f7854c/langchain_core-0.3.63.tar.gz", hash = "sha256:e2e30cfbb7684a5a0319f6cbf065fc3c438bfd1060302f085a122527890fb01e", size = 558302, upload-time = "2025-05-29T18:57:19.933Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5c/71/a748861e6a69ab6ef50ab8e65120422a1f36245c71a0dd0f02de49c208e1/langchain_core-0.3.63-py3-none-any.whl", hash = "sha256:f91db8221b1bc6808f70b2e72fded1a94d50ee3f1dff1636fb5a5a514c64b7f5", size = 438468, upload-time = "2025-05-29T18:57:17.424Z" },
+]
+
+[[package]]
+name = "langchain-exa"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "exa-py" },
+    { name = "langchain-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/42/2e/b1a6f47fc39b33b0a778d046db4e67c7b7579178c70128708e75139c61e3/langchain_exa-0.3.0.tar.gz", hash = "sha256:8d701e8f5262d24c8a0056542c20fc1dc8d0fcdcb0dd53ded23640acdf8fccf9", size = 8072, upload-time = "2025-05-22T01:46:12.309Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/93/35ccf07e8411a3660fa6e6c28e3a76ed922f14103b3a2ac9ffdf65ac6b16/langchain_exa-0.3.0-py3-none-any.whl", hash = "sha256:8057619e1dc061e670b07f3cca220528a78ee43940a5116fc3fa01c2fab1ad91", size = 8342, upload-time = "2025-05-22T01:46:10.546Z" },
 ]
 
 [[package]]
@@ -2171,6 +2200,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "fastapi-mcp" },
     { name = "langchain-community" },
+    { name = "langchain-exa" },
     { name = "langchain-google-community" },
     { name = "langchain-ollama" },
     { name = "langchain-openai" },
@@ -2210,6 +2240,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "fastapi-mcp", specifier = ">=0.3.4" },
     { name = "langchain-community", specifier = ">=0.3.22" },
+    { name = "langchain-exa", specifier = ">=0.3.0" },
     { name = "langchain-google-community", specifier = ">=2.0.7" },
     { name = "langchain-ollama", specifier = ">=0.3.2" },
     { name = "langchain-openai", specifier = ">=0.3.14" },
