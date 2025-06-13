@@ -208,7 +208,21 @@ let vue_data = {
       tavily_api_key: '',
       jina_api_key: '',
       Crawl4Ai_url: 'http://127.0.0.1:11235',
-      Crawl4Ai_api_key: 'test_api_code'
+      Crawl4Ai_api_key: 'test_api_code',
+      bing_max_results: 10, // 默认值
+      bing_api_key: '',
+      bing_search_url: 'https://api.bing.microsoft.com/v7.0/search',
+      google_max_results: 10, // 默认值
+      google_api_key: '',
+      google_cse_id: '',
+      brave_max_results: 10, // 默认值
+      brave_api_key: '',
+      exa_max_results:10,
+      exa_api_key: '',
+      serper_max_results:10,
+      serper_api_key: '',
+      bochaai_max_results:10,
+      bochaai_api_key: '',
     },
     codeSettings: {
       enabled: false,

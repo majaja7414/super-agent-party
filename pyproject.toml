@@ -1,6 +1,6 @@
 [project]
 name = "super-agent-party"
-version = "v0.1.9"
+version = "v0.2.0"
 description = "超级智能体派对 | 链接一切模型、知识库、搜索引擎、MCP服务器、A2A服务器；可以web端、桌面端、API等多种方式使用"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -10,7 +10,6 @@ dependencies = [
     "appdirs>=1.4.4",
     "bs4>=0.0.2",
     "docstring-parser>=0.16",
-    "duckduckgo-search>=8.0.1",
     "faiss-cpu>=1.10.0",
     "fastapi-mcp>=0.3.4",
     "fastapi>=0.115.12",
@@ -39,4 +38,7 @@ dependencies = [
     "mem0ai>=0.1.101",
     "e2b-code-interpreter>=1.5.0",
     "qq-botpy>=1.2.1",
+    "duckduckgo-search>=8.0.3",
+    "langchain-google-community>=2.0.7",
+    "langchain-exa>=0.3.0",
 ]

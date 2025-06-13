@@ -3,7 +3,7 @@ import json
 import os
 import time
 from bs4 import BeautifulSoup
-from duckduckgo_search import DDGS
+from langchain_community.tools import DuckDuckGoSearchResults
 import requests
 from tavily import TavilyClient
 from py.get_setting import load_settings
@@ -13,9 +13,8 @@ async def DDGsearch_async(query):
     def sync_search():
         max_results = settings['webSearch']['duckduckgo_max_results'] or 10
         try:
-            with DDGS() as ddg:
-                results = ddg.text(query, max_results=max_results)
-            json.dumps(results, indent=2, ensure_ascii=False)
+            dds = DuckDuckGoSearchResults(num_results=max_results,output_format="json")
+            results = dds.invoke(query)
             return results
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -104,6 +103,81 @@ searxng_tool = {
 }
 
 
+async def bochaai_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['bochaai_max_results'] or 10
+        api_key = settings['webSearch'].get('bochaai_api_key', "")
+        
+        if not api_key:
+            return "API key未配置"
+
+        url = "https://api.bochaai.com/v1/web-search"
+        headers = {
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        payload = json.dumps({
+            "query": query,
+            "summary": True,
+            "count": max_results
+        })
+
+        try:
+            response = requests.post(url, headers=headers, data=payload, timeout=30)
+            if response.status_code == 200:
+                result_data = response.json()
+                
+                # 解析新版API返回格式
+                formatted_results = []
+                search_results = result_data.get('data', {}).get('webPages', {}).get('value', [])
+                
+                for item in search_results:
+                    # 构建更丰富的结果信息
+                    formatted_item = {
+                        'title': item.get('name', '无标题'),
+                        'link': item.get('url', ''),
+                        'displayUrl': item.get('displayUrl', ''),
+                        'snippet': item.get('snippet', '无内容摘要'),
+                        'siteName': item.get('siteName', '未知来源'),
+                    }
+                    # 自动生成简洁的来源名称
+                    if not formatted_item['siteName']:
+                        formatted_item['siteName'] = formatted_item['displayUrl'].split('//')[-1].split('/')[0]
+                    formatted_results.append(formatted_item)
+                
+                return json.dumps(formatted_results, indent=2, ensure_ascii=False)
+            else:
+                return f"请求失败，状态码：{response.status_code}，响应内容：{response.text}"
+        except Exception as e:
+            print(f"博查得搜索错误: {str(e)}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"异步执行错误: {e}")
+        return ""
+
+bochaai_tool = {
+    "type": "function",
+    "function": {
+        "name": "bochaai_search_async",
+        "description": "通过博查得智能搜索API获取网络信息，支持深度语义理解。回答时，在回答的最下方按照以下格式标注信息来源：[网站名称](链接地址)，注意：1.链接地址直接使用原始URL 2.不要添加任何空格 3.多个来源换行排列",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的自然语言查询语句，支持复杂语义和长句（示例：阿里巴巴最新财报要点）",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
 async def Tavily_search_async(query):
     settings = await load_settings()
     def sync_search():
@@ -143,6 +217,216 @@ tavily_tool = {
             "required": ["query"],
         },
     },
+}
+
+from langchain_community.utilities import BingSearchAPIWrapper
+
+async def Bing_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['bing_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('bing_api_key', "")
+            bing_search_url = settings['webSearch'].get('bing_search_url', "")
+            client = BingSearchAPIWrapper(bing_subscription_key=api_key,bing_search_url=bing_search_url)
+            response = client.results(query=query,num_results=max_results)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Bing search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+
+bing_tool = {
+    "type": "function",
+    "function": {
+        "name": "Bing_search_async",
+        "description": "通过Bing搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
+from langchain_google_community import GoogleSearchAPIWrapper
+
+async def Google_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['google_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('google_api_key', "")
+            google_cse_id = settings['webSearch'].get('google_cse_id', "")
+            client = GoogleSearchAPIWrapper(google_api_key=api_key,google_cse_id=google_cse_id)
+            response = client.results(query=query,num_results=max_results)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Google search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+
+google_tool = {
+    "type": "function",
+    "function": {
+        "name": "Google_search_async",
+        "description": "通过Google搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        }
+    }
+}
+
+from langchain_community.tools import BraveSearch
+
+async def Brave_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['brave_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('brave_api_key', "")
+            client = BraveSearch.from_api_key(api_key=api_key, search_kwargs={"count": max_results})
+            response = client.run(query)
+            return response
+        except Exception as e:
+            print(f"Brave search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+    
+brave_tool = {
+    "type": "function",
+    "function": {
+        "name": "Brave_search_async",
+        "description": "通过Brave搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
+
+from langchain_exa import ExaSearchResults
+async def Exa_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['exa_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('exa_api_key', "")
+            client = ExaSearchResults(exa_api_key=api_key)
+            response = client._run(
+                query=query,
+                num_results=max_results,
+            )
+            # 判断repose的类型
+            if type(response) == list or type(response) == dict:
+                return json.dumps(response, indent=2, ensure_ascii=False)
+            elif type(response) == str:
+                return response
+        except Exception as e:
+            print(f"Exa search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+
+exa_tool = {
+    "type": "function", 
+    "function": {
+        "name": "Exa_search_async",
+        "description": "通过Exa搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+            }
+    }
+}
+
+from langchain_community.utilities import GoogleSerperAPIWrapper
+
+async def Serper_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['serper_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('serper_api_key', "")
+            client = GoogleSerperAPIWrapper(serper_api_key=api_key,k=max_results)
+            response = client.results(query)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Serper search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+    
+serper_tool = {
+    "type": "function",
+    "function": {
+        "name": "Serper_search_async",
+        "description": "通过Serper搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
 }
 
 async def jina_crawler_async(original_url):

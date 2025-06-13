@@ -1688,7 +1688,13 @@
                         >
                           <el-option label="DuckDuckGo" value="duckduckgo" ></el-option>
                           <el-option label="SearXNG" value="searxng" ></el-option>
-                          <el-option label="tavily" value="tavily" ></el-option>
+                          <el-option label="Tavily" value="tavily" ></el-option>
+                          <el-option label="Bing" value="bing" ></el-option>
+                          <el-option label="Google" value="google" ></el-option>
+                          <el-option label="Brave" value="brave" ></el-option>
+                          <el-option label="Exa" value="exa" ></el-option>
+                          <el-option label="Serper" value="serper" ></el-option>
+                          <el-option label="Bochaai" value="bochaai" ></el-option>
                         </el-select>
                       </el-form-item>
                       <el-form-item :label="t('webCrawling')" class="form-item-align">
@@ -1812,7 +1818,285 @@
                       <el-form-item :label="t('apiKey')" class="form-item-align">
                         <el-input
                           v-model="webSearchSettings.tavily_api_key"
-                          :placeholder="t('tavilyAPIKeyPlaceholder')"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <!-- Bing 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'bing'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Bing
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/create-bing-search-service-resource"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.bing_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.bing_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('searchEndpoint')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.bing_search_url"
+                          placeholder="https://api.bing.microsoft.com/v7.0/search"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+
+                  <!-- Google 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'google'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Google
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://console.cloud.google.com/apis/credentials"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.google_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.google_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                      <el-form-item label="CSE ID" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.google_cse_id"
+                          :placeholder="t('googleCSEIdPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+
+                  <!-- Brave 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'brave'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Brave
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://brave.com/search/api/"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.brave_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.brave_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+
+                  <!-- Exa 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'exa'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Exa
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://docs.exa.ai/reference/welcome"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.exa_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.exa_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+
+                  <!-- Serper 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'serper'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Serper
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://serper.dev/dashboard"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.serper_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.serper_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
+                          show-password
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                  </div>
+                  <!-- Bochaai 配置块 -->
+                  <div class="tool-item" v-show="webSearchSettings.engine === 'bochaai'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-globe"></i>
+                          </el-icon>
+                          Bochaai
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://open.bochaai.com/overview"
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoAPI') }}
+                          </el-link>
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('resultCount')" class="form-item-align">
+                        <el-slider
+                          v-model="webSearchSettings.bochaai_max_results"
+                          :min="1"
+                          :max="20"
+                          :step="1"
+                          @input="autoSaveSettings"
+                        />
+                      </el-form-item>
+                      <el-form-item :label="t('apiKey')" class="form-item-align">
+                        <el-input
+                          v-model="webSearchSettings.bochaai_api_key"
+                          :placeholder="t('apiKeyPlaceholder')"
                           show-password
                           @input="autoSaveSettings"
                           class="full-width-input"
