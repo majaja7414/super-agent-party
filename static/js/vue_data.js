@@ -219,6 +219,8 @@ let vue_data = {
       brave_api_key: '',
       exa_max_results:10,
       exa_api_key: '',
+      serper_max_results:10,
+      serper_api_key: '',
     },
     codeSettings: {
       enabled: false,

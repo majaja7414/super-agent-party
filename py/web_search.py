@@ -275,7 +275,7 @@ async def Exa_search_async(query):
         max_results = settings['webSearch']['exa_max_results'] or 10
         try:
             api_key = settings['webSearch'].get('exa_api_key', "")
-            client = ExaSearchResults(api_key=api_key)
+            client = ExaSearchResults(exa_api_key=api_key)
             response = client._run(
                 query=query,
                 num_results=max_results,
@@ -314,6 +314,45 @@ exa_tool = {
     }
 }
 
+from langchain_community.utilities import GoogleSerperAPIWrapper
+
+async def Serper_search_async(query):
+    settings = await load_settings()
+    def sync_search():
+        max_results = settings['webSearch']['serper_max_results'] or 10
+        try:
+            api_key = settings['webSearch'].get('serper_api_key', "")
+            client = GoogleSerperAPIWrapper(serper_api_key=api_key,k=max_results)
+            response = client.results(query)
+            return json.dumps(response, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Serper search error: {e}")
+            return ""
+
+    try:
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_search)
+    except Exception as e:
+        print(f"Async execution error: {e}")
+        return ""
+    
+serper_tool = {
+    "type": "function",
+    "function": {
+        "name": "Serper_search_async",
+        "description": "通过Serper搜索API获取网络信息。回答时，在回答的最下方给出信息来源。以链接的形式给出信息来源，格式为：[网站名称](链接地址)。返回链接时，不要让()内出现空格",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "需要搜索的关键词或自然语言查询语句",
+                }
+            },
+            "required": ["query"],
+        },
+    }
+}
 
 async def jina_crawler_async(original_url):
     settings = await load_settings()
