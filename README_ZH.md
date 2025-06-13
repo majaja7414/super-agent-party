@@ -133,11 +133,19 @@
   - 支持了rerank模型，可以提升知识库的检索效果。
   - 支持混合搜索功能，可以选择关键词搜索和语义搜索之间的比例。
 2. 联网功能，让大模型能够根据提问需求去主动联网查询信息。目前已支持：
-  - [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）
-  - [searxng](https://github.com/searxng/searxng)（可以docker本地部署）
-  - [tavily](https://tavily.com/)（需要申请api key）
-  - [jina](https://github.com/jina-ai/jina)（可以无需api key，用于网页抓取）
-  - [crawl4ai](https://github.com/unclecode/crawl4ai)（可以docker本地部署，用于网页抓取）。
+  - **搜索引擎**
+    - [duckduckgo](https://duckduckgo.com/)（完全免费，中国网络环境无法访问）
+    - [searxng](https://github.com/searxng/searxng)（可以docker本地部署）
+    - [tavily](https://tavily.com/)（需要申请api key）
+    - [bing](https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/create-bing-search-service-resource)（需要申请api key）
+    - [google](https://console.cloud.google.com/apis/credentials)（需要申请api key）
+    - [brave](https://brave.com/search/api/)（需要申请api key）
+    - [exa](https://www.exa.app/)（需要申请api key）
+    - [serper](https://serper.dev/)（需要申请api key）
+    - [博查](https://bochaai.com/)（需要申请api key）
+  - **网页抓取**
+    - [jina](https://github.com/jina-ai/jina)（可以无需api key，用于网页抓取）
+    - [crawl4ai](https://github.com/unclecode/crawl4ai)（可以docker本地部署，用于网页抓取）。
 3. [MCP](https://modelcontextprotocol.io/introduction)服务，让大模型能够根据提问需求去主动调用MCP服务。目前支持三种调用方式：标准输入输出、服务器发送事件 (SSE)、流式HTTP、websocket。
 4. [A2A](https://github.com/google/A2A)服务，让大模型能够根据提问需求去主动调用A2A服务。
 5. 深度思考，可以将推理模型的推理能力移植到可以工具调用或多模态模型中，让大模型在工具调用之前先利用推理模型进行推理分析。例如：deepseek-V3可以工具调用，但是推理模型deepseek-R1无法工具调用，那么就可以将deepseek-R1的推理能力移植到deepseek-V3中，让deepseek-V3在工具调用之前先利用deepseek-R1进行推理分析。
@@ -174,6 +182,7 @@
   - 支持对话轮数调节，默认为30轮，会逐渐丢弃旧的对话记录，防止上下文溢出，可以配置记忆模块，实现角色人设固定和永久记忆。
   - 实现了QQ机器人能返回思考过程和调用工具的过程，可以配置是否开启。
 15. 文生图模型，除了原先支持的pollinations，还支持openai接口的模型，例如：dall-e-2、 dall-e-3 或 gpt-image-1。也可以接入其他兼容openai绘图接口的模型，例如：硅基流动上的kolors、FLUX等。
+16. 给出了机器人向外发送图片时，如果返回为base64的解决方案，可以在机器人通用配置中添加图床，未来会给出更多图床选择，目前只支持[easyimage2](https://github.com/icret/EasyImages2.0)。
 
 ## 免责声明：
 本开源项目及其内容（以下简称“项目”）仅供参考之用，并不意味着任何明示或暗示的保证。项目贡献者不对项目的完整性、准确性、可靠性或适用性承担任何责任。任何依赖项目内容的行为均需自行承担风险。在任何情况下，项目贡献者均不对因使用项目内容而产生的任何间接、特殊或附带的损失或损害承担责任。

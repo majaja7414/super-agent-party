@@ -134,11 +134,19 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   - We have supported the rerank model, which can improve the retrieval effect of the knowledge base.
   - Support mixed search function, which allows you to choose the proportion between keyword search and semantic search.
 2. Networking function, which allows the large model to actively query information online according to the needs of the question. Currently, it supports:
-  - [duckduckgo](https://duckduckgo.com/) (Completely free, but cannot be accessed in China's online environment)
-  - [searxng](https://github.com/searxng/searxng) (can be locally deployed with Docker)
-  - [tavily](https://tavily.com/)（需要申请api key）
-  - [jina](https://github.com/jina-ai/jina) (can be used for web scraping without an API key)
-  - [crawl4ai](https://github.com/unclecode/crawl4ai) (can be locally deployed with Docker, and is used for web scraping).
+  - **Search Engine**
+    - [duckduckgo](https://duckduckgo.com/) (Completely free, but cannot be accessed in China's online environment)
+    - [searxng](https://github.com/searxng/searxng) (can be locally deployed with Docker)
+    - [tavily](https://tavily.com/)（需要申请api key）
+    - [bing](https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/create-bing-search-service-resource) (need to apply for an API key)
+    - [google](https://console.cloud.google.com/apis/credentials) (need to apply for an API key)
+    - [Brave](https://brave.com/search/api/) (need to apply for an api key)
+    - [exa](https://www.exa.app/) (need to apply for an API key)
+    - [serper](https://serper.dev/) (need to apply for an API key)
+    - [bochaai](https://bochaai.com/) (need to apply for an API key)
+  - **Web scraping**
+    - [jina](https://github.com/jina-ai/jina) (can be used for web scraping without an API key)
+    - [crawl4ai](https://github.com/unclecode/crawl4ai) (can be locally deployed with Docker, used for web scraping).
 3. [MCP](https://modelcontextprotocol.io/introduction) service, which allows large models to actively invoke the MCP service according to the needs of the query. Currently, it supports three invocation methods: standard input and output, server-sent events (SSE), streaming HTTP, and websocket.
 4. [A2A](https://github.com/google/A2A) service, which allows large models to actively invoke the A2A service according to the needs of the query.
 5. Deep thinking allows us to transplant the reasoning ability of the inference model into tools or multimodal models, so that the large model can use the inference model for reasoning analysis before tool invocation. For example: deepseek-V3 can be invoked by tools, but the inference model deepseek-R1 cannot be invoked by tools. In this case, we can transplant the reasoning ability of deepseek-R1 into deepseek-V3, so that deepseek-V3 can use deepseek-R1 for reasoning analysis before tool invocation.
@@ -176,6 +184,7 @@ For detailed deployment methods, please refer to the [Deployment and Usage Docum
   - Conversation round limit is adjustable, defaulting to 30 rounds. Older conversation records will be gradually discarded to prevent context overflow. You can configure the memory module to maintain fixed character settings and permanent memory.  
   - The QQ bot can return its thinking process and tool-calling process; this feature can be enabled or disabled via configuration.
 15. For image generation models, in addition to the previously supported Pollinations, we now also support OpenAI interface models such as: `dall-e-2`, `dall-e-3`, and `gpt-image-1`. It can also integrate with other image generation models compatible with the OpenAI drawing API, for example: Kolors or FLUX on SiliconFlow.  
+16. Provided a solution for when the robot sends out images and the return is in base64 format. You can add an image hosting service to the robot's general configuration. In the future, more image hosting options will be provided, currently only [easyimage2](https://github.com/icret/EasyImages2.0) is supported.  
 
 ## Disclaimer:
 This open-source project and its content (hereinafter referred to as the "project") are for reference only and do not imply any explicit or implicit warranties. The project contributors do not assume any responsibility for the completeness, accuracy, reliability, or applicability of the project. Any behavior that relies on the project content shall be at the user's own risk. In any case, the project contributors shall not be liable for any indirect, special, or incidental losses or damages arising from the use of the project content.
