@@ -174,9 +174,15 @@ function startBackend() {
     env: {
       ...process.env,
       PYTHONUNBUFFERED: '1',
-      NODE_ENV: isDev ? 'development' : 'production'
+      NODE_ENV: isDev ? 'development' : 'production',
+      // 添加 Electron 相关环境变量
+      ELECTRON_RUN_AS_NODE: '1',
+      ELECTRON_NO_ATTACH_CONSOLE: '1',
+      // 防止子进程弹出控制台
+      CREATE_NO_WINDOW: '1'
     }
   }
+
   if (isDev) {
     // 开发模式使用Python启动
     const backendScript = path.join(__dirname, 'server.py')
@@ -202,14 +208,23 @@ function startBackend() {
         throw new Error(`Unsupported platform: ${process.platform}`)
     }
 
-    const exePath = path.join(
-      process.env.PORTABLE_EXECUTABLE_DIR || app.getAppPath(),
-      '../server',
-      serverExecutable
-    ).replace('app.asar', 'app.asar.unpacked')
+    // 修改可执行文件路径获取方式
+    const resourcesPath = process.resourcesPath || path.join(process.execPath, '..', 'resources')
+    const exePath = path.join(resourcesPath, 'server', serverExecutable)
     
+    // 添加更多环境变量
     spawnOptions.env.UV_THREADPOOL_SIZE = '4'
     spawnOptions.env.NODE_OPTIONS = '--max-old-space-size=4096'
+    spawnOptions.env.PYTHONHOME = ''  // 清空可能冲突的Python环境
+    spawnOptions.env.PYTHONPATH = ''  // 清空可能冲突的Python路径
+    
+    // Windows 特殊处理
+    if (process.platform === 'win32') {
+      spawnOptions.windowsVerbatimArguments = false
+      spawnOptions.windowsHide = true
+      // 添加 Windows 特定的选项来隐藏控制台
+      spawnOptions.detached = false
+    }
 
     // 设置可执行权限(仅在 Unix 系统)
     if (process.platform !== 'win32') {
@@ -220,7 +235,12 @@ function startBackend() {
       }
     }
     
-    backendProcess = spawn(exePath, [], {
+    console.log(`Starting backend from: ${exePath}`)
+    
+    backendProcess = spawn(exePath, [
+      '--port', PORT.toString(),
+      '--host', BACKEND_HOST,
+    ], {
       ...spawnOptions,
       cwd: path.dirname(exePath)
     })

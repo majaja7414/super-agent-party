@@ -31,12 +31,16 @@ from contextlib import asynccontextmanager,suppress
 import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-import botpy
-from botpy.message import C2CMessage,GroupMessage
+from multiprocess_worker import run_bot_process, run_bot_process_wrapper
 import argparse
 from mem0 import Memory
-if sys.platform.startswith('win'):
-    multiprocessing.freeze_support()
+from multiprocessing import freeze_support
+# 在程序最开始设置
+if hasattr(sys, '_MEIPASS'):
+    # 打包后的程序
+    os.environ['PYTHONPATH'] = sys._MEIPASS
+    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ.get('PATH', '')
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
@@ -3043,506 +3047,6 @@ class QQBotConfig(BaseModel):
 qq_bot_process = None
 current_bot_config = None
 
-async def upload_image_host(url):
-    settings = await load_settings()
-    # 判断是否开启了图床功能
-    if settings["BotConfig"]["imgHost_enabled"] and 'uploaded_files' in url:
-        if settings["BotConfig"]["imgHost"] == "easyImage2":
-            EI2_url = settings["BotConfig"]["EI2_base_url"]
-            EI2_token = settings["BotConfig"]["EI2_api_key"]
-            # 上传图片到图床
-            file_name = url.split("/")[-1]
-            file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
-            data = {
-                "token": EI2_token
-            }
-            with open(file_path, "rb") as f:
-                files = {
-                    "image": (file_path, f)
-                }
-                response = requests.post(EI2_url, data=data, files=files)
-            if response.status_code == 200:
-                # 打印返回的 JSON 数据中的url字段
-                url = response.json().get("url")
-            else:
-                print("上传失败")
-    return url
-
-class MyClient(botpy.Client):
-    def __init__(self,start_event, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.is_running = False
-        self.QQAgent = "super-model"
-        self.memoryLimit = 10
-        self.memoryList = {}
-        self.start_event = start_event
-        self.separators = ['。', '\n', '？', '！']
-        self.reasoningVisible = False
-        self.quickRestart = True
-
-    async def on_ready(self):
-        self.is_running = True
-        self.start_event.set()
-
-    async def on_c2c_message_create(self, message: C2CMessage):
-        if not self.is_running:
-            return
-        client = AsyncOpenAI(
-            api_key="super-secret-key",
-            base_url=f"http://127.0.0.1:{PORT}/v1"
-        )
-        user_content = []
-        if message.attachments:
-            for attachment in message.attachments:
-                if attachment.content_type.startswith("image/"):
-                    image_url = attachment.url
-                    user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-        if user_content:
-            user_content.append({"type": "text", "text": message.content})
-        else:
-            user_content = message.content
-        print(f"User content: {user_content}")
-        c_id = message.author.user_openid
-        if c_id not in self.memoryList:
-            self.memoryList[c_id] = []
-        if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
-                self.memoryList[c_id] = []
-        self.memoryList[c_id].append({"role": "user", "content": user_content})
-
-        # 初始化状态管理
-        if not hasattr(self, 'msg_seq_counters'):
-            self.msg_seq_counters = {}
-        self.msg_seq_counters.setdefault(c_id, 1)
-        
-        if not hasattr(self, 'processing_states'):
-            self.processing_states = {}
-        self.processing_states[c_id] = {
-            "text_buffer": "",
-            "image_buffer": "",
-            "image_cache": []
-        }
-
-        try:
-            # 流式调用API
-            stream = await client.chat.completions.create(
-                model=self.QQAgent,
-                messages=self.memoryList[c_id],
-                stream=True
-            )
-            
-            full_response = []
-            async for chunk in stream:
-                reasoning_content = ""
-                if chunk.choices:
-                    chunk_dict = chunk.model_dump()
-                    delta = chunk_dict["choices"][0].get("delta", {})
-                    if delta:
-                        reasoning_content = delta.get("reasoning_content", "") 
-                content = chunk.choices[0].delta.content or ""
-                full_response.append(content)
-                if reasoning_content and self.reasoningVisible:
-                    content = reasoning_content
-                
-                # 更新缓冲区
-                state = self.processing_states[c_id]
-                state["text_buffer"] += content
-                state["image_buffer"] += content
-
-                # 处理文本实时发送
-                while True:
-                    if self.separators == []:
-                        break
-                    # 查找分隔符（。或\n）
-                    buffer = state["text_buffer"]
-                    split_pos = -1
-                    for i, c in enumerate(buffer):
-                        if c in self.separators:
-                            split_pos = i + 1
-                            break
-                    if split_pos == -1:
-                        break
-
-                    # 分割并处理当前段落
-                    current_chunk = buffer[:split_pos]
-                    state["text_buffer"] = buffer[split_pos:]
-                    
-                    # 清洗并发送文字
-                    clean_text = self._clean_text(current_chunk)
-                    if clean_text:
-                        await self._send_text_message(message, clean_text)
-                    
-            # 提取图片到缓存（不发送）
-            self._extract_images_to_cache(c_id)
-
-            # 处理剩余文本
-            if state["text_buffer"]:
-                clean_text = self._clean_text(state["text_buffer"])
-                if clean_text:
-                    await self._send_text_message(message, clean_text)
-            
-            # 最终图片发送
-            await self._send_cached_images(message)
-
-            # 记忆管理
-            full_content = "".join(full_response)
-            self.memoryList[c_id].append({"role": "assistant", "content": full_content})
-            if self.memoryLimit > 0:
-                while len(self.memoryList[c_id]) > self.memoryLimit:
-                    self.memoryList[c_id].pop(0)
-
-        except Exception as e:
-            print(f"处理异常: {e}")
-            clean_text = self._clean_text(str(e))
-            if clean_text:
-                await self._send_text_message(message, clean_text)
-        finally:
-            # 清理状态
-            del self.processing_states[c_id]
-
-    def _extract_images_to_cache(self, c_id):
-        """渐进式图片链接提取"""
-        state = self.processing_states[c_id]
-        temp_buffer = state["image_buffer"]
-        state["image_buffer"] = ""  # 重置缓冲区
-        
-        # 匹配完整图片链接
-        pattern = r'!\[.*?\]\((https?://[^\s\)]+)'
-        matches = re.finditer(pattern, temp_buffer)
-        for match in matches:
-            state["image_cache"].append(match.group(1))
-
-    async def _send_text_message(self, message, text):
-        """发送文本消息并更新序号"""
-        c_id = message.author.user_openid
-        await message._api.post_c2c_message(
-            openid=message.author.user_openid,
-            msg_type=0,
-            msg_id=message.id,
-            content=text,
-            msg_seq=self.msg_seq_counters[c_id]
-        )
-        self.msg_seq_counters[c_id] += 1
-
-    async def _send_cached_images(self, message):
-        """批量发送缓存的图片"""
-        c_id = message.author.user_openid
-        state = self.processing_states.get(c_id, {})
-        
-        for url in state.get("image_cache", []):
-            try:
-                # 链接有效性验证
-                if not re.match(r'^https?://', url):
-                    continue
-                # 判断是否开启了图床功能
-                url = await upload_image_host(url)
-                # 用request获取图片，保证图片存在
-                res = requests.get(url)
-
-                print(f"发送图片: {url}")
-                # 上传媒体文件
-                upload_media = await message._api.post_c2c_file(
-                    openid=message.author.user_openid,
-                    file_type=1,
-                    url=url
-                )
-                # 发送富媒体消息
-                await message._api.post_c2c_message(
-                    openid=message.author.user_openid,
-                    msg_type=7,
-                    msg_id=message.id,
-                    media=upload_media,
-                    msg_seq=self.msg_seq_counters[c_id]
-                )
-                self.msg_seq_counters[c_id] += 1
-            except Exception as e:
-                print(f"图片发送失败: {e}")
-                clean_text = self._clean_text(str(e))
-                if clean_text:
-                    await self._send_text_message(message, clean_text)
-
-    def _clean_text(self, text):
-        """三级内容清洗"""
-        # 移除图片标记
-        clean = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-        # 移除超链接
-        clean = re.sub(r'\[.*?\]\(.*?\)', '', clean)
-        # 移除纯URL
-        clean = re.sub(r'https?://\S+', '', clean)
-        return clean.strip()
-
-    
-    async def on_group_at_message_create(self, message: GroupMessage):
-        if not self.is_running:
-            return
-        
-        client = AsyncOpenAI(
-            api_key="super-secret-key",
-            base_url=f"http://127.0.0.1:{PORT}/v1"
-        )
-        user_content = []
-        if message.attachments:
-            for attachment in message.attachments:
-                if attachment.content_type.startswith("image/"):
-                    image_url = attachment.url
-                    try:
-                        # 用request获取图片，保证图片存在
-                        response = requests.get(image_url)
-                        user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-                    except Exception as e:
-                        print(f"图片获取失败: {e}")
-        if user_content:
-            user_content.append({"type": "text", "text": message.content})
-        else:
-            user_content = message.content
-        g_id = message.group_openid
-        if g_id not in self.memoryList:
-            self.memoryList[g_id] = []
-        if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
-                self.memoryList[g_id] = []
-        self.memoryList[g_id].append({"role": "user", "content": user_content})
-
-        # 初始化群组状态
-        if not hasattr(self, 'group_states'):
-            self.group_states = {}
-        self.group_states[g_id] = {
-            "msg_seq": 1,
-            "text_buffer": "",
-            "image_buffer": "",
-            "image_cache": []
-        }
-
-        try:
-            # 流式API调用
-            stream = await client.chat.completions.create(
-                model=self.QQAgent,
-                messages=self.memoryList[g_id],
-                stream=True
-            )
-            
-            full_response = []
-            async for chunk in stream:
-                reasoning_content = ""
-                if chunk.choices:
-                    chunk_dict = chunk.model_dump()
-                    delta = chunk_dict["choices"][0].get("delta", {})
-                    if delta:
-                        reasoning_content = delta.get("reasoning_content", "")
-                content = chunk.choices[0].delta.content or ""
-                full_response.append(content)
-                if reasoning_content and self.reasoningVisible:
-                    content = reasoning_content
-                state = self.group_states[g_id]
-                
-                # 更新文本缓冲区
-                state["text_buffer"] += content
-                state["image_buffer"] += content
-
-                # 处理文本分段
-                while True:
-                    if self.separators == []:
-                        break
-                    # 查找分隔符（。或\n）
-                    buffer = state["text_buffer"]
-                    split_pos = -1
-                    for i, c in enumerate(buffer):
-                        if c in self.separators:
-                            split_pos = i + 1
-                            break
-                    if split_pos == -1:
-                        break
-
-                    # 处理当前段落
-                    current_chunk = buffer[:split_pos]
-                    state["text_buffer"] = buffer[split_pos:]
-                    
-                    # 清洗并发送文字
-                    clean_text = self._clean_group_text(current_chunk)
-                    if clean_text:
-                        await self._send_group_text(message, clean_text, state)
-                    
-            # 提取图片到缓存
-            self._cache_group_images(g_id)
-
-            # 处理剩余文本
-            if self.group_states[g_id]["text_buffer"]:
-                clean_text = self._clean_group_text(self.group_states[g_id]["text_buffer"])
-                if clean_text:
-                    await self._send_group_text(message, clean_text, state)
-
-            # 发送缓存图片
-            await self._send_group_images(message, g_id)
-
-            # 记忆管理
-            full_content = "".join(full_response)
-            self.memoryList[g_id].append({"role": "assistant", "content": full_content})
-            if self.memoryLimit > 0:
-                while len(self.memoryList[g_id]) > self.memoryLimit:
-                    self.memoryList[g_id].pop(0)
-
-        except Exception as e:
-            print(f"群聊处理异常: {e}")
-            clean_text = self._clean_group_text(str(e))
-            if clean_text:
-                await self._send_group_text(message, clean_text, state)
-        finally:
-            # 清理状态
-            del self.group_states[g_id]
-
-    def _cache_group_images(self, g_id):
-        """渐进式图片缓存"""
-        state = self.group_states[g_id]
-        temp_buffer = state["image_buffer"]
-        state["image_buffer"] = ""
-        
-        # 匹配完整图片链接
-        pattern = r'!\[.*?\]\((https?://[^\s\)]+)'
-        matches = re.finditer(pattern, temp_buffer)
-        for match in matches:
-            state["image_cache"].append(match.group(1))
-
-    async def _send_group_text(self, message, text, state):
-        """发送群聊文字消息"""
-        await message._api.post_group_message(
-            group_openid=message.group_openid,
-            msg_type=0,
-            msg_id=message.id,
-            content=text,
-            msg_seq=state["msg_seq"]
-        )
-        state["msg_seq"] += 1
-
-    async def _send_group_images(self, message, g_id):
-        """批量发送群聊图片"""
-        state = self.group_states.get(g_id, {})
-        for url in state.get("image_cache", []):
-            try:
-                # 链接有效性验证
-                if not url.startswith(('http://', 'https://')):
-                    continue
-                # 判断是否开启了图床功能
-                url = await upload_image_host(url)
-                # 用request获取图片，保证图片存在
-                res = requests.get(url)
-                print(f"发送图片: {url}")
-                # 上传群文件
-                upload_media = await message._api.post_group_file(
-                    group_openid=message.group_openid,
-                    file_type=1,
-                    url=url
-                )
-                # 发送群媒体消息
-                await message._api.post_group_message(
-                    group_openid=message.group_openid,
-                    msg_type=7,
-                    msg_id=message.id,
-                    media=upload_media,
-                    msg_seq=state["msg_seq"]
-                )
-                state["msg_seq"] += 1
-            except Exception as e:
-                print(f"群图片发送失败: {e}")
-                clean_text = self._clean_group_text(str(e))
-                if clean_text:
-                    self._send_group_text(message, clean_text, state)
-
-    def _clean_group_text(self, text):
-        """群聊文本三级清洗"""
-        # 移除图片标记
-        clean = re.sub(r'!\[.*?\]\(.*?\)', '', text)
-        # 移除超链接
-        clean = re.sub(r'\[.*?\]\(.*?\)', '', clean)
-        # 移除纯URL
-        clean = re.sub(r'https?://\S+', '', clean)
-        return clean.strip()
-
-
-def run_bot_process(config: QQBotConfig, start_event, shared_dict):
-    """在新进程中运行机器人的函数"""
-    # 配置子进程的日志系统
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
-    QQlogger = logging.getLogger("QQBotProcess")
-    QQlogger.info("子进程启动，开始配置机器人...")
-
-    # 提前声明 QQclient，确保在信号处理函数中可用
-    QQclient = None
-
-    # 统一的信号处理函数
-    def handle_signal(signum, frame):
-        QQlogger.info(f"接收到终止信号 {signum}, 准备停止机器人...")
-        # 尝试关闭机器人连接
-        if QQclient and hasattr(QQclient, 'close'):
-            try:
-                QQlogger.info("正在关闭机器人连接...")
-                QQclient.close()
-            except Exception as e:
-                QQlogger.error(f"关闭机器人连接时出错: {str(e)}")
-        QQlogger.info("机器人进程退出")
-        sys.exit(0)
-    
-    # 注册信号处理器 (Unix系统)
-    if sys.platform != 'win32':
-        # Unix/Linux/macOS 系统
-        for sig in [signal.SIGTERM, signal.SIGINT]:
-            try:
-                signal.signal(sig, handle_signal)
-                QQlogger.debug(f"已注册 {signal.Signals(sig).name} 信号处理器")
-            except AttributeError:
-                # 某些信号在特定平台可能不可用
-                pass
-    
-    # 对于Windows，使用atexit注册退出处理
-    if sys.platform == 'win32':
-        import atexit
-        QQlogger.debug("Windows系统，注册atexit退出处理")
-        
-        def windows_exit_handler():
-            QQlogger.info("Windows退出处理被调用")
-            handle_signal(signal.SIGTERM, None)
-        
-        atexit.register(windows_exit_handler)
-
-    # 移除自定义事件循环和信号处理
-    # 直接使用基类的run方法启动
-    try:
-        # 创建客户端时传入启动事件
-        QQclient = MyClient(start_event, intents=botpy.Intents(public_messages=True))
-        QQclient.QQAgent = config.QQAgent
-        QQclient.memoryLimit = config.memoryLimit
-        QQclient.separators = config.separators
-        QQclient.reasoningVisible = config.reasoningVisible
-        QQclient.quickRestart = config.quickRestart
-        
-        QQlogger.info("机器人配置完成，开始运行...")
-        
-        # 运行机器人
-        QQclient.run(appid=config.appid, secret=config.secret)
-    except Exception as e:
-        # 捕获异常并存入共享字典
-        shared_dict['error'] = str(e)
-        start_event.set()  # 确保事件被设置
-        QQlogger.error(f"机器人启动失败: {str(e)}")
-        # 记录完整异常信息
-        QQlogger.exception("机器人启动异常详情:")
-    finally:
-        # 清理资源
-        if QQclient:
-            QQlogger.info("清理机器人资源...")
-            try:
-                QQclient.is_running = False
-                # 确保内存被正确清理
-                if hasattr(QQclient, 'memoryList') and isinstance(QQclient.memoryList, list):
-                    QQclient.memoryList.clear()
-                    QQlogger.debug("内存列表已清空")
-            except Exception as e:
-                QQlogger.error(f"清理资源时出错: {str(e)}")
-        
-        QQlogger.info("机器人进程已完全停止")
-
 @app.post("/start_qq_bot")
 async def start_qq_bot(config: QQBotConfig):
     global qq_bot_process, current_bot_config
@@ -3553,42 +3057,50 @@ async def start_qq_bot(config: QQBotConfig):
             content={"success": False, "message": "QQ机器人已经在运行"}
         )
 
-    # 使用Manager创建共享对象
-    with Manager() as manager:
+    # 检查环境
+    is_electron = os.environ.get('ELECTRON_RUN_AS_NODE') == '1'
+    is_packaged = getattr(sys, 'frozen', False) or hasattr(sys, '_MEIPASS')
+    
+    try:
+        # 使用Manager创建共享对象
+        manager = Manager()
         shared_dict = manager.dict()
-        start_event = Event()
+        start_event = manager.Event()
         
-        # 创建并启动进程
-        qq_bot_process = multiprocessing.Process(
-            target=run_bot_process,
-            args=(config, start_event, shared_dict),
-            name="QQBotProcess"
+        # 为子进程准备环境变量
+        process_env = os.environ.copy()
+        if is_electron:
+            # 传递 Electron 环境信息到子进程
+            process_env['ELECTRON_CHILD_PROCESS'] = '1'
+            process_env['PYTHONIOENCODING'] = 'utf-8'
+        
+        # 创建进程
+        ctx = multiprocessing.get_context('spawn')
+        qq_bot_process = ctx.Process(
+            target=run_bot_process_wrapper,  # 使用包装函数
+            args=(config, start_event, shared_dict, process_env),
+            name="QQBotProcess",
+            daemon=False
         )
         
-        start_event.clear()  # 清除事件状态
+        start_event.clear()
         qq_bot_process.start()
         logger.info(f"QQ机器人进程已启动，PID: {qq_bot_process.pid}")
         
-        # 等待启动结果（最多10秒）
-        try:
-            # 在异步环境中同步等待
-            loop = asyncio.get_event_loop()
-            event_set = await loop.run_in_executor(
-                None, 
-                lambda: start_event.wait(timeout=10.0)
-            )
-        except Exception as e:
-            qq_bot_process.terminate()
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "message": f"等待机器人启动时出错: {str(e)}"}
-            )
+        # 等待启动结果（增加超时时间）
+        timeout = 15.0 if is_electron else 10.0  # Electron 环境下增加超时时间
+        
+        loop = asyncio.get_event_loop()
+        event_set = await loop.run_in_executor(
+            None, 
+            lambda: start_event.wait(timeout=timeout)
+        )
         
         # 检查启动结果
         if 'error' in shared_dict:
             error_msg = shared_dict['error']
             qq_bot_process.terminate()
-            qq_bot_process.join(timeout=1.0)
+            qq_bot_process.join(timeout=2.0)
             qq_bot_process = None
             return JSONResponse(
                 status_code=500,
@@ -3597,21 +3109,31 @@ async def start_qq_bot(config: QQBotConfig):
         
         if not event_set:
             qq_bot_process.terminate()
-            qq_bot_process.join(timeout=1.0)
+            qq_bot_process.join(timeout=2.0)
             qq_bot_process = None
             return JSONResponse(
                 status_code=500,
-                content={"success": False, "message": "机器人启动超时，请检查网络连接"}
+                content={"success": False, "message": "机器人启动超时，请检查配置和网络连接"}
             )
         
-        # 启动成功
         current_bot_config = config
         return {
             "success": True,
             "message": "QQ机器人已成功启动",
-            "pid": qq_bot_process.pid
+            "pid": qq_bot_process.pid,
+            "environment": "electron" if is_electron else "standalone"
         }
-
+        
+    except Exception as e:
+        logger.error(f"启动QQ机器人时发生异常: {str(e)}")
+        if qq_bot_process:
+            qq_bot_process.terminate()
+            qq_bot_process = None
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"启动异常: {str(e)}"}
+        )
+    
 # 重新加载QQ机器人
 @app.post("/reload_qq_bot")
 async def reload_qq_bot(config: QQBotConfig):
@@ -3966,7 +3488,46 @@ app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uplo
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")
 
+def init_multiprocessing():
+    """初始化多进程设置"""
+    # 检查是否在 Electron 环境中运行
+    is_electron = os.environ.get('ELECTRON_RUN_AS_NODE') == '1'
+    is_packaged = getattr(sys, 'frozen', False) or hasattr(sys, '_MEIPASS')
+    
+    if is_electron or is_packaged:
+        # 在 Electron 或打包环境中强制使用 spawn
+        try:
+            multiprocessing.set_start_method('spawn', force=True)
+            logger.info("使用 spawn 方法启动多进程 (Electron/打包环境)")
+        except RuntimeError as e:
+            logger.warning(f"设置多进程方法失败: {e}")
+    elif sys.platform == 'win32':
+        try:
+            multiprocessing.set_start_method('spawn', force=True)
+            logger.info("使用 spawn 方法启动多进程 (Windows)")
+        except RuntimeError as e:
+            logger.warning(f"设置多进程方法失败: {e}")
+    else:
+        try:
+            multiprocessing.set_start_method('fork', force=True)
+            logger.info("使用 fork 方法启动多进程")
+        except RuntimeError as e:
+            logger.warning(f"设置多进程方法失败: {e}")
+
 if __name__ == "__main__":
-    multiprocessing.set_start_method('spawn')
+    # 确保freeze_support在最开始就被调用
+    freeze_support()
+    
+    # 初始化多进程
+    init_multiprocessing()
+    
+    # Windows下隐藏主程序控制台（如果需要）
+    if sys.platform == 'win32' and hasattr(sys, '_MEIPASS'):
+        import ctypes
+        whnd = ctypes.windll.kernel32.GetConsoleWindow()
+        if whnd != 0:
+            # 0=隐藏, 1=正常, 2=最小化, 3=最大化
+            ctypes.windll.user32.ShowWindow(whnd, 0)
+    
     import uvicorn
     uvicorn.run(app, host=HOST, port=PORT)

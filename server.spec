@@ -18,14 +18,16 @@ a = Analysis(
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
         ('static', 'static'),
+        ('multiprocess_worker.py', '.'),
         ('tiktoken_cache', 'tiktoken_cache')
     ],
     hiddenimports=[
         'pydantic.deprecated.decorator',
         'tiktoken_ext',
         'tiktoken_ext.openai_public',
-        'multiprocessing',
         'botpy',
+        'multiprocess_worker',
+        *collect_submodules('multiprocessing'),
         *collect_submodules('mem0'),
     ],
     hookspath=[],
@@ -88,7 +90,7 @@ else:
         a.scripts,
         [],
         name='server',
-        console=(platform.system() != 'Windows'),  # Windows 无弹窗
+        console=False,
         icon='static/source/icon.png' if platform.system() == 'Windows' else None,
         **base_exe_config
     )
