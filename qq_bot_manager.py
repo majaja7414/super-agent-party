@@ -24,6 +24,8 @@ class QQBotManager:
         self.loop = None
         self._shutdown_event = threading.Event()
         self._startup_complete = threading.Event()
+        self._ready_complete = threading.Event()  # 新增：等待 on_ready 完成
+        self._startup_error = None
         
     def start_bot(self, config):
         """在新线程中启动机器人"""
@@ -33,6 +35,8 @@ class QQBotManager:
         self.config = config
         self._shutdown_event.clear()
         self._startup_complete.clear()
+        self._ready_complete.clear()  # 重置就绪状态
+        self._startup_error = None
         
         # 使用传统线程方式，更稳定
         self.bot_thread = threading.Thread(
@@ -43,13 +47,24 @@ class QQBotManager:
         )
         self.bot_thread.start()
         
-        # 等待启动确认
+        # 等待启动确认（连接建立）
         if not self._startup_complete.wait(timeout=30):
             self.stop_bot()
-            raise Exception("机器人启动超时")
+            raise Exception("机器人连接超时")
+            
+        # 检查是否有启动错误
+        if self._startup_error:
+            self.stop_bot()
+            raise Exception(f"机器人启动失败: {self._startup_error}")
+        
+        # 等待机器人就绪（on_ready 触发）
+        if not self._ready_complete.wait(timeout=30):
+            self.stop_bot()
+            raise Exception("机器人就绪超时，请检查网络连接和配置")
             
         if not self.is_running:
-            raise Exception("机器人启动失败")
+            self.stop_bot()
+            raise Exception("机器人未能正常运行")
             
     def _run_bot_thread(self, config):
         """在线程中运行机器人"""
@@ -71,34 +86,61 @@ class QQBotManager:
             
             # 设置弱引用以避免循环引用
             self.bot_client._manager_ref = weakref.ref(self)
+            # 设置就绪回调
+            self.bot_client._ready_callback = self._on_bot_ready
             
             # 创建启动任务
             async def run_bot():
                 try:
-                    # 标记为已启动
-                    self.is_running = True
-                    self._startup_complete.set()
-                    logging.info("开始运行QQ机器人...")
+                    logging.info("开始连接QQ机器人...")
                     
-                    # 运行机器人
+                    # 启动机器人连接
                     await self.bot_client.start(appid=config.appid, secret=config.secret)
                     
                 except asyncio.CancelledError:
                     logging.info("机器人任务被取消")
                 except Exception as e:
                     logging.error(f"机器人运行时异常: {e}")
-                finally:
-                    self.is_running = False
+                    # 保存启动错误
+                    self._startup_error = str(e)
+                    # 确保启动等待被解除
+                    if not self._startup_complete.is_set():
+                        self._startup_complete.set()
+                    raise
             
             # 创建并运行机器人任务
             bot_task = self.loop.create_task(run_bot())
+            
+            # 在连接建立后设置启动完成标志（但还未就绪）
+            def connection_established():
+                if not self._startup_error:
+                    self._startup_complete.set()
+                    logging.info("机器人连接已建立，等待就绪...")
+            
+            # 稍微延迟设置连接状态，让 start 方法有机会检测错误
+            async def delayed_connection_check():
+                await asyncio.sleep(2)  # 给连接2秒时间
+                if not bot_task.done() and not self._startup_error:
+                    connection_established()
+            
+            # 创建延迟检查任务
+            check_task = self.loop.create_task(delayed_connection_check())
+            
+            # 运行主任务
             self.loop.run_until_complete(bot_task)
             
         except Exception as e:
             logging.error(f"机器人线程异常: {e}")
-            if not self._startup_complete.is_set():
-                self._startup_complete.set()  # 确保启动等待被解除
+            # 确保错误被记录并传递
+            if not self._startup_error:
+                self._startup_error = str(e)
         finally:
+            # 确保启动等待被解除
+            if not self._startup_complete.is_set():
+                self._startup_complete.set()
+            if not self._ready_complete.is_set():
+                self._ready_complete.set()
+                
             # 确保任务被正确取消
             if bot_task and not bot_task.done():
                 bot_task.cancel()
@@ -110,7 +152,13 @@ class QQBotManager:
                     logging.warning(f"取消机器人任务时出错: {e}")
             
             self._cleanup()
-            
+    
+    def _on_bot_ready(self):
+        """机器人就绪回调"""
+        self.is_running = True
+        self._ready_complete.set()
+        logging.info("QQ机器人已完全就绪")
+
     def _cleanup(self):
         """清理资源"""
         self.is_running = False
@@ -215,7 +263,8 @@ class QQBotManager:
                 logging.warning(f"等待线程结束时出错: {e}")
                 
         logging.info("QQ机器人已停止")
-            
+
+
     def get_status(self):
         """获取机器人状态"""
         return {
@@ -223,8 +272,12 @@ class QQBotManager:
             "thread_alive": self.bot_thread.is_alive() if self.bot_thread else False,
             "client_ready": self.bot_client.is_running if self.bot_client else False,
             "config": self.config.model_dump() if self.config else None,
-            "loop_running": self.loop and not self.loop.is_closed() if self.loop else False
+            "loop_running": self.loop and not self.loop.is_closed() if self.loop else False,
+            "startup_error": self._startup_error,
+            "connection_established": self._startup_complete.is_set(),
+            "ready_completed": self._ready_complete.is_set()
         }
+
 
     def __del__(self):
         """析构函数确保资源清理"""
@@ -261,6 +314,7 @@ async def upload_image_host(url):
                 print("上传失败")
     return url
 
+# MyClient 类的修改
 class MyClient(botpy.Client):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -282,7 +336,8 @@ class MyClient(botpy.Client):
             await super().start(appid=appid, secret=secret)
         except Exception as e:
             logging.error(f"客户端启动失败: {e}")
-            raise
+            # 确保错误被传递到上层
+            raise Exception(f"认证失败或配置错误: {e}")
     
     async def close(self):
         """关闭客户端"""
@@ -295,12 +350,18 @@ class MyClient(botpy.Client):
             logging.warning(f"关闭客户端时出错: {e}")
     
     async def on_ready(self):
+        """机器人就绪事件"""
         if self._shutdown_requested:
             return
             
         self.is_running = True
         self._ready_event.set()
-        logging.info("QQ机器人已就绪")
+        
+        # 调用管理器的就绪回调
+        if self._ready_callback:
+            self._ready_callback()
+        
+        logging.info("QQ机器人已就绪，可以接收消息")
 
     async def wait_for_ready(self, timeout=30):
         """等待机器人就绪"""
@@ -309,7 +370,6 @@ class MyClient(botpy.Client):
             return True
         except asyncio.TimeoutError:
             return False
-    
     async def on_c2c_message_create(self, message: C2CMessage):
         if not self.is_running:
             return

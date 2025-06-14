@@ -1,14 +1,20 @@
 # -- coding: utf-8 --
+import os
+import sys
+# 在程序最开始设置
+if hasattr(sys, '_MEIPASS'):
+    # 打包后的程序
+    os.environ['PYTHONPATH'] = sys._MEIPASS
+    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ.get('PATH', '')
+
 import asyncio
 import copy
 from functools import partial
 import json
-import os
 import random
 import re
 import shutil
 import signal
-import sys
 from urllib.parse import urlparse
 from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
@@ -32,12 +38,6 @@ from concurrent.futures import ThreadPoolExecutor
 import argparse
 from mem0 import Memory
 from qq_bot_manager import QQBotManager
-
-# 在程序最开始设置
-if hasattr(sys, '_MEIPASS'):
-    # 打包后的程序
-    os.environ['PYTHONPATH'] = sys._MEIPASS
-    os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ.get('PATH', '')
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -3056,8 +3056,12 @@ async def start_qq_bot(config: QQBotConfig):
     except Exception as e:
         logger.error(f"启动QQ机器人失败: {e}")
         return JSONResponse(
-            status_code=500,
-            content={"success": False, "message": str(e)}
+            status_code=400,  # 改为 400 表示客户端错误
+            content={
+                "success": False, 
+                "message": f"启动失败: {str(e)}",
+                "error_type": "startup_error"
+            }
         )
 
 @app.post("/stop_qq_bot")
@@ -3073,7 +3077,11 @@ async def stop_qq_bot():
 
 @app.get("/qq_bot_status")
 async def qq_bot_status():
-    return qq_bot_manager.get_status()
+    status = qq_bot_manager.get_status()
+    # 如果有启动错误，在状态中包含错误信息
+    if status.get("startup_error") and not status.get("is_running"):
+        status["error_message"] = f"启动失败: {status['startup_error']}"
+    return status
 
 @app.post("/reload_qq_bot")
 async def reload_qq_bot(config: QQBotConfig):
@@ -3164,27 +3172,10 @@ app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=Tru
 
 # 简化main函数
 if __name__ == "__main__":
-    # 设置日志
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler('server.log', encoding='utf-8')
-        ] if getattr(sys, 'frozen', False) else [
-            logging.FileHandler('server.log', encoding='utf-8'),
-            logging.StreamHandler()
-        ]
-    )
-    
-    # Windows 打包环境下隐藏控制台
-    if sys.platform == 'win32' and getattr(sys, 'frozen', False):
-        try:
-            import ctypes
-            whnd = ctypes.windll.kernel32.GetConsoleWindow()
-            if whnd != 0:
-                ctypes.windll.user32.ShowWindow(whnd, 0)
-        except:
-            pass
-    
     import uvicorn
-    uvicorn.run(app, host=HOST, port=PORT, log_config=None)
+
+    uvicorn.run(
+        app,
+        host=HOST,
+        port=PORT
+    )

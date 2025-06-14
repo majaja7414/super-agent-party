@@ -2719,6 +2719,9 @@ let vue_methods = {
     this.isStarting = true;
     
     try {
+      // 显示连接中的提示
+      showNotification('正在连接QQ机器人...', 'info');
+      
       const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -2729,11 +2732,16 @@ let vue_methods = {
       
       if (result.success) {
         this.isQQBotRunning = true;
-        showNotification('QQ机器人已成功启动', 'success');
+        showNotification('QQ机器人已成功启动并就绪', 'success');
       } else {
         // 显示具体错误信息
         const errorMessage = result.message || '启动失败，请检查配置';
         showNotification(`启动失败: ${errorMessage}`, 'error');
+        
+        // 如果是超时错误，给出更具体的提示
+        if (errorMessage.includes('超时')) {
+          showNotification('提示：请检查网络连接和机器人配置是否正确', 'warning');
+        }
       }
     } catch (error) {
       console.error('启动QQ机器人时出错:', error);

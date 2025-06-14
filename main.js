@@ -168,7 +168,7 @@ function createSkeletonWindow() {
 
 function startBackend() {
   const spawnOptions = {
-    stdio: ['ignore', 'pipe', 'pipe'],
+    stdio: ['ignore', 'ignore', 'ignore'],
     shell: false,
     env: {
       ...process.env,
@@ -177,13 +177,15 @@ function startBackend() {
     }
   }
 
-  // Windows 特殊处理 - 确保不显示任何窗口
+  // Windows 特殊处理
   if (process.platform === 'win32') {
     spawnOptions.windowsHide = true
     spawnOptions.detached = false
+    spawnOptions.shell = false
+    // 关键：添加 Windows 创建标志
     spawnOptions.windowsVerbatimArguments = false
     // 使用 CREATE_NO_WINDOW 标志
-    spawnOptions.stdio = ['ignore', 'ignore', 'ignore']  // 完全忽略输出
+    spawnOptions.stdio = ['ignore', 'ignore', 'ignore']
   }
 
   if (isDev) {
