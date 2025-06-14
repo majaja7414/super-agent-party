@@ -1,19 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 import platform
 from PyInstaller.utils.hooks import collect_submodules
+
 # 全平台禁用签名配置
 universal_disable_sign = {
     'codesign_identity': None,
     'entitlements_file': None,
     'signing_requirements': '',
-    'exclude_binaries': True  # 防止包含已签名二进制文件
+    'exclude_binaries': True
 }
 
 a = Analysis(
     ['server.py'],
     pathex=[],
     binaries=[],
-    entitle_file=None,
     datas=[
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
@@ -24,6 +24,7 @@ a = Analysis(
         'pydantic.deprecated.decorator',
         'tiktoken_ext',
         'tiktoken_ext.openai_public',
+        'botpy',
         *collect_submodules('mem0'),
     ],
     hookspath=[],
@@ -36,14 +37,14 @@ a = Analysis(
 
 pyz = PYZ(a.pure)
 
-# 全平台通用构建配置
+# 修改基础配置
 base_exe_config = {
     'debug': False,
     'strip': False,
     'upx': True,
     'bootloader_ignore_signals': False,
     'disable_windowed_traceback': False,
-    **universal_disable_sign  # 合并签名禁用配置
+    **universal_disable_sign
 }
 
 if platform.system() == 'Darwin':
@@ -53,18 +54,9 @@ if platform.system() == 'Darwin':
         a.scripts,
         [],
         name='server',
-        console=False,
         argv_emulation=True,
         icon='static/source/icon.png',
         **base_exe_config
-    )
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.datas,
-        name='server',
-        upx_exclude=[],
-        **universal_disable_sign
     )
     # macOS 专用 .app 配置
     app = BUNDLE(
@@ -79,22 +71,30 @@ if platform.system() == 'Darwin':
         },
         **universal_disable_sign
     )
-else:
-    # Windows/Linux 配置
+elif platform.system() == 'Windows':
+    # Windows 特殊配置
     exe = EXE(
         pyz,
         a.scripts,
         [],
         name='server',
-        console=(platform.system() != 'Windows'),  # Windows 无弹窗
-        icon='static/source/icon.png' if platform.system() == 'Windows' else None,
+        icon='static/source/icon.ico',  # 使用 .ico 格式图标
         **base_exe_config
     )
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.datas,
+else:
+    # Linux 配置
+    exe = EXE(
+        pyz,
+        a.scripts,
+        [],
         name='server',
-        upx_exclude=[],
-        **universal_disable_sign
+        **base_exe_config
     )
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    name='server',
+    upx_exclude=[],
+    **universal_disable_sign
+)

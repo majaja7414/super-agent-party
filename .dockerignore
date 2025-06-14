@@ -23,4 +23,5 @@ server.dist/
 doc/
 *.spec
 super-agent-data/
-botpy.log
+botpy.log*
+build.bat
