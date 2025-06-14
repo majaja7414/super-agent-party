@@ -169,71 +169,35 @@ function createSkeletonWindow() {
 function startBackend() {
   const spawnOptions = {
     stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
     shell: false,
     env: {
       ...process.env,
-      PYTHONUNBUFFERED: '1',
       NODE_ENV: isDev ? 'development' : 'production',
-      // 添加 Electron 相关环境变量
-      ELECTRON_RUN_AS_NODE: '1',
-      ELECTRON_NO_ATTACH_CONSOLE: '1',
-      // 防止子进程弹出控制台
-      CREATE_NO_WINDOW: '1'
+      PYTHONIOENCODING: 'utf-8'
     }
   }
 
+  // Windows 特殊处理 - 确保不显示任何窗口
+  if (process.platform === 'win32') {
+    spawnOptions.windowsHide = true
+    spawnOptions.detached = false
+    spawnOptions.windowsVerbatimArguments = false
+    // 使用 CREATE_NO_WINDOW 标志
+    spawnOptions.stdio = ['ignore', 'ignore', 'ignore']  // 完全忽略输出
+  }
+
   if (isDev) {
-    // 开发模式使用Python启动
-    const backendScript = path.join(__dirname, 'server.py')
+    // 开发模式
     backendProcess = spawn(pythonExec, [
       'server.py',
       '--port', PORT.toString(),
       '--host', BACKEND_HOST,
     ], spawnOptions);
   } else {
-    // 生产模式使用编译后的可执行文件
-    let serverExecutable
-    switch (process.platform) {
-      case 'win32':
-        serverExecutable = 'server.exe'
-        break
-      case 'darwin':
-        serverExecutable = 'server'
-        break
-      case 'linux':
-        serverExecutable = 'server'
-        break
-      default:
-        throw new Error(`Unsupported platform: ${process.platform}`)
-    }
-
-    // 修改可执行文件路径获取方式
+    // 生产模式
+    let serverExecutable = process.platform === 'win32' ? 'server.exe' : 'server'
     const resourcesPath = process.resourcesPath || path.join(process.execPath, '..', 'resources')
     const exePath = path.join(resourcesPath, 'server', serverExecutable)
-    
-    // 添加更多环境变量
-    spawnOptions.env.UV_THREADPOOL_SIZE = '4'
-    spawnOptions.env.NODE_OPTIONS = '--max-old-space-size=4096'
-    spawnOptions.env.PYTHONHOME = ''  // 清空可能冲突的Python环境
-    spawnOptions.env.PYTHONPATH = ''  // 清空可能冲突的Python路径
-    
-    // Windows 特殊处理
-    if (process.platform === 'win32') {
-      spawnOptions.windowsVerbatimArguments = false
-      spawnOptions.windowsHide = true
-      // 添加 Windows 特定的选项来隐藏控制台
-      spawnOptions.detached = false
-    }
-
-    // 设置可执行权限(仅在 Unix 系统)
-    if (process.platform !== 'win32') {
-      try {
-        fs.chmodSync(exePath, '755')
-      } catch (err) {
-        console.error('Failed to set executable permissions:', err)
-      }
-    }
     
     console.log(`Starting backend from: ${exePath}`)
     
@@ -246,37 +210,31 @@ function startBackend() {
     })
   }
 
-  // 日志处理
-  const logStream = fs.createWriteStream(
-    path.join(logDir, `backend-${Date.now()}.log`),
-    { flags: 'a' }
-  )
-  
-  backendProcess.stdout.on('data', (data) => {
-    logStream.write(`[INFO] ${data}`)
-    if (loadingWindow) {
-      loadingWindow.webContents.send('log', data.toString())
-    }
-  })
-  
-  backendProcess.stderr.on('data', (data) => {
-    logStream.write(`[ERROR] ${data}`)
-    if (loadingWindow) {
-      loadingWindow.webContents.send('error', data.toString())
-    }
-  })
+  // 简化日志处理
+  if (isDev) {
+    const logStream = fs.createWriteStream(
+      path.join(logDir, `backend-${Date.now()}.log`),
+      { flags: 'a' }
+    )
+    
+    backendProcess.stdout?.on('data', (data) => {
+      logStream.write(`[INFO] ${data}`)
+    })
+    
+    backendProcess.stderr?.on('data', (data) => {
+      logStream.write(`[ERROR] ${data}`)
+    })
+  }
 
   backendProcess.on('error', (err) => {
-    logStream.write(`Process error: ${err.message}`)
-    if (loadingWindow) {
-      loadingWindow.webContents.send('error', err.message)
-    }
+    console.error('Backend process error:', err)
   })
 
   backendProcess.on('close', (code) => {
-    logStream.end(`\nProcess exited with code ${code}\n`)
+    console.log(`Backend process exited with code ${code}`)
   })
 }
+
 
 async function waitForBackend() {
   const MAX_RETRIES = 30

@@ -18,7 +18,6 @@ a = Analysis(
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
         ('static', 'static'),
-        ('multiprocess_worker.py', '.'),
         ('tiktoken_cache', 'tiktoken_cache')
     ],
     hiddenimports=[
@@ -26,8 +25,6 @@ a = Analysis(
         'tiktoken_ext',
         'tiktoken_ext.openai_public',
         'botpy',
-        'multiprocess_worker',
-        *collect_submodules('multiprocessing'),
         *collect_submodules('mem0'),
     ],
     hookspath=[],

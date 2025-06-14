@@ -1,18 +1,240 @@
-import datetime
-import logging
+# qq_bot_manager.py
+import asyncio
+import threading
 import os
-import re
-import signal
-import sys
-import time
-from typing import List
+from typing import Optional,List
+import weakref
 import botpy
-from botpy.message import C2CMessage,GroupMessage
+from botpy.message import C2CMessage, GroupMessage
 from openai import AsyncOpenAI
+import logging
+import re
+import time
 from pydantic import BaseModel
 import requests
 
-from py.get_setting import PORT, UPLOAD_FILES_DIR, load_settings
+from py.get_setting import UPLOAD_FILES_DIR, load_settings,get_port
+
+class QQBotManager:
+    def __init__(self):
+        self.bot_thread: Optional[threading.Thread] = None
+        self.bot_client: Optional[MyClient] = None
+        self.is_running = False
+        self.config = None
+        self.loop = None
+        self._shutdown_event = threading.Event()
+        self._startup_complete = threading.Event()
+        
+    def start_bot(self, config):
+        """在新线程中启动机器人"""
+        if self.is_running:
+            raise Exception("机器人已在运行")
+            
+        self.config = config
+        self._shutdown_event.clear()
+        self._startup_complete.clear()
+        
+        # 使用传统线程方式，更稳定
+        self.bot_thread = threading.Thread(
+            target=self._run_bot_thread,
+            args=(config,),
+            daemon=True,
+            name="QQBotThread"
+        )
+        self.bot_thread.start()
+        
+        # 等待启动确认
+        if not self._startup_complete.wait(timeout=30):
+            self.stop_bot()
+            raise Exception("机器人启动超时")
+            
+        if not self.is_running:
+            raise Exception("机器人启动失败")
+            
+    def _run_bot_thread(self, config):
+        """在线程中运行机器人"""
+        self.loop = None
+        bot_task = None
+        
+        try:
+            # 创建新的事件循环
+            self.loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(self.loop)
+            
+            # 创建机器人客户端
+            self.bot_client = MyClient(intents=botpy.Intents(public_messages=True))
+            self.bot_client.QQAgent = config.QQAgent
+            self.bot_client.memoryLimit = config.memoryLimit
+            self.bot_client.separators = config.separators if config.separators else ['。', '\n', '？', '！']
+            self.bot_client.reasoningVisible = config.reasoningVisible
+            self.bot_client.quickRestart = config.quickRestart
+            
+            # 设置弱引用以避免循环引用
+            self.bot_client._manager_ref = weakref.ref(self)
+            
+            # 创建启动任务
+            async def run_bot():
+                try:
+                    # 标记为已启动
+                    self.is_running = True
+                    self._startup_complete.set()
+                    logging.info("开始运行QQ机器人...")
+                    
+                    # 运行机器人
+                    await self.bot_client.start(appid=config.appid, secret=config.secret)
+                    
+                except asyncio.CancelledError:
+                    logging.info("机器人任务被取消")
+                except Exception as e:
+                    logging.error(f"机器人运行时异常: {e}")
+                finally:
+                    self.is_running = False
+            
+            # 创建并运行机器人任务
+            bot_task = self.loop.create_task(run_bot())
+            self.loop.run_until_complete(bot_task)
+            
+        except Exception as e:
+            logging.error(f"机器人线程异常: {e}")
+            if not self._startup_complete.is_set():
+                self._startup_complete.set()  # 确保启动等待被解除
+        finally:
+            # 确保任务被正确取消
+            if bot_task and not bot_task.done():
+                bot_task.cancel()
+                try:
+                    self.loop.run_until_complete(bot_task)
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    logging.warning(f"取消机器人任务时出错: {e}")
+            
+            self._cleanup()
+            
+    def _cleanup(self):
+        """清理资源"""
+        self.is_running = False
+        
+        # 清理机器人客户端
+        if self.bot_client and self.loop and not self.loop.is_closed():
+            try:
+                # 标记客户端为关闭状态
+                self.bot_client._shutdown_requested = True
+                
+                # 如果客户端有close方法且事件循环还在运行，尝试关闭
+                if hasattr(self.bot_client, 'close'):
+                    # 创建关闭任务并运行
+                    async def close_client():
+                        try:
+                            await self.bot_client.close()
+                        except Exception as e:
+                            logging.warning(f"关闭客户端时出错: {e}")
+                    
+                    close_task = self.loop.create_task(close_client())
+                    try:
+                        self.loop.run_until_complete(close_task)
+                    except Exception as e:
+                        logging.warning(f"执行关闭任务时出错: {e}")
+                        
+            except Exception as e:
+                logging.warning(f"清理机器人客户端时出错: {e}")
+                
+        # 清理事件循环
+        if self.loop and not self.loop.is_closed():
+            try:
+                # 获取所有待执行的任务
+                pending_tasks = []
+                try:
+                    pending_tasks = asyncio.all_tasks(self.loop)
+                except RuntimeError:
+                    # 如果事件循环已经停止，all_tasks 可能会抛出 RuntimeError
+                    pass
+                
+                # 取消所有待执行的任务
+                for task in pending_tasks:
+                    if not task.done():
+                        task.cancel()
+                
+                # 如果有待处理的任务，等待它们完成或取消
+                if pending_tasks:
+                    try:
+                        # 使用 gather 收集所有任务的结果
+                        async def cancel_all_tasks():
+                            await asyncio.gather(*pending_tasks, return_exceptions=True)
+                        
+                        cancel_task = self.loop.create_task(cancel_all_tasks())
+                        self.loop.run_until_complete(cancel_task)
+                        
+                    except Exception as e:
+                        logging.warning(f"等待任务取消时出错: {e}")
+                        
+                # 关闭事件循环
+                if not self.loop.is_closed():
+                    self.loop.close()
+                        
+            except Exception as e:
+                logging.warning(f"关闭事件循环时出错: {e}")
+                
+        self.bot_client = None
+        self.loop = None
+        self._shutdown_event.set()
+            
+    def stop_bot(self):
+        """停止机器人"""
+        if not self.is_running and not self.bot_thread:
+            return
+            
+        logging.info("正在停止QQ机器人...")
+        
+        # 设置停止标志
+        self._shutdown_event.set()
+        self.is_running = False
+        
+        # 如果机器人客户端存在，标记为请求关闭
+        if self.bot_client:
+            self.bot_client._shutdown_requested = True
+        
+        # 如果事件循环存在且正在运行，尝试停止它
+        if self.loop and not self.loop.is_closed():
+            try:
+                # 在循环中调度停止
+                self.loop.call_soon_threadsafe(self.loop.stop)
+            except RuntimeError as e:
+                # 如果循环已经停止，会抛出 RuntimeError
+                logging.debug(f"事件循环已停止: {e}")
+            except Exception as e:
+                logging.warning(f"停止事件循环时出错: {e}")
+        
+        # 等待线程结束
+        if self.bot_thread and self.bot_thread.is_alive():
+            try:
+                self.bot_thread.join(timeout=10)
+                if self.bot_thread.is_alive():
+                    logging.warning("机器人线程在超时后仍在运行")
+            except Exception as e:
+                logging.warning(f"等待线程结束时出错: {e}")
+                
+        logging.info("QQ机器人已停止")
+            
+    def get_status(self):
+        """获取机器人状态"""
+        return {
+            "is_running": self.is_running,
+            "thread_alive": self.bot_thread.is_alive() if self.bot_thread else False,
+            "client_ready": self.bot_client.is_running if self.bot_client else False,
+            "config": self.config.model_dump() if self.config else None,
+            "loop_running": self.loop and not self.loop.is_closed() if self.loop else False
+        }
+
+    def __del__(self):
+        """析构函数确保资源清理"""
+        try:
+            self.stop_bot()
+        except:
+            pass
+
+
+
 
 async def upload_image_host(url):
     settings = await load_settings()
@@ -40,45 +262,85 @@ async def upload_image_host(url):
     return url
 
 class MyClient(botpy.Client):
-    def __init__(self,start_event, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_running = False
         self.QQAgent = "super-model"
         self.memoryLimit = 10
         self.memoryList = {}
-        self.start_event = start_event
         self.separators = ['。', '\n', '？', '！']
         self.reasoningVisible = False
         self.quickRestart = True
-
+        self._ready_event = asyncio.Event()
+        self.port = get_port()
+        self._shutdown_requested = False
+        self._manager_ref = None  # 弱引用管理器
+        
+    async def start(self, appid, secret):
+        """启动客户端"""
+        try:
+            await super().start(appid=appid, secret=secret)
+        except Exception as e:
+            logging.error(f"客户端启动失败: {e}")
+            raise
+    
+    async def close(self):
+        """关闭客户端"""
+        self._shutdown_requested = True
+        self.is_running = False
+        try:
+            # 调用父类的关闭方法
+            await super().close()
+        except Exception as e:
+            logging.warning(f"关闭客户端时出错: {e}")
+    
     async def on_ready(self):
+        if self._shutdown_requested:
+            return
+            
         self.is_running = True
-        self.start_event.set()
+        self._ready_event.set()
+        logging.info("QQ机器人已就绪")
 
+    async def wait_for_ready(self, timeout=30):
+        """等待机器人就绪"""
+        try:
+            await asyncio.wait_for(self._ready_event.wait(), timeout=timeout)
+            return True
+        except asyncio.TimeoutError:
+            return False
+    
     async def on_c2c_message_create(self, message: C2CMessage):
         if not self.is_running:
             return
+        
         client = AsyncOpenAI(
             api_key="super-secret-key",
-            base_url=f"http://127.0.0.1:{PORT}/v1"
+            base_url=f"http://127.0.0.1:{self.port}/v1"
         )
+        
         user_content = []
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
                     user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+        
         if user_content:
             user_content.append({"type": "text", "text": message.content})
         else:
             user_content = message.content
+            
         print(f"User content: {user_content}")
+        
         c_id = message.author.user_openid
         if c_id not in self.memoryList:
             self.memoryList[c_id] = []
+            
         if self.quickRestart:
             if "/restart" in message.content or "/重启" in message.content:
                 self.memoryList[c_id] = []
+                
         self.memoryList[c_id].append({"role": "user", "content": user_content})
 
         # 初始化状态管理
@@ -124,7 +386,7 @@ class MyClient(botpy.Client):
                 while True:
                     if self.separators == []:
                         break
-                    # 查找分隔符（。或\n）
+                    # 查找分隔符
                     buffer = state["text_buffer"]
                     split_pos = -1
                     for i, c in enumerate(buffer):
@@ -143,7 +405,7 @@ class MyClient(botpy.Client):
                     if clean_text:
                         await self._send_text_message(message, clean_text)
                     
-            # 提取图片到缓存（不发送）
+            # 提取图片到缓存
             self._extract_images_to_cache(c_id)
 
             # 处理剩余文本
@@ -169,7 +431,8 @@ class MyClient(botpy.Client):
                 await self._send_text_message(message, clean_text)
         finally:
             # 清理状态
-            del self.processing_states[c_id]
+            if c_id in self.processing_states:
+                del self.processing_states[c_id]
 
     def _extract_images_to_cache(self, c_id):
         """渐进式图片链接提取"""
@@ -249,7 +512,7 @@ class MyClient(botpy.Client):
         
         client = AsyncOpenAI(
             api_key="super-secret-key",
-            base_url=f"http://127.0.0.1:{PORT}/v1"
+            base_url=f"http://127.0.0.1:{self.port}/v1"
         )
         user_content = []
         if message.attachments:
@@ -437,89 +700,3 @@ class QQBotConfig(BaseModel):
     separators: List[str]
     reasoningVisible: bool
     quickRestart: bool
-    
-def run_bot_process_wrapper(config: QQBotConfig, start_event, shared_dict, env_vars):
-    """包装函数，用于设置子进程环境"""
-    try:
-        # 更新环境变量
-        os.environ.update(env_vars)
-        
-        # 调用实际的机器人进程函数
-        run_bot_process(config, start_event, shared_dict)
-    except Exception as e:
-        shared_dict['error'] = f"子进程包装异常: {str(e)}"
-        start_event.set()
-
-def run_bot_process(config: QQBotConfig, start_event, shared_dict):
-    """在新进程中运行机器人的函数"""
-    try:
-        # 确保 freeze_support
-        from multiprocessing import freeze_support
-        freeze_support()
-        
-        # 检查是否是 Electron 子进程
-        is_electron_child = os.environ.get('ELECTRON_CHILD_PROCESS') == '1'
-        
-        shared_dict['debug'] = f"子进程启动，PID: {os.getpid()}, Electron子进程: {is_electron_child}"
-        
-        # Windows 和 Electron 特殊处理
-        if sys.platform == 'win32':
-            import subprocess
-            subprocess._cleanup = lambda: None
-            
-            # 隐藏控制台窗口
-            if is_electron_child or os.environ.get('CREATE_NO_WINDOW'):
-                try:
-                    import ctypes
-                    whnd = ctypes.windll.kernel32.GetConsoleWindow()
-                    if whnd != 0:
-                        ctypes.windll.user32.ShowWindow(whnd, 0)  # 隐藏窗口
-                except Exception as e:
-                    shared_dict['warning'] = f"隐藏控制台失败: {str(e)}"
-        
-        # 配置日志
-        log_path = 'bot_electron.log' if is_electron_child else 'bot.log'
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_path, encoding='utf-8'),
-                logging.StreamHandler()
-            ]
-        )
-
-        logger = logging.getLogger("QQBotProcess")
-        logger.info(f"机器人子进程启动 (Electron: {is_electron_child})")
-        
-        # 其余代码保持不变，但增加更多错误处理
-        try:
-            client = MyClient(start_event, intents=botpy.Intents(public_messages=True))
-            client.QQAgent = config.QQAgent
-            client.memoryLimit = config.memoryLimit
-            client.separators = config.separators
-            client.reasoningVisible = config.reasoningVisible
-            client.quickRestart = config.quickRestart
-            
-            logger.info("开始运行QQ机器人...")
-            shared_dict['status'] = 'starting'
-            
-            # 运行机器人
-            client.run(appid=config.appid, secret=config.secret)
-            
-        except Exception as bot_error:
-            error_msg = f"机器人运行异常: {str(bot_error)}"
-            logger.error(error_msg)
-            shared_dict['error'] = error_msg
-            start_event.set()
-        
-    except Exception as e:
-        error_msg = f"子进程初始化异常: {str(e)}"
-        shared_dict['error'] = error_msg
-        start_event.set()
-        
-        # 记录到日志文件
-        try:
-            with open('bot_error.log', 'a', encoding='utf-8') as f:
-                f.write(f"{datetime.now()}: {error_msg}\n")
-        except:
-            pass

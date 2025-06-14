@@ -1,11 +1,8 @@
 # -- coding: utf-8 --
 import asyncio
 import copy
-import datetime
 from functools import partial
 import json
-import multiprocessing
-from multiprocessing import Manager, Event
 import os
 import random
 import re
@@ -31,10 +28,11 @@ from contextlib import asynccontextmanager,suppress
 import requests
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from multiprocess_worker import run_bot_process, run_bot_process_wrapper
+
 import argparse
 from mem0 import Memory
-from multiprocessing import freeze_support
+from qq_bot_manager import QQBotManager
+
 # 在程序最开始设置
 if hasattr(sys, '_MEIPASS'):
     # 打包后的程序
@@ -3043,382 +3041,58 @@ class QQBotConfig(BaseModel):
     reasoningVisible: bool
     quickRestart: bool
 
-# 全局变量，用于存储机器人进程
-qq_bot_process = None
-current_bot_config = None
+# 全局机器人管理器
+qq_bot_manager = QQBotManager()
 
 @app.post("/start_qq_bot")
 async def start_qq_bot(config: QQBotConfig):
-    global qq_bot_process, current_bot_config
-    
-    if qq_bot_process and qq_bot_process.is_alive():
-        return JSONResponse(
-            status_code=400,
-            content={"success": False, "message": "QQ机器人已经在运行"}
-        )
-
-    # 检查环境
-    is_electron = os.environ.get('ELECTRON_RUN_AS_NODE') == '1'
-    is_packaged = getattr(sys, 'frozen', False) or hasattr(sys, '_MEIPASS')
-    
     try:
-        # 使用Manager创建共享对象
-        manager = Manager()
-        shared_dict = manager.dict()
-        start_event = manager.Event()
-        
-        # 为子进程准备环境变量
-        process_env = os.environ.copy()
-        if is_electron:
-            # 传递 Electron 环境信息到子进程
-            process_env['ELECTRON_CHILD_PROCESS'] = '1'
-            process_env['PYTHONIOENCODING'] = 'utf-8'
-        
-        # 创建进程
-        ctx = multiprocessing.get_context('spawn')
-        qq_bot_process = ctx.Process(
-            target=run_bot_process_wrapper,  # 使用包装函数
-            args=(config, start_event, shared_dict, process_env),
-            name="QQBotProcess",
-            daemon=False
-        )
-        
-        start_event.clear()
-        qq_bot_process.start()
-        logger.info(f"QQ机器人进程已启动，PID: {qq_bot_process.pid}")
-        
-        # 等待启动结果（增加超时时间）
-        timeout = 15.0 if is_electron else 10.0  # Electron 环境下增加超时时间
-        
-        loop = asyncio.get_event_loop()
-        event_set = await loop.run_in_executor(
-            None, 
-            lambda: start_event.wait(timeout=timeout)
-        )
-        
-        # 检查启动结果
-        if 'error' in shared_dict:
-            error_msg = shared_dict['error']
-            qq_bot_process.terminate()
-            qq_bot_process.join(timeout=2.0)
-            qq_bot_process = None
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "message": f"机器人启动失败: {error_msg}"}
-            )
-        
-        if not event_set:
-            qq_bot_process.terminate()
-            qq_bot_process.join(timeout=2.0)
-            qq_bot_process = None
-            return JSONResponse(
-                status_code=500,
-                content={"success": False, "message": "机器人启动超时，请检查配置和网络连接"}
-            )
-        
-        current_bot_config = config
+        qq_bot_manager.start_bot(config)
         return {
             "success": True,
             "message": "QQ机器人已成功启动",
-            "pid": qq_bot_process.pid,
-            "environment": "electron" if is_electron else "standalone"
+            "environment": "thread-based"
         }
-        
     except Exception as e:
-        logger.error(f"启动QQ机器人时发生异常: {str(e)}")
-        if qq_bot_process:
-            qq_bot_process.terminate()
-            qq_bot_process = None
+        logger.error(f"启动QQ机器人失败: {e}")
         return JSONResponse(
             status_code=500,
-            content={"success": False, "message": f"启动异常: {str(e)}"}
+            content={"success": False, "message": str(e)}
         )
-    
-# 重新加载QQ机器人
-@app.post("/reload_qq_bot")
-async def reload_qq_bot(config: QQBotConfig):
-    """
-    重新加载QQ机器人配置
-    支持热重载：先停止当前机器人，然后用新配置启动
-    改进：增强跨平台和Docker兼容性
-    """
-    global qq_bot_process, current_bot_config
-    
-    # 1. 检查是否需要重载
-    if current_bot_config and config == current_bot_config:
-        logger.info("配置未变化，无需重载")
-        return {
-            "success": True,
-            "message": "配置未变化，无需重载",
-            "pid": qq_bot_process.pid if qq_bot_process and qq_bot_process.is_alive() else None,
-            "config_changed": False
-        }
-    
-    # 2. 记录当前状态
-    was_running = False
-    old_pid = None
-    if qq_bot_process and qq_bot_process.is_alive():
-        was_running = True
-        old_pid = qq_bot_process.pid
-        logger.info(f"机器人正在运行(PID: {old_pid})，将先停止再重新启动")
-        
-        # 使用改进的停止逻辑
-        try:
-            # 特殊处理Docker容器中的PID 1问题
-            in_docker = os.path.exists('/.dockerenv')
-            
-            # 发送终止信号
-            if in_docker and old_pid == 1:
-                # Docker中PID 1需要特殊处理
-                logger.info("在Docker容器中发送SIGINT到PID 1")
-                os.kill(old_pid, signal.SIGINT)
-            else:
-                # 标准终止信号
-                if sys.platform == 'win32':
-                    qq_bot_process.terminate()
-                else:
-                    os.kill(old_pid, signal.SIGTERM)
-            
-            # 等待进程结束 (增加超时时间)
-            timeout = 10.0  # 最多等待10秒
-            start_time = time.time()
-            
-            while time.time() - start_time < timeout:
-                if not qq_bot_process.is_alive():
-                    break
-                # 更精确的等待
-                await asyncio.sleep(0.5)
-                # 二次检查防止竞争条件
-                if not qq_bot_process.is_alive():
-                    break
-                
-                # 每2秒记录一次状态
-                if int(time.time() - start_time) % 2 == 0:
-                    logger.info(f"等待进程 {old_pid} 停止...")
-            
-            # 如果进程仍在运行，强制终止
-            if qq_bot_process.is_alive():
-                logger.warning(f"进程 {old_pid} 未响应，强制终止")
-                try:
-                    if sys.platform == 'win32':
-                        qq_bot_process.kill()
-                    else:
-                        os.kill(old_pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass  # 进程可能在我们检查后退出
-                
-                # 等待最终确认
-                qq_bot_process.join(timeout=2.0)
-            
-            logger.info(f"旧机器人进程 {old_pid} 已停止")
-        except ProcessLookupError:
-            logger.warning(f"机器人进程 {old_pid} 已不存在")
-        except Exception as e:
-            logger.error(f"停止机器人时出错: {str(e)}")
-            return JSONResponse(
-                status_code=500,
-                content={
-                    "success": False,
-                    "message": f"停止现有机器人失败: {str(e)}",
-                    "config_changed": False
-                }
-            )
-        finally:
-            # 确保进程对象被清理
-            if qq_bot_process:
-                if not qq_bot_process.is_alive():
-                    qq_bot_process.close()
-                qq_bot_process = None
-    
-    # 3. 保存新配置
-    current_bot_config = config
-    logger.info("QQ机器人配置已更新")
-    
-    # 4. 如果之前是运行状态，重新启动
-    if was_running:
-        # 添加额外延迟确保进程完全终止
-        await asyncio.sleep(1.0)
-        
-        # 使用Manager创建共享对象
-        with Manager() as manager:
-            shared_dict = manager.dict()
-            start_event = Event()
-            
-            # 创建并启动进程
-            qq_bot_process = multiprocessing.Process(
-                target=run_bot_process,
-                args=(config, start_event, shared_dict),
-                name="QQBotProcess"
-            )
-            
-            start_event.clear()  # 清除事件状态
-            qq_bot_process.start()
-            new_pid = qq_bot_process.pid
-            logger.info(f"QQ机器人进程已重新启动，新PID: {new_pid}")
-            
-            # 等待启动结果（最多10秒）
-            try:
-                # 在异步环境中同步等待
-                loop = asyncio.get_event_loop()
-                event_set = await loop.run_in_executor(
-                    None, 
-                    lambda: start_event.wait(timeout=10.0)
-                )
-            except Exception as e:
-                qq_bot_process.terminate()
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "success": False,
-                        "message": f"等待机器人启动时出错: {str(e)}",
-                        "pid": None,
-                        "config_changed": True
-                    }
-                )
-            
-            # 检查启动结果
-            if 'error' in shared_dict:
-                error_msg = shared_dict['error']
-                qq_bot_process.terminate()
-                qq_bot_process.join(timeout=1.0)
-                qq_bot_process = None
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "success": False,
-                        "message": f"机器人启动失败: {error_msg}",
-                        "pid": None,
-                        "config_changed": True
-                    }
-                )
-            
-            if not event_set:
-                qq_bot_process.terminate()
-                qq_bot_process.join(timeout=1.0)
-                qq_bot_process = None
-                return JSONResponse(
-                    status_code=500,
-                    content={
-                        "success": False,
-                        "message": "机器人启动超时，请检查网络连接",
-                        "pid": None,
-                        "config_changed": True
-                    }
-                )
-            
-            # 启动成功
-            return {
-                "success": True,
-                "message": "QQ机器人配置已重载并重新启动",
-                "pid": new_pid,
-                "old_pid": old_pid,
-                "config_changed": True
-            }
-    
-    # 5. 如果之前未运行，只更新配置
-    logger.info("QQ机器人配置已更新，但未启动（机器人之前未运行）")
-    return {
-        "success": True,
-        "message": "QQ机器人配置已更新",
-        "pid": None,
-        "old_pid": old_pid,
-        "config_changed": True
-    }
 
-# 停止QQ机器人
 @app.post("/stop_qq_bot")
 async def stop_qq_bot():
-    global qq_bot_process
-    
-    if not qq_bot_process or not qq_bot_process.is_alive():
-        raise HTTPException(status_code=400, detail="QQ机器人未在运行")
-    
-    pid = qq_bot_process.pid
-    logger.info(f"开始停止机器人进程 (PID: {pid})")
-    
     try:
-        # 特殊处理Docker容器中的PID 1问题
-        in_docker = os.path.exists('/.dockerenv')
-        
-        # 发送终止信号
-        try:
-            if in_docker and pid == 1:
-                # Docker中PID 1需要特殊处理
-                logger.info("在Docker容器中发送SIGINT到PID 1")
-                os.kill(pid, signal.SIGINT)
-            else:
-                # 标准终止信号
-                if sys.platform == 'win32':
-                    qq_bot_process.terminate()
-                else:
-                    os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            logger.warning(f"进程 {pid} 已不存在")
-            qq_bot_process = None
-            return {"success": True, "message": "进程已终止"}
-        
-        # 等待进程结束 (增加超时时间)
-        timeout = 10.0  # 最多等待10秒
-        start_time = time.time()
-        
-        while time.time() - start_time < timeout:
-            if not qq_bot_process.is_alive():
-                break
-            # 更精确的等待
-            await asyncio.sleep(0.5)
-            # 二次检查防止竞争条件
-            if not qq_bot_process.is_alive():
-                break
-            
-            # 每2秒记录一次状态
-            if int(time.time() - start_time) % 2 == 0:
-                logger.info(f"等待进程 {pid} 停止...")
-        
-        # 如果进程仍在运行，强制终止
-        if qq_bot_process.is_alive():
-            logger.warning(f"进程 {pid} 未响应，强制终止")
-            try:
-                if sys.platform == 'win32':
-                    qq_bot_process.kill()
-                else:
-                    os.kill(pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass  # 进程可能在我们检查后退出
-            
-            # 等待最终确认
-            qq_bot_process.join(timeout=2.0)
-    
+        qq_bot_manager.stop_bot()
+        return {"success": True, "message": "QQ机器人已停止"}
     except Exception as e:
-        logger.error(f"停止机器人时出错: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content={"success": False, "message": f"停止机器人失败: {str(e)}"}
+            content={"success": False, "message": str(e)}
         )
-    finally:
-        # 确保进程对象被清理
-        if qq_bot_process and not qq_bot_process.is_alive():
-            qq_bot_process.close()
-        qq_bot_process = None
-    
-    logger.info(f"机器人进程 {pid} 已成功停止")
-    return {"success": True, "message": "QQ机器人已停止"}
 
-# 检查机器人状态和配置
 @app.get("/qq_bot_status")
 async def qq_bot_status():
-    global qq_bot_process, current_bot_config
-    
-    status = {
-        "is_running": False,
-        "pid": None,
-        "config": current_bot_config.model_dump() if current_bot_config else None
-    }
-    
-    if qq_bot_process and qq_bot_process.is_alive():
-        status["is_running"] = True
-        status["pid"] = qq_bot_process.pid
-    
-    return status
+    return qq_bot_manager.get_status()
+
+@app.post("/reload_qq_bot")
+async def reload_qq_bot(config: QQBotConfig):
+    try:
+        # 先停止再启动
+        qq_bot_manager.stop_bot()
+        await asyncio.sleep(1)  # 等待完全停止
+        qq_bot_manager.start_bot(config)
+        
+        return {
+            "success": True,
+            "message": "QQ机器人已重新加载",
+            "config_changed": True
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": str(e)}
+        )
 
 
 settings_lock = asyncio.Lock()
@@ -3488,46 +3162,29 @@ app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uplo
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")
 
-def init_multiprocessing():
-    """初始化多进程设置"""
-    # 检查是否在 Electron 环境中运行
-    is_electron = os.environ.get('ELECTRON_RUN_AS_NODE') == '1'
-    is_packaged = getattr(sys, 'frozen', False) or hasattr(sys, '_MEIPASS')
-    
-    if is_electron or is_packaged:
-        # 在 Electron 或打包环境中强制使用 spawn
-        try:
-            multiprocessing.set_start_method('spawn', force=True)
-            logger.info("使用 spawn 方法启动多进程 (Electron/打包环境)")
-        except RuntimeError as e:
-            logger.warning(f"设置多进程方法失败: {e}")
-    elif sys.platform == 'win32':
-        try:
-            multiprocessing.set_start_method('spawn', force=True)
-            logger.info("使用 spawn 方法启动多进程 (Windows)")
-        except RuntimeError as e:
-            logger.warning(f"设置多进程方法失败: {e}")
-    else:
-        try:
-            multiprocessing.set_start_method('fork', force=True)
-            logger.info("使用 fork 方法启动多进程")
-        except RuntimeError as e:
-            logger.warning(f"设置多进程方法失败: {e}")
-
+# 简化main函数
 if __name__ == "__main__":
-    # 确保freeze_support在最开始就被调用
-    freeze_support()
+    # 设置日志
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler('server.log', encoding='utf-8')
+        ] if getattr(sys, 'frozen', False) else [
+            logging.FileHandler('server.log', encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
     
-    # 初始化多进程
-    init_multiprocessing()
-    
-    # Windows下隐藏主程序控制台（如果需要）
-    if sys.platform == 'win32' and hasattr(sys, '_MEIPASS'):
-        import ctypes
-        whnd = ctypes.windll.kernel32.GetConsoleWindow()
-        if whnd != 0:
-            # 0=隐藏, 1=正常, 2=最小化, 3=最大化
-            ctypes.windll.user32.ShowWindow(whnd, 0)
+    # Windows 打包环境下隐藏控制台
+    if sys.platform == 'win32' and getattr(sys, 'frozen', False):
+        try:
+            import ctypes
+            whnd = ctypes.windll.kernel32.GetConsoleWindow()
+            if whnd != 0:
+                ctypes.windll.user32.ShowWindow(whnd, 0)
+        except:
+            pass
     
     import uvicorn
-    uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(app, host=HOST, port=PORT, log_config=None)
