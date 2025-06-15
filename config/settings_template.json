@@ -136,7 +136,7 @@
     },
     "BotConfig": {
       "imgHost_enabled":false,
-      "imgHost": "easyImage2",
+      "imgHost": "smms",
       "EI2_base_url": "",
       "EI2_api_key": ""
     }

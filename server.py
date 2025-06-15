@@ -1028,7 +1028,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             continue
                         if tool.function.arguments:
                             # function参数为流式响应，需要拼接
-                            tool_calls[idx].function.arguments += tool.function.arguments
+                            if tool_calls[idx].function.arguments:
+                                tool_calls[idx].function.arguments += tool.function.arguments
+                            else:
+                                tool_calls[idx].function.arguments = tool.function.arguments
                 else:
                     # 创建原始chunk的拷贝
                     chunk_dict = chunk.model_dump()
@@ -1332,6 +1335,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     # 使用json.loads来解析修改后的字符串为列表
                     data_list = json.loads(modified_data)
                     results = await dispatch_tool(response_content.name, data_list[0],settings)
+                    print(results)
                     if results is None:
                         chunk = {
                             "id": "extra_tools",
@@ -1540,7 +1544,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     continue
                                 if tool.function.arguments:
                                     # function参数为流式响应，需要拼接
-                                    tool_calls[idx].function.arguments += tool.function.arguments
+                                    if tool_calls[idx].function.arguments:
+                                        tool_calls[idx].function.arguments += tool.function.arguments
+                                    else:
+                                        tool_calls[idx].function.arguments = tool.function.arguments
                         else:
                             # 创建原始chunk的拷贝
                             chunk_dict = chunk.model_dump()

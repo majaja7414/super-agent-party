@@ -272,6 +272,7 @@ let vue_data = {
       { value: 'global', label: 'global' },
     ],
     imgHostOptions:[
+      { value: 'smms', label: 'smms' },
       { value: 'easyImage2', label: 'easyImage2' },
     ],
     showRestartDialog: false,
@@ -385,7 +386,8 @@ let vue_data = {
     },
     BotConfig: {
       imgHost_enabled: false,
-      imgHost: 'easyImage2',
+      imgHost: 'smms',
+      SMMS_api_key: '',
       EI2_base_url: '',
       EI2_api_key: '',
     },
