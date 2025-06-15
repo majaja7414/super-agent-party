@@ -58,6 +58,14 @@ if platform.system() == 'Darwin':
         icon='static/source/icon.png',
         **base_exe_config
     )
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        name='server',
+        upx_exclude=[],
+        **universal_disable_sign
+    )
     # macOS 专用 .app 配置
     app = BUNDLE(
         coll,
@@ -81,6 +89,14 @@ elif platform.system() == 'Windows':
         icon='static/source/icon.ico',  # 使用 .ico 格式图标
         **base_exe_config
     )
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        name='server',
+        upx_exclude=[],
+        **universal_disable_sign
+    )
 else:
     # Linux 配置
     exe = EXE(
@@ -90,11 +106,11 @@ else:
         name='server',
         **base_exe_config
     )
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    name='server',
-    upx_exclude=[],
-    **universal_disable_sign
-)
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.datas,
+        name='server',
+        upx_exclude=[],
+        **universal_disable_sign
+    )

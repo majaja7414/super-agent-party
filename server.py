@@ -37,7 +37,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import argparse
 from mem0 import Memory
-from qq_bot_manager import QQBotManager
+from py.qq_bot_manager import QQBotManager
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -2696,6 +2696,12 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
                 api_key=current_settings['reasoner']['api_key'],
                 base_url=current_settings['reasoner']['base_url'] or "https://api.openai.com/v1",
             )
+        # 将"system_prompt"插入到request.messages[0].content中
+        if current_settings['system_prompt']:
+            if request.messages[0]['role'] == 'system':
+                request.messages[0]['content'] = current_settings['system_prompt'] + "\n\n" + request.messages[0]['content']
+            else:
+                request.messages.insert(0, {'role': 'system', 'content': current_settings['system_prompt']})
         if current_settings != settings:
             settings = current_settings
         try:

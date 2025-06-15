@@ -991,6 +991,7 @@ let vue_methods = {
             top_p: data.data.top_p || 1,
             extra_params: data.data.extra_params || [],
           };
+          this.system_prompt = data.data.system_prompt || '';
           this.conversations = data.data.conversations || this.conversations;
           this.conversationId = data.data.conversationId || this.conversationId;
           this.agents = data.data.agents || this.agents;
@@ -1425,6 +1426,7 @@ let vue_methods = {
         // 构造 payload（保持原有逻辑）
         const payload = {
           ...this.settings,
+          system_prompt: this.system_prompt,
           agents: this.agents,
           mainAgent: this.mainAgent,
           qqBotConfig : this.qqBotConfig,
