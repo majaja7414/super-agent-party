@@ -429,6 +429,7 @@ const translations = {
       'expandInput': '展开输入框',
       'googleCSEIdPlaceholder':'请输入Google Custom Search Engine ID',
       'searchEndpoint': '搜索接口URL',
+      'gotoQQbot': '前往QQ开放平台',
     },
     'en-US': {
       'chat': 'Chat',
@@ -859,5 +860,6 @@ const translations = {
       'expandInput': 'Expand Input',
       'googleCSEIdPlaceholder': 'Please enter Google Custom Search Engine ID',
       'searchEndpoint': 'Search Endpoint',
+      'gotoQQbot': 'Go to the QQ Open Platform.' ,
     }
   };

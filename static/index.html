@@ -3754,7 +3754,17 @@
                         <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
                           <span>
                             <el-icon><i class="fa-brands fa-qq"></i></el-icon>
-                            {{ t('qq_bot_config') }} <!-- 本地化文本 -->
+                            {{ t('qq_bot_config') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://q.qq.com/" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('gotoQQbot') }}
+                            </el-link>
                           </span>
                           <div>
                             <!-- 启动按钮 -->
