@@ -398,9 +398,15 @@ class MyClient(botpy.Client):
             self.memoryList[c_id] = []
             
         if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
+            if "/重启" in message.content:
                 self.memoryList[c_id] = []
-                
+                await self._send_text_message(message, "对话记录已重置。")
+                return
+            if "/restart" in message.content: 
+                self.memoryList[c_id] = []
+                await self._send_text_message(message, "The conversation record has been reset.")
+                return
+
         self.memoryList[c_id].append({"role": "user", "content": user_content})
 
         # 初始化状态管理
@@ -593,8 +599,14 @@ class MyClient(botpy.Client):
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
         if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
+            if "/重启" in message.content:
                 self.memoryList[g_id] = []
+                await self._send_group_text(message, "对话记录已重置。", state)
+                return
+            if "/restart" in message.content: 
+                self.memoryList[g_id] = []
+                await self._send_group_text(message, "The conversation record has been reset.", state)
+                return
         self.memoryList[g_id].append({"role": "user", "content": user_content})
 
         # 初始化群组状态
