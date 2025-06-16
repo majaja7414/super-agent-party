@@ -1017,6 +1017,7 @@ let vue_methods = {
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
+          this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
         } 
@@ -1452,6 +1453,7 @@ let vue_methods = {
           memories: this.memories,
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
+          comfyuiServers: this.comfyuiServers,
           custom_http: this.customHttpTools,
         };
         const correlationId = uuid.v4();
@@ -2945,5 +2947,36 @@ let vue_methods = {
       this.isMobile = window.innerWidth <= 768;
       if(this.isMobile) this.sidebarVisible = false;
     },
+    // 添加ComfyUI服务器
+    addComfyUIServer() {
+      this.comfyuiServers.push('http://localhost:8188')
+      this.autoSaveSettings()
+    },
 
+    // 移除服务器
+    removeComfyUIServer(index) {
+      if (this.comfyuiServers.length > 1) {
+        this.comfyuiServers.splice(index, 1)
+        this.autoSaveSettings()
+      }
+    },
+
+    // 连接服务器
+    async connectComfyUI() {
+      this.isConnecting = true
+      try {
+        const url = this.comfyuiServers[0]
+        const response = await fetch(`${url}/history`, {
+          method: 'HEAD',
+          mode: 'cors'
+        })
+        if (response.ok) {
+          this.activeComfyUIUrl = url
+          this.$message.success('服务器连接成功')
+        }
+      } catch (e) {
+        this.$message.error('无法连接ComfyUI服务器')
+      }
+      this.isConnecting = false
+    },
 }

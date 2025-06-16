@@ -465,8 +465,16 @@ let vue_data = {
         id: 'customHttpTool',
         title: 'customHttpTool',
         icon: 'fa-solid fa-wifi'
-      }
+      },
+      {
+        id: 'comfyui',
+        title: 'ComfyUI',
+        icon: 'fa-solid fa-palette'
+      },
     ],
+    comfyuiServers: ['http://localhost:8188'], // 默认服务器
+    activeComfyUIUrl: '',
+    isConnecting: false,
     customHttpTools: [],  // 用于存储自定义HTTP工具的数组
     showCustomHttpToolForm: false,
     isInputExpanded: false,

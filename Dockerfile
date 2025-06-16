@@ -27,9 +27,6 @@ COPY . .
 # 创建上传目录
 RUN mkdir -p uploaded_files
 
-RUN apt-get update && apt-get install -y tini
-ENTRYPOINT ["/usr/bin/tini", "--"]
-
 # 暴露端口和环境变量
 EXPOSE 3456
 ENV HOST=0.0.0.0 PORT=3456 PYTHONUNBUFFERED=1

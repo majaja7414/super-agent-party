@@ -134,6 +134,7 @@
       "api_key": "",
       "size": "1024x1024"
     },
+    "comfyuiServers": ["http://localhost:8188"],
     "BotConfig": {
       "imgHost_enabled":false,
       "imgHost": "smms",

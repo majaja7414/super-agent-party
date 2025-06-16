@@ -430,6 +430,13 @@ const translations = {
       'googleCSEIdPlaceholder':'请输入Google Custom Search Engine ID',
       'searchEndpoint': '搜索接口URL',
       'gotoQQbot': '前往QQ开放平台',
+      'comfyuiServers': 'ComfyUI服务器',
+      'addServer': '添加服务器',
+      'server': '服务器',
+      'noServerTip': '未连接服务器',
+      'comfyuiConfig': 'ComfyUI配置',
+      'comfyuiDisplay': 'ComfyUI显示',
+      'connectServer': '连接服务器',
     },
     'en-US': {
       'chat': 'Chat',
@@ -861,5 +868,12 @@ const translations = {
       'googleCSEIdPlaceholder': 'Please enter Google Custom Search Engine ID',
       'searchEndpoint': 'Search Endpoint',
       'gotoQQbot': 'Go to the QQ Open Platform.' ,
+      'comfyuiServers': 'ComfyUI Servers',
+      'addServer': 'Add Server',
+      'server': 'Server',
+      'noServerTip': 'No server added',
+      'comfyuiConfig': 'ComfyUI Config',
+      'comfyuiDisplay': 'ComfyUI Display',
+      'connectServer': 'Not connected to the server.',
     }
   };
