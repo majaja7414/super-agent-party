@@ -3115,6 +3115,64 @@ async def reload_qq_bot(config: QQBotConfig):
             content={"success": False, "message": str(e)}
         )
 
+@app.post("/add_workflow")
+async def add_workflow(file: UploadFile = File(...)):
+    # 检查文件类型是否为 JSON
+    if file.content_type != "application/json":
+        raise HTTPException(
+            status_code=400,
+            detail="Only JSON files are allowed."
+        )
+
+    # 生成唯一文件名
+    unique_filename = f"{uuid.uuid4()}.json"
+    file_path = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+
+    # 保存文件
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save file: {str(e)}"
+        )
+
+    # 返回文件信息
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "message": "File uploaded successfully",
+            "file": {
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+                "url": f"/uploaded_files/{unique_filename}",
+                "enabled": True
+            }
+        }
+    )
+
+@app.delete("/delete_workflow/{filename}")
+async def delete_workflow(filename: str):
+    file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+    
+    # 检查文件是否存在
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # 删除文件
+    try:
+        os.remove(file_path)
+        return JSONResponse(
+            status_code=200,
+            content={"success": True, "message": "File deleted successfully"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete file: {str(e)}"
+        )
 
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")

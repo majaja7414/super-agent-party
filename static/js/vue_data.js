@@ -651,5 +651,8 @@ main();`,
     ],
     modelOptions: [],
     previewVisible: false,
-    previewImageUrl: ''
+    previewImageUrl: '',
+    workflows: [], // 保存工作流文件列表
+    showWorkflowUploadDialog: false, // 控制上传对话框的显示
+    workflowFile: null, // 当前选中的工作流文件
 };

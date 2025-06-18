@@ -2979,4 +2979,72 @@ let vue_methods = {
       }
       this.isConnecting = false
     },
+    // 处理文件拖拽
+    handleWorkflowDrop(event) {
+      event.preventDefault();
+      const files = event.dataTransfer.files;
+      if (files.length > 0) {
+        this.workflowFile = files[0];
+      }
+    },
+    // 浏览文件
+    browseWorkflowFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (event) => {
+        const files = event.target.files;
+        if (files.length > 0) {
+          this.workflowFile = files[0];
+        }
+      };
+      input.click();
+    },
+    // 移除文件
+    removeWorkflowFile() {
+      this.workflowFile = null;
+    },
+    // 上传文件
+    async uploadWorkflow() {
+      if (!this.workflowFile) return;
+
+      const formData = new FormData();
+      formData.append('file', this.workflowFile);
+
+      try {
+        const response = await fetch('/add_workflow', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await response.json();
+        if (data.success) {
+          this.workflows.push(data.file);
+          this.showWorkflowUploadDialog = false;
+          this.workflowFile = null;
+        } else {
+          this.$message.error('上传失败');
+        }
+      } catch (error) {
+        console.error('上传失败:', error);
+        this.$message.error('上传失败');
+      }
+    },
+    // 删除工作流
+    async deleteWorkflow(filename) {
+      try {
+        const response = await fetch(`/delete_workflow/${filename}`, {
+          method: 'DELETE',
+        });
+        const data = await response.json();
+        if (data.success) {
+          this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
+          this.$message.success('删除成功');
+        } else {
+          this.$message.error('删除失败');
+        }
+      } catch (error) {
+        console.error('删除失败:', error);
+        this.$message.error('删除失败');
+      }
+    },
 }

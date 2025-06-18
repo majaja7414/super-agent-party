@@ -439,6 +439,8 @@ const translations = {
       'connectServer': '连接服务器',
       'connectComfyUIServer': '连接ComfyUI服务器',
       'removeComfyUIServer': '移除ComfyUI服务器',
+      'comfyuiWorkflowTool': 'ComfyUI 工作流转工具',
+      'uploadWorkflowJson': '上传工作流 JSON',
     },
     'en-US': {
       'chat': 'Chat',
@@ -879,5 +881,7 @@ const translations = {
       'connectServer': 'Not connected to the server.',
       'connectComfyUIServer': 'Connect to ComfyUI Server',
       'removeComfyUIServer': 'Remove ComfyUI Server',
+      'comfyuiWorkflowTool': 'ComfyUI Workflow Tool',
+      'uploadWorkflowJson': 'Upload Workflow JSON',
     }
   };
