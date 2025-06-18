@@ -539,10 +539,10 @@ let vue_methods = {
       const url = `${this.partyURL}/uploaded_files/${uniqueFilename}`
       navigator.clipboard.writeText(url)
         .then(() => {
-          this.$message.success(this.t('copy_success'))
+          showNotification(this.t('copy_success'))
         })
         .catch(() => {
-          this.$message.error(this.t('copy_failed'), 'error')
+          showNotification(this.t('copy_failed'), 'error')
         })
     },
     
@@ -2972,10 +2972,10 @@ let vue_methods = {
         })
         if (response.ok) {
           this.activeComfyUIUrl = url
-          this.$message.success('服务器连接成功')
+          showNotification('服务器连接成功')
         }
       } catch (e) {
-        this.$message.error('无法连接ComfyUI服务器')
+        showNotification('无法连接ComfyUI服务器', 'error')
       }
       this.isConnecting = false
     },
@@ -3022,11 +3022,11 @@ let vue_methods = {
           this.showWorkflowUploadDialog = false;
           this.workflowFile = null;
         } else {
-          this.$message.error('上传失败');
+          showNotification('上传失败', 'error');
         }
       } catch (error) {
         console.error('上传失败:', error);
-        this.$message.error('上传失败');
+        showNotification('上传失败', 'error');
       }
     },
     // 删除工作流
@@ -3038,13 +3038,13 @@ let vue_methods = {
         const data = await response.json();
         if (data.success) {
           this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
-          this.$message.success('删除成功');
+          showNotification('删除成功');
         } else {
-          this.$message.error('删除失败');
+          showNotification('删除失败', 'error');
         }
       } catch (error) {
         console.error('删除失败:', error);
-        this.$message.error('删除失败');
+       showNotification('删除失败', 'error');
       }
     },
 }
