@@ -2957,9 +2957,21 @@
                             <el-icon><i class="fa-solid fa-server"></i></el-icon>
                             {{ t('comfyuiServers') }}
                           </span>
-                          <div>
-                            <el-tooltip :content="t('connectServer')" placement="top">
+                        </div>
+                        <div class="tool-content">
+                          <div v-for="(server, index) in comfyuiServers" 
+                              :key="index" 
+                              class="server-item">
+                            <el-input 
+                              v-model="comfyuiServers[index]" 
+                              placeholder="http://localhost:8188"
+                              class="full-width-input"
+                              @change="autoSaveSettings"
+                            >
+                            </el-input>
+                            <el-tooltip :content="t('connectComfyUIServer')" placement="top">
                               <el-button 
+                                v-if="index == 0"
                                 type="primary" 
                                 @click="connectComfyUI" 
                                 :disabled="comfyuiServers.length === 0 || isConnecting"
@@ -2973,26 +2985,15 @@
                                 </template>
                               </el-button>
                             </el-tooltip>
-                          </div>
-                        </div>
-                        <div class="tool-content">
-                          <div v-for="(server, index) in comfyuiServers" 
-                              :key="index" 
-                              class="server-item">
-                            <el-input 
-                              v-model="comfyuiServers[index]" 
-                              placeholder="http://localhost:8188"
-                              class="full-width-input"
-                            >
-                            </el-input>
-                            <el-button 
-                              v-if="index !== 0"
-                              @click="removeComfyUIServer(index)"
-                              type="danger" 
-                              circle
-                              size="small">
-                              <i class="fa-solid fa-trash"></i>
-                            </el-button>
+                            <el-tooltip :content="t('removeComfyUIServer')" placement="top">
+                              <el-button 
+                                v-if="index !== 0"
+                                @click="removeComfyUIServer(index)"
+                                type="danger" 
+                                circle>
+                                <i class="fa-solid fa-trash"></i>
+                              </el-button>
+                            </el-tooltip>
                           </div>
                           <el-button 
                             @click="addComfyUIServer"

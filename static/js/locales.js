@@ -437,6 +437,8 @@ const translations = {
       'comfyuiConfig': 'ComfyUI配置',
       'comfyuiDisplay': 'ComfyUI显示',
       'connectServer': '连接服务器',
+      'connectComfyUIServer': '连接ComfyUI服务器',
+      'removeComfyUIServer': '移除ComfyUI服务器',
     },
     'en-US': {
       'chat': 'Chat',
@@ -875,5 +877,7 @@ const translations = {
       'comfyuiConfig': 'ComfyUI Config',
       'comfyuiDisplay': 'ComfyUI Display',
       'connectServer': 'Not connected to the server.',
+      'connectComfyUIServer': 'Connect to ComfyUI Server',
+      'removeComfyUIServer': 'Remove ComfyUI Server',
     }
   };
