@@ -655,4 +655,8 @@ main();`,
     workflows: [], // 保存工作流文件列表
     showWorkflowUploadDialog: false, // 控制上传对话框的显示
     workflowFile: null, // 当前选中的工作流文件
+    selectedTextInput: null,
+    selectedImageInput: null,
+    textInputOptions: [], // 确保这里是一个空数组
+    imageInputOptions: [], // 确保这里是一个空数组
 };

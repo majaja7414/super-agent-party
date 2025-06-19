@@ -1018,6 +1018,7 @@ let vue_methods = {
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
+          this.workflows = data.data.workflows || this.workflows;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
         } 
@@ -1454,6 +1455,7 @@ let vue_methods = {
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
           comfyuiServers: this.comfyuiServers,
+          workflows: this.workflows,
           custom_http: this.customHttpTools,
         };
         const correlationId = uuid.v4();
@@ -2979,14 +2981,6 @@ let vue_methods = {
       }
       this.isConnecting = false
     },
-    // 处理文件拖拽
-    handleWorkflowDrop(event) {
-      event.preventDefault();
-      const files = event.dataTransfer.files;
-      if (files.length > 0) {
-        this.workflowFile = files[0];
-      }
-    },
     // 浏览文件
     browseWorkflowFile() {
       const input = document.createElement('input');
@@ -2996,6 +2990,7 @@ let vue_methods = {
         const files = event.target.files;
         if (files.length > 0) {
           this.workflowFile = files[0];
+          this.loadWorkflowFile(this.workflowFile); // 确保在文件已选择后调用
         }
       };
       input.click();
@@ -3003,31 +2998,6 @@ let vue_methods = {
     // 移除文件
     removeWorkflowFile() {
       this.workflowFile = null;
-    },
-    // 上传文件
-    async uploadWorkflow() {
-      if (!this.workflowFile) return;
-
-      const formData = new FormData();
-      formData.append('file', this.workflowFile);
-
-      try {
-        const response = await fetch('/add_workflow', {
-          method: 'POST',
-          body: formData,
-        });
-        const data = await response.json();
-        if (data.success) {
-          this.workflows.push(data.file);
-          this.showWorkflowUploadDialog = false;
-          this.workflowFile = null;
-        } else {
-          showNotification('上传失败', 'error');
-        }
-      } catch (error) {
-        console.error('上传失败:', error);
-        showNotification('上传失败', 'error');
-      }
     },
     // 删除工作流
     async deleteWorkflow(filename) {
@@ -3047,4 +3017,95 @@ let vue_methods = {
        showNotification('删除失败', 'error');
       }
     },
+      // 处理文件拖拽
+  handleWorkflowDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      this.workflowFile = files[0];
+      this.loadWorkflowFile(this.workflowFile); // 加载工作流文件以生成选择项
+    }
+  },
+  
+  // 加载工作流文件
+  async loadWorkflowFile(file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const workflowJson = JSON.parse(event.target.result);
+      this.populateInputOptions(workflowJson);
+    };
+    reader.readAsText(file);
+  },
+
+  // 填充输入选择项
+  populateInputOptions(workflowJson) {
+    this.textInputOptions = [];
+    this.imageInputOptions = [];
+    console.log(workflowJson);
+    for (const nodeId in workflowJson) {
+      const node = workflowJson[nodeId];
+      if (node.inputs) {
+        // 添加文字输入选项
+        if (node.inputs.text || node.inputs.value || node.inputs.prompt) {
+          this.textInputOptions.push({
+            label: `${node._meta.title} (ID: ${nodeId})`,
+            value: { nodeId, inputField: node.inputs.text ? 'text' : (node.inputs.value ? 'value' : 'prompt') },
+          });
+        }
+        // 添加图片输入选项
+        if (node.class_type === 'LoadImage' && node.inputs.image) {
+          this.imageInputOptions.push({
+            label: `${node._meta.title} (ID: ${nodeId})`,
+            value: { nodeId, inputField: 'image' },
+          });
+        }
+      }
+    }
+  },
+
+    // 上传文件
+    async uploadWorkflow() {
+      if (!this.workflowFile) return;
+
+      const formData = new FormData();
+      formData.append('file', this.workflowFile);
+
+      // 记录所选的输入位置
+      const workflowData = {
+        textInput: this.selectedTextInput,
+        imageInput: this.selectedImageInput,
+      };
+
+      // 发送 JSON 字符串作为普通字段
+      formData.append('workflow_data', JSON.stringify(workflowData));
+
+      try {
+        const response = await fetch('/add_workflow', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) { // 检查响应状态
+          const errorText = await response.text(); // 获取错误文本
+          console.error("Server error:", errorText); // 输出错误信息
+          throw new Error("Server error");
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          this.workflows.push(data.file);
+          this.showWorkflowUploadDialog = false;
+          this.workflowFile = null;
+          this.selectedTextInput = null; // 重置选中
+          this.selectedImageInput = null; // 重置选中
+          showNotification('上传成功');
+        } else {
+          showNotification('上传失败', 'error');
+        }
+      } catch (error) {
+        console.error('上传失败:', error);
+        showNotification('上传失败', 'error');
+      }
+    },
+
 }

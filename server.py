@@ -16,7 +16,7 @@ import re
 import shutil
 import signal
 from urllib.parse import urlparse
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
@@ -3129,7 +3129,7 @@ async def reload_qq_bot(config: QQBotConfig):
         )
 
 @app.post("/add_workflow")
-async def add_workflow(file: UploadFile = File(...)):
+async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(...)):
     # 检查文件类型是否为 JSON
     if file.content_type != "application/json":
         raise HTTPException(
@@ -3151,6 +3151,9 @@ async def add_workflow(file: UploadFile = File(...)):
             detail=f"Failed to save file: {str(e)}"
         )
 
+    # 解析 workflow_data
+    workflow_data_dict = json.loads(workflow_data)
+
     # 返回文件信息
     return JSONResponse(
         status_code=200,
@@ -3161,7 +3164,9 @@ async def add_workflow(file: UploadFile = File(...)):
                 "unique_filename": unique_filename,
                 "original_filename": file.filename,
                 "url": f"/uploaded_files/{unique_filename}",
-                "enabled": True
+                "enabled": True,
+                "text_input": workflow_data_dict.get("textInput"),
+                "image_input": workflow_data_dict.get("imageInput"),
             }
         }
     )

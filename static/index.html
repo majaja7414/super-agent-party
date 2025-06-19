@@ -3059,16 +3059,19 @@
                 <el-dialog
                   v-model="showWorkflowUploadDialog"
                   :title="t('uploadWorkflowJson')"
-                  width="600px">
+                  width="600px"
+                >
                   <div class="upload-container">
                     <div
                       class="drop-zone"
                       @dragover.prevent
                       @drop.prevent="handleWorkflowDrop"
-                      @click="browseWorkflowFile">
+                      @click="browseWorkflowFile"
+                    >
                       <el-icon :size="50"><i class="fa-solid fa-upload"></i></el-icon>
                       <p>{{ t('clickOrDrop') }}</p>
                     </div>
+                    
                     <!-- 文件列表 -->
                     <div class="compact-file-list" v-if="workflowFile">
                       <div class="compact-file-item">
@@ -3076,15 +3079,40 @@
                         <el-button
                           @click.stop="removeWorkflowFile"
                           class="delete-icon"
-                          circle>
+                          circle
+                        >
                           <i class="fa-solid fa-trash"></i>
                         </el-button>
                       </div>
                     </div>
+                    <div class="input-box">
+                      <!-- 文字输入位置选择 -->
+                      <el-select v-model="selectedTextInput" :placeholder="t('selectTextInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in textInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        />
+                      </el-select>
+                    </div>
+                    <div class="input-box">
+                      <!-- 图片输入位置选择 -->
+                      <el-select v-model="selectedImageInput" :placeholder="t('selectImageInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in imageInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        />
+                      </el-select>
+                    </div>
                   </div>
                   <template #footer>
                     <el-button @click="showWorkflowUploadDialog = false">{{ t('cancel') }}</el-button>
-                    <el-button type="primary" @click="uploadWorkflow" :disabled="!workflowFile">{{ t('createImmediately') }}</el-button>
+                    <el-button type="primary" @click="uploadWorkflow" :disabled="!workflowFile">
+                      {{ t('createImmediately') }}
+                    </el-button>
                   </template>
                 </el-dialog>
               </div>

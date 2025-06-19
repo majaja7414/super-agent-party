@@ -441,6 +441,10 @@ const translations = {
       'removeComfyUIServer': '移除ComfyUI服务器',
       'comfyuiWorkflowTool': 'ComfyUI 工作流转工具',
       'uploadWorkflowJson': '上传工作流 JSON',
+      'textInput': '文本输入',
+      'selectTextInput': '请选择文本输入',
+      'imageInput': '图片输入',
+      'selectImageInput': '请选择图片输入',
     },
     'en-US': {
       'chat': 'Chat',
@@ -883,5 +887,9 @@ const translations = {
       'removeComfyUIServer': 'Remove ComfyUI Server',
       'comfyuiWorkflowTool': 'ComfyUI Workflow Tool',
       'uploadWorkflowJson': 'Upload Workflow JSON',
+      'textInput': 'Text Input',
+      'selectTextInput': 'Please select text input',
+      'imageInput': 'Image Input',
+      'selectImageInput': 'Please select image input',
     }
   };
