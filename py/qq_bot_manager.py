@@ -4,6 +4,7 @@ import threading
 import os
 from typing import Optional,List
 import weakref
+import aiohttp
 import botpy
 from botpy.message import C2CMessage, GroupMessage
 from openai import AsyncOpenAI
@@ -12,7 +13,9 @@ import re
 import time
 from pydantic import BaseModel
 import requests
-
+from PIL import Image
+import io
+import base64
 from py.get_setting import get_port
 from py.image_host import upload_image_host
 
@@ -358,7 +361,40 @@ class MyClient(botpy.Client):
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
-                    user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_url) as response:
+                            if response.status == 200:
+                                # 获取原始图像数据
+                                image_data = await response.read()
+                                
+                                # 检查是否为支持的格式
+                                content_type = attachment.content_type.lower()
+                                if content_type not in ["image/png", "image/jpeg", "image/gif"]:
+                                    try:
+                                        # 转换为JPG格式
+                                        img = Image.open(io.BytesIO(image_data))
+                                        if img.mode in ("RGBA", "LA", "P"):
+                                            img = img.convert("RGB")
+                                        
+                                        jpg_buffer = io.BytesIO()
+                                        img.save(jpg_buffer, format="JPEG", quality=95)
+                                        image_data = jpg_buffer.getvalue()
+                                        content_type = "image/jpeg"
+                                    except Exception as e:
+                                        print(f"图像转换失败: {e}")
+                                        continue
+                                
+                                # 转换为Base64
+                                base64_data = base64.b64encode(image_data).decode("utf-8")
+                                data_uri = f"data:{content_type};base64,{base64_data}"
+                                
+                                user_content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": data_uri
+                                    }
+                                })
         
         if user_content:
             user_content.append({"type": "text", "text": message.content})

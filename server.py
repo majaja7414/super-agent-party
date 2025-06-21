@@ -332,6 +332,9 @@ async def images_in_messages(messages: List[Dict],fastapi_base_url: str) -> List
                             media_type = await get_image_media_type(image_url)
                             item["image_url"]["url"] = f"data:{media_type};base64,{base64_image}"
                             item["image_url"]["hash"] = hashlib.md5(item["image_url"]["url"].encode()).hexdigest()
+                        else:
+                            item["image_url"]["hash"] = hashlib.md5(item["image_url"]["url"].encode()).hexdigest()
+
                         image_urls.append(item)
         if image_urls:
             images.append({'index': index, 'images': image_urls})
