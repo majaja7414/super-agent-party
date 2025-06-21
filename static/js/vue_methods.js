@@ -3010,6 +3010,7 @@ let vue_methods = {
           this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
           showNotification('删除成功');
         } else {
+          this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
           showNotification('删除失败', 'error');
         }
       } catch (error) {
@@ -3041,24 +3042,38 @@ let vue_methods = {
   populateInputOptions(workflowJson) {
     this.textInputOptions = [];
     this.imageInputOptions = [];
-    console.log(workflowJson);
+    
     for (const nodeId in workflowJson) {
       const node = workflowJson[nodeId];
-      if (node.inputs) {
-        // 添加文字输入选项
-        if (node.inputs.text || node.inputs.value || node.inputs.prompt) {
-          this.textInputOptions.push({
-            label: `${node._meta.title} (ID: ${nodeId})`,
-            value: { nodeId, inputField: node.inputs.text ? 'text' : (node.inputs.value ? 'value' : 'prompt') },
-          });
-        }
-        // 添加图片输入选项
-        if (node.class_type === 'LoadImage' && node.inputs.image) {
+      if (!node.inputs) continue;
+      
+      // 查找所有包含text/value/prompt的文本输入字段
+      const textInputKeys = Object.keys(node.inputs).filter(key => 
+        (key.includes('text') || key.includes('value') || key.includes('prompt')) &&
+        typeof node.inputs[key] === 'string' // 确保值是字符串类型
+      );
+      
+      // 为每个符合条件的字段创建选项
+      textInputKeys.forEach(key => {
+        this.textInputOptions.push({
+          label: `${node._meta.title} - ${key} (ID: ${nodeId})`,
+          value: { nodeId, inputField: key, id : `${nodeId}-${key}` },
+        });
+      });
+      
+      // 查找图片输入字段
+      if (node.class_type === 'LoadImage') {
+        const imageKeys = Object.keys(node.inputs).filter(key => 
+          key.includes('image') && 
+          typeof node.inputs[key] === 'string' // 确保值是字符串类型
+        );
+        
+        imageKeys.forEach(key => {
           this.imageInputOptions.push({
-            label: `${node._meta.title} (ID: ${nodeId})`,
-            value: { nodeId, inputField: 'image' },
+            label: `${node._meta.title} - ${key} (ID: ${nodeId})`,
+            value: { nodeId, inputField: key, id : `${nodeId}-${key}` },
           });
-        }
+        });
       }
     }
   },
@@ -3098,6 +3113,7 @@ let vue_methods = {
           this.workflowFile = null;
           this.selectedTextInput = null; // 重置选中
           this.selectedImageInput = null; // 重置选中
+          this.autoSaveSettings();
           showNotification('上传成功');
         } else {
           showNotification('上传失败', 'error');
