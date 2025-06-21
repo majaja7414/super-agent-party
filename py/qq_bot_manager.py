@@ -1,5 +1,6 @@
 # qq_bot_manager.py
 import asyncio
+import json
 import threading
 import os
 from typing import Optional,List
@@ -357,11 +358,12 @@ class MyClient(botpy.Client):
         )
         
         user_content = []
+        image_url_list = []
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
-                    
+                    image_url_list.append(image_url)
                     async with aiohttp.ClientSession() as session:
                         async with session.get(image_url) as response:
                             if response.status == 200:
@@ -397,7 +399,7 @@ class MyClient(botpy.Client):
                                 })
         
         if user_content:
-            user_content.append({"type": "text", "text": message.content})
+            user_content.append({"type": "text", "text": message.content+"图片链接："+json.dumps(image_url_list)})
         else:
             user_content = message.content
             
@@ -591,18 +593,47 @@ class MyClient(botpy.Client):
             base_url=f"http://127.0.0.1:{self.port}/v1"
         )
         user_content = []
+        image_url_list = []
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
-                    try:
-                        # 用request获取图片，保证图片存在
-                        response = requests.get(image_url)
-                        user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-                    except Exception as e:
-                        print(f"图片获取失败: {e}")
+                    image_url_list.append(image_url)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_url) as response:
+                            if response.status == 200:
+                                # 获取原始图像数据
+                                image_data = await response.read()
+                                
+                                # 检查是否为支持的格式
+                                content_type = attachment.content_type.lower()
+                                if content_type not in ["image/png", "image/jpeg", "image/gif"]:
+                                    try:
+                                        # 转换为JPG格式
+                                        img = Image.open(io.BytesIO(image_data))
+                                        if img.mode in ("RGBA", "LA", "P"):
+                                            img = img.convert("RGB")
+                                        
+                                        jpg_buffer = io.BytesIO()
+                                        img.save(jpg_buffer, format="JPEG", quality=95)
+                                        image_data = jpg_buffer.getvalue()
+                                        content_type = "image/jpeg"
+                                    except Exception as e:
+                                        print(f"图像转换失败: {e}")
+                                        continue
+                                
+                                # 转换为Base64
+                                base64_data = base64.b64encode(image_data).decode("utf-8")
+                                data_uri = f"data:{content_type};base64,{base64_data}"
+                                
+                                user_content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": data_uri
+                                    }
+                                })
         if user_content:
-            user_content.append({"type": "text", "text": message.content})
+            user_content.append({"type": "text", "text": message.content+"图片链接："+json.dumps(image_url_list)})
         else:
             user_content = message.content
         g_id = message.group_openid

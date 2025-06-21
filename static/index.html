@@ -2956,13 +2956,23 @@
                           <span>
                             <el-icon><i class="fa-solid fa-server"></i></el-icon>
                             {{ t('comfyuiServers') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://platform.comfy.org/profile/api-keys" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('gotoAPI') }}
+                            </el-link>
                           </span>
                         </div>
                         <div class="tool-content">
                           <div class="server-item">
                             <el-input 
                               v-model="comfyuiAPIkey" 
-                              :placeholder="t('apiKey')"
+                              :placeholder="t('comfyuiAPIKey')"
                               class="full-width-input"
                               show-password
                               @change="autoSaveSettings"
