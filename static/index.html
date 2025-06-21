@@ -3138,8 +3138,30 @@
                       </el-select>
                     </div>
                     <div class="input-box">
+                      <!-- 文字输入位置选择 -->
+                      <el-select v-model="selectedTextInput2" value-key="id"  :placeholder="t('selectTextInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in textInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="input-box">
                       <!-- 图片输入位置选择 -->
                       <el-select v-model="selectedImageInput" value-key="id" :placeholder="t('selectImageInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in imageInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="input-box">
+                      <!-- 图片输入位置选择 -->
+                      <el-select v-model="selectedImageInput2" value-key="id" :placeholder="t('selectImageInput')" class="full-width-input">
                         <el-option
                           v-for="(node, index) in imageInputOptions"
                           :key="index"

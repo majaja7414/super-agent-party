@@ -274,9 +274,11 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
     if "comfyui_" in tool_name:
         tool_name = tool_name.replace("comfyui_", "")
         text_input = tool_params.get('text_input', None)
+        text_input_2 = tool_params.get('text_input_2', None)
         image_input = tool_params.get('image_input', None)
+        image_input_2 = tool_params.get('image_input_2', None)
         print(tool_name)
-        result = await comfyui_tool_call(tool_name, text_input, image_input)
+        result = await comfyui_tool_call(tool_name, text_input, image_input,text_input_2,image_input_2)
         return str(result)
     if tool_name not in _TOOL_HOOKS:
         for server_name, mcp_client in mcp_client_list.items():
@@ -659,12 +661,24 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             "type": "string"
                         }
                         comfyui_required.append("text_input")
+                    if workflow["text_input_2"] is not None:
+                        comfyui_properties["text_input_2"] = {
+                            "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "type": "string"
+                        }
+                        comfyui_required.append("text_input_2")
                     if workflow["image_input"] is not None:
                         comfyui_properties["image_input"] = {
                             "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
                             "type": "string"
                         }
                         comfyui_required.append("image_input")
+                    if workflow["image_input_2"] is not None:
+                        comfyui_properties["image_input_2"] = {
+                            "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "type": "string"
+                        }
+                        comfyui_required.append("image_input_2")
                     comfyui_parameters = {
                         "type": "object",
                         "properties": comfyui_properties,
@@ -3242,7 +3256,9 @@ async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(.
                 "url": f"/uploaded_files/{unique_filename}",
                 "enabled": True,
                 "text_input": workflow_data_dict.get("textInput"),
+                "text_input_2": workflow_data_dict.get("textInput2"),
                 "image_input": workflow_data_dict.get("imageInput"),
+                "image_input_2": workflow_data_dict.get("imageInput2"),
                 "description": workflow_data_dict.get("description")
             }
         }

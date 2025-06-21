@@ -659,6 +659,8 @@ main();`,
     workflowFile: null, // 当前选中的工作流文件
     selectedTextInput: null,
     selectedImageInput: null,
+    selectedTextInput2: null,
+    selectedImageInput2: null,
     textInputOptions: [], // 确保这里是一个空数组
     imageInputOptions: [], // 确保这里是一个空数组
 };

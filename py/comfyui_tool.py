@@ -121,7 +121,7 @@ async def upload_image_via_url(image_url, server_address):
 
 running_comfyuiServers = []
 
-async def comfyui_tool_call(tool_name, text_input = None, image_input = None):
+async def comfyui_tool_call(tool_name, text_input = None, image_input = None,text_input_2 = None,image_input_2 = None):
     settings = await load_settings()
     comfyuiServers = settings["comfyuiServers"]
     server_address = ""
@@ -160,6 +160,12 @@ async def comfyui_tool_call(tool_name, text_input = None, image_input = None):
         text_inputField = using_workflow["text_input"]["inputField"]
         prompt[text_nodeId]["inputs"][text_inputField] = text_input
 
+
+    if text_input_2 is not None:
+        text_nodeId = using_workflow["text_input_2"]["nodeId"]
+        text_inputField = using_workflow["text_input_2"]["inputField"]
+        prompt[text_nodeId]["inputs"][text_inputField] = text_input_2
+
     if image_input is not None:
         image_nodeId = using_workflow["image_input"]["nodeId"]
         image_inputField = using_workflow["image_input"]["inputField"]
@@ -173,6 +179,22 @@ async def comfyui_tool_call(tool_name, text_input = None, image_input = None):
                 return "图片上传失败"
         else:
             return "图片上传失败"
+
+    if image_input_2 is not None:
+        image_nodeId = using_workflow["image_input_2"]["nodeId"]
+        image_inputField = using_workflow["image_input_2"]["inputField"]
+        image_result = await upload_image_via_url(image_input_2, server_address)  # 使用 await
+        if image_result is not None:
+            image_name_2 = image_result.get("name")
+            if image_name_2:
+                prompt[image_nodeId]["inputs"][image_inputField] = image_name_2
+                print("Image uploaded successfully.")
+            else:
+                return "图片上传失败"
+        else:
+            return "图片上传失败"
+
+    image_path_list = get_all(prompt,server_address,settings)
 
     image_path_list = get_all(prompt,server_address,settings)
 

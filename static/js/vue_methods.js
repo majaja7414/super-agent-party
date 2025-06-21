@@ -3115,7 +3115,9 @@ let vue_methods = {
       // 记录所选的输入位置
       const workflowData = {
         textInput: this.selectedTextInput,
+        textInput2: this.selectedTextInput,
         imageInput: this.selectedImageInput,
+        imageInput2: this.selectedImageInput,
         description: this.workflowDescription,
       };
 
