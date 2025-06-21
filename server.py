@@ -230,6 +230,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
     from py.load_files import get_file_content
     from py.code_interpreter import e2b_code_async,local_run_code_async
     from py.custom_http import fetch_custom_http
+    from py.comfyui_tool import comfyui_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -253,6 +254,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         "Exa_search_async": Exa_search_async,
         "Serper_search_async": Serper_search_async,
         "bochaai_search_async": bochaai_search_async,
+        "comfyui_tool_call": comfyui_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -268,6 +270,13 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         url = tool_custom_http['url']
         headers = tool_custom_http['headers']
         result = await fetch_custom_http(method, url, headers, tool_params)
+        return str(result)
+    if "comfyui_" in tool_name:
+        tool_name = tool_name.replace("comfyui_", "")
+        text_input = tool_params.get('text_input', None)
+        image_input = tool_params.get('image_input', None)
+        print(tool_name)
+        result = await comfyui_tool_call(tool_name, text_input, image_input)
         return str(result)
     if tool_name not in _TOOL_HOOKS:
         for server_name, mcp_client in mcp_client_list.items():
@@ -639,7 +648,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         },
                     }
                     tools.append(custom_http_tool)
-        print(settings["workflows"])
         if settings["workflows"]:
             for workflow in settings["workflows"]:
                 if workflow["enabled"]:
@@ -647,7 +655,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     comfyui_required = []
                     if workflow["text_input"] is not None:
                         comfyui_properties["text_input"] = {
-                            "description": "需要输入的文字",
+                            "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
                             "type": "string"
                         }
                         comfyui_required.append("text_input")
@@ -666,7 +674,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "type": "function",
                         "function": {
                             "name": f"comfyui_{workflow['unique_filename']}",
-                            "description": f"{workflow['description']}",
+                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
                             "parameters": comfyui_parameters,
                         },
                     }
@@ -1990,6 +1998,37 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     },
                 }
                 tools.append(custom_http_tool)
+    if settings["workflows"]:
+        for workflow in settings["workflows"]:
+            if workflow["enabled"]:
+                comfyui_properties = {}
+                comfyui_required = []
+                if workflow["text_input"] is not None:
+                    comfyui_properties["text_input"] = {
+                        "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                        "type": "string"
+                    }
+                    comfyui_required.append("text_input")
+                if workflow["image_input"] is not None:
+                    comfyui_properties["image_input"] = {
+                        "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                        "type": "string"
+                    }
+                    comfyui_required.append("image_input")
+                comfyui_parameters = {
+                    "type": "object",
+                    "properties": comfyui_properties,
+                    "required": comfyui_required
+                }
+                comfyui_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": f"comfyui_{workflow['unique_filename']}",
+                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
+                        "parameters": comfyui_parameters,
+                    },
+                }
+                tools.append(comfyui_tool)
     search_not_done = False
     search_task = ""
     print(tools)
@@ -3172,9 +3211,11 @@ async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(.
             detail="Only JSON files are allowed."
         )
 
-    # 生成唯一文件名
-    unique_filename = f"{uuid.uuid4()}.json"
-    file_path = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+    # 生成唯一文件名，uuid.uuid4()，没有连词符
+    unique_filename = str(uuid.uuid4()).replace('-', '')
+
+    # 拼接文件路径
+    file_path = os.path.join(UPLOAD_FILES_DIR, unique_filename + ".json")
 
     # 保存文件
     try:
@@ -3209,7 +3250,7 @@ async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(.
 
 @app.delete("/delete_workflow/{filename}")
 async def delete_workflow(filename: str):
-    file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+    file_path = os.path.join(UPLOAD_FILES_DIR, filename + ".json")
     
     # 检查文件是否存在
     if not os.path.exists(file_path):
