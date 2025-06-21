@@ -1018,6 +1018,7 @@ let vue_methods = {
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
+          this.comfyuiAPIkey = data.data.comfyuiAPIkey || this.comfyuiAPIkey;
           this.workflows = data.data.workflows || this.workflows;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
@@ -1198,41 +1199,66 @@ let vue_methods = {
       });
       if (max_rounds === 0) {
         // 如果 max_rounds 是 0, 映射所有消息
-        messages = this.messages.map(msg => ({
-          role: msg.role,
-          content: (msg.imageLinks && msg.imageLinks.length > 0)
-            ? [
-                {
-                  type: "text",
-                  text: msg.content + (msg.fileLinks_content ?? '')
-                },
-                ...msg.imageLinks.map(imageLink => ({
-                  type: "image_url",
-                  image_url: { url: imageLink.path }
-                }))
-              ]
-            : msg.content + (msg.fileLinks_content ?? '')
-        }));
-      } else {
-        // 准备发送的消息历史（保留最近 max_rounds 条消息）
-        messages = this.messages
-          .slice(-max_rounds)
-          .map(msg => ({
+        messages = this.messages.map(msg => {
+          // 提取HTTP/HTTPS图片链接
+          const httpImageLinks = msg.imageLinks?.filter(imageLink => 
+            imageLink.path.startsWith('http')
+          ) || [];
+          
+          // 构建图片URL文本信息
+          const imageUrlsText = httpImageLinks.length > 0 
+            ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
+            : '';
+          
+          return {
             role: msg.role,
-            content: msg.imageLinks.length > 0
+            content: (msg.imageLinks && msg.imageLinks.length > 0)
               ? [
                   {
                     type: "text",
-                    text: msg.content + (msg.fileLinks_content ?? '')
+                    text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
                   },
                   ...msg.imageLinks.map(imageLink => ({
                     type: "image_url",
                     image_url: { url: imageLink.path }
                   }))
                 ]
-              : msg.content + (msg.fileLinks_content ?? '')
-          }));
+              : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+          };
+        });
+      } else {
+        // 准备发送的消息历史（保留最近 max_rounds 条消息）
+        messages = this.messages
+          .slice(-max_rounds)
+          .map(msg => {
+            // 提取HTTP/HTTPS图片链接
+            const httpImageLinks = msg.imageLinks?.filter(imageLink => 
+              imageLink.path.startsWith('http://') || imageLink.path.startsWith('https://')
+            ) || [];
+            
+            // 构建图片URL文本信息
+            const imageUrlsText = httpImageLinks.length > 0 
+              ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
+              : '';
+            
+            return {
+              role: msg.role,
+              content: msg.imageLinks.length > 0
+                ? [
+                    {
+                      type: "text",
+                      text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+                    },
+                    ...msg.imageLinks.map(imageLink => ({
+                      type: "image_url",
+                      image_url: { url: imageLink.path }
+                    }))
+                  ]
+                : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+            };
+          });
       }
+
       
 
       
@@ -1455,6 +1481,7 @@ let vue_methods = {
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
           comfyuiServers: this.comfyuiServers,
+          comfyuiAPIkey: this.comfyuiAPIkey,
           workflows: this.workflows,
           custom_http: this.customHttpTools,
         };

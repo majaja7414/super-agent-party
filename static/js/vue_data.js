@@ -473,6 +473,7 @@ let vue_data = {
       },
     ],
     comfyuiServers: ['http://localhost:8188'], // 默认服务器
+    comfyuiAPIkey: '',
     workflowDescription: "",
     activeComfyUIUrl: '',
     isConnecting: false,

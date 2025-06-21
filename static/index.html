@@ -2959,6 +2959,16 @@
                           </span>
                         </div>
                         <div class="tool-content">
+                          <div class="server-item">
+                            <el-input 
+                              v-model="comfyuiAPIkey" 
+                              :placeholder="t('apiKey')"
+                              class="full-width-input"
+                              show-password
+                              @change="autoSaveSettings"
+                            >
+                            </el-input>
+                          </div>
                           <div v-for="(server, index) in comfyuiServers" 
                               :key="index" 
                               class="server-item">

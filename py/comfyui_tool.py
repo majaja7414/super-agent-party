@@ -15,8 +15,25 @@ from py.get_setting import UPLOAD_FILES_DIR, load_settings,get_host,get_port
     
 client_id = str(uuid.uuid4())
 
-def queue_prompt(prompt,server_address):
-    p = {"prompt": prompt, "client_id": client_id}
+def queue_prompt(prompt,server_address,settings):
+    api_key = ""
+    if settings:
+        if settings["comfyuiAPIkey"]:
+            api_key = settings["comfyuiAPIkey"]
+    if api_key:
+        p = {
+            "prompt": prompt, 
+            "client_id": client_id ,
+            "extra_data": 
+            {
+                "api_key_comfy_org": api_key,
+            },
+        }
+    else:
+        p = {
+            "prompt": prompt, 
+            "client_id": client_id,
+        }
     data = json.dumps(p).encode("utf-8")
     req = urllib.request.Request("{}/prompt".format(server_address), data=data)
     return json.loads(urllib.request.urlopen(req).read())
@@ -33,10 +50,10 @@ def get_history(prompt_id,server_address):
     with urllib.request.urlopen("{}/history/{}".format(server_address, prompt_id)) as response:
         return json.loads(response.read())
     
-def get_all(prompt,server_address):
+def get_all(prompt,server_address,settings):
     HOST = get_host()
     PORT = get_port()
-    prompt_id = queue_prompt(prompt,server_address)["prompt_id"]
+    prompt_id = queue_prompt(prompt,server_address,settings)["prompt_id"]
     image_path_list = []
     while True:
         try:
@@ -157,7 +174,7 @@ async def comfyui_tool_call(tool_name, text_input = None, image_input = None):
         else:
             return "图片上传失败"
 
-    image_path_list = get_all(prompt,server_address)
+    image_path_list = get_all(prompt,server_address,settings)
 
     running_comfyuiServers.remove(server_address)
 
