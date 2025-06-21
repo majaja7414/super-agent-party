@@ -3089,6 +3089,7 @@ let vue_methods = {
       const workflowData = {
         textInput: this.selectedTextInput,
         imageInput: this.selectedImageInput,
+        workflowDescription: this.workflowDescription,
       };
 
       // 发送 JSON 字符串作为普通字段

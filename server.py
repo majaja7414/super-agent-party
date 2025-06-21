@@ -600,6 +600,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
+        print(settings["workflows"])
         get_llm_tool_fuction = await get_llm_tool(settings)
         if get_llm_tool_fuction:
             tools.append(get_llm_tool_fuction)

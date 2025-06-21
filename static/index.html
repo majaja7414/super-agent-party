@@ -3085,6 +3085,16 @@
                         </el-button>
                       </div>
                     </div>
+
+                    <div class="input-box" required>
+                      <el-input
+                        v-model="workflowDescription"
+                        type="textarea"
+                        :rows="3"
+                        :placeholder="t('descriptionPlaceholder')"
+                      />
+                    </div>
+
                     <div class="input-box">
                       <!-- 文字输入位置选择 -->
                       <el-select v-model="selectedTextInput" value-key="id"  :placeholder="t('selectTextInput')" class="full-width-input">

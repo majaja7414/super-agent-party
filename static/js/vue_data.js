@@ -473,6 +473,7 @@ let vue_data = {
       },
     ],
     comfyuiServers: ['http://localhost:8188'], // 默认服务器
+    workflowDescription: "",
     activeComfyUIUrl: '',
     isConnecting: false,
     customHttpTools: [],  // 用于存储自定义HTTP工具的数组
