@@ -600,7 +600,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         function = await mcp_client.get_openai_functions()
                         if function:
                             tools.extend(function)
-        print(settings["workflows"])
         get_llm_tool_fuction = await get_llm_tool(settings)
         if get_llm_tool_fuction:
             tools.append(get_llm_tool_fuction)
@@ -640,6 +639,38 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         },
                     }
                     tools.append(custom_http_tool)
+        print(settings["workflows"])
+        if settings["workflows"]:
+            for workflow in settings["workflows"]:
+                if workflow["enabled"]:
+                    comfyui_properties = {}
+                    comfyui_required = []
+                    if workflow["text_input"] is not None:
+                        comfyui_properties["text_input"] = {
+                            "description": "需要输入的文字",
+                            "type": "string"
+                        }
+                        comfyui_required.append("text_input")
+                    if workflow["image_input"] is not None:
+                        comfyui_properties["image_input"] = {
+                            "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "type": "string"
+                        }
+                        comfyui_required.append("image_input")
+                    comfyui_parameters = {
+                        "type": "object",
+                        "properties": comfyui_properties,
+                        "required": comfyui_required
+                    }
+                    comfyui_tool = {
+                        "type": "function",
+                        "function": {
+                            "name": f"comfyui_{workflow['unique_filename']}",
+                            "description": f"{workflow['description']}",
+                            "parameters": comfyui_parameters,
+                        },
+                    }
+                    tools.append(comfyui_tool)
         print(tools)
         source_prompt = ""
         if request.fileLinks:
@@ -3171,6 +3202,7 @@ async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(.
                 "enabled": True,
                 "text_input": workflow_data_dict.get("textInput"),
                 "image_input": workflow_data_dict.get("imageInput"),
+                "description": workflow_data_dict.get("description")
             }
         }
     )

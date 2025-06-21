@@ -140,5 +140,6 @@
       "imgHost": "smms",
       "EI2_base_url": "",
       "EI2_api_key": ""
-    }
+    },
+    "workflows": []
 }
