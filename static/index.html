@@ -2991,9 +2991,8 @@
                             </el-input>
                             <el-tooltip :content="t('connectComfyUIServer')" placement="top">
                               <el-button 
-                                v-if="index == 0"
                                 type="primary" 
-                                @click="connectComfyUI" 
+                                @click="connectComfyUI(index)" 
                                 :disabled="comfyuiServers.length === 0 || isConnecting"
                                 circle
                               >
@@ -3033,6 +3032,7 @@
                           1. {{ t('comfyuiConfigInfo1') }}<br>
                           2. {{ t('comfyuiConfigInfo2') }}<br>
                           3. {{ t('comfyuiConfigInfo3') }}<br>
+                          4. {{ t('comfyuiConfigInfo4') }}<br>
                       </el-alert>
                     </el-form>
                   </el-tab-pane>

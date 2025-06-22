@@ -2991,10 +2991,10 @@ let vue_methods = {
     },
 
     // 连接服务器
-    async connectComfyUI() {
+    async connectComfyUI(index) {
       this.isConnecting = true
       try {
-        const url = this.comfyuiServers[0]
+        const url = this.comfyuiServers[index]
         const response = await fetch(`${url}/history`, {
           method: 'HEAD',
           mode: 'cors'
