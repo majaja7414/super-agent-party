@@ -272,6 +272,7 @@ let vue_data = {
       { value: 'global', label: 'global' },
     ],
     imgHostOptions:[
+      { value: 'smms', label: 'smms' },
       { value: 'easyImage2', label: 'easyImage2' },
     ],
     showRestartDialog: false,
@@ -385,7 +386,8 @@ let vue_data = {
     },
     BotConfig: {
       imgHost_enabled: false,
-      imgHost: 'easyImage2',
+      imgHost: 'smms',
+      SMMS_api_key: '',
       EI2_base_url: '',
       EI2_api_key: '',
     },
@@ -463,8 +465,18 @@ let vue_data = {
         id: 'customHttpTool',
         title: 'customHttpTool',
         icon: 'fa-solid fa-wifi'
-      }
+      },
+      {
+        id: 'comfyui',
+        title: 'ComfyUI',
+        icon: 'fa-solid fa-palette'
+      },
     ],
+    comfyuiServers: ['http://localhost:8188'], // 默认服务器
+    comfyuiAPIkey: '',
+    workflowDescription: "",
+    activeComfyUIUrl: '',
+    isConnecting: false,
     customHttpTools: [],  // 用于存储自定义HTTP工具的数组
     showCustomHttpToolForm: false,
     isInputExpanded: false,
@@ -641,5 +653,14 @@ main();`,
     ],
     modelOptions: [],
     previewVisible: false,
-    previewImageUrl: ''
+    previewImageUrl: '',
+    workflows: [], // 保存工作流文件列表
+    showWorkflowUploadDialog: false, // 控制上传对话框的显示
+    workflowFile: null, // 当前选中的工作流文件
+    selectedTextInput: null,
+    selectedImageInput: null,
+    selectedTextInput2: null,
+    selectedImageInput2: null,
+    textInputOptions: [], // 确保这里是一个空数组
+    imageInputOptions: [], // 确保这里是一个空数组
 };

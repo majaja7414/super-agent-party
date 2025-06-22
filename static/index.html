@@ -166,6 +166,12 @@
             </el-icon>
             <template #title>{{ t('agentSuite') }}</template>
           </el-menu-item>
+          <el-menu-item index="deploy-bot">
+              <el-icon>
+                  <i class="fa-solid fa-robot"></i>
+              </el-icon>
+              <template #title>{{ t('deployBot') }}</template>
+          </el-menu-item>
           <el-menu-item index="storage">
             <el-icon>
               <i class="fa-solid fa-box-archive"></i>
@@ -177,12 +183,6 @@
               <i class="fa-solid fa-plug"></i>
             </el-icon>
             <template #title>{{ t('apiGroup') }}</template>
-          </el-menu-item>
-          <el-menu-item index="deploy-bot">
-              <el-icon>
-                  <i class="fa-solid fa-robot"></i>
-              </el-icon>
-              <template #title>{{ t('deployBot') }}</template>
           </el-menu-item>
           <el-menu-item index="system">
             <el-icon>
@@ -2322,9 +2322,6 @@
                         <el-collapse-item name="advanced">
                           <template #title>
                             <div class="collapse-title">
-                              <el-icon class="mr-2">
-                                <i class="fa-solid fa-chevron-right"></i>
-                              </el-icon>
                               <span class="font-medium">{{ t('advancedSettings') }}</span>
                             </div>
                           </template>
@@ -2948,6 +2945,247 @@
             </div>
             <!-- 内容切换区 -->
             <div class="suite-content">
+              <!-- 在agent_group的内容区添加ComfyUI配置 -->
+              <div v-show="subMenu === 'comfyui'" class="page comfyui-container">
+                <el-tabs>
+                  <!-- 配置选项卡 -->
+                  <el-tab-pane :label="t('comfyuiConfig')">
+                    <el-form class="settings-form" label-position="top">
+                      <div class="tool-item">
+                        <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>
+                            <el-icon><i class="fa-solid fa-server"></i></el-icon>
+                            {{ t('comfyuiServers') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://platform.comfy.org/profile/api-keys" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('gotoAPI') }}
+                            </el-link>
+                          </span>
+                        </div>
+                        <div class="tool-content">
+                          <div class="server-item">
+                            <el-input 
+                              v-model="comfyuiAPIkey" 
+                              :placeholder="t('comfyuiAPIKey')"
+                              class="full-width-input"
+                              show-password
+                              @change="autoSaveSettings"
+                            >
+                            </el-input>
+                          </div>
+                          <div v-for="(server, index) in comfyuiServers" 
+                              :key="index" 
+                              class="server-item">
+                            <el-input 
+                              v-model="comfyuiServers[index]" 
+                              placeholder="http://localhost:8188"
+                              class="full-width-input"
+                              @change="autoSaveSettings"
+                            >
+                            </el-input>
+                            <el-tooltip :content="t('connectComfyUIServer')" placement="top">
+                              <el-button 
+                                type="primary" 
+                                @click="connectComfyUI(index)" 
+                                :disabled="comfyuiServers.length === 0 || isConnecting"
+                                circle
+                              >
+                                <template v-if="isConnecting">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-plug"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                            <el-tooltip :content="t('removeComfyUIServer')" placement="top">
+                              <el-button 
+                                v-if="index !== 0"
+                                @click="removeComfyUIServer(index)"
+                                type="danger" 
+                                circle>
+                                <i class="fa-solid fa-trash"></i>
+                              </el-button>
+                            </el-tooltip>
+                          </div>
+                          <el-button 
+                            @click="addComfyUIServer"
+                            type="primary" 
+                            plain 
+                            class="add-server-btn">
+                            <i class="fa-solid fa-plus"></i> {{ t('addServer') }}
+                          </el-button>
+                        </div>
+                      </div>
+                      <el-alert
+                          :title="t('comfyuiConfigInfo')"
+                          type="info"
+                          :closable="false"
+                          class="mb-2"
+                        >
+                          1. {{ t('comfyuiConfigInfo1') }}<br>
+                          2. {{ t('comfyuiConfigInfo2') }}<br>
+                          3. {{ t('comfyuiConfigInfo3') }}<br>
+                          4. {{ t('comfyuiConfigInfo4') }}<br>
+                      </el-alert>
+                    </el-form>
+                  </el-tab-pane>
+
+                  <!-- 展示选项卡 -->
+                  <el-tab-pane :label="t('comfyuiDisplay')">
+                    <div class="comfyui-iframe-container">
+                      <iframe 
+                        v-if="activeComfyUIUrl"
+                        :src="activeComfyUIUrl" 
+                        frameborder="0"
+                        class="comfyui-iframe"></iframe>
+                      <div v-else class="no-server-tip">
+                        <el-empty :description="t('noServerTip')" />
+                      </div>
+                    </div>
+                  </el-tab-pane>
+
+                      <!-- 新增 ComfyUI 工作流转工具选项卡 -->
+                  <el-tab-pane :label="t('comfyuiWorkflowTool')">
+                  <!-- 磁贴列表 -->
+                    <div class="provider-grid">
+                      <div v-for="file in workflows" :key="file.unique_filename" class="provider-card knowledge-card">
+                        <div class="card-header">
+                          <el-switch v-model="file.enabled" @change="autoSaveSettings"></el-switch>
+                          <div class="card-actions">
+                            <!-- 下载按钮 -->
+                            <a :href="`${partyURL}/uploaded_files/${file.unique_filename}`" download target="_blank">
+                              <el-button circle size="small" class="file-actions-btn">
+                                  <i class="fa-solid fa-download"></i>
+                              </el-button>
+                            </a>
+                            <!-- 删除按钮 -->
+                            <el-button
+                              type="danger"
+                              circle
+                              size="small"
+                              @click="deleteWorkflow(file.unique_filename)">
+                              <i class="fa-solid fa-trash"></i>
+                            </el-button>
+                          </div>
+                        </div>
+                        <h3>{{ file.original_filename }}</h3>
+                        <span>{{ file.description }}</span>
+                      </div>
+                      <!-- 添加上传按钮 -->
+                      <div class="provider-card add-tile" @click="showWorkflowUploadDialog = true">
+                        <el-icon :size="40" color="#909399"><i class="fa-solid fa-plus"></i></el-icon>
+                        <div style="color: #606266; margin-top: 10px;">{{ t('uploadWorkflowJson') }}</div>
+                      </div>
+                    </div>
+                  </el-tab-pane>
+                </el-tabs>
+                <!-- 工作流上传对话框 -->
+                <el-dialog
+                  v-model="showWorkflowUploadDialog"
+                  :title="t('uploadWorkflowJson')"
+                  width="600px"
+                >
+                  <div class="upload-container">
+                    <div
+                      class="drop-zone"
+                      @dragover.prevent
+                      @drop.prevent="handleWorkflowDrop"
+                      @click="browseWorkflowFile"
+                    >
+                      <el-icon :size="50"><i class="fa-solid fa-upload"></i></el-icon>
+                      <p>{{ t('clickOrDrop') }}</p>
+                    </div>
+                    
+                    <!-- 文件列表 -->
+                    <div class="compact-file-list" v-if="workflowFile">
+                      <div class="compact-file-item">
+                        <span class="file-name">@{{ workflowFile.name }}</span>
+                        <el-button
+                          @click.stop="removeWorkflowFile"
+                          class="delete-icon"
+                          circle
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+
+                    <div class="input-box" required>
+                      <el-input
+                        v-model="workflowDescription"
+                        type="textarea"
+                        :rows="3"
+                        :placeholder="t('descriptionPlaceholder')"
+                      />
+                    </div>
+
+                    <div class="input-box">
+                      <!-- 文字输入位置选择 -->
+                      <el-select v-model="selectedTextInput" value-key="id"  :placeholder="t('selectTextInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in textInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="input-box">
+                      <!-- 文字输入位置选择 -->
+                      <el-select v-model="selectedTextInput2" value-key="id"  :placeholder="t('selectTextInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in textInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="input-box">
+                      <!-- 图片输入位置选择 -->
+                      <el-select v-model="selectedImageInput" value-key="id" :placeholder="t('selectImageInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in imageInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <div class="input-box">
+                      <!-- 图片输入位置选择 -->
+                      <el-select v-model="selectedImageInput2" value-key="id" :placeholder="t('selectImageInput')" class="full-width-input">
+                        <el-option
+                          v-for="(node, index) in imageInputOptions"
+                          :key="index"
+                          :label="node.label"
+                          :value="node.value"
+                        ></el-option>
+                      </el-select>
+                    </div>
+                    <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        {{ t('comfyuiWorkflowInfo') }}
+                    </el-alert>
+                  </div>
+                  <template #footer>
+                    <el-button @click="cancelWorkflowUpload">{{ t('cancel') }}</el-button>
+                    <el-button type="primary" @click="uploadWorkflow" :disabled="!workflowFile">
+                      {{ t('createImmediately') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
               <!-- 智能体页面 -->
               <div v-show="subMenu === 'agents'" class="page agents-container">
                 <!-- 磁贴网格 -->
@@ -3701,6 +3939,17 @@
                                   <span>
                                     {{ t('imgHostType') }}
                                     <el-link
+                                      v-if="BotConfig.imgHost === 'smms'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://sm.ms/" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoAPI') }}
+                                    </el-link>
+                                    <el-link
                                       v-if="BotConfig.imgHost === 'easyImage2'"
                                       type="primary"
                                       :underline="false"
@@ -3717,13 +3966,22 @@
                                 v-model="BotConfig.imgHost"
                                 @change="changeImgHost">
                                 <el-option
-                                  v-for="option in imgHostOptions"ß
+                                  v-for="option in imgHostOptions"
                                   :key="option.value"
                                   :label="option.label"
                                   :value="option.value"
                                 >
                                 </el-option>
                               </el-select>
+                            </el-form-item>
+                            <!--sm.ms图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'smms'" :label="t('apiKey')">
+                              <el-input
+                                v-model="BotConfig.SMMS_api_key"
+                                :placeholder="t('apiKeyPlaceholder')"
+                                class="full-width-input"
+                                show-password
+                              />
                             </el-form-item>
                             <!--easyimage2图床-->
                             <el-form-item v-if="BotConfig.imgHost === 'easyImage2'" :label="t('baseURL')">
@@ -3754,7 +4012,17 @@
                         <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
                           <span>
                             <el-icon><i class="fa-brands fa-qq"></i></el-icon>
-                            {{ t('qq_bot_config') }} <!-- 本地化文本 -->
+                            {{ t('qq_bot_config') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://q.qq.com/" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('gotoQQbot') }}
+                            </el-link>
                           </span>
                           <div>
                             <!-- 启动按钮 -->

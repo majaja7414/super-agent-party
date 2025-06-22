@@ -1,7 +1,7 @@
 {
   "name": "super-agent-party",
-  "version": "v0.2.0",
-  "description": "超级智能体派对 | 链接一切模型、知识库、搜索引擎、MCP服务器、A2A服务器；可以web端、桌面端、API等多种方式使用",
+  "version": "v0.2.1",
+  "description": "超级智能体派对v0.2.1 | 轻松链接一切!",
   "main": "main.js",
   "asar": false,
   "scripts": {

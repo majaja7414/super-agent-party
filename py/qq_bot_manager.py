@@ -1,9 +1,11 @@
 # qq_bot_manager.py
 import asyncio
+import json
 import threading
 import os
 from typing import Optional,List
 import weakref
+import aiohttp
 import botpy
 from botpy.message import C2CMessage, GroupMessage
 from openai import AsyncOpenAI
@@ -12,8 +14,11 @@ import re
 import time
 from pydantic import BaseModel
 import requests
-
-from py.get_setting import UPLOAD_FILES_DIR, load_settings,get_port
+from PIL import Image
+import io
+import base64
+from py.get_setting import get_port
+from py.image_host import upload_image_host
 
 class QQBotManager:
     def __init__(self):
@@ -287,33 +292,6 @@ class QQBotManager:
             pass
 
 
-
-
-async def upload_image_host(url):
-    settings = await load_settings()
-    # 判断是否开启了图床功能
-    if settings["BotConfig"]["imgHost_enabled"] and 'uploaded_files' in url:
-        if settings["BotConfig"]["imgHost"] == "easyImage2":
-            EI2_url = settings["BotConfig"]["EI2_base_url"]
-            EI2_token = settings["BotConfig"]["EI2_api_key"]
-            # 上传图片到图床
-            file_name = url.split("/")[-1]
-            file_path = os.path.join(UPLOAD_FILES_DIR, file_name)
-            data = {
-                "token": EI2_token
-            }
-            with open(file_path, "rb") as f:
-                files = {
-                    "image": (file_path, f)
-                }
-                response = requests.post(EI2_url, data=data, files=files)
-            if response.status_code == 200:
-                # 打印返回的 JSON 数据中的url字段
-                url = response.json().get("url")
-            else:
-                print("上传失败")
-    return url
-
 # MyClient 类的修改
 class MyClient(botpy.Client):
     def __init__(self, *args, **kwargs):
@@ -380,14 +358,48 @@ class MyClient(botpy.Client):
         )
         
         user_content = []
+        image_url_list = []
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
-                    user_content.append({"type": "image_url", "image_url": {"url": image_url}})
+                    image_url_list.append(image_url)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_url) as response:
+                            if response.status == 200:
+                                # 获取原始图像数据
+                                image_data = await response.read()
+                                
+                                # 检查是否为支持的格式
+                                content_type = attachment.content_type.lower()
+                                if content_type not in ["image/png", "image/jpeg", "image/gif"]:
+                                    try:
+                                        # 转换为JPG格式
+                                        img = Image.open(io.BytesIO(image_data))
+                                        if img.mode in ("RGBA", "LA", "P"):
+                                            img = img.convert("RGB")
+                                        
+                                        jpg_buffer = io.BytesIO()
+                                        img.save(jpg_buffer, format="JPEG", quality=95)
+                                        image_data = jpg_buffer.getvalue()
+                                        content_type = "image/jpeg"
+                                    except Exception as e:
+                                        print(f"图像转换失败: {e}")
+                                        continue
+                                
+                                # 转换为Base64
+                                base64_data = base64.b64encode(image_data).decode("utf-8")
+                                data_uri = f"data:{content_type};base64,{base64_data}"
+                                
+                                user_content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": data_uri
+                                    }
+                                })
         
         if user_content:
-            user_content.append({"type": "text", "text": message.content})
+            user_content.append({"type": "text", "text": message.content+"图片链接："+json.dumps(image_url_list)})
         else:
             user_content = message.content
             
@@ -398,9 +410,15 @@ class MyClient(botpy.Client):
             self.memoryList[c_id] = []
             
         if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
+            if "/重启" in message.content:
                 self.memoryList[c_id] = []
-                
+                await self._send_text_message(message, "对话记录已重置。")
+                return
+            if "/restart" in message.content: 
+                self.memoryList[c_id] = []
+                await self._send_text_message(message, "The conversation record has been reset.")
+                return
+
         self.memoryList[c_id].append({"role": "user", "content": user_content})
 
         # 初始化状态管理
@@ -575,26 +593,61 @@ class MyClient(botpy.Client):
             base_url=f"http://127.0.0.1:{self.port}/v1"
         )
         user_content = []
+        image_url_list = []
         if message.attachments:
             for attachment in message.attachments:
                 if attachment.content_type.startswith("image/"):
                     image_url = attachment.url
-                    try:
-                        # 用request获取图片，保证图片存在
-                        response = requests.get(image_url)
-                        user_content.append({"type": "image_url", "image_url": {"url": image_url}})
-                    except Exception as e:
-                        print(f"图片获取失败: {e}")
+                    image_url_list.append(image_url)
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(image_url) as response:
+                            if response.status == 200:
+                                # 获取原始图像数据
+                                image_data = await response.read()
+                                
+                                # 检查是否为支持的格式
+                                content_type = attachment.content_type.lower()
+                                if content_type not in ["image/png", "image/jpeg", "image/gif"]:
+                                    try:
+                                        # 转换为JPG格式
+                                        img = Image.open(io.BytesIO(image_data))
+                                        if img.mode in ("RGBA", "LA", "P"):
+                                            img = img.convert("RGB")
+                                        
+                                        jpg_buffer = io.BytesIO()
+                                        img.save(jpg_buffer, format="JPEG", quality=95)
+                                        image_data = jpg_buffer.getvalue()
+                                        content_type = "image/jpeg"
+                                    except Exception as e:
+                                        print(f"图像转换失败: {e}")
+                                        continue
+                                
+                                # 转换为Base64
+                                base64_data = base64.b64encode(image_data).decode("utf-8")
+                                data_uri = f"data:{content_type};base64,{base64_data}"
+                                
+                                user_content.append({
+                                    "type": "image_url",
+                                    "image_url": {
+                                        "url": data_uri
+                                    }
+                                })
         if user_content:
-            user_content.append({"type": "text", "text": message.content})
+            user_content.append({"type": "text", "text": message.content+"图片链接："+json.dumps(image_url_list)})
         else:
             user_content = message.content
         g_id = message.group_openid
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
         if self.quickRestart:
-            if "/restart" in message.content or "/重启" in message.content:
+            if "/重启" in message.content:
                 self.memoryList[g_id] = []
+                await self._send_group_text(message, "对话记录已重置。", state)
+                return
+            if "/restart" in message.content: 
+                self.memoryList[g_id] = []
+                await self._send_group_text(message, "The conversation record has been reset.", state)
+                return
         self.memoryList[g_id].append({"role": "user", "content": user_content})
 
         # 初始化群组状态

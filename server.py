@@ -16,7 +16,7 @@ import re
 import shutil
 import signal
 from urllib.parse import urlparse
-from fastapi import BackgroundTasks, FastAPI, File, HTTPException, UploadFile, WebSocket, Request
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request
 from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
@@ -39,7 +39,7 @@ import argparse
 from mem0 import Memory
 from py.qq_bot_manager import QQBotManager
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 parser = argparse.ArgumentParser(description="Run the ASGI application server.")
 parser.add_argument("--host", default="127.0.0.1", help="Host for the ASGI server, default is 127.0.0.1")
@@ -230,6 +230,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
     from py.load_files import get_file_content
     from py.code_interpreter import e2b_code_async,local_run_code_async
     from py.custom_http import fetch_custom_http
+    from py.comfyui_tool import comfyui_tool_call
     _TOOL_HOOKS = {
         "DDGsearch_async": DDGsearch_async,
         "searxng_async": searxng_async,
@@ -253,6 +254,7 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         "Exa_search_async": Exa_search_async,
         "Serper_search_async": Serper_search_async,
         "bochaai_search_async": bochaai_search_async,
+        "comfyui_tool_call": comfyui_tool_call,
     }
     if "multi_tool_use." in tool_name:
         tool_name = tool_name.replace("multi_tool_use.", "")
@@ -268,6 +270,15 @@ async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str
         url = tool_custom_http['url']
         headers = tool_custom_http['headers']
         result = await fetch_custom_http(method, url, headers, tool_params)
+        return str(result)
+    if "comfyui_" in tool_name:
+        tool_name = tool_name.replace("comfyui_", "")
+        text_input = tool_params.get('text_input', None)
+        text_input_2 = tool_params.get('text_input_2', None)
+        image_input = tool_params.get('image_input', None)
+        image_input_2 = tool_params.get('image_input_2', None)
+        print(tool_name)
+        result = await comfyui_tool_call(tool_name, text_input, image_input,text_input_2,image_input_2)
         return str(result)
     if tool_name not in _TOOL_HOOKS:
         for server_name, mcp_client in mcp_client_list.items():
@@ -332,6 +343,9 @@ async def images_in_messages(messages: List[Dict],fastapi_base_url: str) -> List
                             media_type = await get_image_media_type(image_url)
                             item["image_url"]["url"] = f"data:{media_type};base64,{base64_image}"
                             item["image_url"]["hash"] = hashlib.md5(item["image_url"]["url"].encode()).hexdigest()
+                        else:
+                            item["image_url"]["hash"] = hashlib.md5(item["image_url"]["url"].encode()).hexdigest()
+
                         image_urls.append(item)
         if image_urls:
             images.append({'index': index, 'images': image_urls})
@@ -636,6 +650,49 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         },
                     }
                     tools.append(custom_http_tool)
+        if settings["workflows"]:
+            for workflow in settings["workflows"]:
+                if workflow["enabled"]:
+                    comfyui_properties = {}
+                    comfyui_required = []
+                    if workflow["text_input"] is not None:
+                        comfyui_properties["text_input"] = {
+                            "description": "第一个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "type": "string"
+                        }
+                        comfyui_required.append("text_input")
+                    if workflow["text_input_2"] is not None:
+                        comfyui_properties["text_input_2"] = {
+                            "description": "第二个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "type": "string"
+                        }
+                        comfyui_required.append("text_input_2")
+                    if workflow["image_input"] is not None:
+                        comfyui_properties["image_input"] = {
+                            "description": "第一个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "type": "string"
+                        }
+                        comfyui_required.append("image_input")
+                    if workflow["image_input_2"] is not None:
+                        comfyui_properties["image_input_2"] = {
+                            "description": "第二个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "type": "string"
+                        }
+                        comfyui_required.append("image_input_2")
+                    comfyui_parameters = {
+                        "type": "object",
+                        "properties": comfyui_properties,
+                        "required": comfyui_required
+                    }
+                    comfyui_tool = {
+                        "type": "function",
+                        "function": {
+                            "name": f"comfyui_{workflow['unique_filename']}",
+                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
+                            "parameters": comfyui_parameters,
+                        },
+                    }
+                    tools.append(comfyui_tool)
         print(tools)
         source_prompt = ""
         if request.fileLinks:
@@ -716,553 +773,70 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
         else:
             extra_params = {}
         async def stream_generator(user_prompt,DRS_STAGE):
-            kb_list = []
-            if settings["knowledgeBases"]:
-                for kb in settings["knowledgeBases"]:
-                    if kb["enabled"] and kb["processingStatus"] == "completed":
-                        kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
-            if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
-                if kb_list:
-                    chunk_dict = {
-                        "id": "webSearch",
-                        "choices": [
-                            {
-                                "finish_reason": None,
-                                "index": 0,
-                                "delta": {
-                                    "role":"assistant",
-                                    "content": "",
-                                    "reasoning_content": f"{await t("KB_search")}\n\n"
-                                }
-                            }
-                        ]
-                    }
-                    yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    all_kb_content = []
-                    # 用query_knowledge_base函数查询kb_list中所有的知识库
-                    for kb in kb_list:
-                        kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
-                        all_kb_content.extend(kb_content)
-                        if settings["KBSettings"]["is_rerank"]:
-                            all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
-                    if all_kb_content:
-                        all_kb_content = json.dumps(all_kb_content, ensure_ascii=False, indent=4)
-                        kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
-                        request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
-                                                # 获取时间戳和uuid
-                        timestamp = time.time()
-                        uid = str(uuid.uuid4())
-                        # 构造文件名
-                        filename = f"{timestamp}_{uid}.txt"
-                        # 将搜索结果写入UPLOAD_FILES_DIR文件夹下的filename文件
-                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
-                            f.write(str(all_kb_content))           
-                        # 将文件链接更新为新的链接
-                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
-                        tool_chunk = {
-                            "choices": [{
-                                "delta": {
-                                    "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
-                                }
-                            }]
-                        }
-                        yield f"data: {json.dumps(tool_chunk)}\n\n"
-            if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
-                if kb_list:
-                    kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
-                    print(kb_list_message)
-                    if request.messages and request.messages[0]['role'] == 'system':
-                        request.messages[0]['content'] += kb_list_message
-                    else:
-                        request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
-            else:
+            try:
                 kb_list = []
-            if settings['webSearch']['enabled'] or enable_web_search:
-                if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
-                    chunk_dict = {
-                        "id": "webSearch",
-                        "choices": [
-                            {
-                                "finish_reason": None,
-                                "index": 0,
-                                "delta": {
-                                    "role":"assistant",
-                                    "content": "",
-                                    "reasoning_content": f"{await t("web_search")}\n\n"
+                if settings["knowledgeBases"]:
+                    for kb in settings["knowledgeBases"]:
+                        if kb["enabled"] and kb["processingStatus"] == "completed":
+                            kb_list.append({"kb_id":kb["id"],"name": kb["name"],"introduction":kb["introduction"]})
+                if settings["KBSettings"]["when"] == "before_thinking" or settings["KBSettings"]["when"] == "both":
+                    if kb_list:
+                        chunk_dict = {
+                            "id": "webSearch",
+                            "choices": [
+                                {
+                                    "finish_reason": None,
+                                    "index": 0,
+                                    "delta": {
+                                        "role":"assistant",
+                                        "content": "",
+                                        "reasoning_content": f"{await t("KB_search")}\n\n"
+                                    }
                                 }
+                            ]
+                        }
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        all_kb_content = []
+                        # 用query_knowledge_base函数查询kb_list中所有的知识库
+                        for kb in kb_list:
+                            kb_content = await query_knowledge_base(kb["kb_id"],user_prompt)
+                            all_kb_content.extend(kb_content)
+                            if settings["KBSettings"]["is_rerank"]:
+                                all_kb_content = await rerank_knowledge_base(user_prompt,all_kb_content)
+                        if all_kb_content:
+                            all_kb_content = json.dumps(all_kb_content, ensure_ascii=False, indent=4)
+                            kb_message = f"\n\n可参考的知识库内容：{all_kb_content}"
+                            request.messages[-1]['content'] += f"{kb_message}\n\n用户：{user_prompt}"
+                                                    # 获取时间戳和uuid
+                            timestamp = time.time()
+                            uid = str(uuid.uuid4())
+                            # 构造文件名
+                            filename = f"{timestamp}_{uid}.txt"
+                            # 将搜索结果写入UPLOAD_FILES_DIR文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(all_kb_content))           
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                    }
+                                }]
                             }
-                        ]
-                    }
-                    yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    if settings['webSearch']['engine'] == 'duckduckgo':
-                        results = await DDGsearch_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'searxng':
-                        results = await searxng_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'tavily':
-                        results = await Tavily_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'bing':
-                        results = await Bing_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'google':
-                        results = await Google_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'brave':
-                        results = await Brave_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'exa':
-                        results = await Exa_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'serper':
-                        results = await Serper_search_async(user_prompt)
-                    elif settings['webSearch']['engine'] == 'bochaai':
-                        results = await bochaai_search_async(user_prompt)
-                    if results:
-                        request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
-                        # 获取时间戳和uuid
-                        timestamp = time.time()
-                        uid = str(uuid.uuid4())
-                        # 构造文件名
-                        filename = f"{timestamp}_{uid}.txt"
-                        # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
-                            f.write(str(results))           
-                        # 将文件链接更新为新的链接
-                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
-                        tool_chunk = {
-                            "choices": [{
-                                "delta": {
-                                    "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
-                                }
-                            }]
-                        }
-                        yield f"data: {json.dumps(tool_chunk)}\n\n"
-                if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
-                    if settings['webSearch']['engine'] == 'duckduckgo':
-                        tools.append(duckduckgo_tool)
-                    elif settings['webSearch']['engine'] == 'searxng':
-                        tools.append(searxng_tool)
-                    elif settings['webSearch']['engine'] == 'tavily':
-                        tools.append(tavily_tool)
-                    elif settings['webSearch']['engine'] == 'bing':
-                        tools.append(bing_tool)
-                    elif settings['webSearch']['engine'] == 'google':
-                        tools.append(google_tool)
-                    elif settings['webSearch']['engine'] == 'brave':
-                        tools.append(brave_tool)
-                    elif settings['webSearch']['engine'] == 'exa':
-                        tools.append(exa_tool)
-                    elif settings['webSearch']['crawler'] == 'serper':
-                        tools.append(serper_tool)
-                    elif settings['webSearch']['crawler'] == 'bochaai':
-                        tools.append(bochaai_tool)
-
-                    if settings['webSearch']['crawler'] == 'jina':
-                        tools.append(jina_crawler_tool)
-                    elif settings['webSearch']['crawler'] == 'crawl4ai':
-                        tools.append(Crawl4Ai_tool)
-            if kb_list:
-                tools.append(kb_tool)
-            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
-                deepsearch_messages = copy.deepcopy(request.messages)
-                deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
-                print(request.messages[-1]['content'])
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=deepsearch_messages,
-                    temperature=0.5,
-                    extra_body = extra_params, # 其他参数
-                )
-                user_prompt = response.choices[0].message.content
-                deepsearch_chunk = {
-                    "choices": [{
-                        "delta": {
-                            "reasoning_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
-                        }
-                    }]
-                }
-                yield f"data: {json.dumps(deepsearch_chunk)}\n\n"
-                request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
-                print(request.messages[-1]['content'])
-            # 如果启用推理模型
-            if settings['reasoner']['enabled'] or enable_thinking:
-                reasoner_messages = copy.deepcopy(request.messages)
-                if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
-                    reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-                    drs_msg = get_drs_stage(DRS_STAGE)
-                    if drs_msg:
-                        reasoner_messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
-                if tools:
-                    reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
-                for modelProvider in settings['modelProviders']: 
-                    if modelProvider['id'] == settings['reasoner']['selectedProvider']:
-                        vendor = modelProvider['vendor']
-                        break
-                msg = await images_add_in_messages(reasoner_messages, images,settings)
-                if vendor == 'Ollama':
-                    # 流式调用推理模型
-                    reasoner_stream = await reasoner_client.chat.completions.create(
-                        model=settings['reasoner']['model'],
-                        messages=msg,
-                        stream=True,
-                        temperature=settings['reasoner']['temperature']
-                    )
-                    full_reasoning = ""
-                    buffer = ""  # 跨chunk的内容缓冲区
-                    in_reasoning = False  # 是否在标签内
-                    
-                    async for chunk in reasoner_stream:
-                        if not chunk.choices:
-                            continue
-                        chunk_dict = chunk.model_dump()
-                        delta = chunk_dict["choices"][0].get("delta", {})
-                        if delta:
-                            current_content = delta.get("content", "")
-                            buffer += current_content  # 累积到缓冲区
-                            
-                            # 实时处理缓冲区内容
-                            while True:
-                                if not in_reasoning:
-                                    # 寻找开放标签
-                                    start_pos = buffer.find(open_tag)
-                                    if start_pos != -1:
-                                        # 开放标签前的内容（非思考内容）
-                                        non_reasoning = buffer[:start_pos]
-                                        buffer = buffer[start_pos+len(open_tag):]
-                                        in_reasoning = True
-                                    else:
-                                        break  # 无开放标签，保留后续处理
-                                else:
-                                    # 寻找闭合标签
-                                    end_pos = buffer.find(close_tag)
-                                    if end_pos != -1:
-                                        # 提取思考内容并构造响应
-                                        reasoning_part = buffer[:end_pos]
-                                        chunk_dict["choices"][0]["delta"] = {
-                                            "reasoning_content": reasoning_part,
-                                            "content": ""  # 清除非思考内容
-                                        }
-                                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-                                        full_reasoning += reasoning_part
-                                        buffer = buffer[end_pos+len(close_tag):]
-                                        in_reasoning = False
-                                    else:
-                                        # 发送未闭合的中间内容
-                                        if buffer:
-                                            chunk_dict["choices"][0]["delta"] = {
-                                                "reasoning_content": buffer,
-                                                "content": ""
-                                            }
-                                            yield f"data: {json.dumps(chunk_dict)}\n\n"
-                                            full_reasoning += buffer
-                                            buffer = ""
-                                        break  # 等待更多内容
-                else:
-                    # 流式调用推理模型
-                    reasoner_stream = await reasoner_client.chat.completions.create(
-                        model=settings['reasoner']['model'],
-                        messages=msg,
-                        stream=True,
-                        max_tokens=1, # 根据实际情况调整
-                        temperature=settings['reasoner']['temperature']
-                    )
-                    full_reasoning = ""
-                    # 处理推理模型的流式响应
-                    async for chunk in reasoner_stream:
-                        if not chunk.choices:
-                            continue
-
-                        chunk_dict = chunk.model_dump()
-                        delta = chunk_dict["choices"][0].get("delta", {})
-                        if delta:
-                            reasoning_content = delta.get("reasoning_content", "")
-                            if reasoning_content:
-                                full_reasoning += reasoning_content
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-
-                # 在推理结束后添加完整推理内容到消息
-                request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
-            # 状态跟踪变量
-            in_reasoning = False
-            reasoning_buffer = []
-            content_buffer = []
-            if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
-                request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
-                drs_msg = get_drs_stage(DRS_STAGE)
-                if drs_msg:
-                    request.messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
-            msg = await images_add_in_messages(request.messages, images,settings)
-            if tools:
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=msg,  # 添加图片信息到消息
-                    temperature=request.temperature,
-                    tools=tools,
-                    stream=True,
-                    max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p or settings['top_p'],
-                    frequency_penalty=request.frequency_penalty,
-                    presence_penalty=request.presence_penalty,
-                    extra_body = extra_params, # 其他参数
-                )
-            else:
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=msg,  # 添加图片信息到消息
-                    temperature=request.temperature,
-                    stream=True,
-                    max_tokens=request.max_tokens or settings['max_tokens'],
-                    top_p=request.top_p or settings['top_p'],
-                    frequency_penalty=request.frequency_penalty,
-                    presence_penalty=request.presence_penalty,
-                    extra_body = extra_params, # 其他参数
-                )
-            tool_calls = []
-            full_content = ""
-            search_not_done = False
-            search_task = ""
-            async for chunk in response:
-                if not chunk.choices:
-                    continue
-                choice = chunk.choices[0]
-                if choice.delta.tool_calls:  # function_calling
-                    for idx, tool_call in enumerate(choice.delta.tool_calls):
-                        tool = choice.delta.tool_calls[idx]
-                        if len(tool_calls) <= idx:
-                            tool_calls.append(tool)
-                            continue
-                        if tool.function.arguments:
-                            # function参数为流式响应，需要拼接
-                            tool_calls[idx].function.arguments += tool.function.arguments
-                else:
-                    # 创建原始chunk的拷贝
-                    chunk_dict = chunk.model_dump()
-                    delta = chunk_dict["choices"][0]["delta"]
-                    
-                    # 初始化必要字段
-                    delta.setdefault("content", "")
-                    delta.setdefault("reasoning_content", "")
-                    
-                    # 优先处理 reasoning_content
-                    if delta["reasoning_content"]:
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-                        continue
-
-                    # 处理内容
-                    current_content = delta["content"]
-                    buffer = current_content
-                    
-                    while buffer:
-                        if not in_reasoning:
-                            # 寻找开始标签
-                            start_pos = buffer.find(open_tag)
-                            if start_pos != -1:
-                                # 处理开始标签前的内容
-                                content_buffer.append(buffer[:start_pos])
-                                buffer = buffer[start_pos+len(open_tag):]
-                                in_reasoning = True
-                            else:
-                                content_buffer.append(buffer)
-                                buffer = ""
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
+                if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
+                    if kb_list:
+                        kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
+                        print(kb_list_message)
+                        if request.messages and request.messages[0]['role'] == 'system':
+                            request.messages[0]['content'] += kb_list_message
                         else:
-                            # 寻找结束标签
-                            end_pos = buffer.find(close_tag)
-                            if end_pos != -1:
-                                # 处理思考内容
-                                reasoning_buffer.append(buffer[:end_pos])
-                                buffer = buffer[end_pos+len(close_tag):]
-                                in_reasoning = False
-                            else:
-                                reasoning_buffer.append(buffer)
-                                buffer = ""
-                    
-                    # 构造新的delta内容
-                    new_content = "".join(content_buffer)
-                    new_reasoning = "".join(reasoning_buffer)
-                    
-                    # 更新chunk内容
-                    delta["content"] = new_content.strip("\x00")  # 保留未完成内容
-                    delta["reasoning_content"] = new_reasoning.strip("\x00") or None
-                    
-                    # 重置缓冲区但保留未完成部分
-                    if in_reasoning:
-                        content_buffer = [new_content.split(open_tag)[-1]] 
-                    else:
-                        content_buffer = []
-                    reasoning_buffer = []
-                    
-                    yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    full_content += delta.get("content", "")
-            # 最终flush未完成内容
-            if content_buffer or reasoning_buffer:
-                final_chunk = {
-                    "choices": [{
-                        "delta": {
-                            "content": "".join(content_buffer),
-                            "reasoning_content": "".join(reasoning_buffer)
-                        }
-                    }]
-                }
-                yield f"data: {json.dumps(final_chunk)}\n\n"
-                full_content += final_chunk["choices"][0]["delta"].get("content", "")
-            if tool_calls:
-                pass
-            elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
-                search_prompt = get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content)
-                response = await client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                        "role": "system",
-                        "content": source_prompt,
-                        },
-                        {
-                        "role": "user",
-                        "content": search_prompt,
-                        }
-                    ],
-                    temperature=0.5,
-                    extra_body = extra_params, # 其他参数
-                )
-                response_content = response.choices[0].message.content
-                # 用re 提取```json 包裹json字符串 ```
-                if "```json" in response_content:
-                    try:
-                        response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
-                    except:
-                        # 用re 提取```json 之后的内容
-                        response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
-                try:
-                    response_content = json.loads(response_content)
-                except json.JSONDecodeError:
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                if response_content["status"] == "done":
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = False
-                elif response_content["status"] == "not_done":
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = True
-                    search_task = response_content["unfinished_task"]
-                    task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
-                    request.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": full_content,
-                        }
-                    )
-                    request.messages.append(
-                        {
-                            "role": "user",
-                            "content": task_prompt,
-                        }
-                    )
-                elif response_content["status"] == "need_more_info":
-                    DRS_STAGE = 2
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = False
-                elif response_content["status"] == "search":
-                    DRS_STAGE = 2
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = True
-                    drs_msg = get_drs_stage(DRS_STAGE)
-                    request.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": full_content,
-                        }
-                    )
-                    request.messages.append(
-                        {
-                            "role": "user",
-                            "content": drs_msg,
-                        }
-                    )
-                elif response_content["status"] == "need_more_search":
-                    DRS_STAGE = 2
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = True
-                    search_task = response_content["unfinished_task"]
-                    task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
-                    request.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": full_content,
-                        }
-                    )
-                    request.messages.append(
-                        {
-                            "role": "user",
-                            "content": task_prompt,
-                        }
-                    )
-                elif response_content["status"] == "answer":
-                    DRS_STAGE = 3
-                    search_chunk = {
-                        "choices": [{
-                            "delta": {
-                                "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
-                            }
-                        }]
-                    }
-                    yield f"data: {json.dumps(search_chunk)}\n\n"
-                    search_not_done = True
-                    drs_msg = get_drs_stage(DRS_STAGE)
-                    request.messages.append(
-                        {
-                            "role": "assistant",
-                            "content": full_content,
-                        }
-                    )
-                    request.messages.append(
-                        {
-                            "role": "user",
-                            "content": drs_msg,
-                        }
-                    )
-                print("DRS_STAGE:", DRS_STAGE)
-            reasoner_messages = copy.deepcopy(request.messages)
-            while tool_calls or search_not_done:
-                full_content = ""
-                if tool_calls:
-                    response_content = tool_calls[0].function
-                    if response_content.name in  ["DDGsearch_async","searxng_async", "Bing_search_async", "Google_search_async", "Brave_search_async", "Exa_search_async", "Serper_search_async","bochaai_search_async"]:
+                            request.messages.insert(0, {'role': 'system', 'content': kb_list_message})
+                else:
+                    kb_list = []
+                if settings['webSearch']['enabled'] or enable_web_search:
+                    if settings['webSearch']['when'] == 'before_thinking' or settings['webSearch']['when'] == 'both':
                         chunk_dict = {
                             "id": "webSearch",
                             "choices": [
@@ -1272,144 +846,105 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"\n\n{await t("web_search")}\n\n"
+                                        "reasoning_content": f"{await t("web_search")}\n\n"
                                     }
                                 }
                             ]
                         }
                         yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    elif response_content.name in  ["jina_crawler_async","Crawl4Ai_search_async"]:
-                        chunk_dict = {
-                            "id": "webSearch",
-                            "choices": [
-                                {
-                                    "finish_reason": None,
-                                    "index": 0,
+                        if settings['webSearch']['engine'] == 'duckduckgo':
+                            results = await DDGsearch_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'searxng':
+                            results = await searxng_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'tavily':
+                            results = await Tavily_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'bing':
+                            results = await Bing_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'google':
+                            results = await Google_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'brave':
+                            results = await Brave_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'exa':
+                            results = await Exa_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'serper':
+                            results = await Serper_search_async(user_prompt)
+                        elif settings['webSearch']['engine'] == 'bochaai':
+                            results = await bochaai_search_async(user_prompt)
+                        if results:
+                            request.messages[-1]['content'] += f"\n\n联网搜索结果：{results}\n\n请根据联网搜索结果组织你的回答，并确保你的回答是准确的。"
+                            # 获取时间戳和uuid
+                            timestamp = time.time()
+                            uid = str(uuid.uuid4())
+                            # 构造文件名
+                            filename = f"{timestamp}_{uid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(results))           
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
                                     "delta": {
-                                        "role":"assistant",
-                                        "content": "",
-                                        "reasoning_content": f"\n\n{await t("web_search_more")}\n\n"
+                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                     }
-                                }
-                            ]
-                        }
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    elif response_content.name in ["query_knowledge_base"]:
-                        chunk_dict = {
-                            "id": "webSearch",
-                            "choices": [
-                                {
-                                    "finish_reason": None,
-                                    "index": 0,
-                                    "delta": {
-                                        "role":"assistant",
-                                        "content": "",
-                                        "reasoning_content": f"\n\n{await t("knowledge_base")}\n\n"
-                                    }
-                                }
-                            ]
-                        }
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    else:
-                        chunk_dict = {
-                            "id": "webSearch",
-                            "choices": [
-                                {
-                                    "finish_reason": None,
-                                    "index": 0,
-                                    "delta": {
-                                        "role":"assistant",
-                                        "content": "",
-                                        "reasoning_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
-                                    }
-                                }
-                            ]
-                        }
-                        yield f"data: {json.dumps(chunk_dict)}\n\n"
-                    print(response_content.arguments)
-                    modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
-                    print(modified_data)
-                    # 使用json.loads来解析修改后的字符串为列表
-                    data_list = json.loads(modified_data)
-                    results = await dispatch_tool(response_content.name, data_list[0],settings)
-                    if results is None:
-                        chunk = {
-                            "id": "extra_tools",
-                            "choices": [
-                                {
-                                    "index": 0,
-                                    "delta": {
-                                        "role":"assistant",
-                                        "content": "",
-                                        "tool_calls":modified_data,
-                                    }
-                                }
-                            ]
-                        }
-                        yield f"data: {json.dumps(chunk)}\n\n"
-                        break
-                    if response_content.name in ["query_knowledge_base"]:
-                        if settings["KBSettings"]["is_rerank"]:
-                            results = await rerank_knowledge_base(user_prompt,results)
-                        results = json.dumps(results, ensure_ascii=False, indent=4)
-                    request.messages.append(
-                        {
-                            "tool_calls": [
-                                {
-                                    "id": tool_calls[0].id,
-                                    "function": {
-                                        "arguments": json.dumps(data_list[0]),
-                                        "name": response_content.name,
-                                    },
-                                    "type": tool_calls[0].type,
-                                }
-                            ],
-                            "role": "assistant",
-                            "content": str(response_content),
-                        }
-                    )
-                    request.messages.append(
-                        {
-                            "role": "tool",
-                            "tool_call_id": tool_calls[0].id,
-                            "name": response_content.name,
-                            "content": str(results),
-                        }
-                    )
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
                     if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
-                        request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
-                    reasoner_messages.append(
-                        {
-                            "role": "assistant",
-                            "content": str(response_content),
-                        }
+                        if settings['webSearch']['engine'] == 'duckduckgo':
+                            tools.append(duckduckgo_tool)
+                        elif settings['webSearch']['engine'] == 'searxng':
+                            tools.append(searxng_tool)
+                        elif settings['webSearch']['engine'] == 'tavily':
+                            tools.append(tavily_tool)
+                        elif settings['webSearch']['engine'] == 'bing':
+                            tools.append(bing_tool)
+                        elif settings['webSearch']['engine'] == 'google':
+                            tools.append(google_tool)
+                        elif settings['webSearch']['engine'] == 'brave':
+                            tools.append(brave_tool)
+                        elif settings['webSearch']['engine'] == 'exa':
+                            tools.append(exa_tool)
+                        elif settings['webSearch']['crawler'] == 'serper':
+                            tools.append(serper_tool)
+                        elif settings['webSearch']['crawler'] == 'bochaai':
+                            tools.append(bochaai_tool)
+
+                        if settings['webSearch']['crawler'] == 'jina':
+                            tools.append(jina_crawler_tool)
+                        elif settings['webSearch']['crawler'] == 'crawl4ai':
+                            tools.append(Crawl4Ai_tool)
+                if kb_list:
+                    tools.append(kb_tool)
+                if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                    deepsearch_messages = copy.deepcopy(request.messages)
+                    deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
+                    print(request.messages[-1]['content'])
+                    response = await client.chat.completions.create(
+                        model=model,
+                        messages=deepsearch_messages,
+                        temperature=0.5,
+                        extra_body = extra_params, # 其他参数
                     )
-                    reasoner_messages.append(
-                        {
-                            "role": "user",
-                            "content": f"{response_content.name}工具结果："+str(results),
-                        }
-                    )
-                    # 获取时间戳和uuid
-                    timestamp = time.time()
-                    uid = str(uuid.uuid4())
-                    # 构造文件名
-                    filename = f"{timestamp}_{uid}.txt"
-                    # 将搜索结果写入uploaded_file文件夹下的filename文件
-                    with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
-                        f.write(str(results))            
-                    # 将文件链接更新为新的链接
-                    fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
-                    tool_chunk = {
+                    user_prompt = response.choices[0].message.content
+                    deepsearch_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                                "reasoning_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
                             }
                         }]
                     }
-                    yield f"data: {json.dumps(tool_chunk)}\n\n"
+                    yield f"data: {json.dumps(deepsearch_chunk)}\n\n"
+                    request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
+                    print(request.messages[-1]['content'])
                 # 如果启用推理模型
                 if settings['reasoner']['enabled'] or enable_thinking:
+                    reasoner_messages = copy.deepcopy(request.messages)
+                    if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                        reasoner_messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
+                        drs_msg = get_drs_stage(DRS_STAGE)
+                        if drs_msg:
+                            reasoner_messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
                     if tools:
                         reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
                     for modelProvider in settings['modelProviders']: 
@@ -1500,6 +1035,15 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
 
                     # 在推理结束后添加完整推理内容到消息
                     request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
+                # 状态跟踪变量
+                in_reasoning = False
+                reasoning_buffer = []
+                content_buffer = []
+                if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                    request.messages[-1]['content'] += f"\n\n可参考的步骤：{user_prompt}\n\n"
+                    drs_msg = get_drs_stage(DRS_STAGE)
+                    if drs_msg:
+                        request.messages[-1]['content'] += f"\n\n{drs_msg}\n\n"
                 msg = await images_add_in_messages(request.messages, images,settings)
                 if tools:
                     response = await client.chat.completions.create(
@@ -1527,79 +1071,84 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         extra_body = extra_params, # 其他参数
                     )
                 tool_calls = []
+                full_content = ""
+                search_not_done = False
+                search_task = ""
                 async for chunk in response:
                     if not chunk.choices:
                         continue
-                    if chunk.choices:
-                        choice = chunk.choices[0]
-                        if choice.delta.tool_calls:  # function_calling
-                            for idx, tool_call in enumerate(choice.delta.tool_calls):
-                                tool = choice.delta.tool_calls[idx]
-                                if len(tool_calls) <= idx:
-                                    tool_calls.append(tool)
-                                    continue
-                                if tool.function.arguments:
-                                    # function参数为流式响应，需要拼接
-                                    tool_calls[idx].function.arguments += tool.function.arguments
-                        else:
-                            # 创建原始chunk的拷贝
-                            chunk_dict = chunk.model_dump()
-                            delta = chunk_dict["choices"][0]["delta"]
-                            
-                            # 初始化必要字段
-                            delta.setdefault("content", "")
-                            delta.setdefault("reasoning_content", "")
-
-                             # 优先处理 reasoning_content
-                            if delta["reasoning_content"]:
-                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+                    choice = chunk.choices[0]
+                    if choice.delta.tool_calls:  # function_calling
+                        for idx, tool_call in enumerate(choice.delta.tool_calls):
+                            tool = choice.delta.tool_calls[idx]
+                            if len(tool_calls) <= idx:
+                                tool_calls.append(tool)
                                 continue
-                            
-                            # 处理内容
-                            current_content = delta["content"]
-                            buffer = current_content
-                            
-                            while buffer:
-                                if not in_reasoning:
-                                    # 寻找开始标签
-                                    start_pos = buffer.find(open_tag)
-                                    if start_pos != -1:
-                                        # 处理开始标签前的内容
-                                        content_buffer.append(buffer[:start_pos])
-                                        buffer = buffer[start_pos+len(open_tag):]
-                                        in_reasoning = True
-                                    else:
-                                        content_buffer.append(buffer)
-                                        buffer = ""
+                            if tool.function.arguments:
+                                # function参数为流式响应，需要拼接
+                                if tool_calls[idx].function.arguments:
+                                    tool_calls[idx].function.arguments += tool.function.arguments
                                 else:
-                                    # 寻找结束标签
-                                    end_pos = buffer.find(close_tag)
-                                    if end_pos != -1:
-                                        # 处理思考内容
-                                        reasoning_buffer.append(buffer[:end_pos])
-                                        buffer = buffer[end_pos+len(close_tag):]
-                                        in_reasoning = False
-                                    else:
-                                        reasoning_buffer.append(buffer)
-                                        buffer = ""
-                            
-                            # 构造新的delta内容
-                            new_content = "".join(content_buffer)
-                            new_reasoning = "".join(reasoning_buffer)
-                            
-                            # 更新chunk内容
-                            delta["content"] = new_content.strip("\x00")  # 保留未完成内容
-                            delta["reasoning_content"] = new_reasoning.strip("\x00") or None
-                            
-                            # 重置缓冲区但保留未完成部分
-                            if in_reasoning:
-                                content_buffer = [new_content.split(open_tag)[-1]] 
-                            else:
-                                content_buffer = []
-                            reasoning_buffer = []
-                            
+                                    tool_calls[idx].function.arguments = tool.function.arguments
+                    else:
+                        # 创建原始chunk的拷贝
+                        chunk_dict = chunk.model_dump()
+                        delta = chunk_dict["choices"][0]["delta"]
+                        
+                        # 初始化必要字段
+                        delta.setdefault("content", "")
+                        delta.setdefault("reasoning_content", "")
+                        
+                        # 优先处理 reasoning_content
+                        if delta["reasoning_content"]:
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
-                            full_content += delta.get("content", "")
+                            continue
+
+                        # 处理内容
+                        current_content = delta["content"]
+                        buffer = current_content
+                        
+                        while buffer:
+                            if not in_reasoning:
+                                # 寻找开始标签
+                                start_pos = buffer.find(open_tag)
+                                if start_pos != -1:
+                                    # 处理开始标签前的内容
+                                    content_buffer.append(buffer[:start_pos])
+                                    buffer = buffer[start_pos+len(open_tag):]
+                                    in_reasoning = True
+                                else:
+                                    content_buffer.append(buffer)
+                                    buffer = ""
+                            else:
+                                # 寻找结束标签
+                                end_pos = buffer.find(close_tag)
+                                if end_pos != -1:
+                                    # 处理思考内容
+                                    reasoning_buffer.append(buffer[:end_pos])
+                                    buffer = buffer[end_pos+len(close_tag):]
+                                    in_reasoning = False
+                                else:
+                                    reasoning_buffer.append(buffer)
+                                    buffer = ""
+                        
+                        # 构造新的delta内容
+                        new_content = "".join(content_buffer)
+                        new_reasoning = "".join(reasoning_buffer)
+                        
+                        # 更新chunk内容
+                        delta["content"] = new_content.strip("\x00")  # 保留未完成内容
+                        delta["reasoning_content"] = new_reasoning.strip("\x00") or None
+                        
+                        # 重置缓冲区但保留未完成部分
+                        if in_reasoning:
+                            content_buffer = [new_content.split(open_tag)[-1]] 
+                        else:
+                            content_buffer = []
+                        reasoning_buffer = []
+                        
+                        yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        full_content += delta.get("content", "")
                 # 最终flush未完成内容
                 if content_buffer or reasoning_buffer:
                     final_chunk = {
@@ -1618,7 +1167,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     search_prompt = get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content)
                     response = await client.chat.completions.create(
                         model=model,
-                        messages=[                        
+                        messages=[
                             {
                             "role": "system",
                             "content": source_prompt,
@@ -1769,30 +1318,558 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                         )
                     print("DRS_STAGE:", DRS_STAGE)
-            yield "data: [DONE]\n\n"
-            if m0:
-                messages=[
-                    {
-                        "role": "user",
-                        "content": user_prompt,
-                    },
-                    {
-                        "role": "assistant",
-                        "content": full_content,
-                    }
-                ]
-                executor = ThreadPoolExecutor()
-                async def add_async():
-                    loop = asyncio.get_event_loop()
-                    # 绑定 user_id 关键字参数
-                    func = partial(m0.add, user_id=memoryId)
-                    # 传递 messages 作为位置参数
-                    await loop.run_in_executor(executor, func, messages)
-                    print("知识库更新完成")
+                reasoner_messages = copy.deepcopy(request.messages)
+                while tool_calls or search_not_done:
+                    full_content = ""
+                    if tool_calls:
+                        response_content = tool_calls[0].function
+                        if response_content.name in  ["DDGsearch_async","searxng_async", "Bing_search_async", "Google_search_async", "Brave_search_async", "Exa_search_async", "Serper_search_async","bochaai_search_async"]:
+                            chunk_dict = {
+                                "id": "webSearch",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "reasoning_content": f"\n\n{await t("web_search")}\n\n"
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        elif response_content.name in  ["jina_crawler_async","Crawl4Ai_search_async"]:
+                            chunk_dict = {
+                                "id": "webSearch",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "reasoning_content": f"\n\n{await t("web_search_more")}\n\n"
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        elif response_content.name in ["query_knowledge_base"]:
+                            chunk_dict = {
+                                "id": "webSearch",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "reasoning_content": f"\n\n{await t("knowledge_base")}\n\n"
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        else:
+                            chunk_dict = {
+                                "id": "webSearch",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "reasoning_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                        print(response_content.arguments)
+                        modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
+                        print(modified_data)
+                        # 使用json.loads来解析修改后的字符串为列表
+                        data_list = json.loads(modified_data)
+                        results = await dispatch_tool(response_content.name, data_list[0],settings)
+                        print(results)
+                        if results is None:
+                            chunk = {
+                                "id": "extra_tools",
+                                "choices": [
+                                    {
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "tool_calls":modified_data,
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk)}\n\n"
+                            break
+                        if response_content.name in ["query_knowledge_base"]:
+                            if settings["KBSettings"]["is_rerank"]:
+                                results = await rerank_knowledge_base(user_prompt,results)
+                            results = json.dumps(results, ensure_ascii=False, indent=4)
+                        request.messages.append(
+                            {
+                                "tool_calls": [
+                                    {
+                                        "id": tool_calls[0].id,
+                                        "function": {
+                                            "arguments": json.dumps(data_list[0]),
+                                            "name": response_content.name,
+                                        },
+                                        "type": tool_calls[0].type,
+                                    }
+                                ],
+                                "role": "assistant",
+                                "content": str(response_content),
+                            }
+                        )
+                        request.messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tool_calls[0].id,
+                                "name": response_content.name,
+                                "content": str(results),
+                            }
+                        )
+                        if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                            request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
+                        reasoner_messages.append(
+                            {
+                                "role": "assistant",
+                                "content": str(response_content),
+                            }
+                        )
+                        reasoner_messages.append(
+                            {
+                                "role": "user",
+                                "content": f"{response_content.name}工具结果："+str(results),
+                            }
+                        )
+                        # 获取时间戳和uuid
+                        timestamp = time.time()
+                        uid = str(uuid.uuid4())
+                        # 构造文件名
+                        filename = f"{timestamp}_{uid}.txt"
+                        # 将搜索结果写入uploaded_file文件夹下的filename文件
+                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                            f.write(str(results))            
+                        # 将文件链接更新为新的链接
+                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                        tool_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(tool_chunk)}\n\n"
+                    # 如果启用推理模型
+                    if settings['reasoner']['enabled'] or enable_thinking:
+                        if tools:
+                            reasoner_messages[-1]['content'] += f"可用工具：{json.dumps(tools)}"
+                        for modelProvider in settings['modelProviders']: 
+                            if modelProvider['id'] == settings['reasoner']['selectedProvider']:
+                                vendor = modelProvider['vendor']
+                                break
+                        msg = await images_add_in_messages(reasoner_messages, images,settings)
+                        if vendor == 'Ollama':
+                            # 流式调用推理模型
+                            reasoner_stream = await reasoner_client.chat.completions.create(
+                                model=settings['reasoner']['model'],
+                                messages=msg,
+                                stream=True,
+                                temperature=settings['reasoner']['temperature']
+                            )
+                            full_reasoning = ""
+                            buffer = ""  # 跨chunk的内容缓冲区
+                            in_reasoning = False  # 是否在标签内
+                            
+                            async for chunk in reasoner_stream:
+                                if not chunk.choices:
+                                    continue
+                                chunk_dict = chunk.model_dump()
+                                delta = chunk_dict["choices"][0].get("delta", {})
+                                if delta:
+                                    current_content = delta.get("content", "")
+                                    buffer += current_content  # 累积到缓冲区
+                                    
+                                    # 实时处理缓冲区内容
+                                    while True:
+                                        if not in_reasoning:
+                                            # 寻找开放标签
+                                            start_pos = buffer.find(open_tag)
+                                            if start_pos != -1:
+                                                # 开放标签前的内容（非思考内容）
+                                                non_reasoning = buffer[:start_pos]
+                                                buffer = buffer[start_pos+len(open_tag):]
+                                                in_reasoning = True
+                                            else:
+                                                break  # 无开放标签，保留后续处理
+                                        else:
+                                            # 寻找闭合标签
+                                            end_pos = buffer.find(close_tag)
+                                            if end_pos != -1:
+                                                # 提取思考内容并构造响应
+                                                reasoning_part = buffer[:end_pos]
+                                                chunk_dict["choices"][0]["delta"] = {
+                                                    "reasoning_content": reasoning_part,
+                                                    "content": ""  # 清除非思考内容
+                                                }
+                                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                                full_reasoning += reasoning_part
+                                                buffer = buffer[end_pos+len(close_tag):]
+                                                in_reasoning = False
+                                            else:
+                                                # 发送未闭合的中间内容
+                                                if buffer:
+                                                    chunk_dict["choices"][0]["delta"] = {
+                                                        "reasoning_content": buffer,
+                                                        "content": ""
+                                                    }
+                                                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                                    full_reasoning += buffer
+                                                    buffer = ""
+                                                break  # 等待更多内容
+                        else:
+                            # 流式调用推理模型
+                            reasoner_stream = await reasoner_client.chat.completions.create(
+                                model=settings['reasoner']['model'],
+                                messages=msg,
+                                stream=True,
+                                max_tokens=1, # 根据实际情况调整
+                                temperature=settings['reasoner']['temperature']
+                            )
+                            full_reasoning = ""
+                            # 处理推理模型的流式响应
+                            async for chunk in reasoner_stream:
+                                if not chunk.choices:
+                                    continue
 
-                asyncio.create_task(add_async())
-                print("知识库更新任务已提交")
-            return
+                                chunk_dict = chunk.model_dump()
+                                delta = chunk_dict["choices"][0].get("delta", {})
+                                if delta:
+                                    reasoning_content = delta.get("reasoning_content", "")
+                                    if reasoning_content:
+                                        full_reasoning += reasoning_content
+                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+
+                        # 在推理结束后添加完整推理内容到消息
+                        request.messages[-1]['content'] += f"\n\n可参考的推理过程：{full_reasoning}"
+                    msg = await images_add_in_messages(request.messages, images,settings)
+                    if tools:
+                        response = await client.chat.completions.create(
+                            model=model,
+                            messages=msg,  # 添加图片信息到消息
+                            temperature=request.temperature,
+                            tools=tools,
+                            stream=True,
+                            max_tokens=request.max_tokens or settings['max_tokens'],
+                            top_p=request.top_p or settings['top_p'],
+                            frequency_penalty=request.frequency_penalty,
+                            presence_penalty=request.presence_penalty,
+                            extra_body = extra_params, # 其他参数
+                        )
+                    else:
+                        response = await client.chat.completions.create(
+                            model=model,
+                            messages=msg,  # 添加图片信息到消息
+                            temperature=request.temperature,
+                            stream=True,
+                            max_tokens=request.max_tokens or settings['max_tokens'],
+                            top_p=request.top_p or settings['top_p'],
+                            frequency_penalty=request.frequency_penalty,
+                            presence_penalty=request.presence_penalty,
+                            extra_body = extra_params, # 其他参数
+                        )
+                    tool_calls = []
+                    async for chunk in response:
+                        if not chunk.choices:
+                            continue
+                        if chunk.choices:
+                            choice = chunk.choices[0]
+                            if choice.delta.tool_calls:  # function_calling
+                                for idx, tool_call in enumerate(choice.delta.tool_calls):
+                                    tool = choice.delta.tool_calls[idx]
+                                    if len(tool_calls) <= idx:
+                                        tool_calls.append(tool)
+                                        continue
+                                    if tool.function.arguments:
+                                        # function参数为流式响应，需要拼接
+                                        if tool_calls[idx].function.arguments:
+                                            tool_calls[idx].function.arguments += tool.function.arguments
+                                        else:
+                                            tool_calls[idx].function.arguments = tool.function.arguments
+                            else:
+                                # 创建原始chunk的拷贝
+                                chunk_dict = chunk.model_dump()
+                                delta = chunk_dict["choices"][0]["delta"]
+                                
+                                # 初始化必要字段
+                                delta.setdefault("content", "")
+                                delta.setdefault("reasoning_content", "")
+
+                                # 优先处理 reasoning_content
+                                if delta["reasoning_content"]:
+                                    yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                    continue
+                                
+                                # 处理内容
+                                current_content = delta["content"]
+                                buffer = current_content
+                                
+                                while buffer:
+                                    if not in_reasoning:
+                                        # 寻找开始标签
+                                        start_pos = buffer.find(open_tag)
+                                        if start_pos != -1:
+                                            # 处理开始标签前的内容
+                                            content_buffer.append(buffer[:start_pos])
+                                            buffer = buffer[start_pos+len(open_tag):]
+                                            in_reasoning = True
+                                        else:
+                                            content_buffer.append(buffer)
+                                            buffer = ""
+                                    else:
+                                        # 寻找结束标签
+                                        end_pos = buffer.find(close_tag)
+                                        if end_pos != -1:
+                                            # 处理思考内容
+                                            reasoning_buffer.append(buffer[:end_pos])
+                                            buffer = buffer[end_pos+len(close_tag):]
+                                            in_reasoning = False
+                                        else:
+                                            reasoning_buffer.append(buffer)
+                                            buffer = ""
+                                
+                                # 构造新的delta内容
+                                new_content = "".join(content_buffer)
+                                new_reasoning = "".join(reasoning_buffer)
+                                
+                                # 更新chunk内容
+                                delta["content"] = new_content.strip("\x00")  # 保留未完成内容
+                                delta["reasoning_content"] = new_reasoning.strip("\x00") or None
+                                
+                                # 重置缓冲区但保留未完成部分
+                                if in_reasoning:
+                                    content_buffer = [new_content.split(open_tag)[-1]] 
+                                else:
+                                    content_buffer = []
+                                reasoning_buffer = []
+                                
+                                yield f"data: {json.dumps(chunk_dict)}\n\n"
+                                full_content += delta.get("content", "")
+                    # 最终flush未完成内容
+                    if content_buffer or reasoning_buffer:
+                        final_chunk = {
+                            "choices": [{
+                                "delta": {
+                                    "content": "".join(content_buffer),
+                                    "reasoning_content": "".join(reasoning_buffer)
+                                }
+                            }]
+                        }
+                        yield f"data: {json.dumps(final_chunk)}\n\n"
+                        full_content += final_chunk["choices"][0]["delta"].get("content", "")
+                    if tool_calls:
+                        pass
+                    elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
+                        search_prompt = get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content)
+                        response = await client.chat.completions.create(
+                            model=model,
+                            messages=[                        
+                                {
+                                "role": "system",
+                                "content": source_prompt,
+                                },
+                                {
+                                "role": "user",
+                                "content": search_prompt,
+                                }
+                            ],
+                            temperature=0.5,
+                            extra_body = extra_params, # 其他参数
+                        )
+                        response_content = response.choices[0].message.content
+                        # 用re 提取```json 包裹json字符串 ```
+                        if "```json" in response_content:
+                            try:
+                                response_content = re.search(r'```json(.*?)```', response_content, re.DOTALL).group(1)
+                            except:
+                                # 用re 提取```json 之后的内容
+                                response_content = re.search(r'```json(.*?)', response_content, re.DOTALL).group(1)
+                        try:
+                            response_content = json.loads(response_content)
+                        except json.JSONDecodeError:
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                        if response_content["status"] == "done":
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = False
+                        elif response_content["status"] == "not_done":
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = True
+                            search_task = response_content["unfinished_task"]
+                            task_prompt = f"请继续完成初始任务中未完成的任务：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n最后，请给出完整的初始任务的最终结果。"
+                            request.messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": full_content,
+                                }
+                            )
+                            request.messages.append(
+                                {
+                                    "role": "user",
+                                    "content": task_prompt,
+                                }
+                            )
+                        elif response_content["status"] == "need_more_info":
+                            DRS_STAGE = 2
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = False
+                        elif response_content["status"] == "search":
+                            DRS_STAGE = 2
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = True
+                            drs_msg = get_drs_stage(DRS_STAGE)
+                            request.messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": full_content,
+                                }
+                            )
+                            request.messages.append(
+                                {
+                                    "role": "user",
+                                    "content": drs_msg,
+                                }
+                            )
+                        elif response_content["status"] == "need_more_search":
+                            DRS_STAGE = 2
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = True
+                            search_task = response_content["unfinished_task"]
+                            task_prompt = f"请继续查询如下信息：\n\n{search_task}\n\n初始任务：{user_prompt}\n\n"
+                            request.messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": full_content,
+                                }
+                            )
+                            request.messages.append(
+                                {
+                                    "role": "user",
+                                    "content": task_prompt,
+                                }
+                            )
+                        elif response_content["status"] == "answer":
+                            DRS_STAGE = 3
+                            search_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(search_chunk)}\n\n"
+                            search_not_done = True
+                            drs_msg = get_drs_stage(DRS_STAGE)
+                            request.messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": full_content,
+                                }
+                            )
+                            request.messages.append(
+                                {
+                                    "role": "user",
+                                    "content": drs_msg,
+                                }
+                            )
+                        print("DRS_STAGE:", DRS_STAGE)
+                yield "data: [DONE]\n\n"
+                if m0:
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": user_prompt,
+                        },
+                        {
+                            "role": "assistant",
+                            "content": full_content,
+                        }
+                    ]
+                    executor = ThreadPoolExecutor()
+                    async def add_async():
+                        loop = asyncio.get_event_loop()
+                        # 绑定 user_id 关键字参数
+                        func = partial(m0.add, user_id=memoryId)
+                        # 传递 messages 作为位置参数
+                        await loop.run_in_executor(executor, func, messages)
+                        print("知识库更新完成")
+
+                    asyncio.create_task(add_async())
+                    print("知识库更新任务已提交")
+                return
+            except Exception as e:
+                # 捕获异常并返回错误信息
+                error_chunk = {
+                    "choices": [{
+                        "delta": {
+                            "reasoning_content": f"❌ {str(e)}\n\n",
+                        }
+                    }]
+                }
+                yield f"data: {json.dumps(error_chunk)}\n\n"
+                yield "data: [DONE]\n\n"  # 确保最终结束
+                return
         
         return StreamingResponse(
             stream_generator(user_prompt, DRS_STAGE),
@@ -1935,6 +2012,37 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     },
                 }
                 tools.append(custom_http_tool)
+    if settings["workflows"]:
+        for workflow in settings["workflows"]:
+            if workflow["enabled"]:
+                comfyui_properties = {}
+                comfyui_required = []
+                if workflow["text_input"] is not None:
+                    comfyui_properties["text_input"] = {
+                        "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                        "type": "string"
+                    }
+                    comfyui_required.append("text_input")
+                if workflow["image_input"] is not None:
+                    comfyui_properties["image_input"] = {
+                        "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                        "type": "string"
+                    }
+                    comfyui_required.append("image_input")
+                comfyui_parameters = {
+                    "type": "object",
+                    "properties": comfyui_properties,
+                    "required": comfyui_required
+                }
+                comfyui_tool = {
+                    "type": "function",
+                    "function": {
+                        "name": f"comfyui_{workflow['unique_filename']}",
+                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
+                        "parameters": comfyui_parameters,
+                    },
+                }
+                tools.append(comfyui_tool)
     search_not_done = False
     search_task = ""
     print(tools)
@@ -3108,6 +3216,74 @@ async def reload_qq_bot(config: QQBotConfig):
             content={"success": False, "message": str(e)}
         )
 
+@app.post("/add_workflow")
+async def add_workflow(file: UploadFile = File(...), workflow_data: str = Form(...)):
+    # 检查文件类型是否为 JSON
+    if file.content_type != "application/json":
+        raise HTTPException(
+            status_code=400,
+            detail="Only JSON files are allowed."
+        )
+
+    # 生成唯一文件名，uuid.uuid4()，没有连词符
+    unique_filename = str(uuid.uuid4()).replace('-', '')
+
+    # 拼接文件路径
+    file_path = os.path.join(UPLOAD_FILES_DIR, unique_filename + ".json")
+
+    # 保存文件
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(await file.read())
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to save file: {str(e)}"
+        )
+
+    # 解析 workflow_data
+    workflow_data_dict = json.loads(workflow_data)
+
+    # 返回文件信息
+    return JSONResponse(
+        status_code=200,
+        content={
+            "success": True,
+            "message": "File uploaded successfully",
+            "file": {
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+                "url": f"/uploaded_files/{unique_filename}",
+                "enabled": True,
+                "text_input": workflow_data_dict.get("textInput"),
+                "text_input_2": workflow_data_dict.get("textInput2"),
+                "image_input": workflow_data_dict.get("imageInput"),
+                "image_input_2": workflow_data_dict.get("imageInput2"),
+                "description": workflow_data_dict.get("description")
+            }
+        }
+    )
+
+@app.delete("/delete_workflow/{filename}")
+async def delete_workflow(filename: str):
+    file_path = os.path.join(UPLOAD_FILES_DIR, filename + ".json")
+    
+    # 检查文件是否存在
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # 删除文件
+    try:
+        os.remove(file_path)
+        return JSONResponse(
+            status_code=200,
+            content={"success": True, "message": "File deleted successfully"}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete file: {str(e)}"
+        )
 
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")
