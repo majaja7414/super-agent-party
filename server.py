@@ -688,7 +688,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "type": "function",
                         "function": {
                             "name": f"comfyui_{workflow['unique_filename']}",
-                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入![video]()这样的markdown语法中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个markdown语法的图片或者视频，用户才能看到多个结果。",
+                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入<video controls> <source src=''></video>的中src中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个图片或者视频，用户才能看到多个结果。",
                             "parameters": comfyui_parameters,
                         },
                     }
@@ -2050,7 +2050,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "type": "function",
                     "function": {
                         "name": f"comfyui_{workflow['unique_filename']}",
-                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入![video]()这样的markdown语法中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个markdown语法的图片或者视频，用户才能看到多个结果。",
+                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入<video controls> <source src=''></video>的中src中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个图片或者视频，用户才能看到多个结果。",
                         "parameters": comfyui_parameters,
                     },
                 }
