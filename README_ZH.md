@@ -14,7 +14,7 @@
 
 ## 简介
 
-🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、视觉能力、绘图能力、自定义工具等高阶功能，打造可插拔的LLM增强中台。与此同时，还可以将你的智能体配置，一键部署到社交软件上（已实现QQ官方机器人）。
+🚀 零侵入 · 极简扩展 · 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、MCP、A2A、深度思考控制、深度研究、视觉能力、绘图能力、自定义工具等高阶功能，打造可插拔的LLM增强中台。与此同时，还可以将你的智能体配置，一键部署到社交软件上（已实现QQ官方机器人）。也可以将其他智能体平台构建的工作流作为智能体的工具使用（已实现comfyui）。
 
 ![image](doc/image/demo.png)
 
@@ -30,13 +30,13 @@
 
 ### windows桌面版安装
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-Setup-0.2.0.exe)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.1/Super-Agent-Party-Setup-0.2.1.exe)
 
 ⭐注意！安装时选择仅为当前用户安装，否则启动时需要管理员权限。
 
 ### MacOS桌面版安装（beta测试）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Mac.dmg)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.1/Super-Agent-Party-0.2.1-Mac.dmg)
 
 ⭐注意！下载后将dmg文件周的app文件拖入`/Applications`目录下，然后打开终端，执行以下命令并输入root密码，从而移除从网络下载附加的Quarantine属性：
 
@@ -52,11 +52,11 @@
 
 `.AppImage` 是一种无需安装、即开即用的 Linux 应用格式。适用于大多数 Linux 发行版。
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Linux.AppImage)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.1/Super-Agent-Party-0.2.1-Linux.AppImage)
 
 #### 2. 使用 `.deb` 包安装（适用于 Ubuntu / Debian 系统）
 
-  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.0/Super-Agent-Party-0.2.0-Linux.deb)
+  👉 [点击下载](https://github.com/heshengtao/super-agent-party/releases/download/v0.2.1/Super-Agent-Party-0.2.1-Linux.deb)
 
 ### docker部署（推荐）
 
