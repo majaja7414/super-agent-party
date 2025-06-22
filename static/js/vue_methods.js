@@ -3115,9 +3115,9 @@ let vue_methods = {
       // 记录所选的输入位置
       const workflowData = {
         textInput: this.selectedTextInput,
-        textInput2: this.selectedTextInput,
+        textInput2: this.selectedTextInput2,
         imageInput: this.selectedImageInput,
-        imageInput2: this.selectedImageInput,
+        imageInput2: this.selectedImageInput2,
         description: this.workflowDescription,
       };
 
@@ -3143,6 +3143,9 @@ let vue_methods = {
           this.workflowFile = null;
           this.selectedTextInput = null; // 重置选中
           this.selectedImageInput = null; // 重置选中
+          this.selectedTextInput2 = null; // 重置选中
+          this.selectedImageInput2 = null; // 重置选中
+          this.workflowDescription = ''; // 清空描述
           this.autoSaveSettings();
           showNotification('上传成功');
         } else {
@@ -3153,5 +3156,13 @@ let vue_methods = {
         showNotification('上传失败', 'error');
       }
     },
-
+    cancelWorkflowUpload() {
+      this.showWorkflowUploadDialog = false;
+      this.workflowFile = null;
+      this.selectedTextInput = null; // 重置选中
+      this.selectedImageInput = null; // 重置选中
+      this.selectedTextInput2 = null; // 重置选中
+      this.selectedImageInput2 = null; // 重置选中
+      this.workflowDescription = ''; // 清空描述
+    },
 }

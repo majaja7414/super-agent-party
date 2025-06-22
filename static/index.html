@@ -3033,7 +3033,7 @@
                           1. {{ t('comfyuiConfigInfo1') }}<br>
                           2. {{ t('comfyuiConfigInfo2') }}<br>
                           3. {{ t('comfyuiConfigInfo3') }}<br>
-                        </el-alert>
+                      </el-alert>
                     </el-form>
                   </el-tab-pane>
 
@@ -3170,9 +3170,16 @@
                         ></el-option>
                       </el-select>
                     </div>
+                    <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        {{ t('comfyuiWorkflowInfo') }}
+                    </el-alert>
                   </div>
                   <template #footer>
-                    <el-button @click="showWorkflowUploadDialog = false">{{ t('cancel') }}</el-button>
+                    <el-button @click="cancelWorkflowUpload">{{ t('cancel') }}</el-button>
                     <el-button type="primary" @click="uploadWorkflow" :disabled="!workflowFile">
                       {{ t('createImmediately') }}
                     </el-button>
