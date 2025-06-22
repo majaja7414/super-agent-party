@@ -3035,9 +3035,11 @@ let vue_methods = {
         const data = await response.json();
         if (data.success) {
           this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
+          await this.autoSaveSettings();
           showNotification('删除成功');
         } else {
           this.workflows = this.workflows.filter(file => file.unique_filename !== filename);
+          await this.autoSaveSettings();
           showNotification('删除失败', 'error');
         }
       } catch (error) {
@@ -3146,7 +3148,7 @@ let vue_methods = {
           this.selectedTextInput2 = null; // 重置选中
           this.selectedImageInput2 = null; // 重置选中
           this.workflowDescription = ''; // 清空描述
-          this.autoSaveSettings();
+          await this.autoSaveSettings();
           showNotification('上传成功');
         } else {
           showNotification('上传失败', 'error');
