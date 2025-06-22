@@ -657,25 +657,25 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     comfyui_required = []
                     if workflow["text_input"] is not None:
                         comfyui_properties["text_input"] = {
-                            "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "description": "第一个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
                             "type": "string"
                         }
                         comfyui_required.append("text_input")
                     if workflow["text_input_2"] is not None:
                         comfyui_properties["text_input_2"] = {
-                            "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "description": "第二个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
                             "type": "string"
                         }
                         comfyui_required.append("text_input_2")
                     if workflow["image_input"] is not None:
                         comfyui_properties["image_input"] = {
-                            "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "description": "第一个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
                             "type": "string"
                         }
                         comfyui_required.append("image_input")
                     if workflow["image_input_2"] is not None:
                         comfyui_properties["image_input_2"] = {
-                            "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                            "description": "第二个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
                             "type": "string"
                         }
                         comfyui_required.append("image_input_2")
