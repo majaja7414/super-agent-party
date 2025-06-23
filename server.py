@@ -657,13 +657,13 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     comfyui_required = []
                     if workflow["text_input"] is not None:
                         comfyui_properties["text_input"] = {
-                            "description": "第一个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "description": "第一个文字输入，需要输入的提示词，用于生成图片或者视频，如果无特别提示，默认为英文",
                             "type": "string"
                         }
                         comfyui_required.append("text_input")
                     if workflow["text_input_2"] is not None:
                         comfyui_properties["text_input_2"] = {
-                            "description": "第二个文字输入，需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                            "description": "第二个文字输入，需要输入的提示词，用于生成图片或者视频，如果无特别提示，默认为英文",
                             "type": "string"
                         }
                         comfyui_required.append("text_input_2")
@@ -688,7 +688,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         "type": "function",
                         "function": {
                             "name": f"comfyui_{workflow['unique_filename']}",
-                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
+                            "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入<video controls> <source src=''></video>的中src中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个图片或者视频，用户才能看到多个结果。",
                             "parameters": comfyui_parameters,
                         },
                     }
@@ -828,7 +828,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 if settings["KBSettings"]["when"] == "after_thinking" or settings["KBSettings"]["when"] == "both":
                     if kb_list:
                         kb_list_message = f"\n\n可调用的知识库列表：{json.dumps(kb_list, ensure_ascii=False)}"
-                        print(kb_list_message)
                         if request.messages and request.messages[0]['role'] == 'system':
                             request.messages[0]['content'] += kb_list_message
                         else:
@@ -919,7 +918,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 if settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
                     deepsearch_messages = copy.deepcopy(request.messages)
                     deepsearch_messages[-1]['content'] += "\n\n将用户提出的问题或给出的当前任务拆分成多个步骤，每一个步骤用一句简短的话概括即可，无需回答或执行这些内容，直接返回总结即可，但不能省略问题或任务的细节。如果用户输入的只是闲聊或者不包含任务和问题，直接把用户输入重复输出一遍即可。如果是非常简单的问题，也可以只给出一个步骤即可。一般情况下都是需要拆分成多个步骤的。"
-                    print(request.messages[-1]['content'])
                     response = await client.chat.completions.create(
                         model=model,
                         messages=deepsearch_messages,
@@ -936,7 +934,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     }
                     yield f"data: {json.dumps(deepsearch_chunk)}\n\n"
                     request.messages[-1]['content'] += f"\n\n如果用户没有提出问题或者任务，直接闲聊即可，如果用户提出了问题或者任务，任务描述不清晰或者你需要进一步了解用户的真实需求，你可以暂时不完成任务，而是分析需要让用户进一步明确哪些需求。"
-                    print(request.messages[-1]['content'])
                 # 如果启用推理模型
                 if settings['reasoner']['enabled'] or enable_thinking:
                     reasoner_messages = copy.deepcopy(request.messages)
@@ -1317,7 +1314,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "content": drs_msg,
                             }
                         )
-                    print("DRS_STAGE:", DRS_STAGE)
                 reasoner_messages = copy.deepcopy(request.messages)
                 while tool_calls or search_not_done:
                     full_content = ""
@@ -1387,13 +1383,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 ]
                             }
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
-                        print(response_content.arguments)
                         modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
-                        print(modified_data)
                         # 使用json.loads来解析修改后的字符串为列表
                         data_list = json.loads(modified_data)
                         results = await dispatch_tool(response_content.name, data_list[0],settings)
-                        print(results)
                         if results is None:
                             chunk = {
                                 "id": "extra_tools",
@@ -1833,7 +1826,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "content": drs_msg,
                                 }
                             )
-                        print("DRS_STAGE:", DRS_STAGE)
                 yield "data: [DONE]\n\n"
                 if m0:
                     messages=[
@@ -2019,16 +2011,28 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 comfyui_required = []
                 if workflow["text_input"] is not None:
                     comfyui_properties["text_input"] = {
-                        "description": "需要输入的图片提示词，用于生成图片，如果无特别提示，默认为英文",
+                        "description": "第一个文字输入，需要输入的提示词，用于生成图片或者视频，如果无特别提示，默认为英文",
                         "type": "string"
                     }
                     comfyui_required.append("text_input")
+                if workflow["text_input_2"] is not None:
+                    comfyui_properties["text_input_2"] = {
+                        "description": "第二个文字输入，需要输入的提示词，用于生成图片或者视频，如果无特别提示，默认为英文",
+                        "type": "string"
+                    }
+                    comfyui_required.append("text_input_2")
                 if workflow["image_input"] is not None:
                     comfyui_properties["image_input"] = {
-                        "description": "需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                        "description": "第一个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
                         "type": "string"
                     }
                     comfyui_required.append("image_input")
+                if workflow["image_input_2"] is not None:
+                    comfyui_properties["image_input_2"] = {
+                        "description": "第二个图片输入，需要输入的图片，必须是图片URL，可以是外部链接，也可以是服务器内部的URL，例如：https://www.example.com/xxx.png  或者  http://127.0.0.1:3456/xxx.jpg",
+                        "type": "string"
+                    }
+                    comfyui_required.append("image_input_2")
                 comfyui_parameters = {
                     "type": "object",
                     "properties": comfyui_properties,
@@ -2038,14 +2042,13 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     "type": "function",
                     "function": {
                         "name": f"comfyui_{workflow['unique_filename']}",
-                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。",
+                        "description": f"{workflow['description']}+\n如果要输入图片提示词或者修改提示词，尽可能使用英语。\n返回的图片结果，请将图片的URL放入![image]()这样的markdown语法中，用户才能看到图片。如果是视频，请将视频的URL放入<video controls> <source src=''></video>的中src中，用户才能看到视频。如果有多个结果，则请用换行符分隔开这几个图片或者视频，用户才能看到多个结果。",
                         "parameters": comfyui_parameters,
                     },
                 }
                 tools.append(comfyui_tool)
     search_not_done = False
     search_task = ""
-    print(tools)
     try:
         model = settings['model']
         extra_params = settings['extra_params']
@@ -2297,7 +2300,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 extra_body = extra_params, # 其他参数
             )
             response_content = research_response.choices[0].message.content
-            print(response_content)
             # 用re 提取```json 包裹json字符串 ```
             if "```json" in response_content:
                 try:
@@ -2399,7 +2401,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     results = combined_results
                 else:
                     results = None
-                print(results)
                 if results is None:
                     break
                 if response_content.name in ["query_knowledge_base"]:
@@ -2505,7 +2506,6 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     presence_penalty=request.presence_penalty,
                     extra_body = extra_params, # 其他参数
                 )
-            print(response)
             if response.choices[0].message.tool_calls:
                 pass
             elif settings['tools']['deepsearch']['enabled'] or enable_deep_research: 
