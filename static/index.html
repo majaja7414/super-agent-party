@@ -3712,7 +3712,7 @@
             <div class="suite-content">
               <!-- 文本存储 -->
               <div v-show="subMenu === 'text'" class="page text-container">
-                <div class="file-list">
+                <div class="text-list">
                   <!-- 文件列表 -->
                   <div class="file-item" v-for="(file, index) in textFiles" :key="index">
                     <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
@@ -3794,16 +3794,15 @@
               <div v-show="subMenu === 'video'" class="page video-container">
                 <div class="video-list">
                   <div class="video-item" v-for="(video, index) in videoFiles" :key="index">
-                    <video class="video-preview" :src="video.url"></video>
-                    <div class="video-info">
-                      <span class="video-name">{{ video.name }}</span>
-                      <span class="video-duration">{{ formatDuration(video.duration) }}</span>
-                    </div>
-                    <div class="video-actions">
-                      <el-button circle size="small" @click="playVideo(video)">
-                        <i class="fa-solid fa-play"></i>
-                      </el-button>
-                      <el-button type="danger" circle size="small" @click="deleteVideo(video)">
+                    <div class="video-wrapper">
+                      <!-- 视频播放器 -->
+                      <video controls>
+                        <source :src="`${partyURL}/uploaded_files/${video.unique_filename}`" type="video/mp4">
+                        Your browser does not support the video tag.
+                      </video>
+
+                      <!-- 删除按钮定位在视频右上角 -->
+                      <el-button class="delete-overlay-btn" type="danger" circle @click="deleteVideo(video)">
                         <i class="fa-solid fa-trash"></i>
                       </el-button>
                     </div>

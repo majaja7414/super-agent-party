@@ -2492,6 +2492,12 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
+.text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .file-item {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
@@ -2933,4 +2939,16 @@ body {
 .input-box {
   width: 100%;
   margin-bottom: 10px;
+}
+
+.video-wrapper {
+  position: relative;
+  display: inline-block; /* 防止超出容器 */
+}
+
+.delete-overlay-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
 }

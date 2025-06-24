@@ -73,6 +73,8 @@ ALLOWED_EXTENSIONS = [
 ]
 ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
+ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v']
+
 from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
@@ -3090,6 +3092,33 @@ async def delete_file_endpoint(request: Request):
             return JSONResponse(content={"success": False, "message": "File not found"})
     except Exception as e:
         return JSONResponse(content={"success": False, "message": str(e)})
+
+@app.get("/update_storage")
+async def update_storage_endpoint(request: Request):
+    settings = await load_settings()
+    textFiles = settings.get("textFiles") or []
+    imageFiles = settings.get("imageFiles") or []
+    videoFiles = settings.get("videoFiles") or []
+    # 检查UPLOAD_FILES_DIR目录中的文件，根据ALLOWED_EXTENSIONS、ALLOWED_IMAGE_EXTENSIONS、ALLOWED_VIDEO_EXTENSIONS分类，如果不存在于textFiles、imageFiles、videoFiles中则添加进去
+    # 三个列表的元素是字典，包含"unique_filename"和"original_filename"两个键
+    
+    for file in os.listdir(UPLOAD_FILES_DIR):
+        file_path = os.path.join(UPLOAD_FILES_DIR, file)
+        if os.path.isfile(file_path):
+            file_extension = os.path.splitext(file)[1][1:]
+            if file_extension in ALLOWED_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in textFiles]:
+                    textFiles.append({"unique_filename": file, "original_filename": file})
+            elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in imageFiles]:
+                    imageFiles.append({"unique_filename": file, "original_filename": file})
+            elif file_extension in ALLOWED_VIDEO_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in videoFiles]:
+                    videoFiles.append({"unique_filename": file, "original_filename": file})
+
+    # 发给前端
+    return JSONResponse(content={"textFiles": textFiles, "imageFiles": imageFiles, "videoFiles": videoFiles})
+
 
 @app.post("/create_kb")
 async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks):

@@ -429,7 +429,7 @@ let vue_methods = {
     closeWindow() {
       if (isElectron) window.electronAPI.windowAction('close');
     },
-    handleSelect(key) {
+    async handleSelect(key) {
       if (key === 'agent_group') {
         this.activeMenu = 'agent_group';
         this.subMenu = 'agents'; // 默认显示第一个子菜单
@@ -449,6 +449,23 @@ let vue_methods = {
       else if (key === 'storage') {
         this.activeMenu = 'storage';
         this.subMenu = 'text'; // 默认显示第一个子菜单
+        response = await fetch('/update_storage', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+        });
+        if (response.ok) {
+          console.log('Storage files updated successfully');
+          data = await response.json();
+          this.textFiles = data.textFiles;
+          this.imageFiles = data.imageFiles;
+          this.videoFiles = data.videoFiles;
+          this.autoSaveSettings();
+        }
+        else {
+          console.error('Failed to update storage files');
+        }
       }
       else if (key === 'deploy-bot') {
         this.activeMenu = 'deploy-bot';
@@ -3166,5 +3183,26 @@ let vue_methods = {
       this.selectedTextInput2 = null; // 重置选中
       this.selectedImageInput2 = null; // 重置选中
       this.workflowDescription = ''; // 清空描述
+    },
+    async deleteVideo(video) {
+      this.videoFiles = this.videoFiles.filter(i => i !== video);
+      await this.autoSaveSettings();
+      fileName = video.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
     },
 }
