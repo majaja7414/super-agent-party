@@ -3959,6 +3959,28 @@
                                         <i class="fa-solid fa-key"></i>
                                       </el-icon>{{ t('gotoEasyImage2Github') }}
                                     </el-link>
+                                    <el-link
+                                      v-if="BotConfig.imgHost === 'github'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://github.com/settings/tokens" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoAPI') }}
+                                    </el-link>
+                                    <el-link
+                                      v-if="BotConfig.imgHost === 'gitee'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://gitee.com/profile/personal_access_tokens" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoAPI') }}
+                                    </el-link>
                                   </span>
                               </template>
                               <el-select 
@@ -3980,6 +4002,75 @@
                                 :placeholder="t('apiKeyPlaceholder')"
                                 class="full-width-input"
                                 show-password
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <!--gitee图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('repo_owner')">
+                              <el-input
+                                v-model="BotConfig.gitee_repo_owner"
+                                :placeholder="t('repo_owner_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('repo_name')">
+                              <el-input
+                                v-model="BotConfig.gitee_repo_name"
+                                :placeholder="t('repo_name_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('branch')">
+                              <el-input
+                                v-model="BotConfig.gitee_branch"
+                                :placeholder="t('branch_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('token')">
+                              <el-input
+                                v-model="BotConfig.gitee_token"
+                                :placeholder="t('token_placeholder')"
+                                class="full-width-input"
+                                show-password
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <!--github图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('repo_owner')">
+                              <el-input
+                                v-model="BotConfig.github_repo_owner"
+                                :placeholder="t('repo_owner_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('repo_name')">
+                              <el-input
+                                v-model="BotConfig.github_repo_name"
+                                :placeholder="t('repo_name_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('branch')">
+                              <el-input
+                                v-model="BotConfig.github_branch"
+                                :placeholder="t('branch_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('token')">
+                              <el-input
+                                v-model="BotConfig.github_token"
+                                :placeholder="t('token_placeholder')"
+                                class="full-width-input"
+                                show-password
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                             <!--easyimage2图床-->
@@ -3988,6 +4079,7 @@
                                 v-model="BotConfig.EI2_base_url"
                                 placeholder="https://png.cm/api/index.php"
                                 class="full-width-input"
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                             <el-form-item v-if="BotConfig.imgHost === 'easyImage2'"  :label="t('apiKey')">
@@ -3996,6 +4088,7 @@
                                 :placeholder="t('apiKeyPlaceholder')"
                                 class="full-width-input"
                                 show-password
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                           </div>

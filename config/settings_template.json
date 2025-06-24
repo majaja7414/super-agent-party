@@ -140,7 +140,15 @@
       "imgHost_enabled":false,
       "imgHost": "smms",
       "EI2_base_url": "",
-      "EI2_api_key": ""
+      "EI2_api_key": "",
+      "gitee_repo_owner": "",
+      "gitee_repo_name": "",
+      "gitee_token": "",
+      "gitee_branch": "master",
+      "github_repo_owner": "",
+      "github_repo_name": "",
+      "github_token": "",
+      "github_branch": "main"
     },
     "workflows": []
 }

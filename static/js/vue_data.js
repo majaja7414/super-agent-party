@@ -274,6 +274,8 @@ let vue_data = {
     imgHostOptions:[
       { value: 'smms', label: 'smms' },
       { value: 'easyImage2', label: 'easyImage2' },
+      { value: 'gitee', label: 'gitee' },
+      { value: 'github', label: 'github' },
     ],
     showRestartDialog: false,
     agents: {},
@@ -390,6 +392,14 @@ let vue_data = {
       SMMS_api_key: '',
       EI2_base_url: '',
       EI2_api_key: '',
+      gitee_repo_owner: "",
+      gitee_repo_name: "",
+      gitee_token: "",
+      gitee_branch: "master",
+      github_repo_owner: "",
+      github_repo_name: "",
+      github_token: "",
+      github_branch: "main"
     },
     deployTiles: [
       { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
