@@ -138,7 +138,7 @@
     "comfyuiAPIkey": "",
     "BotConfig": {
       "imgHost_enabled":false,
-      "imgHost": "smms",
+      "imgHost": "gitee",
       "EI2_base_url": "",
       "EI2_api_key": "",
       "gitee_repo_owner": "",
