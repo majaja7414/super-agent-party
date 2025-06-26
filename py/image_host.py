@@ -61,7 +61,7 @@ async def _upload_file(settings, file_path):
     # 确保文件存在
     if not os.path.exists(file_path):
         logging.error(f"文件不存在: {file_path}")
-        return file_path
+        return f"文件不存在: {file_path}"
     
     file_name = os.path.basename(file_path)
     is_temp_file = 'tmp' in file_path  # 标记临时文件
@@ -72,7 +72,7 @@ async def _upload_file(settings, file_path):
             api_key = settings["BotConfig"].get("SMMS_api_key")
             if not api_key:
                 logging.warning("SM.MS API key未配置，跳过上传")
-                return file_path
+                return "SM.MS API key未配置，跳过上传"
             
             headers = {"Authorization": api_key}
             upload_url = "https://sm.ms/api/v2/upload"
@@ -109,14 +109,14 @@ async def _upload_file(settings, file_path):
                 # 如果都没有找到URL，返回原始文件路径
                 else:
                     logging.warning("无法从重复图片响应中提取URL")
-                    return file_path
+                    return "无法从重复图片响应中提取URL"
             
             # 处理其他错误
             else:
                 error_msg = result.get("message", "未知错误")
                 error_code = result.get("code", "未知代码")
                 logging.error(f"SM.MS上传失败: {error_msg} (代码: {error_code})")
-                return file_path
+                return f"SM.MS上传失败: {error_msg} (代码: {error_code})"
         
         # EasyImage图床处理
         elif settings["BotConfig"]["imgHost"] == "easyImage2":
@@ -132,7 +132,7 @@ async def _upload_file(settings, file_path):
                 return response.json().get("url")
             else:
                 logging.error(f"EasyImage上传失败: {response.status_code}")
-                return file_path
+                return f"EasyImage上传失败: {response.status_code}"
 
         # Gitee图床处理 - 新增部分
         elif settings["BotConfig"]["imgHost"] == "gitee":
@@ -151,13 +151,13 @@ async def _upload_file(settings, file_path):
                     "gitee_access_token": access_token
                 }.items() if not v]
                 logging.error(f"Gitee配置不完整，缺少: {', '.join(missing)}")
-                return file_path
+                return f"Gitee配置不完整，缺少: {', '.join(missing)}"
             
             # 检查文件大小（Gitee限制1MB）
             file_size = os.path.getsize(file_path)
             if file_size > 1024 * 1024:  # 1MB
                 logging.warning(f"文件大小超过1MB（{file_size}字节），Gitee不支持，跳过上传")
-                return file_path
+                return f"文件大小超过1MB（{file_size}字节），Gitee不支持，跳过上传"
             
             # 读取文件并编码为Base64
             try:
@@ -165,7 +165,7 @@ async def _upload_file(settings, file_path):
                     image_data = base64.b64encode(f.read()).decode("utf-8")
             except Exception as e:
                 logging.error(f"读取文件失败: {str(e)}")
-                return file_path
+                return f"读取文件失败: {str(e)}"
             
             # 构造API请求
             api_url = f"https://gitee.com/api/v5/repos/{repo_owner}/{repo_name}/contents/{file_name}"
@@ -198,11 +198,11 @@ async def _upload_file(settings, file_path):
                 else:
                     error_msg = response_data.get("message", "未知错误")
                     logging.error(f"Gitee上传失败: {error_msg} (状态码: {response.status_code})")
-                    return file_path
+                    return f"Gitee上传失败: {error_msg} (状态码: {response.status_code})"
                     
             except Exception as e:
                 logging.error(f"Gitee上传请求异常: {str(e)}")
-                return file_path
+                return f"Gitee上传请求异常: {str(e)}"
 
         # GitHub图床处理 - 新增部分
         elif settings["BotConfig"]["imgHost"] == "github":
@@ -221,7 +221,7 @@ async def _upload_file(settings, file_path):
                     "github_token": access_token
                 }.items() if not v]
                 logging.error(f"GitHub配置不完整，缺少: {', '.join(missing)}")
-                return file_path
+                return f"GitHub配置不完整，缺少: {', '.join(missing)}"
             
             # 检查文件大小（GitHub限制100MB，但图床建议小于10MB）
             file_size = os.path.getsize(file_path)
@@ -235,7 +235,7 @@ async def _upload_file(settings, file_path):
                     image_data = base64.b64encode(f.read()).decode("utf-8")
             except Exception as e:
                 logging.error(f"读取文件失败: {str(e)}")
-                return file_path
+                return f"读取文件失败: {str(e)}"
             
             # 构造API请求
             api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_name}"
@@ -271,26 +271,26 @@ async def _upload_file(settings, file_path):
                     else:
                         error_msg = response_data.get("message", "未知错误")
                         logging.error(f"GitHub上传失败: {error_msg} (状态码: {response.status_code})")
-                        return file_path
+                        return f"GitHub上传失败: {error_msg} (状态码: {response.status_code})"
                 
                 # 处理其他错误
                 else:
                     error_msg = response_data.get("message", "未知错误")
                     logging.error(f"GitHub上传失败: {error_msg} (状态码: {response.status_code})")
-                    return file_path
+                    return f"GitHub上传失败: {error_msg} (状态码: {response.status_code})"
                     
             except Exception as e:
                 logging.error(f"GitHub上传请求异常: {str(e)}")
-                return file_path
+                return f"GitHub上传请求异常: {str(e)}"
 
         # 未知图床类型
         else:
             logging.warning(f"未知图床类型: {settings['BotConfig']['imgHost']}")
-            return file_path
+            return f"未知图床类型: {settings['BotConfig']['imgHost']}"
     
     except Exception as e:
         logging.error(f"图床上传异常: {str(e)}")
-        return file_path
+        return f"图床上传异常: {str(e)}"
     
     finally:
         # 清理临时文件
