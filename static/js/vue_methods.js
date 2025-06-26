@@ -3205,4 +3205,22 @@ let vue_methods = {
         showNotification(this.t('fileDeleteFailed'), 'error');
       }
     },
+
+    goToURL(provider) {
+        if (provider.vendor === 'custom') {
+          url = provider.url;
+          // 移除url尾部的/v1
+          if (url.endsWith('/v1')) {
+            url = url.slice(0, -3);
+          }
+        }
+        else {
+          url = this.vendorAPIpage[provider.vendor];
+        }
+        if (isElectron) {
+          window.electronAPI.openExternal(url);
+        } else {
+          window.open(url, '_blank');
+        }
+    }
 }

@@ -758,6 +758,14 @@
                       />
                       <div class="card-actions">
                         <el-button
+                          @click="goToURL(provider)"
+                          type="info"
+                          circle
+                          size="small"
+                        >
+                        <i class="fa-solid fa-key"></i>
+                        </el-button>
+                        <el-button
                           @click="fetchModelsForProvider(provider)"
                           type="primary"
                           circle
