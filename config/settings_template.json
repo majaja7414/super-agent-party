@@ -150,5 +150,6 @@
       "github_token": "",
       "github_branch": "main"
     },
-    "workflows": []
+    "workflows": [],
+    "stickerPacks": []
 }

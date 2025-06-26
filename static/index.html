@@ -2517,6 +2517,104 @@
                 </el-tab-pane>
                 </el-tabs>
               </div>
+
+            <!-- 新增表情包界面 -->
+              <div v-show="subMenu === 'sticker'" class="page">
+                <div class="provider-grid">
+                  <!-- 已有表情包库 -->
+                  <div 
+                    v-for="pack in stickerPacks" 
+                    :key="pack.id"
+                    class="provider-card knowledge-card">
+                    <div class="card-header">
+                      <el-switch v-model="pack.enabled"></el-switch>
+                      <div class="card-actions">
+                        <el-button @click="deleteStickerPack(pack)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="kb-content">
+                      <div class="kb-header">
+                        <h3 class="kb-title">{{ pack.name }}</h3>
+                        <el-tag v-if="pack.stickers?.length" type="info" size="small" effect="dark">
+                          {{ pack.stickers.length }} {{ t('images') }}
+                        </el-tag>
+                      </div>
+                      <div class="kb-meta">
+                        <img :src="pack.cover" class="cover-image" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 添加新表情包库 -->
+                  <div class="provider-card add-tile" @click="showStickerDialog = true">
+                    <el-icon :size="40" color="#909399">
+                      <i class="fa-solid fa-plus"></i>
+                    </el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addStickerPack') }}</div>
+                  </div>
+                </div>
+
+                <!-- 表情包创建对话框 -->
+                <el-dialog
+                  v-model="showStickerDialog"
+                  :title="t('createStickerPack')"
+                  width="60%">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('packName')" required>
+                      <el-input v-model="newStickerPack.name" />
+                    </el-form-item>
+
+                    <el-form-item :label="t('uploadStickers')" required>
+                      <div class="sticker-upload">
+                        <el-upload
+                          multiple
+                          list-type="picture-card"
+                          :file-list="uploadedStickers"
+                          :before-upload="handleBeforeUpload"
+                          :on-remove="handleStickerRemove"
+                          :on-preview="handlePictureCardPreview"
+                        >
+                          <el-icon><i class="fa-solid fa-plus"></i></el-icon>
+                        </el-upload>
+                      </div>
+                    </el-form-item>
+
+                    <!-- 预览弹窗 -->
+                    <el-dialog v-model="dialogVisible">
+                      <img :src="imageUrl" style="width: 100%" alt="Preview">
+                    </el-dialog>
+
+                    <el-form-item :label="t('imageDescription')" required>
+                      <div class="tag-editor">
+                        <div class="tag-item" 
+                            v-for="(sticker, index) in uploadedStickers" 
+                            :key="index">
+                          <img :src="sticker.url" class="sticker-thumb" />
+                          <el-input
+                            type="textarea"
+                            :rows="2"
+                            v-model="sticker.description"
+                            :placeholder="t('enterDescriptionPlaceholder')"
+                          />
+                        </div>
+                      </div>
+                    </el-form-item>
+                  </el-form>
+
+                  <template #footer>
+                    <el-button @click="cancelStickerUpload">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary"
+                      @click="createStickerPack"
+                      :disabled="!newStickerPack.name || uploadedStickers.length === 0"
+                      >
+                      {{ t('createImmediately') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
               <!--记忆-->
               <div v-show="subMenu === 'memory'" class="page">
                 <el-tabs v-model="activeMemoryTab">
@@ -2835,100 +2933,6 @@
                   </template>
                 </el-dialog>
               </div>
-
-              <!-- 新增表情包界面 -->
-              <div v-show="subMenu === 'sticker'" class="page">
-                <div class="provider-grid">
-                  <!-- 已有表情包库 -->
-                  <div 
-                    v-for="pack in stickerPacks" 
-                    :key="pack.id"
-                    class="provider-card sticker-pack">
-                    <div class="card-header">
-                      <el-switch v-model="pack.enabled"></el-switch>
-                      <div class="card-actions">
-                        <el-button @click="deleteStickerPack(pack)" type="danger" circle size="small">
-                          <i class="fa-solid fa-trash"></i>
-                        </el-button>
-                      </div>
-                    </div>
-                    <div class="pack-preview">
-                      <img :src="pack.cover" class="cover-image" />
-                      <div class="pack-meta">
-                        <h3>{{ pack.name }}</h3>
-                        <el-tag type="info">{{ pack.tags.length }} tags</el-tag>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- 添加新表情包库 -->
-                  <div class="provider-card add-tile" @click="showStickerDialog = true">
-                    <el-icon :size="40" color="#909399">
-                      <i class="fa-solid fa-plus"></i>
-                    </el-icon>
-                    <div style="color: #606266; margin-top: 10px;">{{ t('addStickerPack') }}</div>
-                  </div>
-                </div>
-
-                <!-- 表情包创建对话框 -->
-                <el-dialog
-                  v-model="showStickerDialog"
-                  :title="t('createStickerPack')"
-                  width="60%">
-                  <el-form label-position="top">
-                    <el-form-item :label="t('packName')" required>
-                      <el-input v-model="newStickerPack.name" />
-                    </el-form-item>
-
-                    <el-form-item :label="t('uploadStickers')" required>
-                      <div class="sticker-upload">
-                        <el-upload
-                          multiple
-                          list-type="picture-card"
-                          :file-list="uploadedStickers"
-                          :before-upload="handleBeforeUpload"
-                          :on-remove="handleStickerRemove"
-                          :on-preview="handlePictureCardPreview"
-                        >
-                          <el-icon><i class="fa-solid fa-plus"></i></el-icon>
-                        </el-upload>
-                      </div>
-                    </el-form-item>
-
-                    <!-- 预览弹窗 -->
-                    <el-dialog v-model="dialogVisible">
-                      <img :src="imageUrl" style="width: 100%" alt="Preview">
-                    </el-dialog>
-
-                    <el-form-item :label="t('imageDescription')" required>
-                      <div class="tag-editor">
-                        <div class="tag-item" 
-                            v-for="(sticker, index) in uploadedStickers" 
-                            :key="index">
-                          <img :src="sticker.url" class="sticker-thumb" />
-                          <el-input
-                            type="textarea"
-                            :rows="2"
-                            v-model="sticker.description"
-                            :placeholder="t('enterDescriptionPlaceholder')"
-                          />
-                        </div>
-                      </div>
-                    </el-form-item>
-                  </el-form>
-
-                  <template #footer>
-                    <el-button @click="cancelStickerUpload">{{ t('cancel') }}</el-button>
-                    <el-button 
-                      type="primary"
-                      @click="createStickerPack"
-                      >
-                      {{ t('createImmediately') }}
-                    </el-button>
-                  </template>
-                </el-dialog>
-              </div>
-
             </div>
           </div>
         </div>

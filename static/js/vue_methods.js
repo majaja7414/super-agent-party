@@ -1015,6 +1015,7 @@ let vue_methods = {
           this.mainAgent = data.data.mainAgent || this.mainAgent;
           this.qqBotConfig = data.data.qqBotConfig || this.qqBotConfig;
           this.BotConfig = data.data.BotConfig || this.BotConfig;
+          this.stickerPacks = data.data.stickerPacks || this.stickerPacks;
           this.toolsSettings = data.data.tools || this.toolsSettings;
           this.llmTools = data.data.llmTools || this.llmTools;
           this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
@@ -1476,6 +1477,7 @@ let vue_methods = {
           mainAgent: this.mainAgent,
           qqBotConfig : this.qqBotConfig,
           BotConfig: this.BotConfig,
+          stickerPacks: this.stickerPacks,
           tools: this.toolsSettings,
           llmTools: this.llmTools,
           conversations: this.conversations,
@@ -3237,7 +3239,7 @@ let vue_methods = {
         this.uploadedStickers.push({
           uid: file.uid,
           url: reader.result,
-          tags: [],
+          description: "",
           file: file
         })
       }
@@ -3248,69 +3250,90 @@ let vue_methods = {
       this.uploadedStickers = this.uploadedStickers.filter(f => f.uid !== file.uid)
     },
 
-    validateDescription(description) {
-      // 示例：移除首尾空格和换行符
-      return description.trim().replace(/\n/g, ' ');
-    },
-
     async createStickerPack() {
       try {
+        // 验证输入
         if (!this.newStickerPack.name || this.uploadedStickers.length === 0) {
           showNotification(this.t('fillAllFields'), 'warning');
           return;
         }
+        
 
+        // 创建FormData对象
         const formData = new FormData();
         
-        const stickerData = {
-          name: this.newStickerPack.name,
-          stickers: []
-        };
-
-        // 修改为处理描述字段
-        this.uploadedStickers.forEach((sticker, index) => {
-          formData.append(`sticker_${index}`, sticker.file);
-          stickerData.stickers.push({
-            description: this.validateDescription(sticker.description)
-          });
+        // 添加表情包名称
+        formData.append('pack_name', this.newStickerPack.name);
+        
+        // 添加所有表情描述
+        this.uploadedStickers.forEach(sticker => {
+          formData.append('descriptions', sticker.description);
+        });
+        
+        // 添加所有表情文件
+        this.uploadedStickers.forEach(sticker => {
+          formData.append('files', sticker.file);
         });
 
-        // 添加元数据为 JSON
-        formData.append('sticker_data', JSON.stringify(stickerData));
-
+        // 发送请求
         const response = await fetch('/create_sticker_pack', {
           method: 'POST',
           body: formData
         });
-
+        
+        // 处理响应
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Server error:", errorText);
-          throw new Error(this.t('uploadFailed'));
+          const errorData = await response.json();
+          console.error("服务器错误详情:", errorData);
+          
+          let errorMsg = this.t('uploadFailed');
+          if (errorData.detail) {
+            if (typeof errorData.detail === 'string') {
+              errorMsg = errorData.detail;
+            } else if (errorData.detail[0]?.msg) {
+              errorMsg = errorData.detail[0].msg;
+            }
+          }
+          
+          throw new Error(errorMsg);
         }
 
         const data = await response.json();
         if (data.success) {
+          // 更新前端状态
           this.stickerPacks.push({
             id: data.id,
             name: data.name,
-            cover: data.cover_url,
-            tags: data.all_tags,
+            stickers: data.stickers,
+            cover: data.cover,
             enabled: true
           });
           
+          this.imageFiles = [...this.imageFiles, ...data.imageFiles];
           this.resetStickerForm();
           await this.autoSaveSettings();
+          
           showNotification(this.t('stickerPackCreated'));
+          this.showStickerDialog = false;
         } else {
           showNotification(data.message || this.t('createFailed'), 'error');
+          this.showStickerDialog = false;
         }
       } catch (error) {
-        console.error('Create failed:', error);
-        showNotification(this.t('createFailed'), 'error');
+        console.error('创建失败:', error);
+        showNotification(
+          error.message || this.t('createFailed'), 
+          'error'
+        );
+        this.showStickerDialog = false;
       }
     },
 
+    deleteStickerPack(stickerPack) {
+      this.stickerPacks = this.stickerPacks.filter(pack => pack.id !== stickerPack.id);
+      this.autoSaveSettings();
+      showNotification(this.t('stickerPackDeleted'));
+    },
     cancelStickerUpload() {
       this.showStickerDialog = false;
       this.resetStickerForm();
@@ -3320,7 +3343,6 @@ let vue_methods = {
       this.newStickerPack = {
         name: '',
         stickers: [],
-        tags: []
       };
       this.uploadedStickers = [];
     },

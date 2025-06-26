@@ -472,6 +472,10 @@ const translations = {
       'enterDescriptionPlaceholder': '请输入图片描述',
       'sticker/image': '表情包/图片库',
       'utilityTools': '实用工具',
+      'images': '张图片',
+      'stickerPackCreated': '表情包/图片库已创建',
+      'createFailed': '创建失败',
+      'stickerPackDeleted': '表情包/图片库已删除',
     },
     'en-US': {
       'chat': 'Chat',
@@ -945,5 +949,9 @@ const translations = {
       'enterDescriptionPlaceholder': 'Please enter a description',
       'sticker/image': 'Sticker/Image Pack',
       'utilityTools': 'Utility Tools',
+      'images': 'Images',
+      'stickerPackCreated': 'Sticker/Image Pack Created',
+      'createFailed': 'Create Failed',
+      'stickerPackDeleted': 'Sticker/Image Pack Deleted',
     }
   };

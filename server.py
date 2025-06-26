@@ -3174,6 +3174,91 @@ async def process_kb(kb_id):
     except Exception as e:
         kb_status[kb_id] = f"failed: {str(e)}"
 
+@app.post("/create_sticker_pack")
+async def create_sticker_pack(
+    request: Request,
+    files: List[UploadFile] = File(..., description="表情文件列表"),
+    pack_name: str = Form(..., description="表情包名称"),
+    descriptions: List[str] = Form(..., description="表情描述列表")
+):
+    """
+    创建新表情包
+    - files: 上传的图片文件列表
+    - pack_name: 表情包名称
+    - descriptions: 每个表情的描述列表
+    """
+    fastapi_base_url = str(request.base_url)
+    imageFiles = []
+    stickers_data = []
+    
+    try:
+        # 验证输入数据
+        if not pack_name:
+            raise HTTPException(status_code=400, detail="表情包名称不能为空")
+        if len(files) == 0:
+            raise HTTPException(status_code=400, detail="至少需要上传一个表情")
+        if len(descriptions) != len(files):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"描述数量({len(descriptions)})与文件数量({len(files)})不匹配"
+            )
+
+        # 处理上传的表情文件
+        for idx, file in enumerate(files):
+            # 获取文件扩展名
+            file_extension = os.path.splitext(file.filename)[1].lower()
+            
+            # 验证文件类型
+            if file_extension not in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"不支持的文件类型: {file_extension}"
+                )
+            
+            # 生成唯一文件名
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+
+            # 保存文件
+            with open(destination, "wb") as buffer:
+                content = await file.read()
+                buffer.write(content)
+
+            # 构建返回数据
+            imageFiles.append({
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+            })
+            
+            # 获取对应的描述（处理可能的索引越界）
+            description = descriptions[idx] if idx < len(descriptions) else ""
+
+            # 构建表情数据
+            stickers_data.append({
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+                "url": f"{fastapi_base_url}uploaded_files/{unique_filename}",
+                "description": description
+            })
+
+        # 创建表情包ID（可替换为数据库存储逻辑）
+        sticker_pack_id = str(uuid.uuid4())
+        
+        return JSONResponse(content={
+            "success": True,
+            "id": sticker_pack_id,
+            "name": pack_name,
+            "stickers": stickers_data,
+            "imageFiles": imageFiles,
+            "cover": stickers_data[0]["url"] if stickers_data else None
+        })
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"创建表情包时出错: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"服务器错误: {str(e)}")
+
 # 定义请求体
 class QQBotConfig(BaseModel):
     QQAgent: str
