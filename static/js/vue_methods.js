@@ -3229,5 +3229,103 @@ let vue_methods = {
         } else {
           window.open(url, '_blank');
         }
+    },
+    handleBeforeUpload(file) {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        this.uploadedStickers.push({
+          uid: file.uid,
+          url: reader.result,
+          tags: [],
+          file: file
+        })
+      }
+      return false // 阻止自动上传
+    },
+
+    handleStickerRemove(file) {
+      this.uploadedStickers = this.uploadedStickers.filter(f => f.uid !== file.uid)
+    },
+
+    validateDescription(description) {
+      // 示例：移除首尾空格和换行符
+      return description.trim().replace(/\n/g, ' ');
+    },
+
+    async createStickerPack() {
+      try {
+        if (!this.newStickerPack.name || this.uploadedStickers.length === 0) {
+          showNotification(this.t('fillAllFields'), 'warning');
+          return;
+        }
+
+        const formData = new FormData();
+        
+        const stickerData = {
+          name: this.newStickerPack.name,
+          stickers: []
+        };
+
+        // 修改为处理描述字段
+        this.uploadedStickers.forEach((sticker, index) => {
+          formData.append(`sticker_${index}`, sticker.file);
+          stickerData.stickers.push({
+            description: this.validateDescription(sticker.description)
+          });
+        });
+
+        // 添加元数据为 JSON
+        formData.append('sticker_data', JSON.stringify(stickerData));
+
+        const response = await fetch('/create_sticker_pack', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Server error:", errorText);
+          throw new Error(this.t('uploadFailed'));
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          this.stickerPacks.push({
+            id: data.id,
+            name: data.name,
+            cover: data.cover_url,
+            tags: data.all_tags,
+            enabled: true
+          });
+          
+          this.resetStickerForm();
+          await this.autoSaveSettings();
+          showNotification(this.t('stickerPackCreated'));
+        } else {
+          showNotification(data.message || this.t('createFailed'), 'error');
+        }
+      } catch (error) {
+        console.error('Create failed:', error);
+        showNotification(this.t('createFailed'), 'error');
+      }
+    },
+
+    cancelStickerUpload() {
+      this.showStickerDialog = false;
+      this.resetStickerForm();
+    },
+
+    resetStickerForm() {
+      this.newStickerPack = {
+        name: '',
+        stickers: [],
+        tags: []
+      };
+      this.uploadedStickers = [];
+    },
+    handlePictureCardPreview(file) {
+      this.imageUrl = file.url || URL.createObjectURL(file.raw)
+      this.dialogVisible = true
     }
 }

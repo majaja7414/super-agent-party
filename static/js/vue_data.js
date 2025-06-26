@@ -326,11 +326,12 @@ let vue_data = {
       { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
     ],
     toolkitTiles: [
-      { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
+      { id: 'tools', title: 'utilityTools', icon: 'fa-solid fa-screwdriver-wrench' },
       { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
       { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' },
       { id: 'memory', title: 'memory', icon: 'fa-solid fa-brain'},
-      { id: 'interpreter', title: 'interpreter', icon: 'fa-solid fa-code'}
+      { id: 'interpreter', title: 'interpreter', icon: 'fa-solid fa-code'},
+      { id: 'sticker', title: 'sticker/image', icon: 'fa-solid fa-face-smile'},
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
@@ -405,6 +406,16 @@ let vue_data = {
       { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
       { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
+    stickerPacks: [],
+    showStickerDialog: false,
+    newStickerPack: {
+      name: '',
+      stickers: [],
+      tags: []
+    },
+    dialogVisible: false,
+    imageUrl: '',
+    uploadedStickers: [], // 格式: { uid: string, url: string, tags: string[] }
     isQQBotRunning: false, // QQ机器人状态
     isStarting: false,      // 启动中状态
     isStopping: false,      // 停止中状态

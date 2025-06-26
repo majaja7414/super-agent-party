@@ -2952,3 +2952,77 @@ body {
   right: 10px;
   z-index: 10;
 }
+.sticker-pack {
+  .cover-image {
+    width: 100%;
+    height: 150px;
+    object-fit: contain;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+  }
+
+  .pack-meta {
+    padding: 10px;
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      color: var(--el-text-color-primary);
+    }
+  }
+}
+
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+
+  .tag-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: auto;
+    padding: 12px;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    
+    .sticker-thumb {
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      object-fit: contain;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      background: var(--el-bg-color-page);
+    }
+
+    .el-input {
+      flex: 1;
+      min-width: 0;
+      
+      &__wrapper {
+        height: 40px;
+      }
+    }
+  }
+}
+
+.el-upload-list--picture-card {
+  --el-upload-list-picture-card-size: 30px;
+  margin: 0;
+  
+  .el-upload-list__item {
+    margin: 0 8px 8px 0;
+  }
+
+  .el-upload-list__item .el-icon-close-tip{
+    display: none !important;
+  }
+}
+
+.sticker-upload {
+  margin-left: 24px;
+  .el-upload {
+    background-color: var(--el-bg-color-page);
+  }
+}
