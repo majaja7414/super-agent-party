@@ -1873,6 +1873,7 @@ let vue_methods = {
         'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
         'Vllm': 'http://127.0.0.1:8000/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
+        'xinference': 'http://localhost:9997/v1',
         'Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
         'Anthropic': 'https://api.anthropic.com/v1',
         'Grok': 'https://api.groq.com/openai/v1',
@@ -1911,6 +1912,12 @@ let vue_methods = {
       }
       if (value === 'Vllm') {
         this.newProviderTemp.apiKey = 'Vllm'
+      }
+      if (value === 'LMstudio') {
+        this.newProviderTemp.apiKey = 'LMstudio'
+      }
+      if (value === 'xinference') {
+        this.newProviderTemp.apiKey = 'xinference'
       }
     },
     // rerank供应商
