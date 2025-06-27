@@ -411,6 +411,15 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages[0]['content'] += language_message
         else:
             request.messages.insert(0, {'role': 'system', 'content': language_message})
+    if settings["stickerPacks"]:
+        for stickerPack in settings["stickerPacks"]:
+            if stickerPack["enabled"]:
+                sticker_message = f"\n\n图片库名称：{stickerPack['name']}，包含的图片：{json.dumps(stickerPack['stickers'])}\n\n"
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += sticker_message
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': sticker_message})
+        request.messages[0]['content'] += "\n\n当你需要使用图片时，请将图片的URL放在markdown的图片标签中，例如：![图片名](图片URL)\n\n"
     return request
 
 def get_drs_stage(DRS_STAGE):
