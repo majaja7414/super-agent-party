@@ -121,6 +121,7 @@ let vue_data = {
     showHistoryDialog: false,
     showLLMToolsDialog: false,
     showHttpToolDialog: false,
+    showComfyUIDialog: false,
     deletingConversationId: null, // 正在被删除的对话ID
     models: [],
     modelsLoading: false,

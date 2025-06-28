@@ -211,6 +211,9 @@ const app = Vue.createApp({
     hasEnabledHttpTools() {
       return this.customHttpTools.some(tool => tool.enabled);
     },
+    hasEnabledComfyUI() {
+      return this.workflows.some(tool => tool.enabled);
+    },
     hasFiles() {
       return this.files.length > 0
     },

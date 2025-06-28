@@ -207,6 +207,10 @@ let vue_methods = {
       this.activeMenu = 'agent_group';
       this.subMenu = 'customHttpTool';
     },
+    switchToComfyui() {
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'comfyui';
+    },
     cancelLLMTool() {
       this.showLLMForm = false
       this.resetForm()

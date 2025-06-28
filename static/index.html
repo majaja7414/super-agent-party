@@ -467,6 +467,32 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showComfyUIDialog"
+            :title="t('ComfyUIManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(tool, index) in workflows" :key="index" class="knowledge-item">
+                <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ tool.original_filename }}</div>
+                  <div class="knowledge-desc">{{ tool.description || t('noDescription') }}</div>
+                </div>
+                <el-button 
+                  @click="deleteWorkflow(tool.unique_filename)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="workflows.length === 0" class="empty-tip">
+                {{ t('noWorkflows') }}
+                <a href="#" @click.stop.prevent="switchToComfyui">{{ t('goComfyui') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showHttpToolDialog"
             :title="t('HttpToolsManagement')"
             width="600px">
@@ -719,6 +745,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-wifi"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('ComfyUI')" placement="top">
+              <el-button
+                @click="this.showComfyUIDialog = true"
+                class="icon-btn comfyui-btn"
+                :type="hasEnabledComfyUI ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-palette"></i>
               </el-button>
             </el-tooltip>
 
