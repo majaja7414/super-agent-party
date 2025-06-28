@@ -2740,6 +2740,14 @@
                           />
                           <div class="card-actions">
                             <el-button
+                              @click="downloadMemory(memory)"
+                              type="primary"
+                              circle
+                              size="small"
+                            >
+                              <i class="fa-solid fa-download"></i>
+                            </el-button>
+                            <el-button
                               @click="editMemory(memory.id)"
                               type="default"
                               circle
@@ -2854,7 +2862,17 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
-
+                    <div class="upload-container">
+                      <div
+                        class="drop-zone"
+                        @dragover.prevent
+                        @drop.prevent="handleJsonDrop"
+                        @click="browseJsonFile"
+                      >
+                        <el-icon :size="50"><i class="fa-solid fa-upload"></i></el-icon>
+                        <p>{{ t('clickOrDropJson') }}</p>
+                      </div>
+                    </div>
                     <el-tabs type="border-card">
                       <!-- 自动更新设定选项卡 -->
                       <el-tab-pane>

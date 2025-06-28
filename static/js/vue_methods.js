@@ -3361,5 +3361,77 @@ let vue_methods = {
     handlePictureCardPreview(file) {
       this.imageUrl = file.url || URL.createObjectURL(file.raw)
       this.dialogVisible = true
+    },
+    downloadMemory(memory) {
+      // 创建一个新的对象，只包含需要下载的字段
+      const { id, name, basic_character, lorebook, random } = memory;
+      
+      const dataToDownload = {
+        id,
+        name,
+        basic_character,
+        lorebook,
+        random
+        // 可以根据需要添加其他非敏感字段
+      };
+
+      const dataStr = JSON.stringify(dataToDownload, null, 2); // 将新对象转换为 JSON 字符串
+      const blob = new Blob([dataStr], { type: 'application/json' }); // 创建 Blob
+      const url = URL.createObjectURL(blob); // 创建 URL
+      const a = document.createElement('a'); // 创建一个链接元素
+      a.href = url;
+      a.download = `${memory.name}.json`; // 设置下载文件的名称
+      document.body.appendChild(a); // 将链接添加到文档中
+      a.click(); // 自动点击链接开始下载
+      document.body.removeChild(a); // 下载后移除链接
+      URL.revokeObjectURL(url); // 释放 URL 对象
+    },
+    browseJsonFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (event) => {
+        this.handleFileUpload(event.target.files[0]);
+      };
+      input.click();
+    },
+
+    handleJsonDrop(event) {
+      const file = event.dataTransfer.files[0];
+      if (file && file.type === 'application/json') {
+        this.handleFileUpload(file);
+      } else {
+        this.$message.error('Please upload a valid JSON file.');
+      }
+    },
+
+    handleFileUpload(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const jsonData = JSON.parse(event.target.result); // 解析 JSON 数据
+          this.importMemoryData(jsonData); // 调用导入方法
+          this.jsonFile = file; // 保存文件信息
+        } catch (error) {
+          this.$message.error('Invalid JSON file.'); // 错误提示
+        }
+      };
+
+      reader.readAsText(file); // 读取文件内容
+    },
+
+    importMemoryData(jsonData) {
+      // 根据 JSON 数据填充 newMemory 对象
+      this.newMemory.name = jsonData.name || '';
+      this.newMemory.basic_character = jsonData.basic_character || '';
+      this.newMemory.lorebook = jsonData.lorebook || [];
+      this.newMemory.random = jsonData.random || [];
+      this.newMemory.providerId = jsonData.providerId || null;
+
+      // 可以根据需要添加更多字段的映射
+    },
+
+    removeJsonFile() {
+      this.jsonFile = null; // 清空文件
     }
 }

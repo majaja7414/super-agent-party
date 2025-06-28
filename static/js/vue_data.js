@@ -124,6 +124,7 @@ let vue_data = {
     showComfyUIDialog: false,
     showStickerPacksDialog: false,
     deletingConversationId: null, // 正在被删除的对话ID
+    jsonFile: null,
     models: [],
     modelsLoading: false,
     modelsError: null,

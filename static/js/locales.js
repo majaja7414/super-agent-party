@@ -485,6 +485,7 @@ const translations = {
       'StickerPackManagement': '表情包/图片库管理',
       'noStickerPack': '暂无表情包/图片库',
       'goStickerPack': '前往添加表情包/图片库',
+      'clickOrDropJson': '点击或拖拽记忆JSON文件至此处',
     },
     'en-US': {
       'chat': 'Chat',
@@ -971,5 +972,6 @@ const translations = {
       'StickerPackManagement': 'Sticker/Image Pack Management',
       'noStickerPack': 'No Sticker/Image Pack',
       'goStickerPack': 'Go to Sticker/Image Pack Management',
+      'clickOrDropJson': 'Click or drag the memory JSON file here',
     }
   };
