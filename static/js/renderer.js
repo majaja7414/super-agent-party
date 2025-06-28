@@ -208,6 +208,9 @@ const app = Vue.createApp({
       // 检查this.mcpServers中的sever中是否有disable为false的
       return Object.values(this.mcpServers).some(server => !server.disabled);
     },
+    hasEnabledHttpTools() {
+      return this.customHttpTools.some(tool => tool.enabled);
+    },
     hasFiles() {
       return this.files.length > 0
     },

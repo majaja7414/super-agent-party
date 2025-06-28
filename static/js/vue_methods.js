@@ -203,6 +203,10 @@ let vue_methods = {
       this.activeMenu = 'agent_group';
       this.subMenu = 'llmTool';
     },
+    switchToHttpTools() {
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'customHttpTool';
+    },
     cancelLLMTool() {
       this.showLLMForm = false
       this.resetForm()

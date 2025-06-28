@@ -120,6 +120,7 @@ let vue_data = {
     conversations: [], // 对话历史记录
     showHistoryDialog: false,
     showLLMToolsDialog: false,
+    showHttpToolDialog: false,
     deletingConversationId: null, // 正在被删除的对话ID
     models: [],
     modelsLoading: false,

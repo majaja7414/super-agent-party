@@ -467,6 +467,32 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showHttpToolDialog"
+            :title="t('HttpToolsManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(tool, index) in customHttpTools" :key="index" class="knowledge-item">
+                <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ tool.name }}</div>
+                  <div class="knowledge-desc">{{ tool.description || t('noDescription') }}</div>
+                </div>
+                <el-button 
+                  @click="removeCustomHttpTool(tool.id)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="customHttpTools.length === 0" class="empty-tip">
+                {{ t('noHttpTools') }}
+                <a href="#" @click.stop.prevent="switchToHttpTools">{{ t('goHttpTools') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
             width="600px">
@@ -682,6 +708,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-plug"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('customHttpTool')" placement="top">
+              <el-button
+                @click="this.showHttpToolDialog = true"
+                class="icon-btn http-btn"
+                :type="hasEnabledHttpTools ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-wifi"></i>
               </el-button>
             </el-tooltip>
 
