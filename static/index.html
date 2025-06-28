@@ -493,6 +493,31 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showStickerPacksDialog"
+            :title="t('StickerPackManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(pack, index) in stickerPacks" :key="index" class="knowledge-item">
+                <el-switch v-model="pack.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ pack.name }}</div>
+                </div>
+                <el-button 
+                  @click="deleteStickerPack(pack)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="stickerPacks.length === 0" class="empty-tip">
+                {{ t('noStickerPack') }}
+                <a href="#" @click.stop.prevent="switchToStickerPacks">{{ t('goStickerPack') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showHttpToolDialog"
             :title="t('HttpToolsManagement')"
             width="600px">
@@ -690,6 +715,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-code"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('sticker')" placement="top">
+              <el-button
+                @click="showStickerPacksDialog = true"
+                class="icon-btn sticker-btn"
+                :type="hasEnabledStickerPacks ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-face-smile"></i>
               </el-button>
             </el-tooltip>
 

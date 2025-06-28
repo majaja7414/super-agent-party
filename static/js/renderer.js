@@ -214,6 +214,9 @@ const app = Vue.createApp({
     hasEnabledComfyUI() {
       return this.workflows.some(tool => tool.enabled);
     },
+    hasEnabledStickerPacks() {
+      return this.stickerPacks.some(pack => pack.enabled);
+    },
     hasFiles() {
       return this.files.length > 0
     },

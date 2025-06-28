@@ -211,6 +211,10 @@ let vue_methods = {
       this.activeMenu = 'agent_group';
       this.subMenu = 'comfyui';
     },
+    switchToStickerPacks() {
+      this.activeMenu = 'toolkit';
+      this.subMenu = 'sticker';
+    },
     cancelLLMTool() {
       this.showLLMForm = false
       this.resetForm()

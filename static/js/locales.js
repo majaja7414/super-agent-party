@@ -482,6 +482,9 @@ const translations = {
       'stickerPackCreated': '表情包/图片库已创建',
       'createFailed': '创建失败',
       'stickerPackDeleted': '表情包/图片库已删除',
+      'StickerPackManagement': '表情包/图片库管理',
+      'noStickerPack': '暂无表情包/图片库',
+      'goStickerPack': '前往添加表情包/图片库',
     },
     'en-US': {
       'chat': 'Chat',
@@ -965,5 +968,8 @@ const translations = {
       'stickerPackCreated': 'Sticker/Image Pack Created',
       'createFailed': 'Create Failed',
       'stickerPackDeleted': 'Sticker/Image Pack Deleted',
+      'StickerPackManagement': 'Sticker/Image Pack Management',
+      'noStickerPack': 'No Sticker/Image Pack',
+      'goStickerPack': 'Go to Sticker/Image Pack Management',
     }
   };
