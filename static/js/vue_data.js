@@ -120,7 +120,11 @@ let vue_data = {
     conversations: [], // 对话历史记录
     showHistoryDialog: false,
     showLLMToolsDialog: false,
+    showHttpToolDialog: false,
+    showComfyUIDialog: false,
+    showStickerPacksDialog: false,
     deletingConversationId: null, // 正在被删除的对话ID
+    jsonFile: null,
     models: [],
     modelsLoading: false,
     modelsError: null,
@@ -274,6 +278,8 @@ let vue_data = {
     imgHostOptions:[
       { value: 'smms', label: 'smms' },
       { value: 'easyImage2', label: 'easyImage2' },
+      { value: 'gitee', label: 'gitee' },
+      { value: 'github', label: 'github' },
     ],
     showRestartDialog: false,
     agents: {},
@@ -324,11 +330,12 @@ let vue_data = {
       { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
     ],
     toolkitTiles: [
-      { id: 'tools', title: 'tools', icon: 'fa-solid fa-screwdriver-wrench' },
+      { id: 'tools', title: 'utilityTools', icon: 'fa-solid fa-screwdriver-wrench' },
       { id: 'websearch', title: 'webSearch', icon: 'fa-solid fa-globe' },
       { id: 'document', title: 'knowledgeBase', icon: 'fa-solid fa-book' },
       { id: 'memory', title: 'memory', icon: 'fa-solid fa-brain'},
-      { id: 'interpreter', title: 'interpreter', icon: 'fa-solid fa-code'}
+      { id: 'interpreter', title: 'interpreter', icon: 'fa-solid fa-code'},
+      { id: 'sticker', title: 'sticker/image', icon: 'fa-solid fa-face-smile'},
     ],
     apiTiles: [
       { id: 'openai', title: 'openaiStyleAPI', icon: 'fa-solid fa-link' },
@@ -390,11 +397,29 @@ let vue_data = {
       SMMS_api_key: '',
       EI2_base_url: '',
       EI2_api_key: '',
+      gitee_repo_owner: "",
+      gitee_repo_name: "",
+      gitee_token: "",
+      gitee_branch: "master",
+      github_repo_owner: "",
+      github_repo_name: "",
+      github_token: "",
+      github_branch: "main"
     },
     deployTiles: [
       { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
       { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
+    stickerPacks: [],
+    showStickerDialog: false,
+    newStickerPack: {
+      name: '',
+      stickers: [],
+      tags: []
+    },
+    dialogVisible: false,
+    imageUrl: '',
+    uploadedStickers: [], // 格式: { uid: string, url: string, tags: string[] }
     isQQBotRunning: false, // QQ机器人状态
     isStarting: false,      // 启动中状态
     isStopping: false,      // 停止中状态
@@ -493,7 +518,7 @@ let vue_data = {
     },
     editingCustomHttpTool: false,
     vendorValues: [
-      'custom', 'OpenAI', 'Ollama','Vllm','LMstudio', 'Deepseek', 'Volcano',
+      'custom', 'OpenAI', 'Ollama','Vllm','LMstudio','xinference', 'Deepseek', 'Volcano',
       'siliconflow', 'aliyun', 'ZhipuAI', 'moonshot', 'minimax', 'Gemini','Anthropic', 
       'Grok', 'mistral', 'lingyi','baichuan', 'qianfan', 'hunyuan', 'stepfun', 'Github', 
       'openrouter','together', 'fireworks', '360', 'Nvidia',
@@ -506,6 +531,7 @@ let vue_data = {
       'Ollama': 'source/providers/ollama.png',
       'Vllm': 'source/providers/vllm.png',
       'LMstudio': 'source/providers/lmstudio.png',
+      'xinference': 'source/providers/xinference.png',
       'Deepseek': 'source/providers/deepseek.png',
       'Volcano': 'source/providers/volcengine.png',
       'siliconflow': 'source/providers/silicon.png',
@@ -540,6 +566,7 @@ let vue_data = {
       'Ollama': 'https://ollama.com/',
       'Vllm': 'https://docs.vllm.ai/en/latest/',      
       'LMstudio': 'https://lmstudio.ai/docs/app',
+      'xinference': 'https://inference.readthedocs.io/zh-cn/latest/index.html',
       'Deepseek': 'https://platform.deepseek.com/api_keys',
       'Volcano': 'https://www.volcengine.com/experience/ark',
       'siliconflow': 'https://cloud.siliconflow.cn/i/yGxrNlGb',

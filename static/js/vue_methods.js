@@ -203,6 +203,18 @@ let vue_methods = {
       this.activeMenu = 'agent_group';
       this.subMenu = 'llmTool';
     },
+    switchToHttpTools() {
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'customHttpTool';
+    },
+    switchToComfyui() {
+      this.activeMenu = 'agent_group';
+      this.subMenu = 'comfyui';
+    },
+    switchToStickerPacks() {
+      this.activeMenu = 'toolkit';
+      this.subMenu = 'sticker';
+    },
     cancelLLMTool() {
       this.showLLMForm = false
       this.resetForm()
@@ -429,7 +441,7 @@ let vue_methods = {
     closeWindow() {
       if (isElectron) window.electronAPI.windowAction('close');
     },
-    handleSelect(key) {
+    async handleSelect(key) {
       if (key === 'agent_group') {
         this.activeMenu = 'agent_group';
         this.subMenu = 'agents'; // 默认显示第一个子菜单
@@ -449,6 +461,23 @@ let vue_methods = {
       else if (key === 'storage') {
         this.activeMenu = 'storage';
         this.subMenu = 'text'; // 默认显示第一个子菜单
+        response = await fetch('/update_storage', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+        });
+        if (response.ok) {
+          console.log('Storage files updated successfully');
+          data = await response.json();
+          this.textFiles = data.textFiles;
+          this.imageFiles = data.imageFiles;
+          this.videoFiles = data.videoFiles;
+          this.autoSaveSettings();
+        }
+        else {
+          console.error('Failed to update storage files');
+        }
       }
       else if (key === 'deploy-bot') {
         this.activeMenu = 'deploy-bot';
@@ -998,6 +1027,7 @@ let vue_methods = {
           this.mainAgent = data.data.mainAgent || this.mainAgent;
           this.qqBotConfig = data.data.qqBotConfig || this.qqBotConfig;
           this.BotConfig = data.data.BotConfig || this.BotConfig;
+          this.stickerPacks = data.data.stickerPacks || this.stickerPacks;
           this.toolsSettings = data.data.tools || this.toolsSettings;
           this.llmTools = data.data.llmTools || this.llmTools;
           this.reasonerSettings = data.data.reasoner || this.reasonerSettings;
@@ -1459,6 +1489,7 @@ let vue_methods = {
           mainAgent: this.mainAgent,
           qqBotConfig : this.qqBotConfig,
           BotConfig: this.BotConfig,
+          stickerPacks: this.stickerPacks,
           tools: this.toolsSettings,
           llmTools: this.llmTools,
           conversations: this.conversations,
@@ -1856,6 +1887,7 @@ let vue_methods = {
         'Ollama': this.isdocker ? 'http://host.docker.internal:11434/v1' : 'http://127.0.0.1:11434/v1',
         'Vllm': 'http://127.0.0.1:8000/v1',
         'LMstudio': 'http://127.0.0.1:1234/v1',
+        'xinference': 'http://localhost:9997/v1',
         'Gemini': 'https://generativelanguage.googleapis.com/v1beta/openai',
         'Anthropic': 'https://api.anthropic.com/v1',
         'Grok': 'https://api.groq.com/openai/v1',
@@ -1894,6 +1926,12 @@ let vue_methods = {
       }
       if (value === 'Vllm') {
         this.newProviderTemp.apiKey = 'Vllm'
+      }
+      if (value === 'LMstudio') {
+        this.newProviderTemp.apiKey = 'LMstudio'
+      }
+      if (value === 'xinference') {
+        this.newProviderTemp.apiKey = 'xinference'
       }
     },
     // rerank供应商
@@ -3167,4 +3205,233 @@ let vue_methods = {
       this.selectedImageInput2 = null; // 重置选中
       this.workflowDescription = ''; // 清空描述
     },
+    async deleteVideo(video) {
+      this.videoFiles = this.videoFiles.filter(i => i !== video);
+      await this.autoSaveSettings();
+      fileName = video.unique_filename
+      try {
+        // 向/delete_file发送请求
+        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: fileName })
+        });
+        // 处理响应
+        if (response.ok) {
+          console.log('File deleted successfully');
+          showNotification(this.t('fileDeleted'), 'success');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showNotification(this.t('fileDeleteFailed'), 'error');
+      }
+    },
+
+    goToURL(provider) {
+        if (provider.vendor === 'custom') {
+          url = provider.url;
+          // 移除url尾部的/v1
+          if (url.endsWith('/v1')) {
+            url = url.slice(0, -3);
+          }
+        }
+        else {
+          url = this.vendorAPIpage[provider.vendor];
+        }
+        if (isElectron) {
+          window.electronAPI.openExternal(url);
+        } else {
+          window.open(url, '_blank');
+        }
+    },
+    handleBeforeUpload(file) {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => {
+        this.uploadedStickers.push({
+          uid: file.uid,
+          url: reader.result,
+          description: "",
+          file: file
+        })
+      }
+      return false // 阻止自动上传
+    },
+
+    handleStickerRemove(file) {
+      this.uploadedStickers = this.uploadedStickers.filter(f => f.uid !== file.uid)
+    },
+
+    async createStickerPack() {
+      try {
+        // 验证输入
+        if (!this.newStickerPack.name || this.uploadedStickers.length === 0) {
+          showNotification(this.t('fillAllFields'), 'warning');
+          return;
+        }
+        
+
+        // 创建FormData对象
+        const formData = new FormData();
+        
+        // 添加表情包名称
+        formData.append('pack_name', this.newStickerPack.name);
+        
+        // 添加所有表情描述
+        this.uploadedStickers.forEach(sticker => {
+          formData.append('descriptions', sticker.description);
+        });
+        
+        // 添加所有表情文件
+        this.uploadedStickers.forEach(sticker => {
+          formData.append('files', sticker.file);
+        });
+
+        // 发送请求
+        const response = await fetch('/create_sticker_pack', {
+          method: 'POST',
+          body: formData
+        });
+        
+        // 处理响应
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("服务器错误详情:", errorData);
+          
+          let errorMsg = this.t('uploadFailed');
+          if (errorData.detail) {
+            if (typeof errorData.detail === 'string') {
+              errorMsg = errorData.detail;
+            } else if (errorData.detail[0]?.msg) {
+              errorMsg = errorData.detail[0].msg;
+            }
+          }
+          
+          throw new Error(errorMsg);
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          // 更新前端状态
+          this.stickerPacks.push({
+            id: data.id,
+            name: data.name,
+            stickers: data.stickers,
+            cover: data.cover,
+            enabled: true
+          });
+          
+          this.imageFiles = [...this.imageFiles, ...data.imageFiles];
+          this.resetStickerForm();
+          await this.autoSaveSettings();
+          
+          showNotification(this.t('stickerPackCreated'));
+          this.showStickerDialog = false;
+        } else {
+          showNotification(data.message || this.t('createFailed'), 'error');
+          this.showStickerDialog = false;
+        }
+      } catch (error) {
+        console.error('创建失败:', error);
+        showNotification(
+          error.message || this.t('createFailed'), 
+          'error'
+        );
+        this.showStickerDialog = false;
+      }
+    },
+
+    deleteStickerPack(stickerPack) {
+      this.stickerPacks = this.stickerPacks.filter(pack => pack.id !== stickerPack.id);
+      this.autoSaveSettings();
+      showNotification(this.t('stickerPackDeleted'));
+    },
+    cancelStickerUpload() {
+      this.showStickerDialog = false;
+      this.resetStickerForm();
+    },
+
+    resetStickerForm() {
+      this.newStickerPack = {
+        name: '',
+        stickers: [],
+      };
+      this.uploadedStickers = [];
+    },
+    handlePictureCardPreview(file) {
+      this.imageUrl = file.url || URL.createObjectURL(file.raw)
+      this.dialogVisible = true
+    },
+    downloadMemory(memory) {
+      // 创建一个新的对象，只包含需要下载的字段
+      const { id, name, basic_character, lorebook, random } = memory;
+      
+      const dataToDownload = {
+        id,
+        name,
+        basic_character,
+        lorebook,
+        random
+        // 可以根据需要添加其他非敏感字段
+      };
+
+      const dataStr = JSON.stringify(dataToDownload, null, 2); // 将新对象转换为 JSON 字符串
+      const blob = new Blob([dataStr], { type: 'application/json' }); // 创建 Blob
+      const url = URL.createObjectURL(blob); // 创建 URL
+      const a = document.createElement('a'); // 创建一个链接元素
+      a.href = url;
+      a.download = `${memory.name}.json`; // 设置下载文件的名称
+      document.body.appendChild(a); // 将链接添加到文档中
+      a.click(); // 自动点击链接开始下载
+      document.body.removeChild(a); // 下载后移除链接
+      URL.revokeObjectURL(url); // 释放 URL 对象
+    },
+    browseJsonFile() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = (event) => {
+        this.handleFileUpload(event.target.files[0]);
+      };
+      input.click();
+    },
+
+    handleJsonDrop(event) {
+      const file = event.dataTransfer.files[0];
+      if (file && file.type === 'application/json') {
+        this.handleFileUpload(file);
+      } else {
+        this.$message.error('Please upload a valid JSON file.');
+      }
+    },
+
+    handleFileUpload(file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const jsonData = JSON.parse(event.target.result); // 解析 JSON 数据
+          this.importMemoryData(jsonData); // 调用导入方法
+          this.jsonFile = file; // 保存文件信息
+        } catch (error) {
+          this.$message.error('Invalid JSON file.'); // 错误提示
+        }
+      };
+
+      reader.readAsText(file); // 读取文件内容
+    },
+
+    importMemoryData(jsonData) {
+      // 根据 JSON 数据填充 newMemory 对象
+      this.newMemory.name = jsonData.name || '';
+      this.newMemory.basic_character = jsonData.basic_character || '';
+      this.newMemory.lorebook = jsonData.lorebook || [];
+      this.newMemory.random = jsonData.random || [];
+      this.newMemory.providerId = jsonData.providerId || null;
+
+      // 可以根据需要添加更多字段的映射
+    },
+
+    removeJsonFile() {
+      this.jsonFile = null; // 清空文件
+    }
 }
