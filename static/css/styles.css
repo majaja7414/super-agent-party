@@ -2492,6 +2492,12 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
+.text-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .file-item {
   background: var(--el-bg-color);
   border: 1px solid var(--el-border-color);
@@ -2933,4 +2939,81 @@ body {
 .input-box {
   width: 100%;
   margin-bottom: 10px;
+}
+
+.video-wrapper {
+  position: relative;
+  display: inline-block; /* 防止超出容器 */
+}
+
+.delete-overlay-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+.knowledge-card {
+  .cover-image {
+    width: 100%;
+    height: 120px;
+    object-fit: contain;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+  }
+}
+
+.tag-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+
+  .tag-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: auto;
+    padding: 12px;
+    background: var(--el-bg-color-page);
+    border-radius: 8px;
+    
+    .sticker-thumb {
+      width: 50px;
+      height: 50px;
+      flex-shrink: 0;
+      object-fit: contain;
+      border: 1px solid var(--el-border-color);
+      border-radius: 4px;
+      background: var(--el-bg-color-page);
+    }
+
+    .el-input {
+      flex: 1;
+      min-width: 0;
+      
+      &__wrapper {
+        height: 40px;
+      }
+    }
+  }
+}
+
+.el-upload-list--picture-card {
+  --el-upload-list-picture-card-size: 30px;
+  margin: 0;
+  
+  .el-upload-list__item {
+    margin: 0 8px 8px 0;
+  }
+
+  .el-upload-list__item .el-icon-close-tip{
+    display: none !important;
+  }
+}
+
+.sticker-upload {
+  margin-left: 24px;
+  .el-upload {
+    background-color: var(--el-bg-color-page);
+  }
 }

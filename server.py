@@ -73,6 +73,8 @@ ALLOWED_EXTENSIONS = [
 ]
 ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
+ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v']
+
 from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
@@ -409,6 +411,15 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
             request.messages[0]['content'] += language_message
         else:
             request.messages.insert(0, {'role': 'system', 'content': language_message})
+    if settings["stickerPacks"]:
+        for stickerPack in settings["stickerPacks"]:
+            if stickerPack["enabled"]:
+                sticker_message = f"\n\n图片库名称：{stickerPack['name']}，包含的图片：{json.dumps(stickerPack['stickers'])}\n\n"
+                if request.messages and request.messages[0]['role'] == 'system':
+                    request.messages[0]['content'] += sticker_message
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': sticker_message})
+        request.messages[0]['content'] += "\n\n当你需要使用图片时，请将图片的URL放在markdown的图片标签中，例如：![图片名](图片URL)\n\n"
     return request
 
 def get_drs_stage(DRS_STAGE):
@@ -3091,6 +3102,33 @@ async def delete_file_endpoint(request: Request):
     except Exception as e:
         return JSONResponse(content={"success": False, "message": str(e)})
 
+@app.get("/update_storage")
+async def update_storage_endpoint(request: Request):
+    settings = await load_settings()
+    textFiles = settings.get("textFiles") or []
+    imageFiles = settings.get("imageFiles") or []
+    videoFiles = settings.get("videoFiles") or []
+    # 检查UPLOAD_FILES_DIR目录中的文件，根据ALLOWED_EXTENSIONS、ALLOWED_IMAGE_EXTENSIONS、ALLOWED_VIDEO_EXTENSIONS分类，如果不存在于textFiles、imageFiles、videoFiles中则添加进去
+    # 三个列表的元素是字典，包含"unique_filename"和"original_filename"两个键
+    
+    for file in os.listdir(UPLOAD_FILES_DIR):
+        file_path = os.path.join(UPLOAD_FILES_DIR, file)
+        if os.path.isfile(file_path):
+            file_extension = os.path.splitext(file)[1][1:]
+            if file_extension in ALLOWED_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in textFiles]:
+                    textFiles.append({"unique_filename": file, "original_filename": file})
+            elif file_extension in ALLOWED_IMAGE_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in imageFiles]:
+                    imageFiles.append({"unique_filename": file, "original_filename": file})
+            elif file_extension in ALLOWED_VIDEO_EXTENSIONS:
+                if file not in [item["unique_filename"] for item in videoFiles]:
+                    videoFiles.append({"unique_filename": file, "original_filename": file})
+
+    # 发给前端
+    return JSONResponse(content={"textFiles": textFiles, "imageFiles": imageFiles, "videoFiles": videoFiles})
+
+
 @app.post("/create_kb")
 async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
@@ -3144,6 +3182,91 @@ async def process_kb(kb_id):
         kb_status[kb_id] = "completed"
     except Exception as e:
         kb_status[kb_id] = f"failed: {str(e)}"
+
+@app.post("/create_sticker_pack")
+async def create_sticker_pack(
+    request: Request,
+    files: List[UploadFile] = File(..., description="表情文件列表"),
+    pack_name: str = Form(..., description="表情包名称"),
+    descriptions: List[str] = Form(..., description="表情描述列表")
+):
+    """
+    创建新表情包
+    - files: 上传的图片文件列表
+    - pack_name: 表情包名称
+    - descriptions: 每个表情的描述列表
+    """
+    fastapi_base_url = str(request.base_url)
+    imageFiles = []
+    stickers_data = []
+    
+    try:
+        # 验证输入数据
+        if not pack_name:
+            raise HTTPException(status_code=400, detail="表情包名称不能为空")
+        if len(files) == 0:
+            raise HTTPException(status_code=400, detail="至少需要上传一个表情")
+        if len(descriptions) != len(files):
+            raise HTTPException(
+                status_code=400, 
+                detail=f"描述数量({len(descriptions)})与文件数量({len(files)})不匹配"
+            )
+
+        # 处理上传的表情文件
+        for idx, file in enumerate(files):
+            # 获取文件扩展名
+            file_extension = os.path.splitext(file.filename)[1].lower()
+            
+            # 验证文件类型
+            if file_extension not in ['.png', '.jpg', '.jpeg', '.gif', '.webp']:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"不支持的文件类型: {file_extension}"
+                )
+            
+            # 生成唯一文件名
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+
+            # 保存文件
+            with open(destination, "wb") as buffer:
+                content = await file.read()
+                buffer.write(content)
+
+            # 构建返回数据
+            imageFiles.append({
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+            })
+            
+            # 获取对应的描述（处理可能的索引越界）
+            description = descriptions[idx] if idx < len(descriptions) else ""
+
+            # 构建表情数据
+            stickers_data.append({
+                "unique_filename": unique_filename,
+                "original_filename": file.filename,
+                "url": f"{fastapi_base_url}uploaded_files/{unique_filename}",
+                "description": description
+            })
+
+        # 创建表情包ID（可替换为数据库存储逻辑）
+        sticker_pack_id = str(uuid.uuid4())
+        
+        return JSONResponse(content={
+            "success": True,
+            "id": sticker_pack_id,
+            "name": pack_name,
+            "stickers": stickers_data,
+            "imageFiles": imageFiles,
+            "cover": stickers_data[0]["url"] if stickers_data else None
+        })
+    
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        logger.error(f"创建表情包时出错: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"服务器错误: {str(e)}")
 
 # 定义请求体
 class QQBotConfig(BaseModel):

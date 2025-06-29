@@ -25,7 +25,7 @@
 Customized agents can be saved as snapshots for easy reuse in the future. The snapshot agents can be directly called using the OpenAI API.
 - ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
-- ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the intelligent entity anytime and anywhere.
+- ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the agent anytime and anywhere.
 
 ## Quick Start
 

@@ -467,6 +467,83 @@
             </div>
           </el-dialog>
           <el-dialog
+            v-model="showComfyUIDialog"
+            :title="t('ComfyUIManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(tool, index) in workflows" :key="index" class="knowledge-item">
+                <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ tool.original_filename }}</div>
+                  <div class="knowledge-desc">{{ tool.description || t('noDescription') }}</div>
+                </div>
+                <el-button 
+                  @click="deleteWorkflow(tool.unique_filename)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="workflows.length === 0" class="empty-tip">
+                {{ t('noWorkflows') }}
+                <a href="#" @click.stop.prevent="switchToComfyui">{{ t('goComfyui') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
+            v-model="showStickerPacksDialog"
+            :title="t('StickerPackManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(pack, index) in stickerPacks" :key="index" class="knowledge-item">
+                <el-switch v-model="pack.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ pack.name }}</div>
+                </div>
+                <el-button 
+                  @click="deleteStickerPack(pack)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="stickerPacks.length === 0" class="empty-tip">
+                {{ t('noStickerPack') }}
+                <a href="#" @click.stop.prevent="switchToStickerPacks">{{ t('goStickerPack') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
+            v-model="showHttpToolDialog"
+            :title="t('HttpToolsManagement')"
+            width="600px">
+            <div class="knowledge-dialog-content">
+              <div v-for="(tool, index) in customHttpTools" :key="index" class="knowledge-item">
+                <el-switch v-model="tool.enabled" @change="autoSaveSettings"></el-switch>
+                <div class="knowledge-info">
+                  <div class="knowledge-name">{{ tool.name }}</div>
+                  <div class="knowledge-desc">{{ tool.description || t('noDescription') }}</div>
+                </div>
+                <el-button 
+                  @click="removeCustomHttpTool(tool.id)" 
+                  type="danger" 
+                  circle 
+                  size="small">
+                  <i class="fa-solid fa-trash"></i>
+                </el-button>
+              </div>
+              <div v-if="customHttpTools.length === 0" class="empty-tip">
+                {{ t('noHttpTools') }}
+                <a href="#" @click.stop.prevent="switchToHttpTools">{{ t('goHttpTools') }}</a>
+                {{ t('add') }}
+              </div>
+            </div>
+          </el-dialog>
+          <el-dialog
             v-model="showHistoryDialog"
             :title="t('chatHistory')"
             width="600px">
@@ -641,6 +718,17 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('sticker')" placement="top">
+              <el-button
+                @click="showStickerPacksDialog = true"
+                class="icon-btn sticker-btn"
+                :type="hasEnabledStickerPacks ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-face-smile"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('agentSnapshot')" placement="top">
               <el-button
                 @click="showAgentDialog = true"
@@ -682,6 +770,28 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-plug"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('customHttpTool')" placement="top">
+              <el-button
+                @click="this.showHttpToolDialog = true"
+                class="icon-btn http-btn"
+                :type="hasEnabledHttpTools ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-wifi"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('ComfyUI')" placement="top">
+              <el-button
+                @click="this.showComfyUIDialog = true"
+                class="icon-btn comfyui-btn"
+                :type="hasEnabledComfyUI ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-palette"></i>
               </el-button>
             </el-tooltip>
 
@@ -757,6 +867,14 @@
                         class="mini-vendor-logo"
                       />
                       <div class="card-actions">
+                        <el-button
+                          @click="goToURL(provider)"
+                          type="info"
+                          circle
+                          size="small"
+                        >
+                        <i class="fa-solid fa-key"></i>
+                        </el-button>
                         <el-button
                           @click="fetchModelsForProvider(provider)"
                           type="primary"
@@ -2509,6 +2627,104 @@
                 </el-tab-pane>
                 </el-tabs>
               </div>
+
+            <!-- 新增表情包界面 -->
+              <div v-show="subMenu === 'sticker'" class="page">
+                <div class="provider-grid">
+                  <!-- 已有表情包库 -->
+                  <div 
+                    v-for="pack in stickerPacks" 
+                    :key="pack.id"
+                    class="provider-card knowledge-card">
+                    <div class="card-header">
+                      <el-switch v-model="pack.enabled"></el-switch>
+                      <div class="card-actions">
+                        <el-button @click="deleteStickerPack(pack)" type="danger" circle size="small">
+                          <i class="fa-solid fa-trash"></i>
+                        </el-button>
+                      </div>
+                    </div>
+                    <div class="kb-content">
+                      <div class="kb-header">
+                        <h3 class="kb-title">{{ pack.name }}</h3>
+                        <el-tag v-if="pack.stickers?.length" type="info" size="small" effect="dark">
+                          {{ pack.stickers.length }} {{ t('images') }}
+                        </el-tag>
+                      </div>
+                      <div class="kb-meta">
+                        <img :src="pack.cover" class="cover-image" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 添加新表情包库 -->
+                  <div class="provider-card add-tile" @click="showStickerDialog = true">
+                    <el-icon :size="40" color="#909399">
+                      <i class="fa-solid fa-plus"></i>
+                    </el-icon>
+                    <div style="color: #606266; margin-top: 10px;">{{ t('addStickerPack') }}</div>
+                  </div>
+                </div>
+
+                <!-- 表情包创建对话框 -->
+                <el-dialog
+                  v-model="showStickerDialog"
+                  :title="t('createStickerPack')"
+                  width="60%">
+                  <el-form label-position="top">
+                    <el-form-item :label="t('packName')" required>
+                      <el-input v-model="newStickerPack.name" />
+                    </el-form-item>
+
+                    <el-form-item :label="t('uploadStickers')" required>
+                      <div class="sticker-upload">
+                        <el-upload
+                          multiple
+                          list-type="picture-card"
+                          :file-list="uploadedStickers"
+                          :before-upload="handleBeforeUpload"
+                          :on-remove="handleStickerRemove"
+                          :on-preview="handlePictureCardPreview"
+                        >
+                          <el-icon><i class="fa-solid fa-plus"></i></el-icon>
+                        </el-upload>
+                      </div>
+                    </el-form-item>
+
+                    <!-- 预览弹窗 -->
+                    <el-dialog v-model="dialogVisible">
+                      <img :src="imageUrl" style="width: 100%" alt="Preview">
+                    </el-dialog>
+
+                    <el-form-item :label="t('imageDescription')" required>
+                      <div class="tag-editor">
+                        <div class="tag-item" 
+                            v-for="(sticker, index) in uploadedStickers" 
+                            :key="index">
+                          <img :src="sticker.url" class="sticker-thumb" />
+                          <el-input
+                            type="textarea"
+                            :rows="2"
+                            v-model="sticker.description"
+                            :placeholder="t('enterDescriptionPlaceholder')"
+                          />
+                        </div>
+                      </div>
+                    </el-form-item>
+                  </el-form>
+
+                  <template #footer>
+                    <el-button @click="cancelStickerUpload">{{ t('cancel') }}</el-button>
+                    <el-button 
+                      type="primary"
+                      @click="createStickerPack"
+                      :disabled="!newStickerPack.name || uploadedStickers.length === 0"
+                      >
+                      {{ t('createImmediately') }}
+                    </el-button>
+                  </template>
+                </el-dialog>
+              </div>
               <!--记忆-->
               <div v-show="subMenu === 'memory'" class="page">
                 <el-tabs v-model="activeMemoryTab">
@@ -2523,6 +2739,14 @@
                             class="mini-vendor-logo"
                           />
                           <div class="card-actions">
+                            <el-button
+                              @click="downloadMemory(memory)"
+                              type="primary"
+                              circle
+                              size="small"
+                            >
+                              <i class="fa-solid fa-download"></i>
+                            </el-button>
                             <el-button
                               @click="editMemory(memory.id)"
                               type="default"
@@ -2638,7 +2862,17 @@
                         </el-option>
                       </el-select>
                     </el-form-item>
-
+                    <div class="upload-container">
+                      <div
+                        class="drop-zone"
+                        @dragover.prevent
+                        @drop.prevent="handleJsonDrop"
+                        @click="browseJsonFile"
+                      >
+                        <el-icon :size="50"><i class="fa-solid fa-upload"></i></el-icon>
+                        <p>{{ t('clickOrDropJson') }}</p>
+                      </div>
+                    </div>
                     <el-tabs type="border-card">
                       <!-- 自动更新设定选项卡 -->
                       <el-tab-pane>
@@ -3712,7 +3946,7 @@
             <div class="suite-content">
               <!-- 文本存储 -->
               <div v-show="subMenu === 'text'" class="page text-container">
-                <div class="file-list">
+                <div class="text-list">
                   <!-- 文件列表 -->
                   <div class="file-item" v-for="(file, index) in textFiles" :key="index">
                     <el-icon class="file-icon"><i class="fa-solid fa-file-lines"></i></el-icon>
@@ -3794,16 +4028,15 @@
               <div v-show="subMenu === 'video'" class="page video-container">
                 <div class="video-list">
                   <div class="video-item" v-for="(video, index) in videoFiles" :key="index">
-                    <video class="video-preview" :src="video.url"></video>
-                    <div class="video-info">
-                      <span class="video-name">{{ video.name }}</span>
-                      <span class="video-duration">{{ formatDuration(video.duration) }}</span>
-                    </div>
-                    <div class="video-actions">
-                      <el-button circle size="small" @click="playVideo(video)">
-                        <i class="fa-solid fa-play"></i>
-                      </el-button>
-                      <el-button type="danger" circle size="small" @click="deleteVideo(video)">
+                    <div class="video-wrapper">
+                      <!-- 视频播放器 -->
+                      <video controls>
+                        <source :src="`${partyURL}/uploaded_files/${video.unique_filename}`" type="video/mp4">
+                        Your browser does not support the video tag.
+                      </video>
+
+                      <!-- 删除按钮定位在视频右上角 -->
+                      <el-button class="delete-overlay-btn" type="danger" circle @click="deleteVideo(video)">
                         <i class="fa-solid fa-trash"></i>
                       </el-button>
                     </div>
@@ -3960,6 +4193,28 @@
                                         <i class="fa-solid fa-key"></i>
                                       </el-icon>{{ t('gotoEasyImage2Github') }}
                                     </el-link>
+                                    <el-link
+                                      v-if="BotConfig.imgHost === 'github'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://github.com/settings/tokens" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoAPI') }}
+                                    </el-link>
+                                    <el-link
+                                      v-if="BotConfig.imgHost === 'gitee'"
+                                      type="primary"
+                                      :underline="false"
+                                      href="https://gitee.com/profile/personal_access_tokens" 
+                                      target="_blank"
+                                    >
+                                      <el-icon class="mr-1">
+                                        <i class="fa-solid fa-key"></i>
+                                      </el-icon>{{ t('gotoAPI') }}
+                                    </el-link>
                                   </span>
                               </template>
                               <el-select 
@@ -3981,6 +4236,75 @@
                                 :placeholder="t('apiKeyPlaceholder')"
                                 class="full-width-input"
                                 show-password
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <!--gitee图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('repo_owner')">
+                              <el-input
+                                v-model="BotConfig.gitee_repo_owner"
+                                :placeholder="t('repo_owner_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('repo_name')">
+                              <el-input
+                                v-model="BotConfig.gitee_repo_name"
+                                :placeholder="t('repo_name_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('branch')">
+                              <el-input
+                                v-model="BotConfig.gitee_branch"
+                                :placeholder="t('branch_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'gitee'" :label="t('token')">
+                              <el-input
+                                v-model="BotConfig.gitee_token"
+                                :placeholder="t('token_placeholder')"
+                                class="full-width-input"
+                                show-password
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <!--github图床-->
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('repo_owner')">
+                              <el-input
+                                v-model="BotConfig.github_repo_owner"
+                                :placeholder="t('repo_owner_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('repo_name')">
+                              <el-input
+                                v-model="BotConfig.github_repo_name"
+                                :placeholder="t('repo_name_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('branch')">
+                              <el-input
+                                v-model="BotConfig.github_branch"
+                                :placeholder="t('branch_placeholder')"
+                                class="full-width-input"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item v-if="BotConfig.imgHost === 'github'" :label="t('token')">
+                              <el-input
+                                v-model="BotConfig.github_token"
+                                :placeholder="t('token_placeholder')"
+                                class="full-width-input"
+                                show-password
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                             <!--easyimage2图床-->
@@ -3989,6 +4313,7 @@
                                 v-model="BotConfig.EI2_base_url"
                                 placeholder="https://png.cm/api/index.php"
                                 class="full-width-input"
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                             <el-form-item v-if="BotConfig.imgHost === 'easyImage2'"  :label="t('apiKey')">
@@ -3997,6 +4322,7 @@
                                 :placeholder="t('apiKeyPlaceholder')"
                                 class="full-width-input"
                                 show-password
+                                @change="autoSaveSettings"
                               />
                             </el-form-item>
                           </div>
