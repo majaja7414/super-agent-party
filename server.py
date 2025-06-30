@@ -2979,7 +2979,7 @@ async def remove_agent_endpoint(request: Request):
     else:
         return JSONResponse({"success": False, "message": "No agentId provided"})
 
-@app.post("/a2a/initialize")
+@app.post("/a2a")
 async def initialize_a2a(request: Request):
     from python_a2a import A2AClient
     data = await request.json()

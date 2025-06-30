@@ -2569,7 +2569,7 @@ let vue_methods = {
           }
         };
         await this.autoSaveSettings();
-        const response = await fetch(`http://${HOST}:${PORT}/a2a/initialize`, {
+        const response = await fetch(`http://${HOST}:${PORT}/a2a`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: newurl })
