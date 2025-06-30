@@ -2468,7 +2468,7 @@ let vue_methods = {
     // 新增确认方法
     async confirmDeleteMCP() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/api/remove_mcp`, {
+        const response = await fetch(`http://${HOST}:${PORT}/remove_mcp`, {
           method: 'POST',
           headers: {
               'Content-Type': 'application/json',

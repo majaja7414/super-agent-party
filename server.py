@@ -2916,7 +2916,7 @@ async def process_mcp(mcp_id: str):
         mcp_client_list[mcp_id].disabled = True
         mcp_status[mcp_id] = f"failed: {str(e)}"
 
-@app.post("/api/remove_mcp")
+@app.post("/remove_mcp")
 async def remove_mcp_server(request: Request):
     global settings, mcp_client_list
     try:
