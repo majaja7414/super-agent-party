@@ -489,6 +489,14 @@ const translations = {
       'noResults': '暂无结果',
       "searchChatHistoryPlaceholder": "搜索对话历史",
       'fastAPIDocs': 'FastAPI文档',
+      'asyncTools': '异步工具',
+      'asyncToolsNotice': '工具调用时，不会阻塞对话，工具结果将在生成后加入到对话中。',
+      'currentTimeNotice': '对话时会自动返回当前时间和时区信息',
+      'fileGetNotice': '智能体将获得查询文件或图片URL的能力',
+      'deepResearchNotice': '开启深度研究模式，智能体将动态规划并调用工具以解决复杂问题',
+      'fakeInferenceNotice': '开启伪推理模式，让没有推理能力的模型也能推理',
+      'latexRenderingEnhancementNotice': '让智能体能够更稳定地输出LaTeX公式',
+      'languageNotice': '智能体将使用指定语言和语气进行对话',
     },
     'en-US': {
       'chat': 'Chat',
@@ -979,5 +987,13 @@ const translations = {
       'noResults': 'No results',
       "searchChatHistoryPlaceholder": "Search chat history",
       'fastAPIDocs': 'FastAPI Docs',
+      'asyncTools': 'Async Tools',
+      'asyncToolsNotice': 'When a tool is called, it does not block the conversation, and the tool result will be added to the conversation after generation.',
+      'currentTimeNotice': 'The current time and timezone information will be automatically returned during the conversation.',
+      'fileGetNotice': 'The agent will gain the ability to query files or image URLs.',
+      'deepResearchNotice': 'Activate deep research mode, the agent will dynamically plan and utilize tools to address complex problems.',
+      'fakeInferenceNotice': 'Enable pseudo-reasoning mode, allowing models without reasoning capabilities to also perform reasoning.',
+      'latexRenderingEnhancementNotice': 'Enable the agent to output LaTeX formulas more stably.',
+      'languageNotice': 'The agent will use the specified language and tone for the conversation.',
     }
   };

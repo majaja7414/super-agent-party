@@ -1596,6 +1596,25 @@
               <!-- 工具界面 -->
               <div v-show="subMenu === 'tools'" class="page">
                 <div class="provider-grid">
+                  <!-- 异步工具 -->
+                  <div class="provider-card tool-card">
+                    <div class="card-header">
+                      <el-switch 
+                        v-model="toolsSettings.asyncTools.enabled" 
+                        @change="autoSaveSettings"
+                        class="tool-switch"
+                      ></el-switch>
+                    </div>
+                    <div class="tool-card-title">
+                      <h3 class="kb-title">{{ t('asyncTools') }}</h3>
+                    </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('asyncToolsNotice') }}
+                      </div>
+                    </el-alert>
+                  </div>
+
                   <!-- 当前时间工具 -->
                   <div class="provider-card tool-card">
                     <div class="card-header">
@@ -1608,6 +1627,11 @@
                     <div class="tool-card-title">
                       <h3 class="kb-title">{{ t('currentTime') }}</h3>
                     </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('currentTimeNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
 
                   <!-- 存储空间文件查询工具 -->
@@ -1622,6 +1646,11 @@
                     <div class="tool-card-title">
                       <h3 class="kb-title">{{ t('fileGet') }}</h3>
                     </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('fileGetNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
 
                   <!-- 深度研究工具 -->
@@ -1636,6 +1665,11 @@
                     <div class="tool-card-title">
                       <h3 class="kb-title">{{ t('deepResearch') }}</h3>
                     </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('deepResearchNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
         
                   <!-- 推理工具 -->
@@ -1650,6 +1684,11 @@
                     <div class="tool-card-title">
                       <h3 class="kb-title">{{ t('fakeInference') }}</h3>
                     </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('fakeInferenceNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
         
                   <!-- LaTeX增强工具 -->
@@ -1664,6 +1703,11 @@
                     <div>
                       <h3 class="kb-title">{{ t('latexRenderingEnhancement') }}</h3>
                     </div>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('latexRenderingEnhancementNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
         
                   <!-- 语言语调工具 -->
@@ -1695,6 +1739,11 @@
                         :placeholder="t('tonePlaceholder')"
                       ></el-input>
                     </el-form-item>
+                    <el-alert type="info" :closable="false" class="mb-2">
+                      <div class="alert-content">
+                        {{ t('languageNotice') }}
+                      </div>
+                    </el-alert>
                   </div>
                 </div>
               </div>

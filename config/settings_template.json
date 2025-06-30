@@ -20,6 +20,9 @@
     "mcpServers": {},
     "llmTools": [],
     "tools": {
+      "asyncTools": {
+        "enabled": false
+      },
       "time": {
         "enabled": false
       },
