@@ -3021,3 +3021,6 @@ body {
 .search-input {
   margin-bottom: 10px;
 }
+.fastapi-iframe {
+  min-height: 85vh!important;
+}

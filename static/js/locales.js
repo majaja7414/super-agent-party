@@ -488,6 +488,7 @@ const translations = {
       'clickOrDropJson': '点击或拖拽记忆JSON文件至此处',
       'noResults': '暂无结果',
       "searchChatHistoryPlaceholder": "搜索对话历史",
+      'fastAPIDocs': 'FastAPI文档',
     },
     'en-US': {
       'chat': 'Chat',
@@ -977,5 +978,6 @@ const translations = {
       'clickOrDropJson': 'Click or drag the memory JSON file here',
       'noResults': 'No results',
       "searchChatHistoryPlaceholder": "Search chat history",
+      'fastAPIDocs': 'FastAPI Docs',
     }
   };

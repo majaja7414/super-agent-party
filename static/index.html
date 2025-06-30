@@ -4582,6 +4582,16 @@
                   </div>
                 </el-form>
               </div>
+              <!-- FastAPI文档 -->
+              <div v-show="subMenu === 'fastapi'" class="page">
+                <iframe 
+                  :src="partyURL + '/docs'" 
+                  frameborder="0" 
+                  width="100%" 
+                  allow="fullscreen"
+                  class="fastapi-iframe"
+                ></iframe>
+              </div>
               <!-- MCP风格API -->
               <div v-show="subMenu === 'mcp'" class="page">
                 <el-form class="settings-form">

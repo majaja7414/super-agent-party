@@ -342,6 +342,7 @@ let vue_data = {
       { id: 'mcp', title: 'MCPStyleAPI', icon: 'fa-solid fa-server' },
       { id: 'docker', title: 'docker', icon: 'fa-brands fa-docker'},
       { id: 'browser', title: 'browserMode', icon: 'fa-solid fa-globe' },
+      { id: 'fastapi', title: 'fastAPIDocs', icon: 'fa-solid fa-book' },
     ],
     storageTiles: [
       { id: 'text', icon: 'fa-solid fa-file-lines', title: 'storageText' },
