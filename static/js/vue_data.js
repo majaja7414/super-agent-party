@@ -507,6 +507,7 @@ let vue_data = {
     isInputExpanded: false,
     sidebarVisible: false,
     isMobile: false,
+    searchKeyword: '',
     newCustomHttpTool: {
       enabled: true,
       name: '',

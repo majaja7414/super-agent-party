@@ -192,6 +192,19 @@ const app = Vue.createApp({
     sortedConversations() {
       return [...this.conversations].sort((a, b) => b.timestamp - a.timestamp);
     },
+    filteredConversations() {
+        const keyword = this.searchKeyword.toLowerCase()
+        return [...this.conversations]
+            .filter(conv => {
+                // 匹配标题或消息内容
+                const titleMatch = (conv.title || this.t('untitled')).toLowerCase().includes(keyword)
+                const contentMatch = conv.messages?.some(msg => 
+                    msg.content.toLowerCase().includes(keyword)
+                )
+                return titleMatch || contentMatch
+            })
+            .sort((a, b) => b.timestamp - a.timestamp)
+    },
     iconClass() {
       return this.isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
     },

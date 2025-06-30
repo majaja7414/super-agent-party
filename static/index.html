@@ -548,8 +548,20 @@
             :title="t('chatHistory')"
             width="600px">
             <div class="knowledge-dialog-content">
-              <!-- 对话记录列表 -->
-              <div v-for="conv in sortedConversations" 
+              <!-- 添加搜索框 -->
+              <el-input
+                  v-model="searchKeyword"
+                  :placeholder="t('searchChatHistoryPlaceholder')"
+                  clearable
+                  class="search-input"
+                  @input="handleSearch">
+                  <template #prefix>
+                      <el-icon><i class="fa-solid fa-magnifying-glass"></i></el-icon>
+                  </template>
+              </el-input>
+
+              <!-- 修改后的对话记录列表 -->
+              <div v-for="conv in filteredConversations" 
                   :key="conv.id" 
                   class="knowledge-item"
                   @click="loadConversation(conv.id)">
@@ -571,8 +583,8 @@
                 </div>
               </div>
               <!-- 如果没有对话记录 -->
-              <div v-if="Object.keys(conversations).length === 0" class="empty-tip">
-                {{ t('noChatHistory') }}
+              <div v-if="filteredConversations.length === 0" class="empty-tip">
+                  {{ searchKeyword ? t('noResults') : t('noChatHistory') }}
               </div>
             </div>
           </el-dialog>

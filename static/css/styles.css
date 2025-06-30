@@ -3017,3 +3017,7 @@ body {
     background-color: var(--el-bg-color-page);
   }
 }
+
+.search-input {
+  margin-bottom: 10px;
+}
