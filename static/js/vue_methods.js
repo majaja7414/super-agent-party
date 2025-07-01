@@ -1383,10 +1383,16 @@ let vue_methods = {
                 const parsed = JSON.parse(jsonStr);
                 
                 // 处理 reasoning_content 逻辑
-                if (parsed.choices?.[0]?.delta?.reasoning_content) {
+                if (parsed.choices?.[0]?.delta?.reasoning_content || parsed.choices?.[0]?.delta?.tool_content) {
                   const lastMessage = this.messages[this.messages.length - 1];
-                  let newContent = parsed.choices[0].delta.reasoning_content;
-                
+                  let newContent = '';
+                  if (parsed.choices?.[0]?.delta?.reasoning_content) {
+                    newContent = parsed.choices[0].delta.reasoning_content;
+                  }
+                  if (parsed.choices?.[0]?.delta?.tool_content) {
+                    newContent = parsed.choices[0].delta.tool_content;
+                  }
+                  
                   // 将新内容中的换行符转换为换行+引用符号
                   newContent = newContent.replace(/\n/g, '\n> ');
                 

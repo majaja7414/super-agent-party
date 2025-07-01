@@ -445,15 +445,19 @@ class MyClient(botpy.Client):
             full_response = []
             async for chunk in stream:
                 reasoning_content = ""
+                tool_content = ""
                 if chunk.choices:
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "") 
+                        tool_content = delta.get("tool_content", "")
                 content = chunk.choices[0].delta.content or ""
                 full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
+                if tool_content and self.reasoningVisible:
+                    content = tool_content
                 
                 # 更新缓冲区
                 state = self.processing_states[c_id]
@@ -670,15 +674,19 @@ class MyClient(botpy.Client):
             full_response = []
             async for chunk in stream:
                 reasoning_content = ""
+                tool_content = ""
                 if chunk.choices:
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "")
+                        tool_content = delta.get("tool_content", "")
                 content = chunk.choices[0].delta.content or ""
                 full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
+                if tool_content and self.reasoningVisible:
+                    content = tool_content
                 
                 # 更新文本缓冲区
                 state["text_buffer"] += content

@@ -801,7 +801,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"{await t("KB_search")}\n\n"
+                                        "tool_content": f"{await t("KB_search")}\n\n"
                                     }
                                 }
                             ]
@@ -831,7 +831,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             tool_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                        "tool_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                     }
                                 }]
                             }
@@ -856,7 +856,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"{await t("web_search")}\n\n"
+                                        "tool_content": f"{await t("web_search")}\n\n"
                                     }
                                 }
                             ]
@@ -895,7 +895,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             tool_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                        "tool_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                     }
                                 }]
                             }
@@ -939,7 +939,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     deepsearch_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
+                                "tool_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
                             }
                         }]
                     }
@@ -1202,7 +1202,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                    "tool_content": f"\n\n❌{await t("task_error")}\n\n",
                                 }
                             }]
                         }
@@ -1211,7 +1211,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
+                                    "tool_content": f"\n\n✅{await t("task_done")}\n\n",
                                 }
                             }]
                         }
@@ -1221,7 +1221,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
+                                    "tool_content": f"\n\n❎{await t("task_not_done")}\n\n",
                                 }
                             }]
                         }
@@ -1246,7 +1246,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
+                                    "tool_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                                 }
                             }]
                         }
@@ -1257,7 +1257,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                    "tool_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
                                 }
                             }]
                         }
@@ -1281,7 +1281,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                    "tool_content": f"\n\n🔍{await t("need_more_search")}\n\n"
                                 }
                             }]
                         }
@@ -1306,7 +1306,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                    "tool_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
                                 }
                             }]
                         }
@@ -1340,7 +1340,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("web_search")}\n\n"
+                                            "tool_content": f"\n\n{await t("web_search")}\n\n"
                                         }
                                     }
                                 ]
@@ -1356,7 +1356,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("web_search_more")}\n\n"
+                                            "tool_content": f"\n\n{await t("web_search_more")}\n\n"
                                         }
                                     }
                                 ]
@@ -1372,7 +1372,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("knowledge_base")}\n\n"
+                                            "tool_content": f"\n\n{await t("knowledge_base")}\n\n"
                                         }
                                     }
                                 ]
@@ -1388,7 +1388,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
+                                            "tool_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
                                         }
                                     }
                                 ]
@@ -1397,7 +1397,10 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
                         # 使用json.loads来解析修改后的字符串为列表
                         data_list = json.loads(modified_data)
-                        results = await dispatch_tool(response_content.name, data_list[0],settings)
+                        if settings['tools']['asyncTools']['enabled']:
+                            pass
+                        else:
+                            results = await dispatch_tool(response_content.name, data_list[0],settings)
                         if results is None:
                             chunk = {
                                 "id": "extra_tools",
@@ -1469,7 +1472,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         tool_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                                    "tool_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
                                 }
                             }]
                         }
@@ -1714,7 +1717,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                        "tool_content": f"\n\n❌{await t("task_error")}\n\n",
                                     }
                                 }]
                             }
@@ -1723,7 +1726,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
+                                        "tool_content": f"\n\n✅{await t("task_done")}\n\n",
                                     }
                                 }]
                             }
@@ -1733,7 +1736,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
+                                        "tool_content": f"\n\n❎{await t("task_not_done")}\n\n",
                                     }
                                 }]
                             }
@@ -1758,7 +1761,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
+                                        "tool_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                                     }
                                 }]
                             }
@@ -1769,7 +1772,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                        "tool_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
                                     }
                                 }]
                             }
@@ -1793,7 +1796,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                        "tool_content": f"\n\n🔍{await t("need_more_search")}\n\n"
                                     }
                                 }]
                             }
@@ -1818,7 +1821,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                        "tool_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
                                     }
                                 }]
                             }
@@ -1866,7 +1869,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 error_chunk = {
                     "choices": [{
                         "delta": {
-                            "reasoning_content": f"❌ {str(e)}\n\n",
+                            "tool_content": f"❌ {str(e)}\n\n",
                         }
                     }]
                 }
