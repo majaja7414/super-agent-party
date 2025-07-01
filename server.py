@@ -185,6 +185,7 @@ async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings:
                 "status": "completed",
                 "result": results,
                 "name": tool_name,
+                "parameters": args,
             }
     except Exception as e:
         async with async_tools_lock:
@@ -192,6 +193,7 @@ async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings:
                 "status": "error",
                 "result": str(e),
                 "name": tool_name,
+                "parameters": args,
             }
 
 async def get_image_content(image_url: str) -> str:
@@ -827,7 +829,11 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         **async_tools.pop(tid)  # 移除已处理的条目
                                     })
                                 elif async_tools[tid]["status"] == "pending":
-                                    responses_to_wait.append(async_tools[tid]["name"])
+                                    responses_to_wait.append({
+                                        "tool_id": tid,
+                                        "name":async_tools[tid]["name"],
+                                        "parameters": async_tools[tid]["parameters"]
+                                    })
                     for response in responses_to_send:
                         tid = response["tool_id"]
                         if response["status"] == "completed":
@@ -872,11 +878,33 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "role": "system",
                                 "content": f"之前调用的异步工具（{tid}）发生错误：\n\n{response['result']}\n\n====错误结束====\n\n"
                             }) 
-                    if responses_to_wait: 
-                        request.messages.append({
-                            "role": "system",
-                            "content": f"以下异步工具仍然在正常运行中，需要花一些时间，请等待其完成，不要重复调用这些工具，再次调用并不会更快的获取工具结果：\n\n{json.dumps(responses_to_wait, ensure_ascii=False)}\n\n====工具结束====\n\n"
-                        })  
+                    for response in responses_to_wait:
+                        # 在request.messages倒数第一个元素之前的位置插入一个新元素
+                        request.messages.insert(-1, 
+                            {
+                                "tool_calls": [
+                                    {
+                                        "id": response["tool_id"],
+                                        "function": {
+                                            "arguments": json.dumps(response["parameters"]),
+                                            "name": response["name"],
+                                        },
+                                        "type": "function",
+                                    }
+                                ],
+                                "role": "assistant",
+                                "content": "",
+                            }
+                        )
+                        results = f"{response["name"]}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
+                        request.messages.insert(-1, 
+                            {
+                                "role": "tool",
+                                "tool_call_id": response["tool_id"],
+                                "name": response["name"],
+                                "content": str(results),
+                            }
+                        )
                 kb_list = []
                 if settings["knowledgeBases"]:
                     for kb in settings["knowledgeBases"]:
@@ -1523,6 +1551,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "status": "pending",
                                     "result": None,
                                     "name":response_content.name,
+                                    "parameters":data_list[0]
                                 }
                             results = f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
                         else:
