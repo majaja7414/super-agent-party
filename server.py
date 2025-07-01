@@ -209,7 +209,7 @@ async def get_image_content(image_url: str) -> str:
                 f.write(str(response.choices[0].message.content))
     return content
 
-async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str:
+async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str | List | None:
     global mcp_client_list,_TOOL_HOOKS
     from py.web_search import (
         DDGsearch_async, 
@@ -365,7 +365,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
                         if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
-                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                                messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": item['image_url']['url']}}]
                             client = AsyncOpenAI(api_key=settings['vision']['api_key'],base_url=settings['vision']['base_url'])
@@ -374,7 +374,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                                 messages = [{"role": "user", "content": images_content}],
                                 temperature=settings['vision']['temperature'],
                             )
-                            messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
+                            messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "w", encoding='utf-8') as f:
                                 f.write(str(response.choices[0].message.content))
     else:           
@@ -386,7 +386,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
                         if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
-                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                                messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
                             messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
@@ -1332,7 +1332,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         response_content = tool_calls[0].function
                         if response_content.name in  ["DDGsearch_async","searxng_async", "Bing_search_async", "Google_search_async", "Brave_search_async", "Exa_search_async", "Serper_search_async","bochaai_search_async"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1348,7 +1348,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         elif response_content.name in  ["jina_crawler_async","Crawl4Ai_search_async"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1364,7 +1364,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         elif response_content.name in ["query_knowledge_base"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1380,7 +1380,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         else:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1398,7 +1398,23 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         # 使用json.loads来解析修改后的字符串为列表
                         data_list = json.loads(modified_data)
                         if settings['tools']['asyncTools']['enabled']:
-                            pass
+                            tool_id = uuid.uuid4()
+                            chunk_dict = {
+                                "id": "agentParty",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "tool_content": f"\n\n{response_content.name}{await t('asyncToolsSetUP')}: <asyncTools>{tool_id}</asyncTools>\n\n"
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                            results = f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
                         else:
                             results = await dispatch_tool(response_content.name, data_list[0],settings)
                         if results is None:
@@ -1417,7 +1433,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                             yield f"data: {json.dumps(chunk)}\n\n"
                             break
-                        if response_content.name in ["query_knowledge_base"]:
+                        if response_content.name in ["query_knowledge_base"] and type(results) == list:
                             if settings["KBSettings"]["is_rerank"]:
                                 results = await rerank_knowledge_base(user_prompt,results)
                             results = json.dumps(results, ensure_ascii=False, indent=4)
@@ -1445,38 +1461,52 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "content": str(results),
                             }
                         )
-                        if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                        if (settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both') and settings['tools']['asyncTools']['enabled'] is False:
                             request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
-                        reasoner_messages.append(
-                            {
-                                "role": "assistant",
-                                "content": str(response_content),
-                            }
-                        )
-                        reasoner_messages.append(
-                            {
-                                "role": "user",
-                                "content": f"{response_content.name}工具结果："+str(results),
-                            }
-                        )
-                        # 获取时间戳和uuid
-                        timestamp = time.time()
-                        uid = str(uuid.uuid4())
-                        # 构造文件名
-                        filename = f"{timestamp}_{uid}.txt"
-                        # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
-                            f.write(str(results))            
-                        # 将文件链接更新为新的链接
-                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
-                        tool_chunk = {
-                            "choices": [{
-                                "delta": {
-                                    "tool_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                        if settings['tools']['asyncTools']['enabled']:
+                            reasoner_messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": str(response_content),
                                 }
-                            }]
-                        }
-                        yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            )
+                            reasoner_messages.append(
+                                {
+                                    "role": "system",
+                                    "content": f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。",
+                                }
+                            )
+                        else:
+                            reasoner_messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": str(response_content),
+                                }
+                            )
+                            reasoner_messages.append(
+                                {
+                                    "role": "system",
+                                    "content": f"{response_content.name}工具结果："+str(results),
+                                }
+                            )
+                            # 获取时间戳和uuid
+                            timestamp = time.time()
+                            uid = str(uuid.uuid4())
+                            # 构造文件名
+                            filename = f"{timestamp}_{uid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(results))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
                     # 如果启用推理模型
                     if settings['reasoner']['enabled'] or enable_thinking:
                         if tools:
