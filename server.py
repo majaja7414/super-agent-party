@@ -167,6 +167,28 @@ async def t(text: str) -> str:
     target_language = settings["systemSettings"]["language"]
     return locales[target_language].get(text, text)
 
+
+# 全局存储异步工具状态
+async_tools = {}
+async_tools_lock = asyncio.Lock()
+
+async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings: dict):
+    try:
+        result = await dispatch_tool(tool_name, args, settings)
+        async with async_tools_lock:
+            async_tools[tool_id] = {
+                "status": "completed",
+                "result": result,
+                "name": tool_name,
+            }
+    except Exception as e:
+        async with async_tools_lock:
+            async_tools[tool_id] = {
+                "status": "error",
+                "result": str(e),
+                "name": tool_name,
+            }
+
 async def get_image_content(image_url: str) -> str:
     import hashlib
     settings = await load_settings()
@@ -311,6 +333,7 @@ class ChatRequest(BaseModel):
     enable_thinking: bool = False
     enable_deep_research: bool = False
     enable_web_search: bool = False
+    asyncToolsID: List[str] = None
 
 async def message_without_images(messages: List[Dict]) -> List[Dict]:
     if messages:
@@ -535,7 +558,7 @@ def get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content):
 """    
     return search_prompt
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id):
     global mcp_client_list
     DRS_STAGE = 1 # 1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
     images = await images_in_messages(request.messages,fastapi_base_url)
@@ -785,6 +808,70 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {}
         async def stream_generator(user_prompt,DRS_STAGE):
             try:
+                # 处理传入的异步工具ID查询
+                if async_tools_id:
+                    responses_to_send = []
+                    responses_to_wait = []
+                    async with async_tools_lock:
+                        # 收集已完成的结果并删除条目
+                        for tid in list(async_tools.keys()):  # 转成list避免字典修改异常
+                            if tid in async_tools_id:
+                                if async_tools[tid]["status"] in ("completed", "error"):
+                                    responses_to_send.append({
+                                        "tool_id": tid,
+                                        **async_tools.pop(tid)  # 移除已处理的条目
+                                    })
+                                elif async_tools[tid]["status"] == "pending":
+                                    responses_to_wait.append(async_tools[tid]["name"])
+                    for response in responses_to_send:
+                        tid = response["tool_id"]
+                        if response["status"] == "completed":
+                            # 构造文件名
+                            filename = f"{tid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(response["result"]))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{tid}{await t("tool_result")}]({fileLink})\n\n",
+                                        "async_tool_id": tid
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            request.messages.append({
+                                "role": "system",
+                                "content": f"之前调用的异步工具（{tid}）的结果：\n\n{response['result']}\n\n====结果结束====\n\n请根据工具结果回复未回复的问题或需求。"
+                            }) 
+                        if response["status"] == "error":
+                            # 构造文件名
+                            filename = f"{tid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(response["result"]))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{tid}{await t("tool_result")}]({fileLink})\n\n",
+                                        "async_tool_id": tid
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            request.messages.append({
+                                "role": "system",
+                                "content": f"之前调用的异步工具（{tid}）发生错误：\n\n{response['result']}\n\n====错误结束====\n\n"
+                            }) 
+                    if responses_to_wait: 
+                        request.messages.append({
+                            "role": "system",
+                            "content": f"以下异步工具仍然在正常运行中，需要花一些时间，请等待其完成，不要重复调用这些工具，再次调用并不会更快的获取工具结果：\n\n{json.dumps(responses_to_wait, ensure_ascii=False)}\n\n====工具结束====\n\n"
+                        })  
                 kb_list = []
                 if settings["knowledgeBases"]:
                     for kb in settings["knowledgeBases"]:
@@ -1399,6 +1486,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         data_list = json.loads(modified_data)
                         if settings['tools']['asyncTools']['enabled']:
                             tool_id = uuid.uuid4()
+                            async_tool_id = f"{response_content.name}_{tool_id}"
                             chunk_dict = {
                                 "id": "agentParty",
                                 "choices": [
@@ -1408,12 +1496,28 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "tool_content": f"\n\n{response_content.name}{await t('asyncToolsSetUP')}: <asyncTools>{tool_id}</asyncTools>\n\n"
+                                            "async_tool_id": async_tool_id
                                         }
                                     }
                                 ]
                             }
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
+                            # 启动异步任务并记录状态
+                            asyncio.create_task(
+                                execute_async_tool(
+                                    async_tool_id,
+                                    response_content.name,
+                                    data_list[0],
+                                    settings
+                                )
+                            )
+                            
+                            async with async_tools_lock:
+                                async_tools[async_tool_id] = {
+                                    "status": "pending",
+                                    "result": None,
+                                    "name":response_content.name,
+                                }
                             results = f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
                         else:
                             results = await dispatch_tool(response_content.name, data_list[0],settings)
@@ -2833,6 +2937,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
     enable_thinking = request.enable_thinking or False
     enable_deep_research = request.enable_deep_research or False
     enable_web_search = request.enable_web_search or False
+    async_tools_id = request.asyncToolsID or None
     if model == 'super-model':
         current_settings = await load_settings()
         # 动态更新客户端配置
@@ -2858,7 +2963,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
             settings = current_settings
         try:
             if request.stream:
-                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id)
             return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
@@ -2901,7 +3006,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id)
             return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况

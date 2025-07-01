@@ -1339,6 +1339,7 @@ let vue_methods = {
             messages: messages,
             stream: true,
             fileLinks: this.fileLinks,
+            asyncToolsID: this.asyncToolsID,
           }),
           signal: this.abortController.signal
         });
@@ -1416,6 +1417,16 @@ let vue_methods = {
                   }
                   lastMessage.content += parsed.choices[0].delta.content;
                   this.scrollToBottom();
+                }
+                if (parsed.choices?.[0]?.delta?.async_tool_id) {
+                    // 判断parsed.choices[0].delta.async_tool_id是否在this.asyncToolsID中
+                    if (this.asyncToolsID.includes(parsed.choices[0].delta.async_tool_id)) {
+                      // 如果在，则删除
+                      this.asyncToolsID = this.asyncToolsID.filter(id => id !== parsed.choices[0].delta.async_tool_id);
+                    } else {
+                      // 如果不在，则添加
+                      this.asyncToolsID.push(parsed.choices[0].delta.async_tool_id);
+                    }
                 }
               } catch (e) {
                 console.error(e);
@@ -1624,6 +1635,7 @@ let vue_methods = {
       this.conversationId = null;
       this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态
+      this.asyncToolsID = [];
       this.scrollToBottom();    // 触发界面更新
       await this.autoSaveSettings();
     },
