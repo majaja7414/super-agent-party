@@ -172,13 +172,18 @@ async def t(text: str) -> str:
 async_tools = {}
 async_tools_lock = asyncio.Lock()
 
-async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings: dict):
+async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings: dict,user_prompt: str):
     try:
-        result = await dispatch_tool(tool_name, args, settings)
+        results = await dispatch_tool(tool_name, args, settings)
+        if tool_name in ["query_knowledge_base"] and type(results) == list:
+            from py.know_base import rerank_knowledge_base
+            if settings["KBSettings"]["is_rerank"]:
+                results = await rerank_knowledge_base(user_prompt,results)
+            results = json.dumps(results, ensure_ascii=False, indent=4)
         async with async_tools_lock:
             async_tools[tool_id] = {
                 "status": "completed",
-                "result": result,
+                "result": results,
                 "name": tool_name,
             }
     except Exception as e:
@@ -1508,7 +1513,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     async_tool_id,
                                     response_content.name,
                                     data_list[0],
-                                    settings
+                                    settings,
+                                    user_prompt
                                 )
                             )
                             
