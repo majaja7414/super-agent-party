@@ -3089,7 +3089,7 @@ async def process_mcp(mcp_id: str):
         mcp_client_list[mcp_id].disabled = True
         mcp_status[mcp_id] = f"failed: {str(e)}"
 
-@app.post("/remove_mcp")
+@app.delete("/remove_mcp")
 async def remove_mcp_server(request: Request):
     global settings, mcp_client_list
     try:
@@ -3122,7 +3122,7 @@ async def remove_mcp_server(request: Request):
         logger.error(f"移除MCP服务器失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/remove_memory")
+@app.delete("/remove_memory")
 async def remove_memory_endpoint(request: Request):
     data = await request.json()
     memory_id = data.get("memoryId")
@@ -3137,7 +3137,7 @@ async def remove_memory_endpoint(request: Request):
     else:
         return JSONResponse({"success": False, "message": "No memoryId provided"})
 
-@app.post("/remove_agent")
+@app.delete("/remove_agent")
 async def remove_agent_endpoint(request: Request):
     data = await request.json()
     agent_id = data.get("agentId")
@@ -3261,7 +3261,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/delete_file")
+@app.delete("/delete_file")
 async def delete_file_endpoint(request: Request):
     data = await request.json()
     file_name = data.get("fileName")
@@ -3315,7 +3315,7 @@ async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks
     
     return {"success": True, "message": "知识库处理已开始，请稍后查询状态"}
 
-@app.post("/remove_kb")
+@app.delete("/remove_kb")
 async def remove_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
     kb_id = data.get("kbId")

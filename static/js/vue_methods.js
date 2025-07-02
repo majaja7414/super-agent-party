@@ -2249,7 +2249,7 @@ let vue_methods = {
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
         const Response = await fetch(`http://${HOST}:${PORT}/remove_kb`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kbId }),
         });
@@ -2489,7 +2489,7 @@ let vue_methods = {
     async confirmDeleteMCP() {
       try {
         const response = await fetch(`http://${HOST}:${PORT}/remove_mcp`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: {
               'Content-Type': 'application/json',
           },
@@ -2553,7 +2553,7 @@ let vue_methods = {
         try {
           // 向/delete_file发送请求
           const response = await fetch(`http://${HOST}:${PORT}/remove_agent`, {
-            method: 'POST',
+            method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ agentId: id })
           });
@@ -2625,7 +2625,7 @@ let vue_methods = {
       try {
         // 向/delete_file发送请求
         const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
@@ -2646,7 +2646,7 @@ let vue_methods = {
       try {
         // 向/delete_file发送请求
         const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
@@ -2734,7 +2734,7 @@ let vue_methods = {
       try {
         // 向/delete_file发送请求
         const response = await fetch(`http://${HOST}:${PORT}/remove_memory`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ memoryId: id })
         });
@@ -3232,7 +3232,7 @@ let vue_methods = {
       try {
         // 向/delete_file发送请求
         const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
