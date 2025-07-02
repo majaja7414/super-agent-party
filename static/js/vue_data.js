@@ -328,7 +328,7 @@ let vue_data = {
     fileLinks: [],
     asrSettings: {
       enabled: false,
-      engine: 'web_speech_api',
+      engine: 'openai',
     },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },

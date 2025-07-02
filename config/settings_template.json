@@ -139,7 +139,7 @@
     },
     "asrSettings": {
       "enabled": false,
-      "engine": "web_speech_api"
+      "engine": "openai"
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",
