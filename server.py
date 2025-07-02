@@ -884,7 +884,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             {
                                 "tool_calls": [
                                     {
-                                        "id": response["tool_id"],
+                                        "id": "agentParty",
                                         "function": {
                                             "arguments": json.dumps(response["parameters"]),
                                             "name": response["name"],
@@ -900,7 +900,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         request.messages.insert(-1, 
                             {
                                 "role": "tool",
-                                "tool_call_id": response["tool_id"],
+                                "tool_call_id": "agentParty",
                                 "name": response["name"],
                                 "content": str(results),
                             }
