@@ -3074,7 +3074,6 @@ async def transcribe_audio_endpoint(
             response = await client.audio.transcriptions.create(
                 file=audio_file,
                 model=current_settings['asrSettings']['model'],
-                stream=True
             )
         else:
             agentSettings = current_settings['agents'].get(model, {})
@@ -3102,6 +3101,7 @@ async def transcribe_audio_endpoint(
             )
         return JSONResponse(content={"text": response.text})
     except Exception as e:
+        print(e)
         return JSONResponse(
             status_code=500,
             content={"error": {"message": str(e), "type": "server_error", "code": 500}}

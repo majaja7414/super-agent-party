@@ -1075,7 +1075,7 @@ let vue_methods = {
       };
     },
 
-    handleKeydown(event) {
+    handleKeyDown(event) {
       if (event.key === 'Enter') {
         if (event.shiftKey) {
           // 如果同时按下了Shift键，则不阻止默认行为，允许换行
@@ -2011,7 +2011,21 @@ let vue_methods = {
         await this.autoSaveSettings();
       }
     },
-
+    async selectAsrProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.asrSettings.model = provider.modelId;
+        this.asrSettings.base_url = provider.url;
+        this.asrSettings.api_key = provider.apiKey;
+        this.asrSettings.vendor = provider.vendor;
+        await this.autoSaveSettings();
+      }
+    },
+    handleAsrProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectAsrProvider(this.asrSettings.selectedProvider);
+      }
+    },
     handleText2imgProviderVisibleChange(visible) {
       if (!visible) {
         this.selectText2imgProvider(this.text2imgSettings.selectedProvider);
@@ -3453,5 +3467,155 @@ let vue_methods = {
 
     removeJsonFile() {
       this.jsonFile = null; // 清空文件
+    },
+  async toggleASR() {
+    this.asrSettings.enabled = !this.asrSettings.enabled;
+    this.autoSaveSettings();
+    
+    if (this.asrSettings.enabled) {
+      await this.startRecording();
+    } else {
+      this.stopRecording();
     }
+  },
+
+  async startRecording() {
+    try {
+      // 请求麦克风权限
+      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // 初始化音频上下文
+      this.audioContext = new AudioContext();
+      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+      
+      // 设置VAD参数
+      this.vad.start();
+      
+      // 初始化录音
+      this.mediaRecorder = new MediaRecorder(this.mediaStream);
+      this.audioChunks = [];
+      
+      this.mediaRecorder.ondataavailable = (event) => {
+        this.audioChunks.push(event.data);
+      };
+      
+      this.mediaRecorder.start(1000); // 每1秒收集一次数据
+      
+      this.isRecording = true;
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      this.asrSettings.enabled = false;
+      showNotification(this.t('micPermissionDenied'), 'error');
+    }
+  },
+
+  stopRecording() {
+    if (this.mediaRecorder) {
+      this.mediaRecorder.stop();
+      this.mediaRecorder = null;
+    }
+    
+    this.vad.pause();
+    
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+    
+    if (this.audioContext) {
+      this.audioContext.close();
+      this.audioContext = null;
+    }
+    
+    this.isRecording = false;
+  },
+
+  async handleSpeechEnd(audio) {
+    try {
+      // 将音频数据转换为WAV格式
+      const wavFile = await this.audioToWav(audio);
+      
+      // 发送到后端识别
+      const formData = new FormData();
+      formData.append('file', wavFile);
+      formData.append('model', 'super-model');
+      
+      const response = await fetch(`http://${HOST}:${PORT}/v1/audio/transcriptions`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) throw new Error('Transcription failed');
+      
+      const result = await response.json();
+      this.userInput += result.text + ' ';
+    } catch (error) {
+      console.error('Transcription error:', error);
+      showNotification(this.t('transcriptionFailed'), 'error');
+    }
+  },
+    async audioToWav(audioData) {
+      try {
+        // 音频参数配置
+        const sampleRate = 16000; // 采样率 16kHz，适合语音识别
+        const numChannels = 1;    // 单声道
+        const bitsPerSample = 16; // 16位采样深度
+        
+        // 将Float32Array转换为Int16Array (16位PCM)
+        const int16Array = new Int16Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          // 将[-1.0, 1.0]范围的浮点数转换为[-32768, 32767]范围的整数
+          const sample = Math.max(-1, Math.min(1, audioData[i])); // 限制范围
+          int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
+        }
+        
+        // 计算文件大小
+        const byteLength = int16Array.length * 2; // 每个样本2字节
+        const buffer = new ArrayBuffer(44 + byteLength); // WAV头部44字节 + 音频数据
+        const view = new DataView(buffer);
+        
+        // 写入WAV文件头
+        const writeString = (offset, string) => {
+          for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+          }
+        };
+        
+        // RIFF chunk descriptor
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + byteLength, true); // 文件大小-8
+        writeString(8, 'WAVE');
+        
+        // fmt sub-chunk
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // fmt chunk大小
+        view.setUint16(20, 1, true);  // 音频格式 (PCM)
+        view.setUint16(22, numChannels, true); // 声道数
+        view.setUint32(24, sampleRate, true);  // 采样率
+        view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true); // 字节率
+        view.setUint16(32, numChannels * bitsPerSample / 8, true); // 块对齐
+        view.setUint16(34, bitsPerSample, true); // 位深度
+        
+        // data sub-chunk
+        writeString(36, 'data');
+        view.setUint32(40, byteLength, true); // 数据大小
+        
+        // 写入音频数据
+        const offset = 44;
+        for (let i = 0; i < int16Array.length; i++) {
+          view.setInt16(offset + i * 2, int16Array[i], true);
+        }
+        
+        // 创建Blob并返回File对象
+        const blob = new Blob([buffer], { type: 'audio/wav' });
+        const file = new File([blob], 'audio.wav', { type: 'audio/wav' });
+        
+        return file;
+        
+      } catch (error) {
+        console.error('Audio conversion error:', error);
+        throw new Error('Failed to convert audio to WAV format');
+      }
+    }
+
 }

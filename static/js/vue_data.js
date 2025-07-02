@@ -326,9 +326,21 @@ let vue_data = {
     updateDownloaded: false,
     downloadProgress: 0,
     fileLinks: [],
+    audioContext: null,
+    mediaStream: null,
+    mediaRecorder: null,
+    audioChunks: [],
+    isRecording: false,
+    vad: null,
+    speechTimeout: null,
     asrSettings: {
       enabled: false,
       engine: 'openai',
+      selectedProvider: null,
+      vendor: "OpenAI",
+      model: "",
+      base_url: "",
+      api_key: ""
     },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },

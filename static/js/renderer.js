@@ -18,7 +18,7 @@ const app = Vue.createApp({
     }
     window.removeEventListener('resize', this.checkMobile);
   },
-  mounted() {
+  async mounted() {
     // 初始检查
     this.checkQQBotStatus();
     this.checkMobile();
@@ -66,6 +66,16 @@ const app = Vue.createApp({
       window.electronAPI.onWindowState((_, state) => {
         this.isMaximized = state === 'maximized'
       });
+    }
+    // 初始化VAD
+    this.vad = await vad.MicVAD.new({
+      preSpeechPadFrames: 10,
+      onSpeechEnd: (audio) => {
+        this.handleSpeechEnd(audio);
+      },
+    });
+    if (this.asrSettings.enabled) {
+      await this.startRecording();
     }
   },
   beforeUnmount() {

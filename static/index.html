@@ -691,7 +691,7 @@
 
             <el-tooltip :content="t('asr')" placement="top">
               <el-button
-                @click="asrSettings.enabled = !asrSettings.enabled; autoSaveSettings()"
+                @click="toggleASR"
                 class="icon-btn asr-btn"
                 :type="asrSettings.enabled ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
