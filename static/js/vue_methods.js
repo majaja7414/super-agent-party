@@ -994,7 +994,7 @@ let vue_methods = {
       };
 
       // 接收消息
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = async (event) => {
         let data;
         try {
           data = JSON.parse(event.data);
@@ -1053,6 +1053,16 @@ let vue_methods = {
           this.workflows = data.data.workflows || this.workflows;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
+          if (this.asrSettings.enabled) {
+            // 初始化VAD
+            this.vad = await vad.MicVAD.new({
+              preSpeechPadFrames: 10,
+              onSpeechEnd: (audio) => {
+                this.handleSpeechEnd(audio);
+              },
+            });
+            await this.startRecording();
+          }
         } 
         else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -3473,6 +3483,15 @@ let vue_methods = {
     this.autoSaveSettings();
     
     if (this.asrSettings.enabled) {
+      if (this.vad == null) {
+        // 初始化VAD
+        this.vad = await vad.MicVAD.new({
+          preSpeechPadFrames: 10,
+          onSpeechEnd: (audio) => {
+            this.handleSpeechEnd(audio);
+          },
+        });
+      }
       await this.startRecording();
     } else {
       this.stopRecording();

@@ -67,16 +67,6 @@ const app = Vue.createApp({
         this.isMaximized = state === 'maximized'
       });
     }
-    // 初始化VAD
-    this.vad = await vad.MicVAD.new({
-      preSpeechPadFrames: 10,
-      onSpeechEnd: (audio) => {
-        this.handleSpeechEnd(audio);
-      },
-    });
-    if (this.asrSettings.enabled) {
-      await this.startRecording();
-    }
   },
   beforeUnmount() {
     if (isElectron) {

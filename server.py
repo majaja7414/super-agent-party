@@ -3066,15 +3066,17 @@ async def transcribe_audio_endpoint(
         contents = await file.read()
         audio_file = BytesIO(contents)
         audio_file.name = file.filename  
+        response = None
         if model == 'super-model':
-            client = AsyncOpenAI(
-                api_key=current_settings['asrSettings']['api_key'],
-                base_url=current_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
-            )
-            response = await client.audio.transcriptions.create(
-                file=audio_file,
-                model=current_settings['asrSettings']['model'],
-            )
+            if current_settings['asrSettings']['engine'] == "openai":
+                client = AsyncOpenAI(
+                    api_key=current_settings['asrSettings']['api_key'],
+                    base_url=current_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
+                )
+                response = await client.audio.transcriptions.create(
+                    file=audio_file,
+                    model=current_settings['asrSettings']['model'],
+                )
         else:
             agentSettings = current_settings['agents'].get(model, {})
             if not agentSettings:
@@ -3090,16 +3092,23 @@ async def transcribe_audio_endpoint(
             if agentSettings['config_path']:
                 with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
                     agent_settings = json.load(f)
-            client = AsyncOpenAI(
-                api_key=agent_settings['asrSettings']['api_key'],
-                base_url=agent_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
-            )
+            if agent_settings['asrSettings']['engine'] == "openai":
+                client = AsyncOpenAI(
+                    api_key=agent_settings['asrSettings']['api_key'],
+                    base_url=agent_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
+                )
 
-            response = await client.audio.transcriptions.create(
-                file=audio_file,
-                model=agent_settings['asrSettings']['model'],
+                response = await client.audio.transcriptions.create(
+                    file=audio_file,
+                    model=agent_settings['asrSettings']['model'],
+                )
+        if response:
+            return JSONResponse(content={"text": response.text})
+        else:
+            return JSONResponse(
+                status_code=500,
+                content={"error": {"message": "ASR engine not found", "type": "server_error", "code": 500}}
             )
-        return JSONResponse(content={"text": response.text})
     except Exception as e:
         print(e)
         return JSONResponse(
