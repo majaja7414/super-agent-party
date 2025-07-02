@@ -497,6 +497,8 @@ const translations = {
       'fakeInferenceNotice': '开启伪推理模式，让没有推理能力的模型也能推理',
       'latexRenderingEnhancementNotice': '让智能体能够更稳定地输出LaTeX公式',
       'languageNotice': '智能体将使用指定语言和语气进行对话',
+      'asrModel': '语音识别模型',
+      'asrEngine': '语音识别接口',
     },
     'en-US': {
       'chat': 'Chat',
@@ -995,5 +997,7 @@ const translations = {
       'fakeInferenceNotice': 'Enable pseudo-reasoning mode, allowing models without reasoning capabilities to also perform reasoning.',
       'latexRenderingEnhancementNotice': 'Enable the agent to output LaTeX formulas more stably.',
       'languageNotice': 'The agent will use the specified language and tone for the conversation.',
+      'asrModel': 'ASR Model',
+      'asrEngine': 'ASR Engine',
     }
   };

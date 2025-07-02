@@ -137,6 +137,10 @@
       "api_key": "",
       "size": "1024x1024"
     },
+    "asrSettings": {
+      "enabled": false,
+      "engine": "web_speech_api"
+    },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",
     "BotConfig": {

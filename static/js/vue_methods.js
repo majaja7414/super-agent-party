@@ -1047,6 +1047,7 @@ let vue_methods = {
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
+          this.asrSettings = data.data.asrSettings || this.asrSettings;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
           this.comfyuiAPIkey = data.data.comfyuiAPIkey || this.comfyuiAPIkey;
           this.workflows = data.data.workflows || this.workflows;
@@ -1528,6 +1529,7 @@ let vue_methods = {
           memories: this.memories,
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
+          asrSettings: this.asrSettings,
           comfyuiServers: this.comfyuiServers,
           comfyuiAPIkey: this.comfyuiAPIkey,
           workflows: this.workflows,

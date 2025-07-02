@@ -326,12 +326,17 @@ let vue_data = {
     updateDownloaded: false,
     downloadProgress: 0,
     fileLinks: [],
+    asrSettings: {
+      enabled: false,
+      engine: 'web_speech_api',
+    },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
       { id: 'reasoner', title: 'reasonerModel', icon: 'fa-solid fa-atom' },
       { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'},
       { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
+      { id: 'asr', title: 'asrModel', icon: 'fa-solid fa-microphone' },
     ],
     toolkitTiles: [
       { id: 'tools', title: 'utilityTools', icon: 'fa-solid fa-screwdriver-wrench' },
