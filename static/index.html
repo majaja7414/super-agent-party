@@ -642,14 +642,25 @@
               </el-button>
             </el-tooltip>
 
-            <el-tooltip :content="t('knowledgeBase')" placement="top">
+            <el-tooltip :content="t('deepThinking')" placement="top">
               <el-button
-                @click="showKnowledgeDialog = true"
-                class="icon-btn knowledge-base-btn"
-                :type="hasEnabledKnowledgeBases ? 'primary' : 'default'"
+                @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
+                class="icon-btn deep-think-btn"
+                :type="reasonerSettings.enabled ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
                 circle>
-                <i class="fa-solid fa-book"></i>
+                <i class="fa-solid fa-atom"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('deepResearch')" placement="top">
+              <el-button
+                @click="toolsSettings.deepsearch.enabled = !toolsSettings.deepsearch.enabled; autoSaveSettings()"
+                class="icon-btn deep-search-btn"
+                :type="toolsSettings.deepsearch.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i class="fa-solid fa-flask"></i>
               </el-button>
             </el-tooltip>
 
@@ -675,25 +686,25 @@
               </el-button>
             </el-tooltip>
 
-            <el-tooltip :content="t('deepThinking')" placement="top">
+            <el-tooltip :content="t('asr')" placement="top">
               <el-button
-                @click="reasonerSettings.enabled = !reasonerSettings.enabled; autoSaveSettings()"
-                class="icon-btn deep-think-btn"
-                :type="reasonerSettings.enabled ? 'primary' : 'default'"
+                @click="asrSettings.enabled = !asrSettings.enabled; autoSaveSettings()"
+                class="icon-btn asr-btn"
+                :type="asrSettings.enabled ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
                 circle>
-                <i class="fa-solid fa-atom"></i>
+                <i class="fa-solid fa-microphone"></i>
               </el-button>
             </el-tooltip>
 
-            <el-tooltip :content="t('deepResearch')" placement="top">
+            <el-tooltip :content="t('knowledgeBase')" placement="top">
               <el-button
-                @click="toolsSettings.deepsearch.enabled = !toolsSettings.deepsearch.enabled; autoSaveSettings()"
-                class="icon-btn deep-search-btn"
-                :type="toolsSettings.deepsearch.enabled ? 'primary' : 'default'"
+                @click="showKnowledgeDialog = true"
+                class="icon-btn knowledge-base-btn"
+                :type="hasEnabledKnowledgeBases ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
                 circle>
-                <i class="fa-solid fa-flask"></i>
+                <i class="fa-solid fa-book"></i>
               </el-button>
             </el-tooltip>
 

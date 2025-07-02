@@ -499,6 +499,7 @@ const translations = {
       'languageNotice': '智能体将使用指定语言和语气进行对话',
       'asrModel': '语音识别模型',
       'asrEngine': '语音识别接口',
+      'asr': '语音识别',
     },
     'en-US': {
       'chat': 'Chat',
@@ -999,5 +1000,6 @@ const translations = {
       'languageNotice': 'The agent will use the specified language and tone for the conversation.',
       'asrModel': 'ASR Model',
       'asrEngine': 'ASR Engine',
+      'asr': 'ASR',
     }
   };
