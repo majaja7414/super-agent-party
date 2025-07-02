@@ -1,4 +1,5 @@
 # -- coding: utf-8 --
+from io import BytesIO
 import os
 import sys
 # 在程序最开始设置
@@ -3052,6 +3053,59 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
                 status_code=500,
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
+
+
+@app.post("/v1/audio/transcriptions")
+async def transcribe_audio_endpoint(
+    file: UploadFile = File(...),
+    model: str = Form("super-model")
+):
+    try:
+        current_settings = await load_settings()
+        model = model or 'super-model'
+        contents = await file.read()
+        audio_file = BytesIO(contents)
+        audio_file.name = file.filename  
+        if model == 'super-model':
+            client = AsyncOpenAI(
+                api_key=current_settings['asrSettings']['api_key'],
+                base_url=current_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
+            )
+            response = await client.audio.transcriptions.create(
+                file=audio_file,
+                model=current_settings['asrSettings']['model'],
+                stream=True
+            )
+        else:
+            agentSettings = current_settings['agents'].get(model, {})
+            if not agentSettings:
+                for agentId , agentConfig in current_settings['agents'].items():
+                    if current_settings['agents'][agentId]['name'] == model:
+                        agentSettings = current_settings['agents'][agentId]
+                        break
+            if not agentSettings:
+                return JSONResponse(
+                    status_code=404,
+                    content={"error": {"message": f"Agent {model} not found", "type": "not_found", "code": 404}}
+                )
+            if agentSettings['config_path']:
+                with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
+                    agent_settings = json.load(f)
+            client = AsyncOpenAI(
+                api_key=agent_settings['asrSettings']['api_key'],
+                base_url=agent_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
+            )
+
+            response = await client.audio.transcriptions.create(
+                file=audio_file,
+                model=agent_settings['asrSettings']['model'],
+            )
+        return JSONResponse(content={"text": response.text})
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": {"message": str(e), "type": "server_error", "code": 500}}
+        )
 
 # 添加状态存储
 mcp_status = {}

@@ -139,7 +139,12 @@
     },
     "asrSettings": {
       "enabled": false,
-      "engine": "openai"
+      "engine": "openai",
+      "selectedProvider": null,
+      "vendor": "OpenAI",
+      "model": "",
+      "base_url": "",
+      "api_key": ""
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",
