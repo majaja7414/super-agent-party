@@ -1054,13 +1054,38 @@ let vue_methods = {
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
           if (this.asrSettings.enabled) {
-            // 初始化VAD
-            this.vad = await vad.MicVAD.new({
-              preSpeechPadFrames: 10,
-              onSpeechEnd: (audio) => {
-                this.handleSpeechEnd(audio);
-              },
-            });
+            if (this.vad == null) {
+              // 初始化VAD
+              this.vad = await vad.MicVAD.new({
+                preSpeechPadFrames: 10,
+                onSpeechStart: () => {
+                  // 语音开始时的处理
+                  this.currentAudioChunks = []; // 重置当前音频块
+                  this.speechStartTime = Date.now(); // 记录开始时间
+                  this.currentTranscriptionId = Date.now().toString(); // 生成唯一ID
+                },
+                onFrameProcessed: (audio) => {
+                  // 处理每一帧音频数据
+                  if (this.asrWs && this.asrWs.readyState === WebSocket.OPEN && 
+                      this.asrSettings.streamingEnabled) {
+                    // 只有在启用流式模式时才发送音频帧
+                    this.sendAudioFrame(audio);
+                  } else if (this.currentAudioChunks) {
+                    // 非流式模式下，收集音频数据
+                    this.currentAudioChunks.push(audio);
+                  }
+                },
+                onSpeechEnd: (audio) => {
+                  // 语音结束时的处理
+                  this.handleSpeechEnd(audio);
+                },
+              });
+            }
+            
+            // 初始化ASR WebSocket
+            await this.initASRWebSocket();
+            
+            // 开始录音
             await this.startRecording();
           }
         } 
@@ -3478,101 +3503,230 @@ let vue_methods = {
     removeJsonFile() {
       this.jsonFile = null; // 清空文件
     },
-  async toggleASR() {
-    this.asrSettings.enabled = !this.asrSettings.enabled;
-    this.autoSaveSettings();
-    
-    if (this.asrSettings.enabled) {
-      if (this.vad == null) {
-        // 初始化VAD
-        this.vad = await vad.MicVAD.new({
-          preSpeechPadFrames: 10,
-          onSpeechEnd: (audio) => {
-            this.handleSpeechEnd(audio);
-          },
-        });
-      }
-      await this.startRecording();
-    } else {
-      this.stopRecording();
-    }
-  },
+    // 初始化ASR WebSocket连接
+    async initASRWebSocket() {
+      const http_protocol = window.location.protocol;
+      const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws_url = `${ws_protocol}//${window.location.host}/asr_ws`;
 
-  async startRecording() {
-    try {
-      // 请求麦克风权限
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.asrWs = new WebSocket(ws_url);
       
-      // 初始化音频上下文
-      this.audioContext = new AudioContext();
-      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
-      
-      // 设置VAD参数
-      this.vad.start();
-      
-      // 初始化录音
-      this.mediaRecorder = new MediaRecorder(this.mediaStream);
-      this.audioChunks = [];
-      
-      this.mediaRecorder.ondataavailable = (event) => {
-        this.audioChunks.push(event.data);
+      // WebSocket 打开事件
+      this.asrWs.onopen = () => {
+        console.log('ASR WebSocket connection established');
+        // 发送初始化消息，包含当前使用的模型信息
+        this.asrWs.send(JSON.stringify({
+          type: 'init',
+        }));
       };
-      
-      this.mediaRecorder.start(1000); // 每1秒收集一次数据
-      
-      this.isRecording = true;
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      this.asrSettings.enabled = false;
-      showNotification(this.t('micPermissionDenied'), 'error');
-    }
-  },
 
-  stopRecording() {
-    if (this.mediaRecorder) {
-      this.mediaRecorder.stop();
-      this.mediaRecorder = null;
-    }
-    
-    this.vad.pause();
-    
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
-    
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
-    }
-    
-    this.isRecording = false;
-  },
+      // 接收消息
+      this.asrWs.onmessage = (event) => {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (e) {
+          console.error('Invalid JSON from ASR server:', event.data);
+          return;
+        }
 
-  async handleSpeechEnd(audio) {
-    try {
-      // 将音频数据转换为WAV格式
-      const wavFile = await this.audioToWav(audio);
+        if (data.type === 'transcription') {
+          // 处理流式ASR返回的临时结果
+          if (data.is_final === false) {
+            // 临时结果，替换最后一段语音的转写结果
+            if (this.lastTranscriptionId === data.id) {
+              // 如果是同一段语音的更新，替换上一次的结果
+              const parts = this.userInput.split(' ');
+              parts.pop(); // 移除最后一个词（上一次的临时结果）
+              this.userInput = parts.join(' ') + ' ' + data.text + ' ';
+            } else {
+              // 新的语音段落
+              this.lastTranscriptionId = data.id;
+              this.userInput += data.text + ' ';
+            }
+          } else {
+            // 最终结果
+            if (this.lastTranscriptionId === data.id) {
+              // 替换同一段语音的最终结果
+              const parts = this.userInput.split(' ');
+              parts.pop(); // 移除最后一个词
+              this.userInput = parts.join(' ') + ' ' + data.text + ' ';
+            } else {
+              // 新的最终结果
+              this.userInput += data.text + ' ';
+            }
+            this.lastTranscriptionId = null;
+          }
+        } else if (data.type === 'error') {
+          console.error('ASR error:', data.message);
+          showNotification(this.t('transcriptionFailed'), 'error');
+        }
+      };
+
+      // WebSocket 关闭事件
+      this.asrWs.onclose = (event) => {
+        console.log('ASR WebSocket connection closed:', event.reason);
+        if (this.asrSettings.enabled) {
+          // 如果ASR仍处于启用状态，尝试重新连接
+          setTimeout(() => this.initASRWebSocket(), 3000);
+        }
+      };
+
+      // WebSocket 错误事件
+      this.asrWs.onerror = (error) => {
+        console.error('ASR WebSocket error:', error);
+      };
+    },
+
+    async toggleASR() {
+      this.asrSettings.enabled = !this.asrSettings.enabled;
+      this.autoSaveSettings();
       
-      // 发送到后端识别
-      const formData = new FormData();
-      formData.append('file', wavFile);
-      formData.append('model', 'super-model');
+      if (this.asrSettings.enabled) {
+        if (this.vad == null) {
+          // 初始化VAD
+          this.vad = await vad.MicVAD.new({
+            preSpeechPadFrames: 10,
+            onSpeechStart: () => {
+              // 语音开始时的处理
+              this.currentAudioChunks = []; // 重置当前音频块
+              this.speechStartTime = Date.now(); // 记录开始时间
+              this.currentTranscriptionId = Date.now().toString(); // 生成唯一ID
+              this.handleSpeechStart();
+            },
+            onFrameProcessed: (audio) => {
+              // 处理每一帧音频数据
+              if (this.asrWs && this.asrWs.readyState === WebSocket.OPEN && 
+                  this.asrSettings.streamingEnabled) {
+                // 只有在启用流式模式时才发送音频帧
+                this.sendAudioFrame(audio);
+              } else if (this.currentAudioChunks) {
+                // 非流式模式下，收集音频数据
+                this.currentAudioChunks.push(audio);
+              }
+            },
+            onSpeechEnd: (audio) => {
+              // 语音结束时的处理
+              this.handleSpeechEnd(audio);
+            },
+          });
+        }
+        
+        // 初始化ASR WebSocket
+        await this.initASRWebSocket();
+        
+        // 开始录音
+        await this.startRecording();
+      } else {
+        this.stopRecording();
+        
+        // 关闭ASR WebSocket
+        if (this.asrWs) {
+          this.asrWs.close();
+          this.asrWs = null;
+        }
+      }
+    },
+
+    sendAudioFrame(audioFrame) {
+      // 发送单帧音频数据用于流式识别
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
       
-      const response = await fetch(`http://${HOST}:${PORT}/v1/audio/transcriptions`, {
-        method: 'POST',
-        body: formData,
-      });
+      // 将Float32Array转换为Int16Array
+      const int16Array = new Int16Array(audioFrame.length);
+      for (let i = 0; i < audioFrame.length; i++) {
+        const sample = Math.max(-1, Math.min(1, audioFrame[i]));
+        int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
+      }
       
-      if (!response.ok) throw new Error('Transcription failed');
+      // 发送音频数据和元数据
+      this.asrWs.send(JSON.stringify({
+        type: 'audio_frame',
+        id: this.currentTranscriptionId,
+        audio: Array.from(int16Array), // 转换为普通数组以便JSON序列化
+        sampleRate: 16000,
+        isEnd: false
+      }));
+    },
+
+    async startRecording() {
+      try {
+        // 请求麦克风权限
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // 初始化音频上下文
+        this.audioContext = new AudioContext();
+        const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+        
+        // 设置VAD参数
+        this.vad.start();
+        
+        this.isRecording = true;
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        this.asrSettings.enabled = false;
+        showNotification(this.t('micPermissionDenied'), 'error');
+      }
+    },
+
+    stopRecording() {
+      this.vad.pause();
       
-      const result = await response.json();
-      this.userInput += result.text + ' ';
-    } catch (error) {
-      console.error('Transcription error:', error);
-      showNotification(this.t('transcriptionFailed'), 'error');
-    }
-  },
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach(track => track.stop());
+        this.mediaStream = null;
+      }
+      
+      if (this.audioContext) {
+        this.audioContext.close();
+        this.audioContext = null;
+      }
+      
+      this.isRecording = false;
+    },
+
+    async handleSpeechStart() {
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
+      // 发送开始标记
+      this.asrWs.send(JSON.stringify({
+        type: 'audio_start',
+        id: this.currentTranscriptionId
+      }));
+    },
+
+    async handleSpeechEnd(audio) {
+      // 语音结束时的处理
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
+      
+      // 如果是流式模式，发送结束标记
+      if (this.asrSettings.streamingEnabled) {
+        this.asrWs.send(JSON.stringify({
+          type: 'audio_end',
+          id: this.currentTranscriptionId
+        }));
+      } else {
+        // 非流式模式，发送完整音频数据
+        // 将音频数据转换为WAV格式
+        const wavFile = await this.audioToWav(audio);
+        
+        // 将WAV文件转换为base64编码
+        const reader = new FileReader();
+        reader.readAsDataURL(wavFile);
+        reader.onloadend = () => {
+          const base64data = reader.result.split(',')[1]; // 移除前缀
+          
+          // 发送完整音频数据
+          this.asrWs.send(JSON.stringify({
+            type: 'audio_complete',
+            id: this.currentTranscriptionId,
+            audio: base64data,
+            format: 'wav'
+          }));
+        };
+      }
+    },
+
+    // WAV转换函数保持不变
     async audioToWav(audioData) {
       try {
         // 音频参数配置

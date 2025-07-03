@@ -1,7 +1,11 @@
 # -- coding: utf-8 --
+import base64
 from io import BytesIO
 import os
 import sys
+import wave
+
+import numpy as np
 # 在程序最开始设置
 if hasattr(sys, '_MEIPASS'):
     # 打包后的程序
@@ -17,7 +21,7 @@ import re
 import shutil
 import signal
 from urllib.parse import urlparse
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request, WebSocketDisconnect
 from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
@@ -28,7 +32,7 @@ from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
-from typing import List, Dict,Optional
+from typing import Any, List, Dict,Optional
 import shortuuid
 from py.mcp_clients import McpClient
 from contextlib import asynccontextmanager,suppress
@@ -3055,67 +3059,261 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
             )
 
 
-@app.post("/v1/audio/transcriptions")
-async def transcribe_audio_endpoint(
-    file: UploadFile = File(...),
-    model: str = Form("super-model")
-):
-    try:
-        current_settings = await load_settings()
-        model = model or 'super-model'
-        contents = await file.read()
-        audio_file = BytesIO(contents)
-        audio_file.name = file.filename  
-        response = None
-        if model == 'super-model':
-            if current_settings['asrSettings']['engine'] == "openai":
-                client = AsyncOpenAI(
-                    api_key=current_settings['asrSettings']['api_key'],
-                    base_url=current_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
-                )
-                response = await client.audio.transcriptions.create(
-                    file=audio_file,
-                    model=current_settings['asrSettings']['model'],
-                )
-        else:
-            agentSettings = current_settings['agents'].get(model, {})
-            if not agentSettings:
-                for agentId , agentConfig in current_settings['agents'].items():
-                    if current_settings['agents'][agentId]['name'] == model:
-                        agentSettings = current_settings['agents'][agentId]
-                        break
-            if not agentSettings:
-                return JSONResponse(
-                    status_code=404,
-                    content={"error": {"message": f"Agent {model} not found", "type": "not_found", "code": 404}}
-                )
-            if agentSettings['config_path']:
-                with open(agentSettings['config_path'], 'r' , encoding='utf-8') as f:
-                    agent_settings = json.load(f)
-            if agent_settings['asrSettings']['engine'] == "openai":
-                client = AsyncOpenAI(
-                    api_key=agent_settings['asrSettings']['api_key'],
-                    base_url=agent_settings['asrSettings']['base_url'] or "https://api.openai.com/v1"
-                )
+# 存储活跃的ASR WebSocket连接
+asr_connections = []
 
-                response = await client.audio.transcriptions.create(
-                    file=audio_file,
-                    model=agent_settings['asrSettings']['model'],
-                )
-        if response:
-            return JSONResponse(content={"text": response.text})
-        else:
-            return JSONResponse(
-                status_code=500,
-                content={"error": {"message": "ASR engine not found", "type": "server_error", "code": 500}}
-            )
-    except Exception as e:
-        print(e)
-        return JSONResponse(
-            status_code=500,
-            content={"error": {"message": str(e), "type": "server_error", "code": 500}}
+# 存储每个连接的音频帧数据
+audio_buffer: Dict[str, Dict[str, Any]] = {}
+
+# ASR流式处理队列
+asr_queue = asyncio.Queue()
+
+# 流式ASR处理器基类
+class StreamingASRProcessor:
+    async def process_frame(self, audio_frame: np.ndarray, session_id: str, frame_id: str) -> Optional[str]:
+        """处理单个音频帧，返回临时转写结果"""
+        raise NotImplementedError()
+    
+    async def finalize(self, session_id: str) -> Optional[str]:
+        """完成转写过程，返回最终结果"""
+        raise NotImplementedError()
+    
+    async def reset(self, session_id: str):
+        """重置处理器状态"""
+        raise NotImplementedError()
+
+# OpenAI流式ASR处理器
+class OpenAIStreamingASRProcessor(StreamingASRProcessor):
+    def __init__(self, api_key: str, base_url: str, model: str):
+        self.api_key = api_key
+        self.base_url = base_url
+        self.model = model
+        self.client = AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url or "https://api.openai.com/v1"
         )
+        # 存储每个会话的音频数据
+        self.sessions = {}
+    
+    async def process_frame(self, audio_frame: np.ndarray, session_id: str, frame_id: str) -> Optional[str]:
+        # OpenAI目前不支持真正的流式ASR，所以这里我们只收集音频帧
+        if session_id not in self.sessions:
+            self.sessions[session_id] = []
+        self.sessions[session_id].append(audio_frame)
+        return None  # 不返回临时结果
+    
+    async def finalize(self, session_id: str) -> Optional[str]:
+        # 处理完整音频
+        if session_id not in self.sessions:
+            return None
+        
+        # 合并所有音频帧
+        all_frames = np.concatenate(self.sessions[session_id])
+        
+        # 创建WAV文件
+        wav_file = BytesIO()
+        with wave.open(wav_file, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)  # 16-bit
+            wf.setframerate(16000)
+            wf.writeframes(all_frames.tobytes())
+        
+        wav_file.seek(0)
+        
+        # 调用OpenAI API
+        try:
+            response = await self.client.audio.transcriptions.create(
+                file=wav_file,
+                model=self.model,
+            )
+            return response.text
+        except Exception as e:
+            print(f"OpenAI ASR error: {e}")
+            return None
+        finally:
+            # 清理会话数据
+            del self.sessions[session_id]
+    
+    async def reset(self, session_id: str):
+        if session_id in self.sessions:
+            del self.sessions[session_id]
 
+# ASR处理器工厂
+async def get_asr_processor(settings: dict) -> StreamingASRProcessor:
+    """根据设置创建适当的ASR处理器"""
+    asr_settings = settings.get('asrSettings', {})
+    engine = asr_settings.get('engine', '')
+    
+    if engine == "openai":
+        return OpenAIStreamingASRProcessor(
+            api_key=asr_settings.get('api_key', ''),
+            base_url=asr_settings.get('base_url', ''),
+            model=asr_settings.get('model', 'whisper-1')
+        )
+ 
+    # 默认返回OpenAI处理器
+    return OpenAIStreamingASRProcessor(
+        api_key="",
+        base_url="https://api.openai.com/v1",
+        model="whisper-1"
+    )
+
+# ASR WebSocket处理
+@app.websocket("/asr_ws")
+async def asr_websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    # 生成唯一的连接ID
+    connection_id = str(uuid.uuid4())
+    asr_connections.append(websocket)
+    
+    # 客户端状态
+    client_state = {
+        "processor": None,
+        "is_streaming": False
+    }
+    
+    try:
+        
+        # 处理消息
+        async for message in websocket.iter_json():
+            msg_type = message.get("type")
+            
+            if msg_type == "init":
+                settings = await load_settings()
+                # 初始化请求
+                client_state["processor"] = await get_asr_processor(settings)
+                
+                # 检查是否支持流式ASR
+                asr_settings = settings.get('asrSettings', {})
+                client_state["is_streaming"] = asr_settings.get('streamingEnabled', False)
+            
+            elif msg_type == "audio_frame" or msg_type == "audio_start":
+                # 处理单帧音频数据
+                if not client_state["processor"]:
+                    continue
+                
+                frame_id = message.get("id")
+                audio_data = np.array(message.get("audio"), dtype=np.int16)
+                
+                if client_state["is_streaming"]:
+                    # 如果支持流式处理，则处理单帧
+                    result = await client_state["processor"].process_frame(
+                        audio_data, connection_id, frame_id
+                    )
+                    
+                    if result:
+                        # 发送临时转写结果
+                        await websocket.send_json({
+                            "type": "transcription",
+                            "id": frame_id,
+                            "text": result,
+                            "is_final": False
+                        })
+                else:
+                    # 非流式模式，只收集音频
+                    if connection_id not in audio_buffer:
+                        audio_buffer[connection_id] = {"frames": [], "current_id": frame_id}
+                    
+                    audio_buffer[connection_id]["frames"].append(audio_data)
+                    audio_buffer[connection_id]["current_id"] = frame_id
+            
+            elif msg_type == "audio_end":
+                # 语音结束信号
+                frame_id = message.get("id")
+                
+                if client_state["is_streaming"]:
+                    # 流式模式下完成处理
+                    final_result = await client_state["processor"].finalize(connection_id)
+                    if final_result:
+                        await websocket.send_json({
+                            "type": "transcription",
+                            "id": frame_id,
+                            "text": final_result,
+                            "is_final": True
+                        })
+                elif connection_id in audio_buffer:
+                    # 非流式模式下处理收集的音频
+                    frames = audio_buffer[connection_id]["frames"]
+                    if frames:
+                        all_audio = np.concatenate(frames)
+                        # 处理完整音频
+                        await client_state["processor"].process_frame(all_audio, connection_id, frame_id)
+                        final_result = await client_state["processor"].finalize(connection_id)
+                        
+                        if final_result:
+                            await websocket.send_json({
+                                "type": "transcription",
+                                "id": frame_id,
+                                "text": final_result,
+                                "is_final": True
+                            })
+                    
+                    # 清理缓冲区
+                    if connection_id in audio_buffer:
+                        del audio_buffer[connection_id]
+                
+                # 重置处理器状态
+                await client_state["processor"].reset(connection_id)
+            
+            elif msg_type == "audio_complete":
+                # 处理完整的音频数据（非流式模式）
+                frame_id = message.get("id")
+                audio_b64 = message.get("audio")
+                audio_format = message.get("format", "wav")
+                
+                if audio_b64:
+                    # 解码base64数据
+                    audio_bytes = base64.b64decode(audio_b64)
+                    audio_file = BytesIO(audio_bytes)
+                    audio_file.name = f"audio.{audio_format}"
+                    
+                    try:
+                        # 调用非流式API
+                        settings = await load_settings()
+                        
+                        asr_settings = settings.get('asrSettings', {})
+                        if asr_settings.get('engine') == "openai":
+                            client = AsyncOpenAI(
+                                api_key=asr_settings.get('api_key', ''),
+                                base_url=asr_settings.get('base_url', '') or "https://api.openai.com/v1"
+                            )
+                            response = await client.audio.transcriptions.create(
+                                file=audio_file,
+                                model=asr_settings.get('model', 'whisper-1'),
+                            )
+                            result = response.text
+                        else:
+                            result = "ASR engine not configured properly"
+                        
+                        # 发送结果
+                        await websocket.send_json({
+                            "type": "transcription",
+                            "id": frame_id,
+                            "text": result,
+                            "is_final": True
+                        })
+                    except Exception as e:
+                        print(f"ASR processing error: {e}")
+                        await websocket.send_json({
+                            "type": "error",
+                            "message": str(e)
+                        })
+    
+    except WebSocketDisconnect:
+        print(f"ASR WebSocket disconnected: {connection_id}")
+    except Exception as e:
+        print(f"ASR WebSocket error: {e}")
+    finally:
+        # 清理资源
+        if connection_id in audio_buffer:
+            del audio_buffer[connection_id]
+        if websocket in asr_connections:
+            asr_connections.remove(websocket)
+        
+        # 重置处理器状态
+        if client_state["processor"]:
+            await client_state["processor"].reset(connection_id)
 # 添加状态存储
 mcp_status = {}
 @app.post("/create_mcp")

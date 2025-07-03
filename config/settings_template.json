@@ -144,7 +144,8 @@
       "vendor": "OpenAI",
       "model": "",
       "base_url": "",
-      "api_key": ""
+      "api_key": "",
+      "streamingEnabled": false
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

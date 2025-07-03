@@ -333,6 +333,9 @@ let vue_data = {
     isRecording: false,
     vad: null,
     speechTimeout: null,
+    currentAudioChunks: [],
+    currentTranscriptionId: null,
+    speechStartTime: null,
     asrSettings: {
       enabled: false,
       engine: 'openai',
@@ -340,7 +343,8 @@ let vue_data = {
       vendor: "OpenAI",
       model: "",
       base_url: "",
-      api_key: ""
+      api_key: "",
+      streamingEnabled: false,
     },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
