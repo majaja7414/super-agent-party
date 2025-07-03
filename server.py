@@ -3179,7 +3179,7 @@ async def asr_websocket_endpoint(websocket: WebSocket):
         async for message in websocket.iter_json():
             msg_type = message.get("type")
             
-            if msg_type == "init":
+            if msg_type == "init"  or msg_type == "audio_start":
                 settings = await load_settings()
                 # 初始化请求
                 client_state["processor"] = await get_asr_processor(settings)
@@ -3188,7 +3188,7 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                 asr_settings = settings.get('asrSettings', {})
                 client_state["is_streaming"] = asr_settings.get('streamingEnabled', False)
             
-            elif msg_type == "audio_frame" or msg_type == "audio_start":
+            elif msg_type == "audio_frame":
                 # 处理单帧音频数据
                 if not client_state["processor"]:
                     continue

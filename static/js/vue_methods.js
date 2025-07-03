@@ -2056,6 +2056,12 @@ let vue_methods = {
         await this.autoSaveSettings();
       }
     },
+    async handleAsrEngineChange() {
+      if (this.asrSettings.engine === 'openai') {
+        this.asrSettings.streamingEnabled = false;
+      }
+      await this.autoSaveSettings();
+    },
     handleAsrProviderVisibleChange(visible) {
       if (!visible) {
         this.selectAsrProvider(this.asrSettings.selectedProvider);
