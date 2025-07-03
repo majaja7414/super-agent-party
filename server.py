@@ -3070,17 +3070,8 @@ asr_queue = asyncio.Queue()
 
 # 流式ASR处理器基类
 class StreamingASRProcessor:
-    async def process_frame(self, audio_frame: np.ndarray, session_id: str, frame_id: str) -> Optional[str]:
-        """处理单个音频帧，返回临时转写结果"""
-        raise NotImplementedError()
-    
-    async def finalize(self, session_id: str) -> Optional[str]:
-        """完成转写过程，返回最终结果"""
-        raise NotImplementedError()
-    
-    async def reset(self, session_id: str):
-        """重置处理器状态"""
-        raise NotImplementedError()
+    def __init__(self):
+        pass
 
 # OpenAI流式ASR处理器
 class OpenAIStreamingASRProcessor(StreamingASRProcessor):
