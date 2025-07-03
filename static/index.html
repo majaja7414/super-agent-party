@@ -1598,7 +1598,7 @@
                           {{ t('asrModel') }}
                         </span>
                       </div>
-                      <el-switch v-model="asrSettings.enabled" @click.stop @change="autoSaveSettings"/>
+                      <el-switch v-model="asrSettings.enabled" @click.stop @change="toggleASR"/>
                     </div>
                     <div class="tool-content">
                       <el-form-item :label="t('asrEngine')" class="form-item-align">

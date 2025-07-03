@@ -1055,31 +1055,7 @@ let vue_methods = {
           this.loadConversation(this.conversationId);
           if (this.asrSettings.enabled) {
             if (this.vad == null) {
-              // 初始化VAD
-              this.vad = await vad.MicVAD.new({
-                preSpeechPadFrames: 10,
-                onSpeechStart: () => {
-                  // 语音开始时的处理
-                  this.currentAudioChunks = []; // 重置当前音频块
-                  this.speechStartTime = Date.now(); // 记录开始时间
-                  this.currentTranscriptionId = Date.now().toString(); // 生成唯一ID
-                },
-                onFrameProcessed: (audio) => {
-                  // 处理每一帧音频数据
-                  if (this.asrWs && this.asrWs.readyState === WebSocket.OPEN && 
-                      this.asrSettings.streamingEnabled) {
-                    // 只有在启用流式模式时才发送音频帧
-                    this.sendAudioFrame(audio);
-                  } else if (this.currentAudioChunks) {
-                    // 非流式模式下，收集音频数据
-                    this.currentAudioChunks.push(audio);
-                  }
-                },
-                onSpeechEnd: (audio) => {
-                  // 语音结束时的处理
-                  this.handleSpeechEnd(audio);
-                },
-              });
+              await this.initVAD();
             }
             
             // 初始化ASR WebSocket
@@ -3538,22 +3514,7 @@ let vue_methods = {
           console.error('Invalid JSON from ASR server:', event.data);
           return;
         }
-
         if (data.type === 'transcription') {
-          // 处理流式ASR返回的临时结果
-          if (data.is_final === false) {
-            // 临时结果，替换最后一段语音的转写结果
-            if (this.lastTranscriptionId === data.id) {
-              // 如果是同一段语音的更新，替换上一次的结果
-              const parts = this.userInput.split(' ');
-              parts.pop(); // 移除最后一个词（上一次的临时结果）
-              this.userInput = parts.join(' ') + ' ' + data.text + ' ';
-            } else {
-              // 新的语音段落
-              this.lastTranscriptionId = data.id;
-              this.userInput += data.text + ' ';
-            }
-          } else {
             // 最终结果
             if (this.lastTranscriptionId === data.id) {
               // 替换同一段语音的最终结果
@@ -3565,7 +3526,6 @@ let vue_methods = {
               this.userInput += data.text + ' ';
             }
             this.lastTranscriptionId = null;
-          }
         } else if (data.type === 'error') {
           console.error('ASR error:', data.message);
           showNotification(this.t('transcriptionFailed'), 'error');
@@ -3593,32 +3553,7 @@ let vue_methods = {
       
       if (this.asrSettings.enabled) {
         if (this.vad == null) {
-          // 初始化VAD
-          this.vad = await vad.MicVAD.new({
-            preSpeechPadFrames: 10,
-            onSpeechStart: () => {
-              // 语音开始时的处理
-              this.currentAudioChunks = []; // 重置当前音频块
-              this.speechStartTime = Date.now(); // 记录开始时间
-              this.currentTranscriptionId = Date.now().toString(); // 生成唯一ID
-              this.handleSpeechStart();
-            },
-            onFrameProcessed: (audio) => {
-              // 处理每一帧音频数据
-              if (this.asrWs && this.asrWs.readyState === WebSocket.OPEN && 
-                  this.asrSettings.streamingEnabled) {
-                // 只有在启用流式模式时才发送音频帧
-                this.sendAudioFrame(audio);
-              } else if (this.currentAudioChunks) {
-                // 非流式模式下，收集音频数据
-                this.currentAudioChunks.push(audio);
-              }
-            },
-            onSpeechEnd: (audio) => {
-              // 语音结束时的处理
-              this.handleSpeechEnd(audio);
-            },
-          });
+          await this.initVAD();
         }
         
         // 初始化ASR WebSocket
@@ -3637,27 +3572,16 @@ let vue_methods = {
       }
     },
 
-    sendAudioFrame(audioFrame) {
-      // 发送单帧音频数据用于流式识别
-      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
-      
-      // 将Float32Array转换为Int16Array
-      const int16Array = new Int16Array(audioFrame.length);
-      for (let i = 0; i < audioFrame.length; i++) {
-        const sample = Math.max(-1, Math.min(1, audioFrame[i]));
-        int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
-      }
-      
-      // 发送音频数据和元数据
-      this.asrWs.send(JSON.stringify({
-        type: 'audio_frame',
-        id: this.currentTranscriptionId,
-        audio: Array.from(int16Array), // 转换为普通数组以便JSON序列化
-        sampleRate: 16000,
-        isEnd: false
-      }));
+    async initVAD(){
+              // 初始化VAD
+        this.vad = await vad.MicVAD.new({
+          preSpeechPadFrames: 10,
+          onSpeechEnd: (audio) => {
+            // 语音结束时的处理
+            this.handleSpeechEnd(audio);
+          },
+        });
     },
-
     async startRecording() {
       try {
         // 请求麦克风权限
@@ -3692,15 +3616,6 @@ let vue_methods = {
       }
       
       this.isRecording = false;
-    },
-
-    async handleSpeechStart() {
-      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
-      // 发送开始标记
-      this.asrWs.send(JSON.stringify({
-        type: 'audio_start',
-        id: this.currentTranscriptionId
-      }));
     },
 
     async handleSpeechEnd(audio) {
