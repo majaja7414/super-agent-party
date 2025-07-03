@@ -2060,6 +2060,9 @@ let vue_methods = {
       if (this.asrSettings.engine === 'openai') {
         this.asrSettings.streamingEnabled = false;
       }
+      if (this.asrSettings.engine === 'funasr') {
+        this.asrSettings.streamingEnabled = true;
+      }
       await this.autoSaveSettings();
     },
     handleAsrProviderVisibleChange(visible) {

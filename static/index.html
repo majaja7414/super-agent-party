@@ -1608,6 +1608,7 @@
                           class="full-width-input"
                         >
                         <el-option :label="t('openaiLike')" value="openai" ></el-option>
+                        <el-option label="FunASR" value="funasr" ></el-option>
                         </el-select>
                       </el-form-item>
                     </div>
@@ -1670,6 +1671,39 @@
                           </el-link>
                           {{ t('addProviderReturnSelect') }}
                           {{ t('addAsrNotice') }}
+                        </div>
+                      </template>
+                    </el-alert>
+                  </div>
+                  <div class="tool-item" v-show="asrSettings.engine === 'funasr'">
+                    <div class="tool-header">
+                      <div class="header-left">
+                        <span>
+                          <el-icon>
+                            <i class="fa-solid fa-microphone"></i>
+                          </el-icon>
+                          FunASR
+                        </span>
+                      </div>
+                    </div>
+                    <div class="tool-content">
+                      <el-form-item :label="t('funasrURL')" class="form-item-align">
+                        <el-input
+                          v-model="asrSettings.funasr_ws_url"
+                          :placeholder="t('funasrURLPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
+                    </div>
+                    <el-alert
+                      type="info"
+                      :closable="false"
+                      class="mb-2"
+                    >
+                      <template #default>
+                        <div class="alert-content">
+                          {{ t('funasrNotice') }}
                         </div>
                       </template>
                     </el-alert>

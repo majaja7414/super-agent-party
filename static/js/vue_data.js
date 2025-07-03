@@ -344,6 +344,7 @@ let vue_data = {
       model: "",
       base_url: "",
       api_key: "",
+      funasr_ws_url: "ws://localhost:10095",
       streamingEnabled: false,
     },
     modelTiles: [
