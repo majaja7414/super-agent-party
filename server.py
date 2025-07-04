@@ -3120,7 +3120,7 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict) -> str:
     """
     try:
         # 获取FunASR服务器地址
-        funasr_url = funasr_settings.get('url', 'ws://localhost:10095')
+        funasr_url = funasr_settings.get('funasr_ws_url', 'ws://localhost:10095')
         if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
             funasr_url = f"ws://{funasr_url}"
         
