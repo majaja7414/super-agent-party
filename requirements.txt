@@ -35,3 +35,4 @@ mem0ai
 pyinstaller
 e2b-code-interpreter
 qq-botpy
+scipy

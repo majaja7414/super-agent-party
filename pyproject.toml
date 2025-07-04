@@ -43,4 +43,5 @@ dependencies = [
     "langchain-exa>=0.3.0",
     "ollama>=0.5.1",
     "websocket-client>=1.8.0",
+    "scipy>=1.16.0",
 ]

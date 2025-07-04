@@ -3,9 +3,11 @@ import base64
 from io import BytesIO
 import os
 import sys
+import tempfile
 import wave
-
+from scipy.io import wavfile
 import numpy as np
+import websockets
 # 在程序最开始设置
 if hasattr(sys, '_MEIPASS'):
     # 打包后的程序
@@ -3065,6 +3067,166 @@ asr_connections = []
 # 存储每个连接的音频帧数据
 audio_buffer: Dict[str, Dict[str, Any]] = {}
 
+def convert_audio_to_pcm16(audio_bytes: bytes, target_sample_rate: int = 16000) -> bytes:
+    """
+    将音频数据转换为PCM16格式，采样率16kHz
+    """
+    try:
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+            temp_file.write(audio_bytes)
+            temp_file_path = temp_file.name
+        
+        try:
+            # 读取音频文件
+            sample_rate, audio_data = wavfile.read(temp_file_path)
+            
+            # 转换为单声道
+            if len(audio_data.shape) > 1:
+                audio_data = np.mean(audio_data, axis=1)
+            
+            # 转换为float32进行重采样
+            if audio_data.dtype != np.float32:
+                if audio_data.dtype == np.int16:
+                    audio_data = audio_data.astype(np.float32) / 32768.0
+                elif audio_data.dtype == np.int32:
+                    audio_data = audio_data.astype(np.float32) / 2147483648.0
+                else:
+                    audio_data = audio_data.astype(np.float32)
+            
+            # 重采样到目标采样率
+            if sample_rate != target_sample_rate:
+                from scipy.signal import resample
+                num_samples = int(len(audio_data) * target_sample_rate / sample_rate)
+                audio_data = resample(audio_data, num_samples)
+            
+            # 转换为int16 PCM格式
+            audio_data = (audio_data * 32767).astype(np.int16)
+            
+            return audio_data.tobytes()
+            
+        finally:
+            # 删除临时文件
+            os.unlink(temp_file_path)
+            
+    except Exception as e:
+        print(f"Audio conversion error: {e}")
+        # 如果转换失败，尝试直接返回原始数据
+        return audio_bytes
+
+async def funasr_recognize(audio_data: bytes, funasr_settings: dict) -> str:
+    """
+    使用FunASR进行语音识别
+    """
+    try:
+        # 获取FunASR服务器地址
+        funasr_url = funasr_settings.get('url', 'ws://localhost:10095')
+        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+            funasr_url = f"ws://{funasr_url}"
+        
+        # 连接到FunASR服务器
+        async with websockets.connect(funasr_url) as websocket:
+            print(f"Connected to FunASR server: {funasr_url}")
+            
+            # 1. 发送初始化配置
+            init_config = {
+                "chunk_size": [5, 10, 5],
+                "wav_name": "python_client",
+                "is_speaking": True,
+                "chunk_interval": 10,
+                "mode": "offline",  # 使用离线模式
+                "hotwords": None,
+                "use_itn": True
+            }
+            
+            await websocket.send(json.dumps(init_config))
+            print("Sent init config")
+            
+            # 2. 转换音频数据为PCM16格式
+            pcm_data = convert_audio_to_pcm16(audio_data)
+            print(f"PCM data length: {len(pcm_data)} bytes")
+            
+            # 3. 分块发送音频数据
+            chunk_size = 960  # 30ms的音频数据 (16000 * 0.03 * 2 = 960字节)
+            total_sent = 0
+            
+            while total_sent < len(pcm_data):
+                chunk_end = min(total_sent + chunk_size, len(pcm_data))
+                chunk = pcm_data[total_sent:chunk_end]
+                
+                # 发送二进制PCM数据
+                await websocket.send(chunk)
+                total_sent = chunk_end
+                
+                # 添加小延迟，模拟实时音频流
+                await asyncio.sleep(0.003)  # 3ms
+            
+            print(f"Sent all audio data: {total_sent} bytes")
+            
+            # 4. 发送结束信号
+            end_config = {
+                "chunk_size": [5, 10, 5],
+                "wav_name": "python_client",
+                "is_speaking": False,
+                "chunk_interval": 10,
+                "mode": "offline",
+                "hotwords": None,
+                "use_itn": True
+            }
+            
+            await websocket.send(json.dumps(end_config))
+            print("Sent end signal")
+            
+            # 5. 等待识别结果
+            result_text = ""
+            timeout_count = 0
+            max_timeout = 200  # 最大等待20秒
+            
+            while timeout_count < max_timeout:
+                try:
+                    # 等待响应消息
+                    response = await asyncio.wait_for(websocket.recv(), timeout=0.1)
+                    
+                    try:
+                        # 尝试解析JSON响应
+                        json_response = json.loads(response)
+                        print(f"Received response: {json_response}")
+                        
+                        if 'text' in json_response:
+                            text = json_response['text']
+                            if text and text.strip():
+                                result_text += text
+                                print(f"Got text: {text}")
+                            
+                            # 检查是否为最终结果
+                            if json_response.get('is_final', False):
+                                print("Got final result")
+                                break
+                                
+                    except json.JSONDecodeError:
+                        # 如果不是JSON格式，可能是二进制数据，忽略
+                        print(f"Non-JSON response: {response}")
+                        pass
+                        
+                except asyncio.TimeoutError:
+                    timeout_count += 1
+                    continue
+                except websockets.exceptions.ConnectionClosed:
+                    print("WebSocket connection closed")
+                    break
+            
+            if not result_text:
+                print("No recognition result received")
+                return ""
+            
+            return result_text.strip()
+            
+    except Exception as e:
+        print(f"FunASR recognition error: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"FunASR识别错误: {str(e)}"
+
 # ASR WebSocket处理
 @app.websocket("/asr_ws")
 async def asr_websocket_endpoint(websocket: WebSocket):
@@ -3075,13 +3237,15 @@ async def asr_websocket_endpoint(websocket: WebSocket):
     asr_connections.append(websocket)
     
     try:
-        
         # 处理消息
         async for message in websocket.iter_json():
             msg_type = message.get("type")
             
             if msg_type == "init":
-                pass
+                await websocket.send_json({
+                    "type": "init_response",
+                    "status": "ready"
+                })
  
             elif msg_type == "audio_complete":
                 # 处理完整的音频数据（非流式模式）
@@ -3092,15 +3256,21 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                 if audio_b64:
                     # 解码base64数据
                     audio_bytes = base64.b64decode(audio_b64)
-                    audio_file = BytesIO(audio_bytes)
-                    audio_file.name = f"audio.{audio_format}"
+                    print(f"Received audio data: {len(audio_bytes)} bytes, format: {audio_format}")
                     
                     try:
-                        # 调用非流式API
+                        # 加载设置
                         settings = await load_settings()
-                        
                         asr_settings = settings.get('asrSettings', {})
-                        if asr_settings.get('engine') == "openai":
+                        asr_engine = asr_settings.get('engine', 'openai')
+                        
+                        result = ""
+                        
+                        if asr_engine == "openai":
+                            # OpenAI ASR
+                            audio_file = BytesIO(audio_bytes)
+                            audio_file.name = f"audio.{audio_format}"
+                            
                             client = AsyncOpenAI(
                                 api_key=asr_settings.get('api_key', ''),
                                 base_url=asr_settings.get('base_url', '') or "https://api.openai.com/v1"
@@ -3110,8 +3280,16 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                                 model=asr_settings.get('model', 'whisper-1'),
                             )
                             result = response.text
+                            
+                        elif asr_engine == "funasr":
+                            # FunASR
+                            print("Using FunASR engine")
+                            result = await funasr_recognize(audio_bytes, asr_settings)
+                            
                         else:
                             result = "ASR engine not configured properly"
+                        
+                        print(f"ASR result: {result}")
                         
                         # 发送结果
                         await websocket.send_json({
@@ -3120,8 +3298,11 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                             "text": result,
                             "is_final": True
                         })
+                        
                     except Exception as e:
                         print(f"ASR processing error: {e}")
+                        import traceback
+                        traceback.print_exc()
                         await websocket.send_json({
                             "type": "error",
                             "message": str(e)
@@ -3131,6 +3312,8 @@ async def asr_websocket_endpoint(websocket: WebSocket):
         print(f"ASR WebSocket disconnected: {connection_id}")
     except Exception as e:
         print(f"ASR WebSocket error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         # 清理资源
         if connection_id in audio_buffer:

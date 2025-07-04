@@ -2033,12 +2033,6 @@ let vue_methods = {
       }
     },
     async handleAsrEngineChange() {
-      if (this.asrSettings.engine === 'openai') {
-        this.asrSettings.streamingEnabled = false;
-      }
-      if (this.asrSettings.engine === 'funasr') {
-        this.asrSettings.streamingEnabled = true;
-      }
       await this.autoSaveSettings();
     },
     handleAsrProviderVisibleChange(visible) {
@@ -3622,13 +3616,6 @@ let vue_methods = {
       // 语音结束时的处理
       if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
       
-      // 如果是流式模式，发送结束标记
-      if (this.asrSettings.streamingEnabled) {
-        this.asrWs.send(JSON.stringify({
-          type: 'audio_end',
-          id: this.currentTranscriptionId
-        }));
-      } else {
         // 非流式模式，发送完整音频数据
         // 将音频数据转换为WAV格式
         const wavFile = await this.audioToWav(audio);
@@ -3647,7 +3634,6 @@ let vue_methods = {
             format: 'wav'
           }));
         };
-      }
     },
 
     // WAV转换函数保持不变
