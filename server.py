@@ -3114,7 +3114,7 @@ def convert_audio_to_pcm16(audio_bytes: bytes, target_sample_rate: int = 16000) 
         # 如果转换失败，尝试直接返回原始数据
         return audio_bytes
 
-async def funasr_recognize(audio_data: bytes, funasr_settings: dict) -> str:
+async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocket,frame_id) -> str:
     """
     使用FunASR进行语音识别
     """
@@ -3157,9 +3157,6 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict) -> str:
                 # 发送二进制PCM数据
                 await websocket.send(chunk)
                 total_sent = chunk_end
-                
-                # 添加小延迟，模拟实时音频流
-                await asyncio.sleep(0.003)  # 3ms
             
             print(f"Sent all audio data: {total_sent} bytes")
             
@@ -3197,7 +3194,13 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict) -> str:
                             if text and text.strip():
                                 result_text += text
                                 print(f"Got text: {text}")
-                            
+                                # 发送结果
+                                await ws.send_json({
+                                    "type": "transcription",
+                                    "id": frame_id,
+                                    "text": result_text,
+                                    "is_final": True
+                                })
                             # 检查是否为最终结果
                             if json_response.get('is_final', False):
                                 print("Got final result")
@@ -3280,24 +3283,24 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                                 model=asr_settings.get('model', 'whisper-1'),
                             )
                             result = response.text
-                            
+                            # 发送结果
+                            await websocket.send_json({
+                                "type": "transcription",
+                                "id": frame_id,
+                                "text": result,
+                                "is_final": True
+                            })
                         elif asr_engine == "funasr":
                             # FunASR
                             print("Using FunASR engine")
-                            result = await funasr_recognize(audio_bytes, asr_settings)
+                            result = await funasr_recognize(audio_bytes, asr_settings,websocket,frame_id)
                             
                         else:
                             result = "ASR engine not configured properly"
                         
                         print(f"ASR result: {result}")
                         
-                        # 发送结果
-                        await websocket.send_json({
-                            "type": "transcription",
-                            "id": frame_id,
-                            "text": result,
-                            "is_final": True
-                        })
+
                         
                     except Exception as e:
                         print(f"ASR processing error: {e}")
