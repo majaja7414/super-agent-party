@@ -502,6 +502,9 @@ const translations = {
       'asrModel': '语音识别模型',
       'asrEngine': '语音识别接口',
       'asr': '语音识别',
+      'funasrURL': 'FunASR URL',
+      'funasrURLPlaceholder': '请输入FunASR URL',
+      'funasrNotice': '请在docker中启动FunASR服务，docker run -d harryliu888/funasr-online-server:latest',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1005,5 +1008,8 @@ const translations = {
       'asrModel': 'ASR Model',
       'asrEngine': 'ASR Engine',
       'asr': 'ASR',
+      'funasrURL': 'FunASR URL',
+      'funasrURLPlaceholder': 'Please enter the FunASR URL',
+      'FunasrNotice ':' Please start the FunASR service in docker, docker run -d harryliu888/funasr-online-server:latest',
     }
   };
