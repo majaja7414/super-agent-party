@@ -1606,9 +1606,42 @@
                           @change="handleAsrEngineChange"
                           class="full-width-input"
                         >
-                        <el-option :label="t('openaiLike')" value="openai" ></el-option>
-                        <el-option label="FunASR" value="funasr" ></el-option>
+                          <el-option :label="t('openaiLike')" value="openai" ></el-option>
+                          <el-option label="FunASR" value="funasr" ></el-option>
                         </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('interactionMethod')" class="form-item-align">
+                        <el-select
+                          v-model="asrSettings.interactionMethod"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option :label="t('auto')" value="auto" ></el-option>
+                          <el-option :label="t('manual')" value="manual" ></el-option>
+                          <el-option :label="t('wakeWord')" value="wakeWord" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('hotkey')" class="form-item-align">
+                        <el-select
+                          v-model="asrSettings.hotkey"
+                          @change="autoSaveSettings"
+                          class="full-width-input"
+                        >
+                          <el-option label="Alt" value="Alt" ></el-option>
+                          <el-option :label="t('Space')" value=" " ></el-option>
+                          <el-option label="Ctrl" value="Control" ></el-option>
+                          <el-option label="Shift" value="Shift" ></el-option>
+                          <el-option label="CapsLock" value="CapsLock" ></el-option>
+                          <el-option label="Tab" value="Tab" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('wakeWordMode')" class="form-item-align">
+                        <el-input
+                          v-model="asrSettings.wakeWord"
+                          :placeholder="t('wakeWordPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
                       </el-form-item>
                     </div>
                   </div>
@@ -1714,6 +1747,15 @@
                           <el-option :label="t('offline')" value="offline" ></el-option>
                         </el-select>
                       </el-form-item>
+                      <el-form-item :label="t('hotwords')" class="form-item-align">
+                        <el-input
+                          v-model="asrSettings.hotwords"
+                          :placeholder="t('hotwordsPlaceholder')"
+                          @input="autoSaveSettings"
+                          type="textarea"
+                          :rows="2"
+                        />
+                      </el-form-item>
                     </div>
                     <el-alert
                       type="info"
@@ -1722,7 +1764,8 @@
                     >
                       <template #default>
                         <div class="alert-content">
-                          {{ t('funasrNotice') }}
+                          {{ t('funasrNotice1') }}<br>
+                          {{ t('funasrNotice2') }}
                         </div>
                       </template>
                     </el-alert>

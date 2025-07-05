@@ -3121,6 +3121,7 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocke
     try:
         # 获取FunASR服务器地址
         funasr_url = funasr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+        hotwords = funasr_settings.get('hotwords', '')
         if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
             funasr_url = f"ws://{funasr_url}"
         
@@ -3135,7 +3136,7 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocke
                 "is_speaking": True,
                 "chunk_interval": 10,
                 "mode": "offline",  # 使用离线模式
-                "hotwords": None,
+                "hotwords": hotwords_to_json(hotwords),
                 "use_itn": True
             }
             
@@ -3162,13 +3163,7 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocke
             
             # 4. 发送结束信号
             end_config = {
-                "chunk_size": [5, 10, 5],
-                "wav_name": "python_client",
                 "is_speaking": False,
-                "chunk_interval": 10,
-                "mode": "offline",
-                "hotwords": None,
-                "use_itn": True
             }
             
             await websocket.send(json.dumps(end_config))
@@ -3230,6 +3225,39 @@ async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocke
         traceback.print_exc()
         return f"FunASR识别错误: {str(e)}"
 
+def hotwords_to_json(input_str):
+    # 初始化结果字典
+    result = {}
+    
+    # 按行分割输入字符串
+    lines = input_str.split('\n')
+    
+    for line in lines:
+        # 清理行首尾的空白字符
+        cleaned_line = line.strip()
+        
+        # 跳过空行
+        if not cleaned_line:
+            continue
+            
+        # 分割词语和权重
+        parts = cleaned_line.rsplit(' ', 1)  # 从右边分割一次
+        
+        if len(parts) != 2:
+            continue  # 跳过格式不正确的行
+            
+        word = parts[0].strip()
+        try:
+            weight = int(parts[1])
+        except ValueError:
+            continue  # 跳过权重不是数字的行
+            
+        # 添加到结果字典
+        result[word] = weight
+    
+    # 转换为JSON字符串
+    return json.dumps(result, ensure_ascii=False)
+
 # ASR WebSocket处理
 @app.websocket("/asr_ws")
 async def asr_websocket_endpoint(websocket: WebSocket):
@@ -3277,6 +3305,7 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                 asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
                 if asr_engine == "funasr":
                     funasr_mode = asr_settings.get('funasr_mode', '2pass')  # 存储模式
+                    hotwords = asr_settings.get('hotwords', '')
                     if funasr_mode == "2pass":
                         # 获取FunASR服务器地址
                         funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
@@ -3293,7 +3322,7 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                                 "is_speaking": True,
                                 "chunk_interval": 10,
                                 "mode": funasr_mode,  
-                                "hotwords": None,
+                                "hotwords": hotwords_to_json(hotwords),
                                 "use_itn": True
                             }
                             await funasr_websocket.send(json.dumps(init_config))

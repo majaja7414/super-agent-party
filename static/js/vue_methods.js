@@ -1086,7 +1086,8 @@ let vue_methods = {
       };
     },
 
-    handleKeyDown(event) {
+    async handleKeyDown(event) {
+      if (event.repeat) return;
       if (event.key === 'Enter') {
         if (event.shiftKey) {
           // 如果同时按下了Shift键，则不阻止默认行为，允许换行
@@ -1094,9 +1095,23 @@ let vue_methods = {
         } else {
           // 阻止默认行为，防止表单提交或新行插入
           event.preventDefault();
-          this.sendMessage();
+          await this.sendMessage();
         }
       }
+      if (event.key === this.asrSettings.hotkey) {
+        event.preventDefault();
+        this.asrSettings.enabled = false;
+        await this.toggleASR();
+      }
+    },
+    async handleKeyUp(event) {
+      if (event.repeat) return;
+      if (event.key === this.asrSettings.hotkey) {
+        event.preventDefault();
+        this.asrSettings.enabled = true;
+        await this.toggleASR();
+        await this.sendMessage();
+      }  
     },
     escapeHtml(unsafe) {
       return unsafe
@@ -3520,6 +3535,17 @@ let vue_methods = {
               this.userInput += data.text;
               this.userInputBuffer = '';
             }
+            if (this.asrSettings.interactionMethod == "auto"){
+              this.sendMessage();
+            }
+            if (this.asrSettings.interactionMethod == "wakeWord"){
+              if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())){
+                this.sendMessage();
+              }
+              else {
+                this.userInput = '';
+              }
+            }
           }
           else {
             // 临时结果
@@ -3575,7 +3601,7 @@ let vue_methods = {
     async initVAD(){
         // 初始化VAD
         this.vad = await vad.MicVAD.new({
-          preSpeechPadFrames: 10,
+          preSpeechPadFrames: 20,
           onSpeechStart: () => {
             // 语音开始时的处理
             this.handleSpeechStart();

@@ -346,6 +346,10 @@ let vue_data = {
       api_key: "",
       funasr_ws_url: "ws://localhost:10095",
       funasr_mode: "2pass",
+      interactionMethod: "auto",
+      hotkey : "Alt",
+      wakeWord: "小派",
+      hotwords: "小派 40\nagent party 60",
     },
     userInputBuffer: '',
     modelTiles: [
