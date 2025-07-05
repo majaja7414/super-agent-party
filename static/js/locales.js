@@ -519,6 +519,9 @@ const translations = {
       'Space':'空格',
       'hotwords': '热词',
       'hotwordsPlaceholder': '请输入热词',
+      'ttsModel': '语音合成模型',
+      'asrReady': '语音识别已准备就绪',
+      'ttsEngine': '语音合成接口',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1039,5 +1042,8 @@ const translations = {
       'Space':'Space',
       'hotwords': 'Hot words',
       'hotwordsPlaceholder': 'Please enter the hot words',
+      'ttsModel': 'TTS Model',
+      'asrReady': 'ASR Ready',
+      'ttsEngine': 'TTS Engine',
     }
   };

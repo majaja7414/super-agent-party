@@ -2047,9 +2047,6 @@ let vue_methods = {
         await this.autoSaveSettings();
       }
     },
-    async handleAsrEngineChange() {
-      await this.autoSaveSettings();
-    },
     handleAsrProviderVisibleChange(visible) {
       if (!visible) {
         this.selectAsrProvider(this.asrSettings.selectedProvider);
@@ -3555,6 +3552,10 @@ let vue_methods = {
         } else if (data.type === 'error') {
           console.error('ASR error:', data.message);
           showNotification(this.t('transcriptionFailed'), 'error');
+        } else if (data.type === 'init_response') {
+          if (data.status === 'ready') {
+            showNotification(this.t('asrReady'), 'success');
+          }
         }
       };
 
@@ -3577,6 +3578,28 @@ let vue_methods = {
       this.asrSettings.enabled = !this.asrSettings.enabled;
       this.autoSaveSettings();
       
+      if (this.asrSettings.enabled) {
+        if (this.vad == null) {
+          await this.initVAD();
+        }
+        
+        // 初始化ASR WebSocket
+        await this.initASRWebSocket();
+        
+        // 开始录音
+        await this.startRecording();
+      } else {
+        this.stopRecording();
+        
+        // 关闭ASR WebSocket
+        if (this.asrWs) {
+          this.asrWs.close();
+          this.asrWs = null;
+        }
+      }
+    },
+
+    async handleASRchange() {
       if (this.asrSettings.enabled) {
         if (this.vad == null) {
           await this.initVAD();

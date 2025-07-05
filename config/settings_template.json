@@ -150,7 +150,11 @@
       "interactionMethod": "auto",
       "hotkey" : "Alt",
       "wakeWord": "小派",
-      "hotwords": "小派 40\nagent party 60"
+      "hotwords": "小派 80\nagent party 60"
+    },
+    "ttsSettings": {
+      "enabled": false,
+      "engine": "edgetts"
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

@@ -349,9 +349,13 @@ let vue_data = {
       interactionMethod: "auto",
       hotkey : "Alt",
       wakeWord: "小派",
-      hotwords: "小派 40\nagent party 60",
+      hotwords: "小派 80\nagent party 60",
     },
     userInputBuffer: '',
+    ttsSettings: {
+      enabled: false,
+      engine: 'edgetts',
+    },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },
@@ -359,6 +363,7 @@ let vue_data = {
       { id: 'vision', title: 'visionModel' , icon: 'fa-solid fa-camera'},
       { id: 'text2img', title: 'text2imgModel', icon: 'fa-solid fa-pencil' },
       { id: 'asr', title: 'asrModel', icon: 'fa-solid fa-microphone' },
+      { id: 'tts', title: 'ttsModel', icon: 'fa-solid fa-volume-high' },
     ],
     toolkitTiles: [
       { id: 'tools', title: 'utilityTools', icon: 'fa-solid fa-screwdriver-wrench' },
