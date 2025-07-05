@@ -345,7 +345,9 @@ let vue_data = {
       base_url: "",
       api_key: "",
       funasr_ws_url: "ws://localhost:10095",
+      funasr_mode: "2pass",
     },
+    userInputBuffer: '',
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },

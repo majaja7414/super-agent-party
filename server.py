@@ -3238,6 +3238,10 @@ async def asr_websocket_endpoint(websocket: WebSocket):
     # 生成唯一的连接ID
     connection_id = str(uuid.uuid4())
     asr_connections.append(websocket)
+    funasr_websocket = None
+    # 新增：连接状态跟踪变量
+    asr_engine = None
+    funasr_mode = None
     
     try:
         # 处理消息
@@ -3245,11 +3249,105 @@ async def asr_websocket_endpoint(websocket: WebSocket):
             msg_type = message.get("type")
             
             if msg_type == "init":
+                # 加载设置
+                settings = await load_settings()
+                asr_settings = settings.get('asrSettings', {})
+                asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                if asr_engine == "funasr":
+                    funasr_mode = asr_settings.get('funasr_mode', 'openai')  # 存储模式
+                    if funasr_mode == "2pass" or funasr_mode == "online":
+                        # 获取FunASR服务器地址
+                        funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                            funasr_url = f"ws://{funasr_url}"
+                        try:
+                            funasr_websocket = await websockets.connect(funasr_url)
+                        except Exception as e:
+                            funasr_websocket = None
+                            print(f"连接FunASR失败: {e}")
                 await websocket.send_json({
                     "type": "init_response",
                     "status": "ready"
                 })
- 
+            elif msg_type == "audio_start":
+                frame_id = message.get("id")
+                # 加载设置
+                settings = await load_settings()
+                asr_settings = settings.get('asrSettings', {})
+                asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                if asr_engine == "funasr":
+                    funasr_mode = asr_settings.get('funasr_mode', '2pass')  # 存储模式
+                    if funasr_mode == "2pass":
+                        # 获取FunASR服务器地址
+                        funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                            funasr_url = f"ws://{funasr_url}"
+                        try:
+                            if not funasr_websocket:
+                                # 连接到FunASR服务器 
+                                funasr_websocket = await websockets.connect(funasr_url)
+                            # 1. 发送初始化配置
+                            init_config = {
+                                "chunk_size": [5, 10, 5],
+                                "wav_name": "python_client",
+                                "is_speaking": True,
+                                "chunk_interval": 10,
+                                "mode": funasr_mode,  
+                                "hotwords": None,
+                                "use_itn": True
+                            }
+                            await funasr_websocket.send(json.dumps(init_config))
+                            print("Sent init config")
+                            # 2. 开启一个异步任务处理FunASR的响应
+                            asyncio.create_task(handle_funasr_response(funasr_websocket, websocket))
+                        except Exception as e:
+                            print(f"连接FunASR失败: {e}")
+                            await websocket.send_json({
+                                "type": "error",
+                                "message": f"无法连接FunASR服务器: {str(e)}"
+                            })
+                            # 标记连接失败，避免后续操作
+                            funasr_websocket = None
+                    else:
+                        # 关闭异步任务处理FunASR的响应
+                        funasr_websocket = None
+                else:
+                    # 关闭异步任务处理FunASR的响应
+                    funasr_websocket = None
+            # 修改点：增加流式音频处理前的检查
+            elif msg_type == "audio_stream":
+                frame_id = message.get("id")
+                audio_base64 = message.get("audio")
+
+                # 关键检查：确保funasr_websocket已初始化
+                if not funasr_websocket:
+                    continue  # 跳过当前消息处理
+
+                if audio_base64:
+                    # 1. Base64 解码 → 得到二进制 PCM (Int16)
+                    pcm_data = base64.b64decode(audio_base64)
+
+                    # 2. 直接转发二进制给 FunASR
+                    try:
+                        await funasr_websocket.send(pcm_data)
+                    except websockets.exceptions.ConnectionClosed:
+                        funasr_websocket = None
+                        # 加载设置
+                        settings = await load_settings()
+                        asr_settings = settings.get('asrSettings', {})
+                        asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                        if asr_engine == "funasr":
+                            funasr_mode = asr_settings.get('funasr_mode', '2pass')  # 存储模式
+                            if funasr_mode == "2pass":
+                                # 获取FunASR服务器地址
+                                funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                                if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                                    funasr_url = f"ws://{funasr_url}"
+                                try:
+                                    funasr_websocket = await websockets.connect(funasr_url)
+                                except Exception as e:
+                                    funasr_websocket = None
+                                    print(f"连接FunASR失败: {e}")
             elif msg_type == "audio_complete":
                 # 处理完整的音频数据（非流式模式）
                 frame_id = message.get("id")
@@ -3293,36 +3391,90 @@ async def asr_websocket_endpoint(websocket: WebSocket):
                         elif asr_engine == "funasr":
                             # FunASR
                             print("Using FunASR engine")
-                            result = await funasr_recognize(audio_bytes, asr_settings,websocket,frame_id)
-                            
-                        else:
-                            result = "ASR engine not configured properly"
-                        
-                        print(f"ASR result: {result}")
-                        
-
-                        
+                            funasr_mode = asr_settings.get('funasr_mode', 'offline')
+                            if funasr_mode == "offline":
+                                result = await funasr_recognize(audio_bytes, asr_settings,websocket,frame_id)
+                            else:
+                                # 关键检查：确保连接有效
+                                if not funasr_websocket:
+                                    continue
+                                
+                                # 4. 发送结束信号
+                                end_config = {
+                                    "is_speaking": False  # 只需发送必要的结束标记
+                                }
+                                try:
+                                    await funasr_websocket.send(json.dumps(end_config))
+                                    print("Sent end signal")
+                                except websockets.exceptions.ConnectionClosed:
+                                    print("FunASR连接已关闭，无法发送结束信号")
+                            funasr_websocket = None
+                    except WebSocketDisconnect:
+                        print(f"ASR WebSocket disconnected: {connection_id}")
                     except Exception as e:
-                        print(f"ASR processing error: {e}")
+                        print(f"ASR WebSocket error: {e}")
                         import traceback
                         traceback.print_exc()
-                        await websocket.send_json({
-                            "type": "error",
-                            "message": str(e)
-                        })
-    
-    except WebSocketDisconnect:
-        print(f"ASR WebSocket disconnected: {connection_id}")
-    except Exception as e:
-        print(f"ASR WebSocket error: {e}")
-        import traceback
-        traceback.print_exc()
     finally:
         # 清理资源
         if connection_id in audio_buffer:
             del audio_buffer[connection_id]
         if websocket in asr_connections:
             asr_connections.remove(websocket)
+        # 新增：确保关闭FunASR连接
+        if funasr_websocket:
+            await funasr_websocket.close()
+
+
+async def handle_funasr_response(funasr_websocket, 
+                               client_websocket: WebSocket):
+    """
+    处理 FunASR 服务器的响应，并将结果转发给客户端
+    """
+    try:
+        async for message in funasr_websocket:
+            try:
+                if funasr_websocket:
+                    # FunASR 返回的数据可能是 JSON 或二进制
+                    if isinstance(message, bytes):
+                        message = message.decode('utf-8')
+                    
+                    data = json.loads(message)
+                    print(f"FunASR response: {data}")
+                    # 解析 FunASR 响应
+                    if "text" in data:  # 普通识别结果
+                        if data.get('mode', '') == "2pass-online":
+                            await client_websocket.send_json({
+                                "type": "transcription",
+                                "text": data["text"],
+                                "is_final": False
+                            })
+                        else:
+                            await client_websocket.send_json({
+                                "type": "transcription",
+                                "text": data["text"],
+                                "is_final": True
+                            })
+                    elif "mode" in data:  # 初始化响应
+                        print(f"FunASR initialized: {data}")
+                    else:
+                        print(f"Unknown FunASR response: {data}")
+                else:
+                    # 如果 FunASR 连接关闭，发送错误消息，退出循环，结束任务
+            
+                    break
+            except json.JSONDecodeError:
+                print(f"FunASR sent non-JSON data: {message[:100]}...")
+            except Exception as e:
+                print(f"Error processing FunASR response: {e}")
+                break
+
+    except websockets.exceptions.ConnectionClosed:
+        print("FunASR connection closed")
+    except Exception as e:
+        print(f"FunASR handler error: {e}")
+    finally:
+        await funasr_websocket.close()
 
 # 添加状态存储
 mcp_status = {}

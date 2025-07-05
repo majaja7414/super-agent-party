@@ -3509,17 +3509,23 @@ let vue_methods = {
           return;
         }
         if (data.type === 'transcription') {
+          if (data.is_final) {
             // 最终结果
-            if (this.lastTranscriptionId === data.id) {
-              // 替换同一段语音的最终结果
-              const parts = this.userInput.split(' ');
-              parts.pop(); // 移除最后一个词
-              this.userInput = parts.join(' ') + ' ' + data.text + ' ';
+            if (this.userInputBuffer.length > 0) {
+              // 用data.text替换this.userInput中最后一个this.userInputBuffer
+              this.userInput = this.userInput.slice(0, -this.userInputBuffer.length) + data.text;
+              this.userInputBuffer = '';
             } else {
-              // 新的最终结果
-              this.userInput += data.text + ' ';
+              // 如果没有临时结果，直接添加到userInput
+              this.userInput += data.text;
+              this.userInputBuffer = '';
             }
-            this.lastTranscriptionId = null;
+          }
+          else {
+            // 临时结果
+            this.userInput += data.text;
+            this.userInputBuffer += data.text;
+          }
         } else if (data.type === 'error') {
           console.error('ASR error:', data.message);
           showNotification(this.t('transcriptionFailed'), 'error');
@@ -3567,9 +3573,19 @@ let vue_methods = {
     },
 
     async initVAD(){
-              // 初始化VAD
+        // 初始化VAD
         this.vad = await vad.MicVAD.new({
           preSpeechPadFrames: 10,
+          onSpeechStart: () => {
+            // 语音开始时的处理
+            this.handleSpeechStart();
+          },
+          onFrameProcessed: (probabilities, frame) => {
+            // 处理每一帧
+            if (probabilities["isSpeech"] > 0.3){
+              this.handleFrameProcessed(frame);
+            }
+          },
           onSpeechEnd: (audio) => {
             // 语音结束时的处理
             this.handleSpeechEnd(audio);
@@ -3611,7 +3627,51 @@ let vue_methods = {
       
       this.isRecording = false;
     },
+    async handleSpeechStart() {
+      // 语音开始时的处理
+      this.currentTranscriptionId = uuid.v4();
+      this.frame_buffer = [];
+      this.asrWs.send(JSON.stringify({
+        type: 'audio_start',
+        id: this.currentTranscriptionId,
+      }));
+    },
 
+    async handleFrameProcessed(frame) {
+      // 新增检查：确保 frame 存在且是 Float32Array
+      if (!frame || !(frame instanceof Float32Array)) {
+        console.error('Invalid audio frame:', frame);
+        return;
+      }
+
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) {
+        console.warn('WebSocket not ready');
+        return;
+      }
+
+      try {
+        // 转换和处理逻辑...
+        const int16Pcm = new Int16Array(frame.length);
+        for (let i = 0; i < frame.length; i++) {
+          int16Pcm[i] = Math.max(-32768, Math.min(32767, frame[i] * 32767));
+        }
+
+        const base64Audio = btoa(
+          String.fromCharCode(...new Uint8Array(int16Pcm.buffer))
+        );
+
+        this.asrWs.send(JSON.stringify({
+          type: 'audio_stream',
+          id: this.currentTranscriptionId,
+          audio: base64Audio,
+          format: 'pcm',
+          sample_rate: 16000 // 明确采样率
+        }));
+
+      } catch (e) {
+        console.error('Frame processing error:', e);
+      }
+    },
     async handleSpeechEnd(audio) {
       // 语音结束时的处理
       if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;

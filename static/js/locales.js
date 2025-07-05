@@ -505,6 +505,9 @@ const translations = {
       'funasrURL': 'FunASR URL',
       'funasrURLPlaceholder': '请输入FunASR URL',
       'funasrNotice': '请在docker中启动FunASR服务，docker run -d harryliu888/funasr-online-server:latest',
+      'mode': '模式',
+      'online': '实时',
+      'offline': '非实时',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1011,5 +1014,8 @@ const translations = {
       'funasrURL': 'FunASR URL',
       'funasrURLPlaceholder': 'Please enter the FunASR URL',
       'FunasrNotice ':' Please start the FunASR service in docker, docker run -d harryliu888/funasr-online-server:latest',
+      'mode': 'Mode',
+      'online': 'Real-time',
+      'offline': 'Non-real-time',
     }
   };
