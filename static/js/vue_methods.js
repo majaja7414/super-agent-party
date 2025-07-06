@@ -1388,6 +1388,10 @@ let vue_methods = {
           audioChunks: [],
           isPlaying:false,
         });
+        // 启动TTS和音频播放进程
+        const ttsProcess = this.startTTSProcess();
+        const audioProcess = this.startAudioPlayProcess();
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -1524,6 +1528,8 @@ let vue_methods = {
             conv.system_prompt = this.system_prompt;
           }
         }
+        // 等待TTS和音频播放进程完成
+        await Promise.all([ttsProcess, audioProcess]);
         this.isThinkOpen = false;
         this.isSending = false;
         this.isTyping = false;
@@ -3899,5 +3905,117 @@ let vue_methods = {
       // 匹配只包含标点符号、空白符（空格、制表符、换行符等）的字符串
       const punctuationAndWhitespaceRegex = /^[\s\p{P}]*$/u;
       return punctuationAndWhitespaceRegex.test(text);
-    }
+    },
+    // TTS处理进程
+    async startTTSProcess() {
+      if (!this.ttsSettings.enabled) return;
+      
+      const lastMessage = this.messages[this.messages.length - 1];
+      let processedChunks = 0;
+      
+      while (this.isTyping || processedChunks < lastMessage.ttsChunks.length) {
+        // 检查是否有新的文本块需要处理
+        if (processedChunks < lastMessage.ttsChunks.length) {
+          const chunk = lastMessage.ttsChunks[processedChunks];
+          const index = processedChunks;
+          
+          try {
+            console.log(`Processing TTS chunk ${index}:`, chunk);
+            const response = await fetch(`${backendURL}/tts`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                text: chunk,
+                index: index
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              // 将音频URL和索引添加到audioChunks
+              lastMessage.audioChunks[data.index] = {
+                url: data.audioUrl,
+                index: data.index
+              };
+              console.log(`TTS chunk ${data.index} processed:`, data.audioUrl);
+            } else {
+              console.error(`TTS failed for chunk ${index}`);
+            }
+          } catch (error) {
+            console.error(`Error processing TTS chunk ${index}:`, error);
+          }
+          
+          processedChunks++;
+        }
+        
+        // 等待一小段时间再检查
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      
+      console.log('TTS processing completed');
+    },
+
+    // 音频播放进程
+    async startAudioPlayProcess() {
+      if (!this.ttsSettings.enabled) return;
+      
+      const lastMessage = this.messages[this.messages.length - 1];
+      let currentAudio = null;
+      
+      while (this.isTyping || lastMessage.currentChunk < lastMessage.ttsChunks.length) {
+        // 检查当前索引的音频是否已经准备好
+        const currentIndex = lastMessage.currentChunk;
+        const audioChunk = lastMessage.audioChunks[currentIndex];
+        
+        if (audioChunk && !lastMessage.isPlaying) {
+          lastMessage.isPlaying = true;
+          console.log(`Playing audio chunk ${currentIndex}:`, audioChunk.url);
+          
+          try {
+            // 创建音频元素并播放
+            currentAudio = new Audio(audioChunk.url);
+            
+            // 等待音频播放完成
+            await new Promise((resolve, reject) => {
+              currentAudio.onended = () => {
+                console.log(`Audio chunk ${currentIndex} finished playing`);
+                resolve();
+              };
+              currentAudio.onerror = (error) => {
+                console.error(`Error playing audio chunk ${currentIndex}:`, error);
+                reject(error);
+              };
+              currentAudio.play().catch(reject);
+            });
+            
+            // 播放完成后移动到下一个块
+            lastMessage.currentChunk++;
+            lastMessage.isPlaying = false;
+            
+          } catch (error) {
+            console.error(`Error playing audio chunk ${currentIndex}:`, error);
+            lastMessage.isPlaying = false;
+            // 如果播放失败，也要移动到下一个块以避免卡住
+            lastMessage.currentChunk++;
+          }
+        }
+        // 等待一小段时间再检查
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length){
+        lastMessage.currentChunk = 0;
+      }
+      console.log('Audio playback completed');
+    },
+
+    // 停止音频播放（用于停止生成时）
+    stopAudioPlayback() {
+      // 这里可以添加停止当前播放音频的逻辑
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (lastMessage) {
+        lastMessage.isPlaying = false;
+      }
+    },
 }
