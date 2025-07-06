@@ -4027,6 +4027,7 @@ let vue_methods = {
               };
               this.currentAudio.onerror = (error) => {
                 console.error(`Error playing audio chunk ${currentIndex}:`, error);
+                showNotification(`Error playing audio:${error}`, 'error');
                 reject(error);
               };
               this.currentAudio.play().catch(reject);
