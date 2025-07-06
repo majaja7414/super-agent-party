@@ -3517,7 +3517,7 @@ async def text_to_speech(request: Request):
         tts_engine = tts_settings.get('engine', 'edgetts')
         if tts_engine == 'edgetts':
             edgettsLanguage = tts_settings.get('edgettsLanguage', 'zh-CN')
-            edgettsVoice = tts_settings.get('edgettsVoice', 'XiaoxiaoNeural')
+            edgettsVoice = tts_settings.get('edgettsVoice', 'XiaoyiNeural')
             rate = tts_settings.get('edgettsRate', 1.0)
             full_voice_name = f"{edgettsLanguage}-{edgettsVoice}"
             rate_text = "+0%"

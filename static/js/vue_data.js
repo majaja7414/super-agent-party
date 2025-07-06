@@ -360,7 +360,7 @@ let vue_data = {
       enabledInterruption: true,
       edgettsLanguage: 'zh-CN',
       edgettsGender: 'Female',
-      edgettsVoice: 'XiaoxiaoNeural',
+      edgettsVoice: 'XiaoyiNeural',
       edgettsRate: 1.0,
     },
     currentAudio: null,

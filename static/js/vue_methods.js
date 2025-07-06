@@ -1092,7 +1092,7 @@ let vue_methods = {
 
     async handleKeyDown(event) {
       if (event.repeat) return;
-      if (event.key === 'Enter') {
+      if (event.key === 'Enter' && this.activeMenu === 'home') {
         if (event.shiftKey) {
           // 如果同时按下了Shift键，则不阻止默认行为，允许换行
           return;
