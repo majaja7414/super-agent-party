@@ -525,6 +525,7 @@ const translations = {
       'tts': '语音合成',
       'pause': '暂停',
       'play': '播放',
+      'initializing': '初始化中',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1049,5 +1050,6 @@ const translations = {
       'asrReady': 'ASR Ready',
       'ttsEngine': 'TTS Engine',
       'tts': 'TTS',
+      'initializing': 'Initializing',
     }
   };

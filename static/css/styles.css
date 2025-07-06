@@ -3026,13 +3026,25 @@ body {
 }
 
 .tts-controls {
-  margin-bottom: 10px;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
+  padding: 4px 8px;
+  background: var(--el-bg-color);
+  border-radius: 4px;
+  font-size: 12px;
 }
 
 .tts-status {
-  font-size: 0.8em;
   color: var(--el-color-info);
+  font-size: 11px;
+}
+
+.message.assistant .tts-controls {
+  background: var(--el-bg-color);
+}
+
+.message.assistant .tts-controls .tts-status {
+  color: var(--el-primary-color)
 }

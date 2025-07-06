@@ -1048,6 +1048,7 @@ let vue_methods = {
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.asrSettings = data.data.asrSettings || this.asrSettings;
+          this.ttsSettings = data.data.ttsSettings || this.ttsSettings;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
           this.comfyuiAPIkey = data.data.comfyuiAPIkey || this.comfyuiAPIkey;
           this.workflows = data.data.workflows || this.workflows;
@@ -1383,7 +1384,6 @@ let vue_methods = {
           role: 'assistant',
           content: ''
         });
-        
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -1556,6 +1556,7 @@ let vue_methods = {
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
           asrSettings: this.asrSettings,
+          ttsSettings: this.ttsSettings,
           comfyuiServers: this.comfyuiServers,
           comfyuiAPIkey: this.comfyuiAPIkey,
           workflows: this.workflows,
@@ -3808,6 +3809,7 @@ let vue_methods = {
         console.error('Audio conversion error:', error);
         throw new Error('Failed to convert audio to WAV format');
       }
-    }
+    },
+
 
 }

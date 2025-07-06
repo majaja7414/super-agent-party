@@ -222,8 +222,11 @@
                   <i v-if="!message.isPlaying" class="fa-solid fa-play"></i>
                   <i v-else class="fa-solid fa-pause"></i>
                 </el-tooltip>
-                <span class="tts-status">
-                  {{ message.currentChunk || 0 + 1 }}/{{ message.ttsChunks?.length || 0 }}
+                <span class="tts-status" v-if="message.ttsChunks">
+                  {{ (message.currentChunk || 0) + 1 }}/{{ message.ttsChunks.length }}
+                </span>
+                <span class="tts-status" v-else>
+                  {{ t('initializing') }}
                 </span>
               </div>
               <div class="message-content">
