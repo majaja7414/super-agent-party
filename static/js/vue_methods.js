@@ -4002,7 +4002,7 @@ let vue_methods = {
           }
         }
         // 等待一小段时间再检查
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       if (lastMessage.currentChunk >= lastMessage.ttsChunks.length){
         lastMessage.currentChunk = 0;
