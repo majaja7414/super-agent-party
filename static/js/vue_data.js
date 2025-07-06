@@ -60,6 +60,7 @@ if (isElectron) {
   }
   // 判断协议
   const protocol = window.location.protocol;
+  const backendURL = window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`;
 let vue_data = {
     isMac: false,
     partyURL:window.location.port ? `${protocol}//${HOST}:${PORT}` : `${protocol}//${HOST}`,
@@ -667,7 +668,7 @@ docker run -d \\
       python: `from openai import OpenAI
 client = OpenAI(
   api_key="super-secret-key",
-  base_url="http://${HOST}:${PORT}/v1"
+  base_url="${backendURL}/v1"
 )
 response = client.chat.completions.create(
   model="super-model",
@@ -679,7 +680,7 @@ print(response.choices[0].message.content)`,
     javascript: `import OpenAI from 'openai';
 const client = new OpenAI({
   apiKey: "super-secret-key",
-  baseURL: "http://${HOST}:${PORT}/v1"
+  baseURL: "${backendURL}/v1"
 });
 async function main() {
   const completion = await client.chat.completions.create({
@@ -691,7 +692,7 @@ async function main() {
   console.log(completion.choices[0].message.content);
 }
 main();`,
-    curl: `curl http://${HOST}:${PORT}/v1/chat/completions \\
+    curl: `curl ${backendURL}/v1/chat/completions \\
 -H "Content-Type: application/json" \\
 -H "Authorization: Bearer super-secret-key" \\
 -d '{

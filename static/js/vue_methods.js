@@ -231,7 +231,7 @@ let vue_methods = {
     // 获取模型列表
     async fetchModelsForType(type) {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/llm_models`, {
+        const response = await fetch(`${backendURL}/llm_models`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -715,7 +715,7 @@ let vue_methods = {
       sandbox.srcdoc = `<!DOCTYPE html>
         <html>
           <head>
-            <base href="http://${HOST}:${PORT}/">
+            <base href="${backendURL}/">
             <link rel="stylesheet" href="/css/styles.css">
             <style>body { margin: 0; padding: 15px; }</style>
           </head>
@@ -1167,7 +1167,7 @@ let vue_methods = {
     
         try {
             console.log('Uploading files...');
-            const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+            const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 body: formData
             });
@@ -1208,7 +1208,7 @@ let vue_methods = {
       
           try {
               console.log('Uploading images...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                   method: 'POST',
                   body: formData
               });
@@ -1354,7 +1354,7 @@ let vue_methods = {
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
-        const response = await fetch(`http://${HOST}:${PORT}/v1/chat/completions`, {  // 修改端点路径
+        const response = await fetch(`${backendURL}/v1/chat/completions`, {  // 修改端点路径
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1597,7 +1597,7 @@ let vue_methods = {
     async fetchModels() {
       this.modelsLoading = true;
       try {
-        const response = await fetch(`http://${HOST}:${PORT}//v1/models`);
+        const response = await fetch(`${backendURL}/v1/models`);
         const result = await response.json();
         
         // 双重解构获取数据
@@ -1619,7 +1619,7 @@ let vue_methods = {
 
     // 修改copyEndpoint方法
     copyEndpoint() {
-      navigator.clipboard.writeText(`http://${HOST}:${PORT}/v1`)
+      navigator.clipboard.writeText(`${backendURL}/v1`)
         .then(() => {
           showNotification(this.t('copy_success'), 'success');
         })
@@ -1629,7 +1629,7 @@ let vue_methods = {
     },
 
     copyMCPEndpoint(){
-      navigator.clipboard.writeText(`http://${HOST}:${PORT}/mcp`)
+      navigator.clipboard.writeText(`${backendURL}/mcp`)
         .then(() => {
           showNotification(this.t('copy_success'), 'success');
         })
@@ -1852,7 +1852,7 @@ let vue_methods = {
     },
     async fetchModelsForProvider(provider) {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/v1/providers/models`, {
+        const response = await fetch(`${backendURL}/v1/providers/models`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -2101,7 +2101,7 @@ let vue_methods = {
   
             try {
               console.log('Uploading files...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 body: formData
               });
@@ -2132,7 +2132,7 @@ let vue_methods = {
             // Electron 环境：通过 JSON 上传
             try {
               console.log('Uploading Electron files...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -2203,7 +2203,7 @@ let vue_methods = {
         // post kbId to 后端的create_kb端口
         try {
           // 1. 触发任务
-          const startResponse = await fetch(`http://${HOST}:${PORT}/create_kb`, {
+          const startResponse = await fetch(`${backendURL}/create_kb`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ kbId }),
@@ -2213,7 +2213,7 @@ let vue_methods = {
           // 2. 轮询状态
           const checkStatus = async () => {
             try {
-              const statusResponse = await fetch(`http://${HOST}:${PORT}/kb_status/${kbId}`);
+              const statusResponse = await fetch(`${backendURL}/kb_status/${kbId}`);
               
               // 处理 HTTP 错误状态
               if (!statusResponse.ok) {
@@ -2288,7 +2288,7 @@ let vue_methods = {
         let kbId = kb.id
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
-        const Response = await fetch(`http://${HOST}:${PORT}/remove_kb`, {
+        const Response = await fetch(`${backendURL}/remove_kb`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kbId }),
@@ -2437,7 +2437,7 @@ let vue_methods = {
       this.isBrowserOpening = true;
       
       setTimeout(() => {
-        const url = `http://${HOST}:${PORT}`;
+        const url = `${backendURL}`;
         if (isElectron) {
           window.electronAPI.openExternal(url);
         } else {
@@ -2477,7 +2477,7 @@ let vue_methods = {
         this.newMCPJson = '';
         await this.autoSaveSettings();
         // 触发后台任务
-        const response = await fetch(`http://${HOST}:${PORT}/create_mcp`, {
+        const response = await fetch(`${backendURL}/create_mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mcpId })
@@ -2485,7 +2485,7 @@ let vue_methods = {
         
         // 启动状态轮询
         const checkStatus = async () => {
-          const statusRes = await fetch(`http://${HOST}:${PORT}/mcp_status/${mcpId}`);
+          const statusRes = await fetch(`${backendURL}/mcp_status/${mcpId}`);
           return statusRes.json();
         };
         
@@ -2528,7 +2528,7 @@ let vue_methods = {
     // 新增确认方法
     async confirmDeleteMCP() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/remove_mcp`, {
+        const response = await fetch(`${backendURL}/remove_mcp`, {
           method: 'DELETE',
           headers: {
               'Content-Type': 'application/json',
@@ -2592,7 +2592,7 @@ let vue_methods = {
         this.agents = { ...this.agents }
         try {
           // 向/delete_file发送请求
-          const response = await fetch(`http://${HOST}:${PORT}/remove_agent`, {
+          const response = await fetch(`${backendURL}/remove_agent`, {
             method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ agentId: id })
@@ -2629,7 +2629,7 @@ let vue_methods = {
           }
         };
         await this.autoSaveSettings();
-        const response = await fetch(`http://${HOST}:${PORT}/a2a`, {
+        const response = await fetch(`${backendURL}/a2a`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: newurl })
@@ -2664,7 +2664,7 @@ let vue_methods = {
       fileName = file.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+        const response = await fetch(`${backendURL}/delete_file`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
@@ -2685,7 +2685,7 @@ let vue_methods = {
       fileName = img.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+        const response = await fetch(`${backendURL}/delete_file`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
@@ -2773,7 +2773,7 @@ let vue_methods = {
       }
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/remove_memory`, {
+        const response = await fetch(`${backendURL}/remove_memory`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ memoryId: id })
@@ -2853,7 +2853,7 @@ let vue_methods = {
       // 显示连接中的提示
       showNotification('正在连接QQ机器人...', 'info');
       
-      const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
+      const response = await fetch(`${backendURL}/start_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.qqBotConfig)
@@ -2887,7 +2887,7 @@ let vue_methods = {
     this.isStopping = true;
     
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/stop_qq_bot`, {
+      const response = await fetch(`${backendURL}/stop_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -2914,7 +2914,7 @@ let vue_methods = {
     this.isReloading = true;
     
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
+      const response = await fetch(`${backendURL}/reload_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.qqBotConfig)
@@ -2943,7 +2943,7 @@ let vue_methods = {
   // 添加状态检查方法
   async checkQQBotStatus() {
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`);
+      const response = await fetch(`${backendURL}/qq_bot_status`);
       const status = await response.json();
       
       // 更新机器人运行状态
@@ -2961,7 +2961,7 @@ let vue_methods = {
     // 新增的方法：供主进程请求关闭机器人
     async requestStopQQBotIfRunning() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`)
+        const response = await fetch(`${backendURL}/qq_bot_status`)
         const status = await response.json()
 
         if (status.is_running) {
@@ -3271,7 +3271,7 @@ let vue_methods = {
       fileName = video.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
+        const response = await fetch(`${backendURL}/delete_file`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
