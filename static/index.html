@@ -1863,6 +1863,12 @@
                           />
                         </el-select>
                       </el-form-item>
+                      <el-form-item :label="t('enabledInterruption')" class="form-item-align" label-position="left">
+                        <el-switch 
+                          v-model="ttsSettings.enabledInterruption" 
+                          @change="autoSaveSettings"
+                        ></el-switch>
+                      </el-form-item>
                     </div>
                   </div>
                   <div class="tool-item" v-show="ttsSettings.engine === 'edgetts'">

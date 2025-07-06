@@ -1152,7 +1152,16 @@ let vue_methods = {
     },
     // 发送消息
     async sendMessage() { 
+      if (this.ttsSettings.enabledInterruption) {
+        // 关闭正在播放的音频
+        if (this.currentAudio){
+          this.currentAudio.pause();
+          this.currentAudio = null;
+          this.stopGenerate();
+        }
+      }
       if (!this.userInput.trim() || this.isTyping) return;
+
       // 声明变量并初始化为 null
       let ttsProcess = null;
       let audioProcess = null;
@@ -1394,10 +1403,11 @@ let vue_methods = {
           audioChunks: [],
           isPlaying:false,
         });
-        // 启动TTS和音频播放进程
-        const ttsProcess = this.startTTSProcess();
-        const audioProcess = this.startAudioPlayProcess();
-
+        if (this.ttsSettings.enabled) {
+          // 启动TTS和音频播放进程
+          const ttsProcess = this.startTTSProcess();
+          const audioProcess = this.startAudioPlayProcess();
+        }
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
@@ -1534,8 +1544,10 @@ let vue_methods = {
             conv.system_prompt = this.system_prompt;
           }
         }
-        // 等待TTS和音频播放进程完成
-        await Promise.all([ttsProcess, audioProcess]);
+        if (this.ttsSettings.enabled) {
+          // 等待TTS和音频播放进程完成
+          await Promise.all([ttsProcess, audioProcess]);
+        }
         this.isThinkOpen = false;
         this.isSending = false;
         this.isTyping = false;
@@ -3573,11 +3585,19 @@ let vue_methods = {
               this.userInputBuffer = '';
             }
             if (this.asrSettings.interactionMethod == "auto"){
-              this.sendMessage();
+              if (this.ttsSettings.enabledInterruption){
+                this.sendMessage();
+              }else if (this.currentAudio == null || this.currentAudio.paused){
+                this.sendMessage();
+              }
             }
             if (this.asrSettings.interactionMethod == "wakeWord"){
               if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())){
-                this.sendMessage();
+                if (this.ttsSettings.enabledInterruption){
+                  this.sendMessage();
+                }else if (this.currentAudio == null || this.currentAudio.paused){
+                  this.sendMessage();
+                }
               }
               else {
                 this.userInput = '';
@@ -3672,6 +3692,14 @@ let vue_methods = {
           onFrameProcessed: (probabilities, frame) => {
             // 处理每一帧
             if (probabilities["isSpeech"] > 0.3){
+              if (this.ttsSettings.enabledInterruption) {
+                // 关闭正在播放的音频
+                if (this.currentAudio){
+                  this.currentAudio.pause();
+                  this.currentAudio = null;
+                  this.stopGenerate();
+                }
+              }
               this.handleFrameProcessed(frame);
             }
           },
@@ -3971,6 +3999,9 @@ let vue_methods = {
       if (!this.ttsSettings.enabled) return;
       
       const lastMessage = this.messages[this.messages.length - 1];
+      if (this.currentAudio){
+        this.currentAudio.pause();
+      }
       this.currentAudio = null;
       
       while (this.isTyping || lastMessage.currentChunk < lastMessage.ttsChunks.length) {
@@ -3984,19 +4015,19 @@ let vue_methods = {
           
           try {
             // 创建音频元素并播放
-            currentAudio = new Audio(audioChunk.url);
+            this.currentAudio = new Audio(audioChunk.url);
             
             // 等待音频播放完成
             await new Promise((resolve, reject) => {
-              currentAudio.onended = () => {
+              this.currentAudio.onended = () => {
                 console.log(`Audio chunk ${currentIndex} finished playing`);
                 resolve();
               };
-              currentAudio.onerror = (error) => {
+              this.currentAudio.onerror = (error) => {
                 console.error(`Error playing audio chunk ${currentIndex}:`, error);
                 reject(error);
               };
-              currentAudio.play().catch(reject);
+              this.currentAudio.play().catch(reject);
             });
             
             // 播放完成后移动到下一个块

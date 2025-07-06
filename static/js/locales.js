@@ -531,6 +531,7 @@ const translations = {
       'edgettsLanguage': 'EdgeTTS语言',
       'edgettsGender': 'EdgeTTS性别',
       'edgettsVoice': 'EdgeTTS声音',
+      'enabledInterruption': '是否允许被打断',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1061,5 +1062,6 @@ const translations = {
       'edgettsLanguage': 'EdgeTTS Language',
       'edgettsGender': 'EdgeTTS Gender',
       'edgettsVoice': 'EdgeTTS Voice',
+      'enabledInterruption': 'Enable Interruption',
     }
   };

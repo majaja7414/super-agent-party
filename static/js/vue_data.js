@@ -357,6 +357,7 @@ let vue_data = {
       enabled: false,
       engine: 'edgetts',
       separators:["。", "\n", "？", "！"],
+      enabledInterruption: true,
       edgettsLanguage: 'zh-CN',
       edgettsGender: 'Female',
       edgettsVoice: 'XiaoxiaoNeural',
