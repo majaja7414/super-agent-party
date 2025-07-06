@@ -358,6 +358,7 @@ let vue_data = {
       engine: 'edgetts',
       separators:["。", "\n", "？", "！"],
     },
+    currentAudio: null,
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
       { id: 'main', title: 'mainModel', icon: 'fa-solid fa-microchip' },

@@ -3962,7 +3962,7 @@ let vue_methods = {
       if (!this.ttsSettings.enabled) return;
       
       const lastMessage = this.messages[this.messages.length - 1];
-      let currentAudio = null;
+      this.currentAudio = null;
       
       while (this.isTyping || lastMessage.currentChunk < lastMessage.ttsChunks.length) {
         // 检查当前索引的音频是否已经准备好
@@ -4016,6 +4016,56 @@ let vue_methods = {
       const lastMessage = this.messages[this.messages.length - 1];
       if (lastMessage) {
         lastMessage.isPlaying = false;
+      }
+    },
+    toggleTTS(message) {
+      if (message.isPlaying) {
+        // 如果正在播放，则暂停
+        message.isPlaying = false;
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+        }
+      } else {
+        // 如果没有播放，则开始播放
+        message.isPlaying = true;
+        this.playAudioChunk(message);
+      }
+    },
+    async playAudioChunk(message) {
+      const audioChunk = message.audioChunks[message.currentChunk];
+      
+      if (audioChunk) {
+        const audio = new Audio(audioChunk.url);
+        this.currentAudio = audio; // 保存当前音频对象
+        
+        try {
+          await audio.play();
+          audio.onended = () => {
+            message.currentChunk++; // 播放结束后，索引加一
+            this.playAudioChunk(message); // 递归调用播放下一个音频块
+          };
+          audio.onerror = (error) => {
+            console.error(`Error playing audio chunk ${message.currentChunk}:`, error);
+            message.isPlaying = false; // 出错时停止播放
+          };
+        } catch (error) {
+          console.error(`Error playing audio chunk ${message.currentChunk}:`, error);
+          message.isPlaying = false; // 出错时停止播放
+        }
+      } else {
+        message.isPlaying = false; // 如果没有音频块，停止播放
+        message.currentChunk = 0; // 重置索引
+      }
+    },
+    backwardTTS(message) {
+      if (message.currentChunk > 0) {
+        message.currentChunk--; // 当前索引减一
+      }
+    },
+
+    forwardTTS(message) {
+      if (message.currentChunk < message.audioChunks.length - 1) {
+        message.currentChunk++; // 当前索引加一
       }
     },
 }
