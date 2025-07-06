@@ -3688,7 +3688,7 @@ let vue_methods = {
           },
           onFrameProcessed: (probabilities, frame) => {
             // 处理每一帧
-            if (probabilities["isSpeech"] > 0.3){
+            if (probabilities["isSpeech"] > 0.5){
               if (this.ttsSettings.enabledInterruption) {
                 // 关闭正在播放的音频
                 if (this.currentAudio){
@@ -3942,7 +3942,8 @@ let vue_methods = {
       const punctuationAndWhitespaceRegex = /^[\s\p{P}]*$/u;
       return punctuationAndWhitespaceRegex.test(text);
     },
-    // TTS处理进程
+
+    // TTS处理进程 - 使用流式响应
     async startTTSProcess() {
       if (!this.ttsSettings.enabled) return;
       
@@ -3950,7 +3951,6 @@ let vue_methods = {
       let processedChunks = 0;
       
       while (this.isTyping || processedChunks < lastMessage.ttsChunks.length) {
-        // 检查是否有新的文本块需要处理
         if (processedChunks < lastMessage.ttsChunks.length) {
           const chunk = lastMessage.ttsChunks[processedChunks];
           const index = processedChunks;
@@ -3969,13 +3969,16 @@ let vue_methods = {
             });
             
             if (response.ok) {
-              const data = await response.json();
+              // 创建音频URL
+              const audioBlob = await response.blob();
+              const audioUrl = URL.createObjectURL(audioBlob);
+              
               // 将音频URL和索引添加到audioChunks
-              lastMessage.audioChunks[data.index] = {
-                url: data.audioUrl,
-                index: data.index
+              lastMessage.audioChunks[index] = {
+                url: audioUrl,
+                index: index
               };
-              console.log(`TTS chunk ${data.index} processed:`, data.audioUrl);
+              console.log(`TTS chunk ${index} processed`);
             } else {
               console.error(`TTS failed for chunk ${index}`);
             }
@@ -3985,9 +3988,9 @@ let vue_methods = {
           
           processedChunks++;
         }
-        
-        // 等待一小段时间再检查
-        await new Promise(resolve => setTimeout(resolve, 10));
+        if (processedChunks === 0){
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
       }
       
       console.log('TTS processing completed');

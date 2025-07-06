@@ -3509,17 +3509,18 @@ async def handle_funasr_response(funasr_websocket,
 async def text_to_speech(request: Request):
     try:
         settings = await load_settings()
-        fastapi_base_url = str(request.base_url)
         data = await request.json()
         text = data['text']
-        index = data['index'] # chunk在ttsChunks中的索引
+        index = data['index']
         tts_settings = settings.get('ttsSettings', {})
         tts_engine = tts_settings.get('engine', 'edgetts')
+        
         if tts_engine == 'edgetts':
             edgettsLanguage = tts_settings.get('edgettsLanguage', 'zh-CN')
             edgettsVoice = tts_settings.get('edgettsVoice', 'XiaoyiNeural')
             rate = tts_settings.get('edgettsRate', 1.0)
             full_voice_name = f"{edgettsLanguage}-{edgettsVoice}"
+            
             rate_text = "+0%"
             if rate >= 1.0:
                 rate_pent = (rate - 1.0) * 100
@@ -3527,19 +3528,26 @@ async def text_to_speech(request: Request):
             elif rate < 1.0:
                 rate_pent = (1.0 - rate) * 100
                 rate_text = f"-{int(rate_pent)}%"
-            print(rate_text)
-            print(f"Using Edge TTS with voice: {full_voice_name}")
-            # 使用edge-tts生成语音
-            communicate = edge_tts.Communicate(text, full_voice_name,rate=rate_text)
-            filename = f"tts_{int(time.time())}.mp3"
             
-            # 保存文件
-            with open(os.path.join(UPLOAD_FILES_DIR, filename), "wb") as fp:
+            print(f"Using Edge TTS with voice: {full_voice_name}")
+            
+            # 创建生成器函数用于流式传输
+            async def generate_audio():
+                communicate = edge_tts.Communicate(text, full_voice_name, rate=rate_text)
                 async for chunk in communicate.stream():
                     if chunk["type"] == "audio":
-                        fp.write(chunk["data"])
+                        yield chunk["data"]
             
-            return {"audioUrl": f"{fastapi_base_url}uploaded_files/{filename}", "index": index}
+            # 返回流式响应
+            return StreamingResponse(
+                generate_audio(),
+                media_type="audio/mpeg",
+                headers={
+                    "Content-Disposition": f"inline; filename=tts_{index}.mp3",
+                    "X-Audio-Index": str(index)
+                }
+            )
+            
         raise HTTPException(status_code=400, detail="Invalid TTS engine")
     except Exception as e:
         return {"error": str(e)}
