@@ -155,7 +155,10 @@
     "ttsSettings": {
       "enabled": false,
       "engine": "edgetts",
-      "separators":["。", "\n", "？", "！"]
+      "separators":["。", "\n", "？", "！"],
+      "edgettsLanguage": "zh-CN",
+      "edgettsGender": "Female",
+      "edgettsVoice": "XiaoxiaoNeural"
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

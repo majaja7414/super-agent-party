@@ -1054,6 +1054,9 @@ let vue_methods = {
           this.workflows = data.data.workflows || this.workflows;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
+          // 初始化时确保数据一致性
+          this.edgettsLanguage = this.ttsSettings.edgettsLanguage;
+          this.edgettsGender = this.ttsSettings.edgettsGender;
           if (this.asrSettings.enabled) {
             if (this.vad == null) {
               await this.initVAD();
@@ -1150,6 +1153,9 @@ let vue_methods = {
     // 发送消息
     async sendMessage() { 
       if (!this.userInput.trim() || this.isTyping) return;
+      // 声明变量并初始化为 null
+      let ttsProcess = null;
+      let audioProcess = null;
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
       if (fileLinks.length > 0){
@@ -4067,5 +4073,30 @@ let vue_methods = {
       if (message.currentChunk < message.audioChunks.length - 1) {
         message.currentChunk++; // 当前索引加一
       }
+    },
+
+    updateLanguages() {
+      // 更新 ttsSettings 中的语言
+      this.ttsSettings.edgettsLanguage = this.edgettsLanguage;
+      
+      // 更新性别和语音
+      this.updateGenders(); 
+      this.autoSaveSettings();
+    },
+    // 当语言改变时更新性别和语音
+    updateGenders() {
+      // 更新 ttsSettings 中的性别
+      this.ttsSettings.edgettsGender = this.edgettsGender;
+      // 更新到第一个语音
+      this.ttsSettings.edgettsVoice = this.filteredVoices[0].name;
+
+      // 更新语音
+      this.updateVoices();
+      this.autoSaveSettings();
+    },
+    
+    // 当性别改变时更新语音
+    updateVoices() {
+      this.autoSaveSettings();
     },
 }

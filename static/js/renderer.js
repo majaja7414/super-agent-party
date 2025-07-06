@@ -286,7 +286,28 @@ const app = Vue.createApp({
       return this.mainAgent !== 'super-model' || 
         Object.values(this.agents).some(a => a.enabled)
     },
+    // 获取所有唯一的语言
+    uniqueLanguages() {
+      const languages = [...new Set(this.edgettsvoices.map(voice => voice.language))];
+      return languages.sort();
+    },
     
+    // 根据选择的语言获取可用的性别
+    uniqueGenders() {
+      const voicesForLanguage = this.edgettsvoices.filter(voice => 
+        voice.language === this.edgettsLanguage
+      );
+      const genders = [...new Set(voicesForLanguage.map(voice => voice.gender))];
+      return genders.sort();
+    },
+    
+    // 根据选择的语言和性别过滤语音
+    filteredVoices() {
+      return this.edgettsvoices.filter(voice => 
+        voice.language === this.edgettsLanguage && 
+        voice.gender === this.edgettsGender
+      );
+    }
   },
   methods: vue_methods
 });
