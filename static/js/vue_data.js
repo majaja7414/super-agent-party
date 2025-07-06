@@ -360,6 +360,7 @@ let vue_data = {
       edgettsLanguage: 'zh-CN',
       edgettsGender: 'Female',
       edgettsVoice: 'XiaoxiaoNeural',
+      edgettsRate: 1.0,
     },
     currentAudio: null,
     edgettsLanguage: 'zh-CN',

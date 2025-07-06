@@ -3850,6 +3850,9 @@ let vue_methods = {
       }
     },
     splitTTSBuffer(buffer) {
+      // 移除buffer中的emoji
+      buffer = buffer.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+
       if (!buffer || buffer.trim() === '') {
         return { chunks: [], remaining: buffer };
       }
@@ -3957,7 +3960,7 @@ let vue_methods = {
         }
         
         // 等待一小段时间再检查
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
       console.log('TTS processing completed');

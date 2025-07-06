@@ -3518,10 +3518,19 @@ async def text_to_speech(request: Request):
         if tts_engine == 'edgetts':
             edgettsLanguage = tts_settings.get('edgettsLanguage', 'zh-CN')
             edgettsVoice = tts_settings.get('edgettsVoice', 'XiaoxiaoNeural')
+            rate = tts_settings.get('edgettsRate', 1.0)
             full_voice_name = f"{edgettsLanguage}-{edgettsVoice}"
+            rate_text = "+0%"
+            if rate >= 1.0:
+                rate_pent = (rate - 1.0) * 100
+                rate_text = f"+{int(rate_pent)}%"
+            elif rate < 1.0:
+                rate_pent = (1.0 - rate) * 100
+                rate_text = f"-{int(rate_pent)}%"
+            print(rate_text)
             print(f"Using Edge TTS with voice: {full_voice_name}")
             # 使用edge-tts生成语音
-            communicate = edge_tts.Communicate(text, full_voice_name)
+            communicate = edge_tts.Communicate(text, full_voice_name,rate=rate_text)
             filename = f"tts_{int(time.time())}.mp3"
             
             # 保存文件

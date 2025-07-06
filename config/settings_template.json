@@ -158,7 +158,8 @@
       "separators":["。", "\n", "？", "！"],
       "edgettsLanguage": "zh-CN",
       "edgettsGender": "Female",
-      "edgettsVoice": "XiaoxiaoNeural"
+      "edgettsVoice": "XiaoxiaoNeural",
+      "edgettsRate": 1.0
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

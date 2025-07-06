@@ -528,6 +528,9 @@ const translations = {
       'initializing': '初始化中',
       'backward': '向后',
       'forward': '向前',
+      'edgettsLanguage': 'EdgeTTS语言',
+      'edgettsGender': 'EdgeTTS性别',
+      'edgettsVoice': 'EdgeTTS声音',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1055,5 +1058,8 @@ const translations = {
       'initializing': 'Initializing',
       'backward': 'Backward',
       'forward': 'Forward',
+      'edgettsLanguage': 'EdgeTTS Language',
+      'edgettsGender': 'EdgeTTS Gender',
+      'edgettsVoice': 'EdgeTTS Voice',
     }
   };
