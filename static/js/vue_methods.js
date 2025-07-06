@@ -1378,16 +1378,20 @@ let vue_methods = {
           showNotification(errorData.error?.message || this.t('error_unknown'), 'error');
           throw new Error(errorData.error?.message || this.t('error_unknown')); // 抛出错误以停止执行
         }
-        
+
         this.isTyping = true;
         this.messages.push({
           role: 'assistant',
-          content: ''
+          content: '',
+          currentChunk: 0,
+          ttsChunks: [],
+          audioChunks: [],
+          isPlaying:false,
         });
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        
+        let tts_buffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -1443,6 +1447,17 @@ let vue_methods = {
                     this.isThinkOpen = false; // 重置状态
                   }
                   lastMessage.content += parsed.choices[0].delta.content;
+                  tts_buffer += parsed.choices[0].delta.content;
+                  // 处理 TTS 分割
+                  if (this.ttsSettings.enabled) {
+                    const { chunks, remaining } = this.splitTTSBuffer(tts_buffer);
+                    // 将完整的句子添加到 ttsChunks
+                    if (chunks.length > 0) {
+                      lastMessage.ttsChunks.push(...chunks);
+                    }
+                    // 更新 tts_buffer 为剩余部分
+                    tts_buffer = remaining;
+                  }
                   this.scrollToBottom();
                 }
                 if (parsed.choices?.[0]?.delta?.async_tool_id) {
@@ -1461,6 +1476,18 @@ let vue_methods = {
               }
             }
           }
+        }
+        // 循环结束后，处理 tts_buffer 中的剩余内容
+        if (tts_buffer.trim() && this.ttsSettings.enabled) {
+          const lastMessage = this.messages[this.messages.length - 1];
+          const { chunks, remaining } = this.splitTTSBuffer(tts_buffer);
+          if (chunks.length > 0) {
+            lastMessage.ttsChunks.push(...chunks);
+          }
+          if (remaining) {
+            lastMessage.ttsChunks.push(remaining);
+          }
+          console.log(lastMessage.ttsChunks)
         }
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -3810,6 +3837,67 @@ let vue_methods = {
         throw new Error('Failed to convert audio to WAV format');
       }
     },
+    splitTTSBuffer(buffer) {
+      if (!buffer || buffer.trim() === '') {
+        return { chunks: [], remaining: buffer };
+      }
 
+      const chunks = [];
+      let remaining = buffer;
+      
+      // 处理转义字符，将字符串形式的转义字符转换为实际字符
+      const processedSeparators = this.ttsSettings.separators.map(sep => {
+        // 处理常见的转义字符
+        return sep.replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r');
+      });
 
+      // 找到所有分隔符的位置
+      const separatorPositions = [];
+      
+      for (let i = 0; i < remaining.length; i++) {
+        for (const separator of processedSeparators) {
+          if (remaining.substring(i, i + separator.length) === separator) {
+            separatorPositions.push({
+              index: i,
+              separator: separator,
+              endIndex: i + separator.length
+            });
+          }
+        }
+      }
+      
+      // 按位置排序
+      separatorPositions.sort((a, b) => a.index - b.index);
+      
+      let lastIndex = 0;
+      
+      // 处理每个分隔符位置
+      for (const pos of separatorPositions) {
+        if (pos.index >= lastIndex) {
+          // 提取从上一个位置到当前分隔符（包含分隔符）的文本
+          const chunk = remaining.substring(lastIndex, pos.endIndex);
+          
+          // 检查chunk是否只包含标点符号和空白符
+          if (!this.isOnlyPunctuationAndWhitespace(chunk)) {
+            chunks.push(chunk);
+          }
+          
+          lastIndex = pos.endIndex;
+        }
+      }
+      
+      // 剩余的文本
+      remaining = remaining.substring(lastIndex);
+      
+      return { chunks, remaining };
+    },
+
+    // 辅助函数：检查字符串是否只包含标点符号和空白符
+    isOnlyPunctuationAndWhitespace(text) {
+      // 匹配只包含标点符号、空白符（空格、制表符、换行符等）的字符串
+      const punctuationAndWhitespaceRegex = /^[\s\p{P}]*$/u;
+      return punctuationAndWhitespaceRegex.test(text);
+    }
 }

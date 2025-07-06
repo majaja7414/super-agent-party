@@ -3510,6 +3510,7 @@ async def text_to_speech(request: Request):
     fastapi_base_url = str(request.base_url)
     data = await request.json()
     text = data['text']
+    index = data['index'] # chunk在ttsChunks中的索引
     
     # 使用edge-tts生成语音
     communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
@@ -3521,7 +3522,7 @@ async def text_to_speech(request: Request):
             if chunk["type"] == "audio":
                 fp.write(chunk["data"])
     
-    return {"audioUrl": f"{fastapi_base_url}uploaded_files/{filename}"}
+    return {"audioUrl": f"{fastapi_base_url}uploaded_files/{filename}", "index": index}
 
 
 # 添加状态存储
