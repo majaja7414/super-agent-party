@@ -523,6 +523,8 @@ const translations = {
       'asrReady': '语音识别已准备就绪',
       'ttsEngine': '语音合成接口',
       'tts': '语音合成',
+      'pause': '暂停',
+      'play': '播放',
     },
     'en-US': {
       'chat': 'Chat',

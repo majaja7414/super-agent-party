@@ -13,7 +13,7 @@ if hasattr(sys, '_MEIPASS'):
     # 打包后的程序
     os.environ['PYTHONPATH'] = sys._MEIPASS
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ.get('PATH', '')
-
+import edge_tts
 import asyncio
 import copy
 from functools import partial
@@ -3504,6 +3504,25 @@ async def handle_funasr_response(funasr_websocket,
         print(f"FunASR handler error: {e}")
     finally:
         await funasr_websocket.close()
+
+@app.post("/tts")
+async def text_to_speech(request: Request):
+    fastapi_base_url = str(request.base_url)
+    data = await request.json()
+    text = data['text']
+    
+    # 使用edge-tts生成语音
+    communicate = edge_tts.Communicate(text, "zh-CN-YunxiNeural")
+    filename = f"tts_{int(time.time())}.mp3"
+    
+    # 保存文件
+    with open(os.path.join(UPLOAD_FILES_DIR, filename), "wb") as fp:
+        async for chunk in communicate.stream():
+            if chunk["type"] == "audio":
+                fp.write(chunk["data"])
+    
+    return {"audioUrl": f"{fastapi_base_url}uploaded_files/{filename}"}
+
 
 # 添加状态存储
 mcp_status = {}

@@ -3024,3 +3024,15 @@ body {
 .fastapi-iframe {
   min-height: 85vh!important;
 }
+
+.tts-controls {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tts-status {
+  font-size: 0.8em;
+  color: var(--el-color-info);
+}

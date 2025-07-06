@@ -36,3 +36,4 @@ pyinstaller
 e2b-code-interpreter
 qq-botpy
 scipy
+edge-tts

@@ -212,6 +212,20 @@
           <!-- 聊天消息列表 -->
           <div class="messages-container" ref="messagesContainer">
             <div v-for="(message, index) in messages" :key="index" class="message" :class="message.role">
+              <div v-if="ttsSettings.enabled && message.role === 'assistant'" class="tts-controls">
+                <el-tooltip :content="message.isPlaying || false ? t('pause') : t('play')">
+                  <el-button 
+                    @click="toggleTTS(message)"
+                    circle 
+                    size="small"
+                  />
+                  <i v-if="!message.isPlaying" class="fa-solid fa-play"></i>
+                  <i v-else class="fa-solid fa-pause"></i>
+                </el-tooltip>
+                <span class="tts-status">
+                  {{ message.currentChunk || 0 + 1 }}/{{ message.ttsChunks?.length || 0 }}
+                </span>
+              </div>
               <div class="message-content">
                 <!-- 用户消息内容 -->
                 <div v-if="message.role === 'user'" class="user-message-content" data-mjx-disabled="true">
