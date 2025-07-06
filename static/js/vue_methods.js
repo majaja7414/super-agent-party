@@ -1304,36 +1304,33 @@ let vue_methods = {
         messages = this.messages
           .slice(-max_rounds)
           .map(msg => {
-            // 提取HTTP/HTTPS图片链接
-            const httpImageLinks = msg.imageLinks?.filter(imageLink => 
-              imageLink.path.startsWith('http://') || imageLink.path.startsWith('https://')
-            ) || [];
-            
-            // 构建图片URL文本信息
-            const imageUrlsText = httpImageLinks.length > 0 
-              ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
-              : '';
-            
-            return {
-              role: msg.role,
-              content: msg.imageLinks.length > 0
-                ? [
-                    {
-                      type: "text",
-                      text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
-                    },
-                    ...msg.imageLinks.map(imageLink => ({
-                      type: "image_url",
-                      image_url: { url: imageLink.path }
-                    }))
-                  ]
-                : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
-            };
-          });
+          // 提取HTTP/HTTPS图片链接
+          const httpImageLinks = msg.imageLinks?.filter(imageLink => 
+            imageLink.path.startsWith('http')
+          ) || [];
+          
+          // 构建图片URL文本信息
+          const imageUrlsText = httpImageLinks.length > 0 
+            ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
+            : '';
+          
+          return {
+            role: msg.role,
+            content: (msg.imageLinks && msg.imageLinks.length > 0)
+              ? [
+                  {
+                    type: "text",
+                    text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+                  },
+                  ...msg.imageLinks.map(imageLink => ({
+                    type: "image_url",
+                    image_url: { url: imageLink.path }
+                  }))
+                ]
+              : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+          };
+        });
       }
-
-      
-
       
       this.userInput = '';
       this.isSending = true;
@@ -3880,6 +3877,8 @@ let vue_methods = {
     splitTTSBuffer(buffer) {
       // 移除buffer中的emoji
       buffer = buffer.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+      // 移除常见的markdown符号，例如：**  --- 
+      buffer = buffer.replace(/[*_~`]/g, '');
 
       if (!buffer || buffer.trim() === '') {
         return { chunks: [], remaining: buffer };
