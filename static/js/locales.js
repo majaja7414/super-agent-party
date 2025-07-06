@@ -526,6 +526,8 @@ const translations = {
       'pause': '暂停',
       'play': '播放',
       'initializing': '初始化中',
+      'backward': '向后',
+      'forward': '向前',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1051,5 +1053,7 @@ const translations = {
       'ttsEngine': 'TTS Engine',
       'tts': 'TTS',
       'initializing': 'Initializing',
+      'backward': 'Backward',
+      'forward': 'Forward',
     }
   };

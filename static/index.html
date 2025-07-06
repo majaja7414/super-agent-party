@@ -218,9 +218,28 @@
                     @click="toggleTTS(message)"
                     circle 
                     size="small"
-                  />
-                  <i v-if="!message.isPlaying" class="fa-solid fa-play"></i>
-                  <i v-else class="fa-solid fa-pause"></i>
+                  >
+                    <i v-if="!message.isPlaying" class="fa-solid fa-play"></i>
+                    <i v-else class="fa-solid fa-pause"></i>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip :content="t('backward')">
+                  <el-button 
+                    @click="backwardTTS(message)"
+                    circle 
+                    size="small"
+                  >
+                    <i class="fa-solid fa-backward"></i>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip :content="t('forward')">
+                  <el-button 
+                    @click="forwardTTS(message)"
+                    circle 
+                    size="small"
+                  >
+                    <i class="fa-solid fa-forward"></i>
+                  </el-button>
                 </el-tooltip>
                 <span class="tts-status" v-if="message.ttsChunks">
                   {{ (message.currentChunk || 0) + 1 }}/{{ message.ttsChunks.length }}

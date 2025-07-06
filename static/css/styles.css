@@ -3027,18 +3027,21 @@ body {
 
 .tts-controls {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  align-items: center; /* 确保垂直居中 */
   margin-bottom: 8px;
-  padding: 4px 8px;
-  background: var(--el-bg-color);
-  border-radius: 4px;
-  font-size: 12px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.message:hover .tts-controls {
+  opacity: 1;
 }
 
 .tts-status {
   color: var(--el-color-info);
   font-size: 11px;
+  margin-left: 8px; /* 文字左侧也保持相同间距 */
 }
 
 .message.assistant .tts-controls {
@@ -3047,4 +3050,9 @@ body {
 
 .message.assistant .tts-controls .tts-status {
   color: var(--el-primary-color)
+}
+
+/* 保持按钮之间的间距不变 */
+.tts-controls .el-button {
+  margin: 0; /* 移除默认边距 */
 }
