@@ -522,6 +522,7 @@ const translations = {
       'ttsModel': '语音合成模型',
       'asrReady': '语音识别已准备就绪',
       'ttsEngine': '语音合成接口',
+      'tts': '语音合成',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1045,5 +1046,6 @@ const translations = {
       'ttsModel': 'TTS Model',
       'asrReady': 'ASR Ready',
       'ttsEngine': 'TTS Engine',
+      'tts': 'TTS',
     }
   };

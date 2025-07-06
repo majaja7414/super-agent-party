@@ -700,6 +700,18 @@
               </el-button>
             </el-tooltip>
 
+            <el-tooltip :content="t('tts')" placement="top">
+              <el-button
+                @click="ttsSettings.enabled = !ttsSettings.enabled; autoSaveSettings()"
+                class="icon-btn asr-btn"
+                :type="ttsSettings.enabled ? 'primary' : 'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i v-if="ttsSettings.enabled" class="fa-solid fa-volume-high"></i>
+                <i v-else class="fa-solid fa-volume-xmark"></i>
+              </el-button>
+            </el-tooltip>
+
             <el-tooltip :content="t('knowledgeBase')" placement="top">
               <el-button
                 @click="showKnowledgeDialog = true"
@@ -1773,6 +1785,7 @@
                   </div>
                 </el-form>
               </div>
+              <!-- 语音合成界面 -->
               <div v-show="subMenu === 'tts'" class="page">
                 <el-form :model="ttsSettings" class="settings-form"  label-position="top">
                   <div class="tool-item">
@@ -1795,6 +1808,23 @@
                           class="full-width-input"
                         >
                           <el-option label="Edge TTS" value="edgetts" ></el-option>
+                        </el-select>
+                      </el-form-item>
+                      <el-form-item :label="t('separators')">
+                        <el-select
+                          v-model="ttsSettings.separators"
+                          multiple
+                          filterable
+                          allow-create
+                          @keyup.enter.native="handleEnter"
+                          @create="handleCreateSeparator"
+                        >
+                          <el-option
+                            v-for="sep in filteredSeparators"
+                            :key="sep.value"
+                            :label="sep.label"
+                            :value="sep.value"
+                          />
                         </el-select>
                       </el-form-item>
                     </div>

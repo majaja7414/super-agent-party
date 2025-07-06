@@ -154,7 +154,8 @@
     },
     "ttsSettings": {
       "enabled": false,
-      "engine": "edgetts"
+      "engine": "edgetts",
+      "separators":["。", "\n", "？", "！"]
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

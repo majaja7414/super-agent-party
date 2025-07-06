@@ -355,6 +355,7 @@ let vue_data = {
     ttsSettings: {
       enabled: false,
       engine: 'edgetts',
+      separators:["。", "\n", "？", "！"],
     },
     modelTiles: [
       { id: 'service', title: 'modelService', icon: 'fa-solid fa-cloud' },
