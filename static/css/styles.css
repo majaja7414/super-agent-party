@@ -947,11 +947,8 @@ body {
   background-color: var(--el-bg-color);
   border-radius: 8px;
   box-shadow: 0 2px 12px var(--el-box-shadow-light);
-  scrollbar-width: none;
-}
-
-.messages-container::-webkit-scrollbar {
-  display: none;
+  scrollbar-width: 2px;
+  overflow-y: auto;
 }
 
 /* 修复消息容器布局 */
