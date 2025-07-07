@@ -533,6 +533,7 @@ const translations = {
       'edgettsVoice': 'EdgeTTS声音',
       'enabledInterruption': '是否允许被打断',
       'edgettsRate': 'EdgeTTS语速',
+      'maxConcurrency': '最大并发数',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1065,5 +1066,6 @@ const translations = {
       'edgettsVoice': 'EdgeTTS Voice',
       'enabledInterruption': 'Enable Interruption',
       'edgettsRate': 'EdgeTTS Rate',
+      'maxConcurrency': 'Max Concurrency',
     }
   };

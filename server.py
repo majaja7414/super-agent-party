@@ -5,6 +5,7 @@ import os
 import sys
 import tempfile
 import wave
+import httpx
 from scipy.io import wavfile
 import numpy as np
 import websockets
@@ -793,6 +794,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 print("m0.search error:",e)
                 relevant_memories = ""
             if request.messages and request.messages[0]['role'] == 'system':
+                print("添加相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n")
                 request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
             else:
                 request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
@@ -3511,6 +3513,8 @@ async def text_to_speech(request: Request):
         settings = await load_settings()
         data = await request.json()
         text = data['text']
+        if text == "":
+            return JSONResponse(status_code=400, content={"error": "Text is empty"})
         index = data['index']
         tts_settings = settings.get('ttsSettings', {})
         tts_engine = tts_settings.get('engine', 'edgetts')
@@ -3547,7 +3551,65 @@ async def text_to_speech(request: Request):
                     "X-Audio-Index": str(index)
                 }
             )
+        elif tts_engine == 'GSV':
+            # 从设置或请求中获取GSV所需参数
+            gsv_server = tts_settings.get('gsvServer', 'http://127.0.0.1:9880')
+            sample_steps = 4
+            if index == 1:
+                sample_steps = 1
+            elif index <= 4:
+                sample_steps = 2
+            # 构建GSV请求参数 (只包含必需参数)
+            gsv_params = {
+                "text": text,
+                "text_lang": 'zh',
+                "ref_audio_path": 'D:/super-agent-party/test/hutao.wav',
+                "prompt_lang": 'zh',
+                "streaming_mode": True,
+                "text_split_method": "cut5", 
+                "media_type": "ogg",
+                "sample_steps": sample_steps,
+                "batch_size":1,
+                "speed_factor":1.0,
+                "prompt_text": "「维护生死的边界」，这是往生堂最重要的工作内容嘛，我也会稍微比平时认真一点。",
+            }
             
+            # 添加可选参数（如果提供）
+            optional_params = [
+                "top_k", "top_p", "temperature",
+                "batch_threshold", "split_bucket",
+                "seed", "parallel_infer", "repetition_penalty","super_sampling"
+            ]
+            
+            for param in optional_params:
+                if param in data:
+                    gsv_params[param] = data[param]
+            
+            print(f"Using GSV TTS with params: {gsv_params}")
+            
+            # 创建流式生成器
+            async def generate_audio():
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    async with client.stream(
+                        "POST",
+                        f"{gsv_server}/tts",
+                        json=gsv_params
+                    ) as response:
+                        if response.status_code != 200:
+                            error = await response.json()
+                            raise HTTPException(status_code=400, detail=error)
+                        async for chunk in response.aiter_bytes():
+                            yield chunk
+            
+            # 返回流式响应 (ogg格式)
+            return StreamingResponse(
+                generate_audio(),
+                media_type="audio/ogg",
+                headers={
+                    "Content-Disposition": f"inline; filename=tts_{index}.ogg",
+                    "X-Audio-Index": str(index)
+                }
+            )
         raise HTTPException(status_code=400, detail="Invalid TTS engine")
     except Exception as e:
         return {"error": str(e)}

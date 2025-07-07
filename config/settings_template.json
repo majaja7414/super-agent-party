@@ -155,7 +155,8 @@
     "ttsSettings": {
       "enabled": false,
       "engine": "edgetts",
-      "separators":["。", "\n", "？", "！"],
+      "separators":["。", "\n", "？", "！", "，"],
+      "maxConcurrency": 2,
       "enabledInterruption": true,
       "edgettsLanguage": "zh-CN",
       "edgettsGender": "Female",

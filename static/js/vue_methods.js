@@ -3948,52 +3948,64 @@ let vue_methods = {
       if (!this.ttsSettings.enabled) return;
       
       const lastMessage = this.messages[this.messages.length - 1];
-      let processedChunks = 0;
+      // 初始化队列管理
+      lastMessage.audioChunks = lastMessage.audioChunks || [];
+      lastMessage.ttsQueue = lastMessage.ttsQueue || new Set();
       
-      while (this.isTyping || processedChunks < lastMessage.ttsChunks.length) {
-        if (processedChunks < lastMessage.ttsChunks.length) {
-          const chunk = lastMessage.ttsChunks[processedChunks];
-          const index = processedChunks;
-          
-          try {
-            console.log(`Processing TTS chunk ${index}:`, chunk);
-            const response = await fetch(`${backendURL}/tts`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                text: chunk,
-                index: index
-              })
-            });
-            
-            if (response.ok) {
-              // 创建音频URL
-              const audioBlob = await response.blob();
-              const audioUrl = URL.createObjectURL(audioBlob);
-              
-              // 将音频URL和索引添加到audioChunks
-              lastMessage.audioChunks[index] = {
-                url: audioUrl,
-                index: index
-              };
-              console.log(`TTS chunk ${index} processed`);
-            } else {
-              console.error(`TTS failed for chunk ${index}`);
-            }
-          } catch (error) {
-            console.error(`Error processing TTS chunk ${index}:`, error);
-          }
-          
-          processedChunks++;
+      let max_concurrency =  1; // 最大并行请求数
+      let nextIndex = 0;
+
+      while (this.isTyping || nextIndex < lastMessage.ttsChunks.length) {
+        if(nextIndex > 0){
+          max_concurrency = this.ttsSettings.maxConcurrency || 1;
         }
-        if (processedChunks === 0){
-          await new Promise(resolve => setTimeout(resolve, 10));
+        // 填充处理队列
+        while (lastMessage.ttsQueue.size < max_concurrency && 
+              nextIndex < lastMessage.ttsChunks.length) {
+          
+          const index = nextIndex++;
+          lastMessage.ttsQueue.add(index);
+          
+          // 并行处理chunk（不等待）
+          this.processTTSChunk(lastMessage, index).finally(() => {
+            lastMessage.ttsQueue.delete(index);
+          });
         }
+        
+        // 避免CPU忙等待
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
       
-      console.log('TTS processing completed');
+      console.log('TTS queue processing completed');
+    },
+
+    async processTTSChunk(message, index) {
+      const chunk = message.ttsChunks[index];
+      console.log(`Processing TTS chunk ${index}:`, chunk);
+      
+      try {
+        const response = await fetch(`${backendURL}/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: chunk, index })
+        });
+
+        if (response.ok) {
+          const audioBlob = await response.blob();
+          const audioUrl = URL.createObjectURL(audioBlob);
+          
+          // 原子性更新音频块
+          message.audioChunks[index] = { url: audioUrl, index };
+          console.log(`TTS chunk ${index} processed`);
+          
+          // 触发播放检查
+          this.checkAudioPlayback();
+        } else {
+          console.error(`TTS failed for chunk ${index}`);
+        }
+      } catch (error) {
+        console.error(`Error processing TTS chunk ${index}:`, error);
+      }
     },
 
     // 音频播放进程
@@ -4001,56 +4013,53 @@ let vue_methods = {
       if (!this.ttsSettings.enabled) return;
       
       const lastMessage = this.messages[this.messages.length - 1];
-      if (this.currentAudio){
-        this.currentAudio.pause();
-      }
-      this.currentAudio = null;
+      lastMessage.currentChunk = lastMessage.currentChunk || 0;
+      lastMessage.isPlaying = false;
       
-      while (this.isTyping || lastMessage.currentChunk < lastMessage.ttsChunks.length) {
-        // 检查当前索引的音频是否已经准备好
-        const currentIndex = lastMessage.currentChunk;
-        const audioChunk = lastMessage.audioChunks[currentIndex];
+      // 只需初始化一次
+      this.audioPlayQueue = [];
+      
+      console.log('Audio playback monitor started');
+    },
+
+    async checkAudioPlayback() {
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (!lastMessage || lastMessage.isPlaying) return;
+
+      const currentIndex = lastMessage.currentChunk;
+      const audioChunk = lastMessage.audioChunks[currentIndex];
+      
+      if (audioChunk && !lastMessage.isPlaying) {
+        lastMessage.isPlaying = true;
+        console.log(`Playing audio chunk ${currentIndex}`);
         
-        if (audioChunk && !lastMessage.isPlaying) {
-          lastMessage.isPlaying = true;
-          console.log(`Playing audio chunk ${currentIndex}:`, audioChunk.url);
+        try { 
+          // 创建新音频实例
+          this.currentAudio = new Audio(audioChunk.url);
           
-          try {
-            // 创建音频元素并播放
-            this.currentAudio = new Audio(audioChunk.url);
-            
-            // 等待音频播放完成
-            await new Promise((resolve, reject) => {
-              this.currentAudio.onended = () => {
-                console.log(`Audio chunk ${currentIndex} finished playing`);
-                resolve();
-              };
-              this.currentAudio.onerror = (error) => {
-                console.error(`Error playing audio chunk ${currentIndex}:`, error);
-                showNotification(`Error playing audio:${error}`, 'error');
-                reject(error);
-              };
-              this.currentAudio.play().catch(reject);
-            });
-            
-            // 播放完成后移动到下一个块
-            lastMessage.currentChunk++;
-            lastMessage.isPlaying = false;
-            
-          } catch (error) {
-            console.error(`Error playing audio chunk ${currentIndex}:`, error);
-            lastMessage.isPlaying = false;
-            // 如果播放失败，也要移动到下一个块以避免卡住
-            lastMessage.currentChunk++;
-          }
+          // 播放音频
+          await new Promise((resolve) => {
+            this.currentAudio.onended = resolve;
+            this.currentAudio.onerror = resolve;
+            this.currentAudio.play().catch(e => console.error('Play error:', e));
+          });
+          
+          console.log(`Audio chunk ${currentIndex} finished`);
+        } catch (error) {
+          console.error(`Playback error: ${error}`);
+        } finally {
+          // 更新状态
+          lastMessage.currentChunk++;
+          lastMessage.isPlaying = false;
+          
+          // 立即检查下一段
+          this.checkAudioPlayback();
         }
-        // 等待一小段时间再检查
-        await new Promise(resolve => setTimeout(resolve, 10));
       }
-      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length){
+      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
+        console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
       }
-      console.log('Audio playback completed');
     },
 
     // 停止音频播放（用于停止生成时）

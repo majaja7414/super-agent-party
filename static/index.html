@@ -1844,6 +1844,7 @@
                           class="full-width-input"
                         >
                           <el-option label="Edge TTS" value="edgetts" ></el-option>
+                          <el-option label="GSV" value="GSV" ></el-option>
                         </el-select>
                       </el-form-item>
                       <el-form-item :label="t('separators')">
@@ -1869,6 +1870,14 @@
                           @change="autoSaveSettings"
                         ></el-switch>
                       </el-form-item>
+                    <el-form-item :label="t('maxConcurrency')" class="form-item-align">
+                      <el-slider
+                        v-model="ttsSettings.maxConcurrency"
+                        :min="1"
+                        :max="16"
+                        :step="1"
+                        @change="autoSaveSettings">
+                    </el-form-item>
                     </div>
                   </div>
                   <div class="tool-item" v-show="ttsSettings.engine === 'edgetts'">
