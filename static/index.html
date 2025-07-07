@@ -3177,7 +3177,7 @@
                       <div class="provider-card knowledge-card" v-for="memory in memories" :key="memory.id">
                         <div class="card-header">
                           <img 
-                            :src="getVendorLogo(memory.vendor)" 
+                            :src="memory.vendor? getVendorLogo(memory.vendor) : 'source/providers/custom.png'" 
                             class="mini-vendor-logo"
                           />
                           <div class="card-actions">
@@ -3323,12 +3323,26 @@
                             <span>{{ t('autoUpdateSetting') }}</span>
                           </el-tooltip>
                         </template>
-                        <el-form-item :label="t('embeddingProvider')" required>
+                        <el-form-item :label="t('embeddingProvider')">
                           <el-select 
                             v-model="newMemory.providerId" 
                             :placeholder="t('selectProvider')"
                             @change="selectMemoryProvider"
                             class="full-width-input">
+                            <!-- 添加“无”选项，默认选中 -->
+                            <el-option
+                              :key="'none'"
+                              :label="t('none')"
+                              :value="null"
+                            >
+                              <div class="provider-option">
+                                <img 
+                                  src="source/providers/custom.png" 
+                                  class="mini-vendor-logo"
+                                />
+                                <span class="model-id">{{ t("NoLongTermMemory") }}</span>
+                              </div>
+                            </el-option>
                             <el-option
                               v-for="provider in modelProviders"
                               :key="provider.id"
@@ -3361,6 +3375,7 @@
                               </el-link>
                               {{ t('addProviderReturnSelect') }}
                               {{ t('addemdNotice') }}
+                              {{ t('autoUpdateSettingNote') }}
                             </div>
                           </template>
                         </el-alert>
@@ -3497,7 +3512,7 @@
                     <el-button 
                       type="primary" 
                       @click="addMemory"
-                      :disabled="!newMemory.name || !newMemory.providerId">
+                      :disabled="!newMemory.name">
                       {{ t('confirmAdd') }}
                     </el-button>
                   </template>

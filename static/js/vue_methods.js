@@ -2750,7 +2750,7 @@ let vue_methods = {
       }
     },
     getVendorLogo(vendor) {
-      return this.vendorLogoList[vendor] || "";
+      return this.vendorLogoList[vendor] || "source/providers/custom.png";
     },
     handleSelectVendor(vendor) {
       this.newProviderTemp.vendor = vendor;
@@ -2774,7 +2774,7 @@ let vue_methods = {
           model:this.newMemory.model,
           api_key: this.newMemory.api_key,
           base_url: this.newMemory.base_url,
-          vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
+          vendor:this.newMemory.providerId ? this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor: "",
           lorebook: this.newMemory.lorebook,
           random: this.newMemory.random,
           basic_character: this.newMemory.basic_character,
@@ -2792,7 +2792,7 @@ let vue_methods = {
           memory.model = this.newMemory.model;
           memory.api_key = this.newMemory.api_key;
           memory.base_url = this.newMemory.base_url;
-          memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
+          memory.vendor = this.newMemory.providerId ? this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor: "";
           memory.lorebook = this.newMemory.lorebook;
           memory.random = this.newMemory.random;
           memory.basic_character = this.newMemory.basic_character;
@@ -2849,7 +2849,7 @@ let vue_methods = {
     
     getVendorName(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
-      return provider ? `${this.t("model")}:${provider.modelId}` : '';
+      return provider ? `${this.t("model")}:${provider.modelId}` : this.t("NoLongTermMemory");
     },
     async saveCustomHttpTool() {
       const toolData = { ...this.newCustomHttpTool };
