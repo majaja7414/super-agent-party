@@ -543,6 +543,14 @@ const translations = {
       "yue" :"粤语",
       "auto": "自动",
       "auto_yue": "自动(粤语)",
+      "gsvRate": "语速",
+      'gsvTextLang': '目标语言',
+      'gsvPromptLang': '参考音频语言',
+      'gsvPromptAudio': '参考音色',
+      'uploadGsvRefAudio': '上传参考音色',
+      'gsvPromptText': '参考音频文本',
+      'gsvPromptTextPlaceholder': '请输入参考音频中对应的文本',
+      'addRefAudio': '添加参考音色',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1085,5 +1093,13 @@ const translations = {
       "yue" :"Cantonese",
       "auto": "Auto",
       "auto_yue": "Auto (Cantonese)",
+      "gsvRate": "Speech rate",
+      'gsvTextLang ':' Target language',
+      'gsvPromptLang ':' Reference audio language',
+      'gsvPromptAudio ':' Reference sound',
+      'uploadGsvRefAudio ':' Upload reference sound',
+      'gsvPromptText ':' Reference audio text',
+      'gsvPromptTextPlaceholder ':' Please enter the corresponding text in the reference audio',
+      'addRefAudio': 'Add reference sound',
     }
   };
