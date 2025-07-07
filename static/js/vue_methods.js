@@ -4145,4 +4145,148 @@ let vue_methods = {
     updateVoices() {
       this.autoSaveSettings();
     },
+      // 浏览参考音频文件
+  browseGsvRefAudioFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = (event) => {
+      const files = event.target.files;
+      if (files.length > 0) {
+        this.newGsvAudio.name = files[0].name;
+        this.newGsvAudio.file = files[0]; // 存储文件对象
+      }
+    };
+    input.click();
+  },
+  
+  // 处理参考音频拖拽
+  handleGsvRefAudioDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      this.newGsvAudio.name = files[0].name;
+      this.newGsvAudio.file = files[0]; // 存储文件对象
+    }
+  },
+  
+  // 移除已选择的参考音频
+  removeNewGsvAudio() {
+    this.newGsvAudio.name = '';
+    this.newGsvAudio.file = null;
+  },
+  
+  // 取消上传
+  cancelGsvAudioUpload() {
+    this.showGsvRefAudioPathDialog = false;
+    this.newGsvAudio.name = '';
+    this.newGsvAudio.text = '';
+    this.newGsvAudio.file = null;
+  },
+  
+  // 上传参考音频
+  async uploadGsvAudio() {
+    if (!this.newGsvAudio.file) {
+      this.showNotification('请先选择音频文件', 'error');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', this.newGsvAudio.file);
+    formData.append('prompt_text', this.newGsvAudio.text);
+    
+    try {
+      const response = await fetch('/upload_gsv_ref_audio', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 添加新音频到选项列表
+        const newAudioOption = {
+          path: result.file.unique_filename,
+          name: result.file.name,
+          text: this.newGsvAudio.text
+        };
+        
+        this.ttsSettings.gsvAudioOptions.push(newAudioOption);
+        
+        // 关闭对话框并重置状态
+        this.cancelGsvAudioUpload();
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        this.showNotification('参考音频上传成功');
+      } else {
+        this.showNotification(`上传失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('上传参考音频失败:', error);
+      this.showNotification('上传失败，请检查网络连接', 'error');
+    }
+  },
+  
+  // 处理参考音频路径改变
+  handleRefAudioPathChange(value) {
+    // 当选择新的参考音频时，更新对应的提示文本
+    const selectedAudio = this.ttsSettings.gsvAudioOptions.find(
+      audio => audio.path === value
+    );
+    
+    if (selectedAudio && selectedAudio.text) {
+      this.ttsSettings.gsvPromptText = selectedAudio.text;
+    }
+    
+    // 自动保存设置
+    this.autoSaveSettings();
+  },
+
+    // 删除音频选项
+  async deleteAudioOption(path) {
+    try {
+      // 查找要删除的音频选项
+      const audioIndex = this.ttsSettings.gsvAudioOptions.findIndex(
+        audio => audio.path === path
+      );
+      
+      if (audioIndex === -1) return;
+      
+      // 获取文件名用于后端删除
+      const uniqueFilename = this.ttsSettings.gsvAudioOptions[audioIndex].path
+        .split('/')
+        .pop();
+      
+      // 调用后端API删除文件
+      const response = await fetch(`/delete_audio/${uniqueFilename}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 从选项中移除
+        this.ttsSettings.gsvAudioOptions.splice(audioIndex, 1);
+        
+        // 如果当前选中的音频被删除，则重置选择
+        if (this.ttsSettings.gsvRefAudioPath === path) {
+          this.ttsSettings.gsvRefAudioPath = '';
+          this.ttsSettings.gsvPromptText = '';
+        }
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        this.showNotification('音频已删除');
+      } else {
+        this.showNotification(`删除失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('删除音频失败:', error);
+      this.showNotification('删除失败，请稍后再试', 'error');
+    }
+  },
+  
 }

@@ -161,7 +161,13 @@
       "edgettsLanguage": "zh-CN",
       "edgettsGender": "Female",
       "edgettsVoice": "XiaoyiNeural",
-      "edgettsRate": 1.0
+      "edgettsRate": 1.0,
+      "gsvTextLang": "zh",
+      "gsvRate": 1.0,
+      "gsvPromptLang": "zh",
+      "gsvPromptText": "",
+      "gsvRefAudioPath": "",
+      "gsvAudioOptions": []
     },
     "comfyuiServers": ["http://localhost:8188"],
     "comfyuiAPIkey": "",

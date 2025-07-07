@@ -3552,57 +3552,63 @@ async def text_to_speech(request: Request):
                     "X-Audio-Index": str(index)
                 }
             )
+        # GSV处理逻辑
         elif tts_engine == 'GSV':
-            # 从设置或请求中获取GSV所需参数
-            gsv_server = tts_settings.get('gsvServer', 'http://127.0.0.1:9880')
+            # 从设置获取所有参数并提供默认值
+            gsv_config = {
+                'server': tts_settings.get('gsvServer', 'http://127.0.0.1:9880'),
+                'text_lang': tts_settings.get('gsvTextLang', 'zh'),
+                'speed': tts_settings.get('gsvRate', 1.0),
+                'prompt_lang': tts_settings.get('gsvPromptLang', 'zh'),
+                'prompt_text': tts_settings.get('gsvPromptText', ''),
+                'ref_audio': tts_settings.get('gsvRefAudioPath', '')
+            }
+            audio_path = os.path.join(UPLOAD_FILES_DIR, gsv_config['ref_audio'])
+            print(f"GSV参数: {gsv_config},音频地址:{audio_path}")
+            # 动态样本步数设置
             sample_steps = 4
             if index == 1:
                 sample_steps = 1
             elif index <= 4:
                 sample_steps = 2
-            # 构建GSV请求参数 (只包含必需参数)
+
+            # 构建核心请求参数
             gsv_params = {
                 "text": text,
-                "text_lang": 'zh',
-                "ref_audio_path": 'D:/super-agent-party/test/hutao.wav',
-                "prompt_lang": 'zh',
-                "streaming_mode": True,
-                "text_split_method": "cut5", 
-                "media_type": "ogg",
+                "text_lang": gsv_config['text_lang'],
+                "ref_audio_path": audio_path,
+                "prompt_lang": gsv_config['prompt_lang'],
+                "prompt_text": gsv_config['prompt_text'],
+                "speed_factor": gsv_config['speed'],
                 "sample_steps": sample_steps,
-                "batch_size":1,
-                "speed_factor":1.0,
-                "prompt_text": "「维护生死的边界」，这是往生堂最重要的工作内容嘛，我也会稍微比平时认真一点。",
+                "streaming_mode": True,
+                "text_split_method": "cut5",
+                "media_type": "ogg",
+                "batch_size": 1
             }
             
-            # 添加可选参数（如果提供）
-            optional_params = [
-                "top_k", "top_p", "temperature",
-                "batch_threshold", "split_bucket",
-                "seed", "parallel_infer", "repetition_penalty","super_sampling"
-            ]
-            
+            # 添加可选参数
+            optional_params = ["top_k", "top_p", "temperature", "batch_threshold", 
+                              "split_bucket", "seed", "parallel_infer", "repetition_penalty"]
             for param in optional_params:
                 if param in data:
                     gsv_params[param] = data[param]
-            
-            print(f"Using GSV TTS with params: {gsv_params}")
-            
-            # 创建流式生成器
+
             async def generate_audio():
                 async with httpx.AsyncClient(timeout=60.0) as client:
-                    async with client.stream(
-                        "POST",
-                        f"{gsv_server}/tts",
-                        json=gsv_params
-                    ) as response:
-                        if response.status_code != 200:
-                            error = await response.json()
-                            raise HTTPException(status_code=400, detail=error)
-                        async for chunk in response.aiter_bytes():
-                            yield chunk
+                    try:
+                        async with client.stream(
+                            "POST",
+                            f"{gsv_config['server']}/tts",
+                            json=gsv_params
+                        ) as response:
+                            response.raise_for_status()
+                            async for chunk in response.aiter_bytes():
+                                yield chunk
+                    except httpx.HTTPStatusError as e:
+                        error_detail = f"GSV服务错误: {e.response.status_code} - {await e.response.text()}"
+                        raise HTTPException(status_code=502, detail=error_detail)
             
-            # 返回流式响应 (ogg格式)
             return StreamingResponse(
                 generate_audio(),
                 media_type="audio/ogg",
@@ -3611,9 +3617,11 @@ async def text_to_speech(request: Request):
                     "X-Audio-Index": str(index)
                 }
             )
-        raise HTTPException(status_code=400, detail="Invalid TTS engine")
+        
+        raise HTTPException(status_code=400, detail="不支持的TTS引擎")
+    
     except Exception as e:
-        return {"error": str(e)}
+        return JSONResponse(status_code=500, content={"error": f"服务器内部错误: {str(e)}"})
 
 # 添加状态存储
 mcp_status = {}
@@ -3823,6 +3831,7 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.delete("/delete_file")
 async def delete_file_endpoint(request: Request):
     data = await request.json()
@@ -3836,6 +3845,84 @@ async def delete_file_endpoint(request: Request):
             return JSONResponse(content={"success": False, "message": "File not found"})
     except Exception as e:
         return JSONResponse(content={"success": False, "message": str(e)})
+
+ALLOWED_AUDIO_EXTENSIONS = ['wav', 'mp3', 'ogg', 'flac', 'aac']
+
+@app.post("/upload_gsv_ref_audio")
+async def upload_gsv_ref_audio(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    fastapi_base_url = str(request.base_url)
+    
+    # 检查文件扩展名
+    file_extension = file.filename.split('.')[-1].lower()
+    if file_extension not in ALLOWED_AUDIO_EXTENSIONS:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"不支持的文件类型: {file_extension}"}
+        )
+    
+    # 生成唯一文件名
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+    
+    try:
+        # 保存文件
+        with open(destination, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 构建响应
+        file_link = f"{fastapi_base_url}uploaded_files/{unique_filename}"
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "参考音频上传成功",
+            "file": {
+                "path": file_link,
+                "name": file.filename,
+                "unique_filename": unique_filename
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"参考音频上传失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"文件保存失败: {str(e)}"}
+        )
+
+@app.delete("/delete_audio/{filename}")
+async def delete_audio(filename: str):
+    try:
+        file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+        
+        # 安全检查：确保文件名是UUID格式，防止路径遍历攻击
+        if not re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.\w+$", filename):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Invalid filename"}
+            )
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={
+                "success": True,
+                "message": "音频文件已删除"
+            })
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "文件不存在"}
+            )
+            
+    except Exception as e:
+        logger.error(f"删除音频失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"删除失败: {str(e)}"}
+        )
 
 @app.get("/update_storage")
 async def update_storage_endpoint(request: Request):

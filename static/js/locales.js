@@ -536,6 +536,13 @@ const translations = {
       'enabledInterruption': '是否允许被打断',
       'edgettsRate': 'EdgeTTS语速',
       'maxConcurrency': '最大并发数',
+      "zh":"中文",
+      "en":"英文",
+      "ja":"日语",
+      "ko":"韩语",
+      "yue" :"粤语",
+      "auto": "自动",
+      "auto_yue": "自动(粤语)",
     },
     'en-US': {
       'chat': 'Chat',
@@ -1071,5 +1078,12 @@ const translations = {
       'enabledInterruption': 'Enable Interruption',
       'edgettsRate': 'EdgeTTS Rate',
       'maxConcurrency': 'Max Concurrency',
+      "zh":"Chinese",
+      "en":"English",
+      "ja":"Japanese",
+      "ko":"Korean",
+      "yue" :"Cantonese",
+      "auto": "Auto",
+      "auto_yue": "Auto (Cantonese)",
     }
   };
