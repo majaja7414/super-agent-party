@@ -183,7 +183,7 @@ let vue_data = {
       sse: `{
   "mcpServers": {
     "sse-server": {
-      "url": "http://localhost:8000/sse",
+      "url": "http://127.0.0.1:8000/sse",
       "disabled": false
     }
   }
@@ -191,7 +191,7 @@ let vue_data = {
       ws: `{
   "mcpServers": {
     "websocket-server": {
-      "url": "ws://localhost:8000/ws",
+      "url": "ws://127.0.0.1:8000/ws",
       "disabled": false
     }
   }
@@ -199,7 +199,7 @@ let vue_data = {
     streamablehttp: `{
   "mcpServers": {
     "streamablehttp-server": {
-      "url": "http://localhost:8000/streamablehttp",
+      "url": "http://127.0.0.1:8000/streamablehttp",
       "disabled": false
     }
   }
@@ -346,7 +346,7 @@ let vue_data = {
       model: "",
       base_url: "",
       api_key: "",
-      funasr_ws_url: "ws://localhost:10095",
+      funasr_ws_url: "ws://127.0.0.1:10095",
       funasr_mode: "2pass",
       interactionMethod: "auto",
       hotkey : "Alt",
@@ -357,13 +357,14 @@ let vue_data = {
     ttsSettings: {
       enabled: false,
       engine: 'edgetts',
-      separators:["。", "\n", "？", "！", "，"],
+      separators:["。", "\n", "？", "！", "，","!","?",","],
       maxConcurrency: 2,
       enabledInterruption: true,
       edgettsLanguage: 'zh-CN',
       edgettsGender: 'Female',
       edgettsVoice: 'XiaoyiNeural',
       edgettsRate: 1.0,
+      gsvServer: "http://127.0.0.1:9880",
       gsvTextLang: 'zh',
       gsvRate: 1.0,
       gsvPromptLang: 'zh',
@@ -858,7 +859,7 @@ let vue_data = {
         icon: 'fa-solid fa-palette'
       },
     ],
-    comfyuiServers: ['http://localhost:8188'], // 默认服务器
+    comfyuiServers: ['http://127.0.0.1:8188'], // 默认服务器
     comfyuiAPIkey: '',
     workflowDescription: "",
     activeComfyUIUrl: '',

@@ -1958,10 +1958,28 @@
                             <i class="fa-solid fa-volume-high"></i>
                           </el-icon>
                           GPT Sovits
+                          <el-link
+                            type="primary"
+                            :underline="false"
+                            href="https://github.com/RVC-Boss/GPT-SoVITS" 
+                            target="_blank"
+                          >
+                            <el-icon class="mr-1">
+                              <i class="fa-solid fa-key"></i>
+                            </el-icon>{{ t('gotoGithub') }}
+                          </el-link>
                         </span>
                       </div>
                     </div>
                     <div class="tool-content">
+                      <el-form-item :label="t('gsvServer')" class="form-item-align">
+                        <el-input
+                          v-model="ttsSettings.gsvServer"
+                          :placeholder="t('gsvServerPlaceholder')"
+                          @input="autoSaveSettings"
+                          class="full-width-input"
+                        />
+                      </el-form-item>
 
                       <!-- 语速滑动条 -->
                       <el-form-item :label="t('gsvRate')" class="form-item-align">
@@ -2041,6 +2059,19 @@
                         class="add-server-btn">
                         <i class="fa-solid fa-plus"></i> {{ t('addRefAudio') }}
                       </el-button>
+
+                      <el-alert
+                        type="info"
+                        :closable="false"
+                        class="mb-2"
+                      >
+                        <template #default>
+                          <div class="alert-content">
+                            {{ t('gsvNotice1') }}<br>
+                            {{ t('gsvNotice2') }}
+                          </div>
+                        </template>
+                      </el-alert>
                     </div>
                   </div>
                   <!-- 音频上传对话框 -->

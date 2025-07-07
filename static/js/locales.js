@@ -506,7 +506,7 @@ const translations = {
       'asr': '语音识别',
       'funasrURL': 'FunASR URL',
       'funasrURLPlaceholder': '请输入FunASR URL',
-      'funasrNotice1': '1. 请在docker中启动FunASR服务，需要在终端中输入：`docker run -d harryliu888/funasr-online-server:latest`',
+      'funasrNotice1': '1. 请在docker中启动FunASR服务，需要在终端中输入：` docker run -d harryliu888/funasr-online-server:latest `',
       'funasrNotice2': '2. 热词一行一个，每行按词语+空格+权重的方式填入',
       'mode': '模式',
       'online': '实时',
@@ -551,6 +551,10 @@ const translations = {
       'gsvPromptText': '参考音频文本',
       'gsvPromptTextPlaceholder': '请输入参考音频中对应的文本',
       'addRefAudio': '添加参考音色',
+      'gsvNotice1': '1. 请点击上方文档链接，下载GSV-V4版本的整合包',
+      'gsvNotice2': '2. 请在整合包项目路径下打开终端，执行` runtime/python.exe api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml `启动服务',
+      'gsvServer': 'GSV URL',
+      'gsvServerPlaceholder': '请输入GSV URL',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1058,7 +1062,7 @@ const translations = {
       'asr': 'ASR',
       'funasrURL': 'FunASR URL',
       'funasrURLPlaceholder': 'Please enter the FunASR URL',
-      'funasrNotice1': '1. Please start the FunASR service in docker, you need to enter in the terminal:`docker run -d harryliu888/funasr-online-server:latest`',
+      'funasrNotice1': '1. Please start the FunASR service in docker, you need to enter in the terminal:` docker run -d harryliu888/funasr-online-server:latest `',
       'funasrNotice2': '2. One hot keyword per line, each line should be filled in the format of keyword + space + weight',
       'mode': 'Mode',
       'online': 'Real-time',
@@ -1101,5 +1105,9 @@ const translations = {
       'gsvPromptText ':' Reference audio text',
       'gsvPromptTextPlaceholder ':' Please enter the corresponding text in the reference audio',
       'addRefAudio': 'Add reference sound',
+      'gsvNotice': '1. Please click the document link above to download the GSV-V4 integrated package',
+      'gsvNotice2': '2. Please open the terminal under the integration package project path, and execute ` runtime/python.exe api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml ` to start the service.',
+      'gsvServer': 'GSV URL',
+      'gsvServerPlaceholder': 'Please enter the GSV URL',
     }
   };
