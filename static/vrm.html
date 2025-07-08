@@ -8,6 +8,14 @@
 			content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
 		/>
 		<style>
+			body.electron {
+			background: transparent !important;
+			overflow: hidden;
+			}
+
+			body.web {
+			background: #ffffff;
+			}
 			body {
 				margin: 0;
 			}
@@ -108,10 +116,22 @@
 			}
 
 			// renderer
-			const renderer = new THREE.WebGPURenderer();
+			// 检测运行环境
+			const isElectron = typeof require !== 'undefined' || navigator.userAgent.includes('Electron');
+
+			// 根据环境添加 class
+			document.body.classList.add(isElectron ? 'electron' : 'web');
+
+			// 调整渲染器设置
+			const renderer = new THREE.WebGPURenderer({
+				alpha: isElectron,  // 在 Electron 中启用透明度通道
+				premultipliedAlpha: isElectron
+			});
 			renderer.setSize( window.innerWidth, window.innerHeight );
 			renderer.setPixelRatio( window.devicePixelRatio );
-			renderer.setClearColor( 0xffffff, 1 ); // 背景保持纯白色
+			// 修改 clearColor 设置
+			renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1); 
+
 			document.body.appendChild( renderer.domElement );
 
 			// camera
@@ -137,6 +157,13 @@
 				emissive: 0xffffff,     // 添加自发光
 				emissiveIntensity: 0.3  // 自发光强度
 			} );
+
+			// 修改地板材质（仅在 Electron 中隐藏地板）
+			if (isElectron) {
+				floorMaterial.visible = false;
+				floorMaterial.opacity = 0;
+				floorMaterial.transparent = true;
+			}
 			const floor = new THREE.Mesh( floorGeometry, floorMaterial );
 			floor.rotation.x = -Math.PI / 2;
 			floor.position.y = 0;

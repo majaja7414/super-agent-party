@@ -4292,5 +4292,21 @@ let vue_methods = {
       this.showNotification('删除失败，请稍后再试', 'error');
     }
   },
-  
+    async startVRM() {
+    if (this.isElectron) {
+      // Electron 环境
+      try {
+        this.isVRMStarting = true;
+        await window.electronAPI.startVRMWindow();
+      } catch (error) {
+        console.error('启动失败:', error);
+      } finally {
+        this.isVRMStarting = false;
+      }
+    } else {
+      // 浏览器环境
+      window.open(`${backendURL}/vrm.html`, '_blank');
+    }
+  },
+
 }
