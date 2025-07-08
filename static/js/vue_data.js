@@ -778,6 +778,13 @@ let vue_data = {
       reasoningVisible: true,
       quickRestart: true,
     },
+    VRMConfig: {
+      VRMAgent:'super-model',
+    },
+    isVRMRunning: false,
+    isVRMStarting: false,
+    isVRMStopping: false,
+    isVRMReloading: false,
     BotConfig: {
       imgHost_enabled: false,
       imgHost: 'smms',
@@ -795,6 +802,7 @@ let vue_data = {
     },
     deployTiles: [
       { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
+      { id: 'table_pet', title: 'tablePet', icon: 'fa-solid fa-dog'},
       { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
     stickerPacks: [],

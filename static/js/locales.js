@@ -557,6 +557,12 @@ const translations = {
       'gsvServerPlaceholder': '请输入GSV URL',
       'Male': '男',
       'Female': '女',
+      'tablePet': 'VRM桌宠',
+      'table_pet_config': 'VRM桌宠配置',
+      'gotoVroid': '在Vroid Studio中创建VRM',
+      'start_table_pet': '启动VRM桌宠',
+      'stop_table_pet': '停止VRM桌宠',
+      'reload_table_pet': '重载VRM桌宠',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1113,5 +1119,11 @@ const translations = {
       'gsvServerPlaceholder': 'Please enter the GSV URL',
       'Male': 'Male',
       'Female': 'Female',
+      'tablePet': 'VRM Table Pet',
+      'table_pet_config': 'VRM Table Pet Config',
+      'gotoVroid': 'Create a VRM in Vroid Studio',
+      'start_table_pet': 'Start VRM Table Pet',
+      'stop_table_pet': 'Stop VRM Table Pet',
+      'reload_table_pet': 'Reload VRM Table Pet',
     }
   };

@@ -5095,6 +5095,102 @@
                       </div>
                     </el-form>
                   </div>
+                  <!-- 桌宠配置页面 -->
+                  <div v-show="subMenu === 'table_pet'">
+                    <el-form class="settings-form" :model="VRMConfig" label-position="top">
+                      <div class="tool-item">
+                        <!-- 桌宠机器人配置头部 -->
+                        <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
+                          <span>
+                            <el-icon><i class="fa-solid fa-dog"></i></el-icon>
+                            {{ t('table_pet_config') }}
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://vroid.com/en/studio" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-key"></i>
+                              </el-icon>{{ t('gotoVroid') }}
+                            </el-link>
+                          </span>
+                          <div>
+                            <!-- 启动按钮 -->
+                            <el-tooltip :content="t('start_table_pet')" placement="top">
+                              <el-button 
+                                type="primary" 
+                                @click="startVRM" 
+                                :disabled="isVRMRunning || isVRMStarting"
+                                circle
+                              >
+                                <template v-if="isVRMStarting">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-play"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                            
+                            <!-- 停止按钮 -->
+                            <el-tooltip :content="t('stop_table_pet')" placement="top">
+                              <el-button 
+                                type="danger" 
+                                @click="stopVRM" 
+                                :disabled="!isVRMRunning || isVRMStopping"
+                                circle
+                              >
+                                <template v-if="isVRMStopping">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-stop"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                            
+                            <!-- 重载按钮 -->
+                            <el-tooltip :content="t('reload_table_pet')" placement="top">
+                              <el-button 
+                                @click="reloadVRMConfig" 
+                                :disabled="!isVRMRunning || isVRMReloading"
+                                circle
+                              >
+                                <template v-if="isVRMReloading">
+                                  <i class="fa-solid fa-rotate fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-rotate"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
+                          </div>
+                        </div>
+                        <div class="tool-content">
+                            <!-- 主智能体选择 -->
+                            <el-form-item :label="t('mainAgent')" required>
+                              <el-select 
+                                v-model="VRMConfig.VRMAgent"
+                                @change="changeVRMAgent">
+                                <el-option
+                                  :label="t('defaultAgent')"
+                                  value="super-model"
+                                >
+                                </el-option>
+                                <el-option
+                                  v-for="(agent, id) in agents"
+                                  :key="id"
+                                  :label="agent.name"
+                                  :value="id"
+                                >
+                                </el-option>
+                              </el-select>
+                            </el-form-item>
+                        </div>
+                      </div>
+                    </el-form>
+                  </div>
                 </div>
             </div>
         </div>
