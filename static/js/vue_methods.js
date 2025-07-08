@@ -3697,7 +3697,9 @@ let vue_methods = {
                   this.stopGenerate();
                 }
               }
-              this.handleFrameProcessed(frame);
+              if (!this.currentAudio || this.currentAudio.paused) {
+                this.handleFrameProcessed(frame);
+              }
             }
           },
           onSpeechEnd: (audio) => {

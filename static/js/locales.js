@@ -555,6 +555,8 @@ const translations = {
       'gsvNotice2': '2. 请在整合包项目路径下打开终端，执行` runtime/python.exe api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml `启动服务',
       'gsvServer': 'GSV URL',
       'gsvServerPlaceholder': '请输入GSV URL',
+      'Male': '男',
+      'Female': '女',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1109,5 +1111,7 @@ const translations = {
       'gsvNotice2': '2. Please open the terminal under the integration package project path, and execute ` runtime/python.exe api_v2.py -a 127.0.0.1 -p 9880 -c GPT_SoVITS/configs/tts_infer.yaml ` to start the service.',
       'gsvServer': 'GSV URL',
       'gsvServerPlaceholder': 'Please enter the GSV URL',
+      'Male': 'Male',
+      'Female': 'Female',
     }
   };
