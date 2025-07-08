@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html>
 	<head>
 		<meta charset="utf-8" />
@@ -128,15 +127,19 @@
 			// scene
 			const scene = new THREE.Scene();
 
-			// 创建地板
+			// 创建地板 - 自发光白色材质
 			const floorGeometry = new THREE.PlaneGeometry( 20, 20 );
-			const floorMaterial = new THREE.MeshLambertMaterial( { 
-				color: 0xffffff,  // 白色
-				side: THREE.DoubleSide 
+			const floorMaterial = new THREE.MeshStandardMaterial( { 
+				color: 0xffffff,        // 纯白色
+				metalness: 0.1,         
+				roughness: 0.1,         
+				side: THREE.DoubleSide,
+				emissive: 0xffffff,     // 添加自发光
+				emissiveIntensity: 0.3  // 自发光强度
 			} );
 			const floor = new THREE.Mesh( floorGeometry, floorMaterial );
-			floor.rotation.x = -Math.PI / 2; // 旋转90度使其水平
-			floor.position.y = 0; // 放在y=0的位置
+			floor.rotation.x = -Math.PI / 2;
+			floor.position.y = 0;
 			scene.add( floor );
 
 			// light
@@ -243,11 +246,94 @@
             const singleBlinkDuration = 0.15;
             const doubleBlinkDuration = 0.4;
 
+            // 闲置动作的时间偏移量，让各个动作不同步
+            const idleOffsets = {
+                body: Math.random() * Math.PI * 2,
+                leftArm: Math.random() * Math.PI * 2,
+                rightArm: Math.random() * Math.PI * 2,
+                head: Math.random() * Math.PI * 2,
+                spine: Math.random() * Math.PI * 2
+            };
+
             // 生成随机的下次眨眼时间和模式
             function getRandomBlinkData() {
                 const interval = Math.random() * 4 + 1.5; // 1.5-5.5秒之间的随机间隔
                 const pattern = Math.random() < 0.8 ? 0 : 1; // 80%单次眨眼，20%双次眨眼
                 return { interval, pattern };
+            }
+
+            // 闲置动作函数
+            function applyIdleAnimation(vrm, time) {
+                if (!vrm.humanoid) return;
+
+                // 身体轻微摆动 - 慢速，小幅度
+                const bodySwayX = Math.sin(time * 0.3 + idleOffsets.body) * 0.02;
+                const bodySwayZ = Math.cos(time * 0.25 + idleOffsets.body) * 0.015;
+                
+                // 脊椎轻微摆动
+                const spine = vrm.humanoid.getNormalizedBoneNode('spine');
+                if (spine) {
+                    spine.rotation.x = bodySwayX;
+                    spine.rotation.z = bodySwayZ;
+                }
+
+                // 胸部轻微摆动
+                const chest = vrm.humanoid.getNormalizedBoneNode('chest');
+                if (chest) {
+                    chest.rotation.x = bodySwayX * 0.5;
+                    chest.rotation.z = bodySwayZ * 0.5;
+                }
+
+                // 左臂自然摆动
+                const leftUpperArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+                const leftLowerArm = vrm.humanoid.getNormalizedBoneNode('leftLowerArm');
+                if (leftUpperArm) {
+                    // 保持基本姿势，添加轻微摆动
+                    leftUpperArm.rotation.z = -0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.03 - 0.01;
+                    leftUpperArm.rotation.x = Math.cos(time * 0.35 + idleOffsets.leftArm) * 0.03;
+                    leftUpperArm.rotation.y = Math.sin(time * 0.3 + idleOffsets.leftArm) * 0.02;
+                }
+                if (leftLowerArm) {
+                    leftLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.02;
+                }
+
+                // 右臂自然摆动
+                const rightUpperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+                const rightLowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
+                if (rightUpperArm) {
+                    // 保持基本姿势，添加轻微摆动
+                    rightUpperArm.rotation.z = 0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.03;
+                    rightUpperArm.rotation.x = Math.cos(time * 0.4 + idleOffsets.rightArm) * 0.03;
+                    rightUpperArm.rotation.y = Math.sin(time * 0.32 + idleOffsets.rightArm) * 0.02;
+                }
+                if (rightLowerArm) {
+                    rightLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.02;
+                }
+
+                // 头部轻微摆动 - 比原来更细腻
+                const headBone = vrm.humanoid.getNormalizedBoneNode('head');
+                if (headBone) {
+                    headBone.rotation.y = Math.sin(time * 0.3 + idleOffsets.head) * 0.15;
+                    headBone.rotation.x = Math.sin(time * 0.25 + idleOffsets.head) * 0.04;
+                    headBone.rotation.z = Math.cos(time * 0.2 + idleOffsets.head) * 0.02;
+                }
+
+                // 肩膀轻微摆动
+                const leftShoulder = vrm.humanoid.getNormalizedBoneNode('leftShoulder');
+                const rightShoulder = vrm.humanoid.getNormalizedBoneNode('rightShoulder');
+                if (leftShoulder) {
+                    leftShoulder.rotation.z = Math.sin(time * 0.35 + idleOffsets.leftArm) * 0.02;
+                }
+                if (rightShoulder) {
+                    rightShoulder.rotation.z = Math.sin(time * 0.4 + idleOffsets.rightArm) * 0.02;
+                }
+
+                // 颈部轻微摆动
+                const neck = vrm.humanoid.getNormalizedBoneNode('neck');
+                if (neck) {
+                    neck.rotation.y = Math.sin(time * 0.28 + idleOffsets.head) * 0.05;
+                    neck.rotation.x = Math.cos(time * 0.32 + idleOffsets.head) * 0.02;
+                }
             }
 
             // 在animate函数中替换原来的眨眼动画代码
@@ -258,16 +344,12 @@
                 const deltaTime = clock.getDelta();
                 
                 if (currentVrm) {
-                    // 简单的呼吸动画
-                    const breathScale = 1 + Math.sin(time * 2) * 0.005;
+                    // 简单的呼吸动画 - 更自然的呼吸节奏
+                    const breathScale = 1 + Math.sin(time * 1.5) * 0.003;
                     currentVrm.scene.scale.setScalar(breathScale);
                     
-                    // 轻微的头部摆动
-                    const headBone = currentVrm.humanoid?.getNormalizedBoneNode('head');
-                    if (headBone) {
-                        headBone.rotation.y = Math.sin(time * 0.3) * 0.2;
-                        headBone.rotation.x = Math.sin(time * 0.3) * 0.05;
-                    }
+                    // 应用闲置动作
+                    applyIdleAnimation(currentVrm, time);
                     
                     // 高级随机眨眼动画
                     if (currentVrm.expressionManager) {
