@@ -1152,6 +1152,8 @@ let vue_methods = {
     },
     // 发送消息
     async sendMessage() { 
+      if (!this.userInput.trim() || this.isTyping) return;
+      this.isTyping = true;
       if (this.ttsSettings.enabledInterruption) {
         // 关闭正在播放的音频
         if (this.currentAudio){
@@ -1160,7 +1162,6 @@ let vue_methods = {
           this.stopGenerate();
         }
       }
-      if (!this.userInput.trim() || this.isTyping) return;
 
       // 声明变量并初始化为 null
       let ttsProcess = null;
@@ -1391,7 +1392,6 @@ let vue_methods = {
           throw new Error(errorData.error?.message || this.t('error_unknown')); // 抛出错误以停止执行
         }
 
-        this.isTyping = true;
         this.messages.push({
           role: 'assistant',
           content: '',
