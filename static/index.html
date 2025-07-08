@@ -165,7 +165,7 @@
           </el-menu-item>
           <el-menu-item index="agent_group">
             <el-icon>
-              <i class="fa-solid fa-cubes"></i>
+              <i class="fa-solid fa-gamepad"></i>
             </el-icon>
             <template #title>{{ t('agentSuite') }}</template>
           </el-menu-item>
@@ -821,7 +821,7 @@
                 :type="hasEnabledLLMTools ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
                 circle>
-                <i class="fa-solid fa-network-wired"></i>
+                <i class="fa-solid fa-cube"></i>
               </el-button>
             </el-tooltip>
 
@@ -843,7 +843,7 @@
                 :type="hasEnabledA2AServers ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
                 circle>
-                <i class="fa-solid fa-plug"></i>
+                <i class="fa-solid fa-network-wired"></i>
               </el-button>
             </el-tooltip>
 
@@ -5171,8 +5171,8 @@
                             <!-- 主智能体选择 -->
                             <el-form-item :label="t('mainAgent')" required>
                               <el-select 
-                                v-model="VRMConfig.VRMAgent"
-                                @change="changeVRMAgent">
+                                v-model="mainAgent"
+                                @change="autoSaveSettings">
                                 <el-option
                                   :label="t('defaultAgent')"
                                   value="super-model"
