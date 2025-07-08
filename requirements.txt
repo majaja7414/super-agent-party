@@ -25,7 +25,7 @@ mcp
 nest_asyncio
 shortuuid
 docstring_parser
-python-a2a[all]==0.3.0
+python-a2a[all]>= 0.5.6
 ollama
 appdirs
 aiosqlite

@@ -863,10 +863,30 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 }]
                             }
                             yield f"data: {json.dumps(tool_chunk)}\n\n"
-                            request.messages.append({
-                                "role": "system",
-                                "content": f"之前调用的异步工具（{tid}）的结果：\n\n{response['result']}\n\n====结果结束====\n\n请根据工具结果回复未回复的问题或需求。"
-                            }) 
+                            request.messages.insert(-1, 
+                                {
+                                    "tool_calls": [
+                                        {
+                                            "id": "agentParty",
+                                            "function": {
+                                                "arguments": json.dumps(response["parameters"]),
+                                                "name": response["name"],
+                                            },
+                                            "type": "function",
+                                        }
+                                    ],
+                                    "role": "assistant",
+                                    "content": "",
+                                }
+                            )
+                            request.messages.insert(-1, 
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": "agentParty",
+                                    "name": response["name"],
+                                    "content": f"之前调用的异步工具（{tid}）的结果：\n\n{response['result']}\n\n====结果结束====\n\n你必须根据工具结果回复未回复的问题或需求。请不要重复调用该工具！"
+                                }
+                            )
                         if response["status"] == "error":
                             # 构造文件名
                             filename = f"{tid}.txt"

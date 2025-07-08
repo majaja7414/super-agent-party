@@ -3881,6 +3881,8 @@ let vue_methods = {
       buffer = buffer.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
       // 移除常见的markdown符号，例如：**  --- 
       buffer = buffer.replace(/[*_~`]/g, '');
+      // 匹配markdown中的链接,[]()，并替换为空字符串
+      buffer = buffer.replace(/\[.*?\]\(.*?\)/g, '');
 
       if (!buffer || buffer.trim() === '') {
         return { chunks: [], remaining: buffer };
