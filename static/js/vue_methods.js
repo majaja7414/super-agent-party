@@ -4032,7 +4032,15 @@ let vue_methods = {
 
       const currentIndex = lastMessage.currentChunk;
       const audioChunk = lastMessage.audioChunks[currentIndex];
-      
+      if (!this.ttsSettings.enabled){
+        lastMessage.isPlaying = false; // 如果没有音频块，停止播放
+        lastMessage.currentChunk = 0; // 重置索引
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio= null;
+        }
+        return;
+      }
       if (audioChunk && !lastMessage.isPlaying) {
         lastMessage.isPlaying = true;
         console.log(`Playing audio chunk ${currentIndex}`);
@@ -4088,8 +4096,16 @@ let vue_methods = {
       }
     },
     async playAudioChunk(message) {
+      if (!this.ttsSettings.enabled){
+        message.isPlaying = false; // 如果没有音频块，停止播放
+        message.currentChunk = 0; // 重置索引
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio= null;
+        }
+        return;
+      }
       const audioChunk = message.audioChunks[message.currentChunk];
-      
       if (audioChunk) {
         const audio = new Audio(audioChunk.url);
         this.currentAudio = audio; // 保存当前音频对象
@@ -4308,5 +4324,12 @@ let vue_methods = {
       window.open(`${backendURL}/vrm.html`, '_blank');
     }
   },
-
+  async startVRMweb() {
+    if (this.isElectron) {
+      window.electronAPI.openExternal(`${backendURL}/vrm.html`);
+    }else {
+      // 浏览器环境
+      window.open(`${backendURL}/vrm.html`, '_blank');
+    }
+  }
 }

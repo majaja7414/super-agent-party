@@ -351,9 +351,9 @@
                 // 头部轻微摆动 - 比原来更细腻
                 const headBone = vrm.humanoid.getNormalizedBoneNode('head');
                 if (headBone) {
-                    headBone.rotation.y = Math.sin(time * 0.3 + idleOffsets.head) * 0.15;
-                    headBone.rotation.x = Math.sin(time * 0.25 + idleOffsets.head) * 0.04;
-                    headBone.rotation.z = Math.cos(time * 0.2 + idleOffsets.head) * 0.02;
+                    headBone.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.03;
+                    headBone.rotation.x = Math.sin(time * 0.5 + idleOffsets.head) * 0.02;
+                    headBone.rotation.z = Math.cos(time * 0.4 + idleOffsets.head) * 0.01;
                 }
 
                 // 肩膀轻微摆动
@@ -369,8 +369,8 @@
                 // 颈部轻微摆动
                 const neck = vrm.humanoid.getNormalizedBoneNode('neck');
                 if (neck) {
-                    neck.rotation.y = Math.sin(time * 0.28 + idleOffsets.head) * 0.05;
-                    neck.rotation.x = Math.cos(time * 0.32 + idleOffsets.head) * 0.02;
+                    neck.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.02;
+                    neck.rotation.x = Math.cos(time * 0.6 + idleOffsets.head) * 0.01;
                 }
             }
 
@@ -447,200 +447,234 @@
             nextBlinkTime = initialBlinkData.interval;
 
 			if (isElectron) {
-			// 等待一小段时间确保页面完全加载
-			setTimeout(() => {
-				// 创建控制面板容器
-				const controlPanel = document.createElement('div');
-				controlPanel.id = 'control-panel';
-				controlPanel.style.cssText = `
-				position: fixed;
-				top: 10px;
-				right: 10px;
-				display: flex;
-				flex-direction: column;
-				gap: 8px;
-				z-index: 9999;
-				opacity: 0;
-				visibility: hidden;
-				transform: translateX(20px);
-				transition: all 0.3s ease;
-				pointer-events: none;
-				`;
-				
-				// 拖拽按钮
-				const dragButton = document.createElement('div');
-				dragButton.id = 'drag-handle';
-				dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
-				dragButton.style.cssText = `
-				width: 36px;
-				height: 36px;
-				background: rgba(255,255,255,0.95);
-				border: 2px solid rgba(0,0,0,0.1);
-				border-radius: 50%;
-				color: #333;
-				cursor: move;
-				-webkit-app-region: drag;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-size: 14px;
-				box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-				transition: all 0.2s ease;
-				user-select: none;
-				pointer-events: auto;
-				backdrop-filter: blur(10px);
-				`;
-				
-				// 关闭按钮
-				const closeButton = document.createElement('div');
-				closeButton.id = 'close-handle';
-				closeButton.innerHTML = '<i class="fas fa-times"></i>';
-				closeButton.style.cssText = `
-				width: 36px;
-				height: 36px;
-				background: rgba(255,255,255,0.95);
-				border: 2px solid rgba(0,0,0,0.1);
-				border-radius: 50%;
-				color: #333;
-				cursor: pointer;
-				-webkit-app-region: no-drag;
-				display: flex;
-				align-items: center;
-				justify-content: center;
-				font-size: 14px;
-				box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-				transition: all 0.2s ease;
-				user-select: none;
-				pointer-events: auto;
-				backdrop-filter: blur(10px);
-				`;
+				// 等待一小段时间确保页面完全加载
+				setTimeout(() => {
+					// 创建控制面板容器
+					const controlPanel = document.createElement('div');
+					controlPanel.id = 'control-panel';
+					controlPanel.style.cssText = `
+					position: fixed;
+					top: 10px;
+					right: 10px;
+					display: flex;
+					flex-direction: column;
+					gap: 8px;
+					z-index: 9999;
+					opacity: 0;
+					visibility: hidden;
+					transform: translateX(20px);
+					transition: all 0.3s ease;
+					pointer-events: none;
+					`;
+					
+					// 拖拽按钮
+					const dragButton = document.createElement('div');
+					dragButton.id = 'drag-handle';
+					dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+					dragButton.style.cssText = `
+					width: 36px;
+					height: 36px;
+					background: rgba(255,255,255,0.95);
+					border: 2px solid rgba(0,0,0,0.1);
+					border-radius: 50%;
+					color: #333;
+					cursor: move;
+					-webkit-app-region: drag;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 14px;
+					box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+					transition: all 0.2s ease;
+					user-select: none;
+					pointer-events: auto;
+					backdrop-filter: blur(10px);
+					`;
+					
+					// 刷新按钮
+					const refreshButton = document.createElement('div');
+					refreshButton.id = 'refresh-handle';
+					refreshButton.innerHTML = '<i class="fas fa-redo-alt"></i>';
+					refreshButton.style.cssText = `
+					width: 36px;
+					height: 36px;
+					background: rgba(255,255,255,0.95);
+					border: 2px solid rgba(0,0,0,0.1);
+					border-radius: 50%;
+					color: #333;
+					cursor: pointer;
+					-webkit-app-region: no-drag;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 14px;
+					box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+					transition: all 0.2s ease;
+					user-select: none;
+					pointer-events: auto;
+					backdrop-filter: blur(10px);
+					`;
+					
+					// 关闭按钮
+					const closeButton = document.createElement('div');
+					closeButton.id = 'close-handle';
+					closeButton.innerHTML = '<i class="fas fa-times"></i>';
+					closeButton.style.cssText = `
+					width: 36px;
+					height: 36px;
+					background: rgba(255,255,255,0.95);
+					border: 2px solid rgba(0,0,0,0.1);
+					border-radius: 50%;
+					color: #333;
+					cursor: pointer;
+					-webkit-app-region: no-drag;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 14px;
+					box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+					transition: all 0.2s ease;
+					user-select: none;
+					pointer-events: auto;
+					backdrop-filter: blur(10px);
+					`;
+					
+					// 添加悬停效果 - 刷新按钮
+					refreshButton.addEventListener('mouseenter', () => {
+						refreshButton.style.background = 'rgba(255,255,255,1)';
+						refreshButton.style.transform = 'scale(1.1)';
+						refreshButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+						refreshButton.style.color = '#dc3545';
+					});
+					
+					refreshButton.addEventListener('mouseleave', () => {
+						refreshButton.style.background = 'rgba(255,255,255,0.95)';
+						refreshButton.style.transform = 'scale(1)';
+						refreshButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+						refreshButton.style.color = '#333';
+					});
 
-				// 添加悬停效果 - 拖拽按钮
-				dragButton.addEventListener('mouseenter', () => {
-				dragButton.style.background = 'rgba(255,255,255,1)';
-				dragButton.style.transform = 'scale(1.1)';
-				dragButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-				dragButton.style.color = '#007bff';
-				});
-				
-				dragButton.addEventListener('mouseleave', () => {
-				dragButton.style.background = 'rgba(255,255,255,0.95)';
-				dragButton.style.transform = 'scale(1)';
-				dragButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-				dragButton.style.color = '#333';
-				});
-				
-				// 添加悬停效果 - 关闭按钮
-				closeButton.addEventListener('mouseenter', () => {
-				closeButton.style.background = 'rgba(255,255,255,1)';
-				closeButton.style.transform = 'scale(1.1)';
-				closeButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-				closeButton.style.color = '#dc3545';
-				});
-				
-				closeButton.addEventListener('mouseleave', () => {
-				closeButton.style.background = 'rgba(255,255,255,0.95)';
-				closeButton.style.transform = 'scale(1)';
-				closeButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-				closeButton.style.color = '#333';
-				});
+					// 刷新按钮点击事件
+					refreshButton.addEventListener('click', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						// 刷新页面
+						window.location.reload();
+					});
+					
+					// 添加悬停效果 - 关闭按钮
+					closeButton.addEventListener('mouseenter', () => {
+						closeButton.style.background = 'rgba(255,255,255,1)';
+						closeButton.style.transform = 'scale(1.1)';
+						closeButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+						closeButton.style.color = '#dc3545';
+					});
+					
+					closeButton.addEventListener('mouseleave', () => {
+						closeButton.style.background = 'rgba(255,255,255,0.95)';
+						closeButton.style.transform = 'scale(1)';
+						closeButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+						closeButton.style.color = '#333';
+					});
 
-				// 关闭按钮点击事件
-				closeButton.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				if (window.electronAPI && window.electronAPI.stopVRMWindow) {
-					window.electronAPI.stopVRMWindow();
-				} else {
-					// 备用方案：直接关闭窗口
-					window.close();
-				}
-				});
-				
-				// 组装控制面板
-				controlPanel.appendChild(dragButton);
-				controlPanel.appendChild(closeButton);
-				
-				// 添加到页面
-				document.body.appendChild(controlPanel);
-				
-				// 显示/隐藏控制逻辑
-				let hideTimeout;
-				let isControlPanelHovered = false;
-				
-				// 显示控制面板
-				function showControlPanel() {
-				clearTimeout(hideTimeout);
-				controlPanel.style.opacity = '1';
-				controlPanel.style.visibility = 'visible';
-				controlPanel.style.transform = 'translateX(0)';
-				controlPanel.style.pointerEvents = 'auto';
-				}
-				
-				// 隐藏控制面板
-				function hideControlPanel() {
-				if (!isControlPanelHovered) {
-					controlPanel.style.opacity = '0';
-					controlPanel.style.visibility = 'hidden';
-					controlPanel.style.transform = 'translateX(20px)';
-					controlPanel.style.pointerEvents = 'none';
-				}
-				}
-				
-				// 延迟隐藏控制面板
-				function scheduleHide() {
-				clearTimeout(hideTimeout);
-				hideTimeout = setTimeout(hideControlPanel, 2000); // 2秒后隐藏
-				}
-				
-				// 窗口鼠标进入事件
-				document.body.addEventListener('mouseenter', () => {
-				showControlPanel();
-				});
-				
-				// 窗口鼠标移动事件（重置隐藏计时器）
-				document.body.addEventListener('mousemove', () => {
-				showControlPanel();
-				scheduleHide();
-				});
-				
-				// 窗口鼠标离开事件
-				document.body.addEventListener('mouseleave', () => {
-				if (!isControlPanelHovered) {
-					scheduleHide();
-				}
-				});
-				
-				// 控制面板鼠标进入事件
-				controlPanel.addEventListener('mouseenter', () => {
-				isControlPanelHovered = true;
-				clearTimeout(hideTimeout);
-				showControlPanel();
-				});
-				
-				// 控制面板鼠标离开事件
-				controlPanel.addEventListener('mouseleave', () => {
-				isControlPanelHovered = false;
-				scheduleHide();
-				});
-				
-				// 鼠标静止检测
-				let mouseStopTimeout;
-				document.body.addEventListener('mousemove', () => {
-				clearTimeout(mouseStopTimeout);
-				mouseStopTimeout = setTimeout(() => {
-					if (!isControlPanelHovered) {
-					hideControlPanel();
+					// 关闭按钮点击事件
+					closeButton.addEventListener('click', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						if (window.electronAPI && window.electronAPI.stopVRMWindow) {
+							window.electronAPI.stopVRMWindow();
+						} else {
+							// 备用方案：直接关闭窗口
+							window.close();
+						}
+					});
+					
+					// 组装控制面板
+					controlPanel.appendChild(dragButton);
+					controlPanel.appendChild(refreshButton);
+					controlPanel.appendChild(closeButton);
+					
+					// 添加到页面
+					document.body.appendChild(controlPanel);
+					
+					// 显示/隐藏控制逻辑
+					let hideTimeout;
+					let isControlPanelHovered = false;
+					
+					// 显示控制面板
+					function showControlPanel() {
+						clearTimeout(hideTimeout);
+						controlPanel.style.opacity = '1';
+						controlPanel.style.visibility = 'visible';
+						controlPanel.style.transform = 'translateX(0)';
+						controlPanel.style.pointerEvents = 'auto';
 					}
-				}, 3000); // 鼠标静止3秒后隐藏
-				});
-				
-				// 初始状态：隐藏控制面板
-				scheduleHide();
-				
-				console.log('控制面板已添加到页面');
-			}, 1000);
+					
+					// 隐藏控制面板
+					function hideControlPanel() {
+						if (!isControlPanelHovered) {
+							controlPanel.style.opacity = '0';
+							controlPanel.style.visibility = 'hidden';
+							controlPanel.style.transform = 'translateX(20px)';
+							controlPanel.style.pointerEvents = 'none';
+						}
+					}
+					
+					// 延迟隐藏控制面板
+					function scheduleHide() {
+						clearTimeout(hideTimeout);
+						hideTimeout = setTimeout(hideControlPanel, 2000); // 2秒后隐藏
+					}
+					
+					// 窗口鼠标进入事件
+					document.body.addEventListener('mouseenter', () => {
+						showControlPanel();
+					});
+					
+					// 窗口鼠标移动事件（重置隐藏计时器）
+					document.body.addEventListener('mousemove', () => {
+						showControlPanel();
+						scheduleHide();
+					});
+					
+					// 窗口鼠标离开事件
+					document.body.addEventListener('mouseleave', () => {
+						if (!isControlPanelHovered) {
+							scheduleHide();
+						}
+					});
+					
+					// 控制面板鼠标进入事件
+					controlPanel.addEventListener('mouseenter', () => {
+						isControlPanelHovered = true;
+						clearTimeout(hideTimeout);
+						showControlPanel();
+					});
+					
+					// 控制面板鼠标离开事件
+					controlPanel.addEventListener('mouseleave', () => {
+						isControlPanelHovered = false;
+						scheduleHide();
+					});
+					
+					// 鼠标静止检测
+					let mouseStopTimeout;
+					document.body.addEventListener('mousemove', () => {
+						clearTimeout(mouseStopTimeout);
+						mouseStopTimeout = setTimeout(() => {
+							if (!isControlPanelHovered) {
+								hideControlPanel();
+							}
+						}, 3000); // 鼠标静止3秒后隐藏
+					});
+					
+					// 初始状态：隐藏控制面板
+					scheduleHide();
+					
+					console.log('控制面板已添加到页面');
+				}, 1000);
 			}
+
 
 
 

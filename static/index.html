@@ -5131,6 +5131,21 @@
                                 </template>
                               </el-button>
                             </el-tooltip>
+                            <!-- 在浏览器启动按钮 -->
+                            <el-tooltip :content="t('start_table_pet_web')" placement="top">
+                              <el-button 
+                                type="primary" 
+                                @click="startVRMweb" 
+                                circle
+                              >
+                                <template v-if="isVRMStarting">
+                                  <i class="fa-solid fa-spinner fa-spin"></i>
+                                </template>
+                                <template v-else>
+                                  <i class="fa-solid fa-window-maximize"></i>
+                                </template>
+                              </el-button>
+                            </el-tooltip>
                           </div>
                         </div>
                         <div class="tool-content">

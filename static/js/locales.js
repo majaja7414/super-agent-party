@@ -563,6 +563,7 @@ const translations = {
       'start_table_pet': '启动VRM桌宠',
       'stop_table_pet': '停止VRM桌宠',
       'reload_table_pet': '重载VRM桌宠',
+      'start_table_pet_web': '启动VRM桌宠(网页)',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1125,5 +1126,6 @@ const translations = {
       'start_table_pet': 'Start VRM Table Pet',
       'stop_table_pet': 'Stop VRM Table Pet',
       'reload_table_pet': 'Reload VRM Table Pet',
+      'start_table_pet_web': 'Start VRM Table Pet (Web)',
     }
   };
