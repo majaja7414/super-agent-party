@@ -3485,12 +3485,7 @@
                     </div>
                     <el-tabs type="border-card">
                       <!-- 自动更新设定选项卡 -->
-                      <el-tab-pane>
-                        <template #label>
-                          <el-tooltip :content="t('autoUpdateNote')" placement="top">
-                            <span>{{ t('autoUpdateSetting') }}</span>
-                          </el-tooltip>
-                        </template>
+                      <el-tab-pane :label="t('autoUpdateSetting')" name="autoUpdateSetting">
                         <el-form-item :label="t('embeddingProvider')">
                           <el-select 
                             v-model="newMemory.providerId" 
@@ -3550,12 +3545,7 @@
                       </el-tab-pane>
 
                       <!-- 角色设定选项卡 -->
-                      <el-tab-pane>
-                        <template #label>
-                          <el-tooltip :content="t('basicCharacterNote')" placement="top">
-                            <span>{{ t('basicCharacter') }}</span>
-                          </el-tooltip>
-                        </template>
+                      <el-tab-pane :label="t('basicCharacter')" name="basicCharacter">
                         <el-form-item>
                           <el-input 
                             v-model="newMemory.basic_character" 
@@ -3568,12 +3558,7 @@
                       </el-tab-pane>
 
                       <!-- 世界观设定选项卡 -->
-                      <el-tab-pane>
-                        <template #label>
-                          <el-tooltip :content="t('worldviewSettingNote')" placement="top">
-                            <span>{{ t('worldviewSetting') }}</span>
-                          </el-tooltip>
-                        </template>
+                      <el-tab-pane :label="t('worldviewSetting')" name="worldviewSetting">
                         <div class="memo-extra-params">
                           <div v-for="(param, index) in newMemory.lorebook" :key="index" class="param-row">
                             <el-input
@@ -3624,12 +3609,7 @@
                       </el-tab-pane>
 
                       <!-- 随机设定选项卡 -->
-                      <el-tab-pane>
-                        <template #label>
-                          <el-tooltip :content="t('randomSettingNote')" placement="top">
-                            <span>{{ t('randomSetting') }}</span>
-                          </el-tooltip>
-                        </template>
+                      <el-tab-pane :label="t('randomSetting')" name="randomSetting">
                         <div class="memo-extra-params">
                           <div v-for="(param, index) in newMemory.random" :key="index" class="param-row">
                             <el-input
