@@ -483,18 +483,22 @@ app.whenReady().then(async () => {
       vrmWindow = new BrowserWindow({
         width: 540,
         height: 960,
-        x: width - 520,  // 右边距 20px
+        x: width - 560,  // 右边距 20px
         y: height - 900, // 下边距 20px
         transparent: true,
         frame: false,
-        alwaysOnTop: true,
-        hasShadow: false,
         resizable: false,
+        alwaysOnTop: true,
         skipTaskbar: true,
+        hasShadow: false,
+        focusable: false,
+        acceptFirstMouse: true,
+        backgroundColor: 'rgba(0, 0, 0, 0)',
         webPreferences: {
-          nodeIntegration: false,
           contextIsolation: true,
-          enableRemoteModule: false,
+          nodeIntegration: true,
+          enableRemoteModule: true,
+          sandbox: false,
           webgl: true, // 启用 WebGL
           preload: path.join(__dirname, 'static/js/preload.js')
         }
@@ -507,12 +511,11 @@ app.whenReady().then(async () => {
         await vrmWindow.loadFile(path.join(__dirname, 'vrm.html'));
       }
 
-      // 确保启用 WebGPU
-      vrmWindow.webContents.on('did-finish-load', () => {
-        vrmWindow.webContents.executeJavaScript(`
-          console.log(navigator.gpu) // 检查 WebGPU 是否可用
-        `)
-      })
+      if (isMac) mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+
+      if (isMac) mainWindow.setIgnoreMouseEvents(true);
+      else mainWindow.setIgnoreMouseEvents(true, { forward: true });
+      mainWindow.setAlwaysOnTop(true, 'screen-saver');
       // 窗口关闭处理
       vrmWindow.on('closed', () => {
         vrmWindow = null;

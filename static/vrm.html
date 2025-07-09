@@ -472,24 +472,55 @@
 					dragButton.id = 'drag-handle';
 					dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
 					dragButton.style.cssText = `
-					width: 36px;
-					height: 36px;
-					background: rgba(255,255,255,0.95);
-					border: 2px solid rgba(0,0,0,0.1);
-					border-radius: 50%;
-					color: #333;
-					cursor: move;
-					-webkit-app-region: drag;
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					font-size: 14px;
-					box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-					transition: all 0.2s ease;
-					user-select: none;
-					pointer-events: auto;
-					backdrop-filter: blur(10px);
+						width: 36px;
+						height: 36px;
+						background: rgba(255,255,255,0.95);
+						border: 2px solid rgba(0,0,0,0.1);
+						border-radius: 50%;
+						color: #333;
+						-webkit-app-region: drag;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						font-size: 14px;
+						box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+						transition: all 0.2s ease;
+						user-select: none;
+						pointer-events: auto;
+						backdrop-filter: blur(10px);
+						position: relative;
 					`;
+
+					// 创建一个内部拖拽区域来确保拖拽功能正常
+					const dragArea = document.createElement('div');
+					dragArea.style.cssText = `
+						position: absolute;
+						top: 0;
+						left: 0;
+						width: 100%;
+						height: 100%;
+						-webkit-app-region: drag;
+						z-index: 1;
+					`;
+
+					// 图标容器
+					const iconContainer = document.createElement('div');
+					iconContainer.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+					iconContainer.style.cssText = `
+						position: relative;
+						z-index: 2;
+						pointer-events: none;
+						display: flex;
+						align-items: center;
+						justify-content: center;
+						width: 100%;
+						height: 100%;
+					`;
+
+					// 组装拖拽按钮
+					dragButton.innerHTML = '';
+					dragButton.appendChild(dragArea);
+					dragButton.appendChild(iconContainer);
 					
 					// 刷新按钮
 					const refreshButton = document.createElement('div');
