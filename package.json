@@ -1,7 +1,7 @@
 {
   "name": "super-agent-party",
-  "version": "v0.2.2",
-  "description": "超级智能体派对v0.2.2 | 轻松链接一切!",
+  "version": "v0.2.3",
+  "description": "超级智能体派对v0.2.3 | 轻松链接一切!",
   "main": "main.js",
   "asar": false,
   "scripts": {
@@ -15,20 +15,20 @@
     "pack": "electron-builder --dir"
   },
   "dependencies": {
-    "@electron/remote": "^2.1.2",
+    "@electron/remote": "^2.1.3",
     "@element-plus/icons-vue": "^2.3.1",
     "@pixiv/three-vrm": "^3.4.2",
     "cli-progress": "^3.12.0",
     "electron-updater": "^6.6.2",
-    "element-plus": "^2.9.6",
+    "element-plus": "^2.10.3",
     "markdown-it": "^14.1.0",
     "three": "^0.178.0",
-    "vue": "^3.5.13"
+    "vue": "^3.5.17"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
     "electron": "^33.0.1",
-    "electron-builder": "^24.9.1"
+    "electron-builder": "^26.0.12"
   },
   "keywords": [
     "AI",
