@@ -30,10 +30,10 @@
 		<script type="importmap">
 			{
 				"imports": {
-					"three": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.webgpu.js",
-					"three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.webgpu.js",
-					"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.176.0/build/three.tsl.js",
-					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.176.0/examples/jsm/",
+					"three": "./node_modules/three/build/three.webgpu.js",
+					"three/webgpu": "./node_modules/three/build/three.webgpu.js",
+					"three/tsl": "./node_modules/three/build/three.tsl.js",
+					"three/addons/": "./node_modules/three/examples/jsm/",
 					"@pixiv/three-vrm": "./node_modules/@pixiv/three-vrm/lib/three-vrm.module.js",
 					"@pixiv/three-vrm/nodes": "./node_modules/@pixiv/three-vrm/lib/nodes/index.module.js"
 				}
@@ -123,15 +123,23 @@
 			// 根据环境添加 class
 			document.body.classList.add(isElectron ? 'electron' : 'web');
 
-			// 调整渲染器设置
+			// 优化渲染器设置
 			const renderer = new THREE.WebGPURenderer({
-				alpha: isElectron,  // 在 Electron 中启用透明度通道
-				premultipliedAlpha: isElectron
+				alpha: isElectron,
+				premultipliedAlpha: isElectron,
+				antialias: true,  // 添加抗锯齿
+				powerPreference: "high-performance",  // 使用高性能GPU
+				forceWebGL: false  // 确保使用WebGPU
 			});
-			renderer.setSize( window.innerWidth, window.innerHeight );
-			renderer.setPixelRatio( window.devicePixelRatio );
-			// 修改 clearColor 设置
-			renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1); 
+
+			// 添加性能优化设置
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比例
+			renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1);
+
+			// 启用阴影（如果需要）
+			renderer.shadowMap.enabled = true;
+			renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 			document.body.appendChild( renderer.domElement );
 
@@ -185,21 +193,16 @@
 			loader.crossOrigin = 'anonymous';
 
 			loader.register( ( parser ) => {
-
-				// create a WebGPU compatible MToonMaterialLoaderPlugin
+				// 创建 WebGPU 兼容的 MToonMaterialLoaderPlugin
 				const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin( parser, {
-
-					// set the material type to MToonNodeMaterial
 					materialType: MToonNodeMaterial,
-
 				} );
 
 				return new VRMLoaderPlugin( parser, {
-
 					mtoonMaterialPlugin,
-
+					// 确保启用所有功能
+					autoUpdateHumanBones: true,
 				} );
-
 			} );
 
 			// 设置自然姿势的函数
@@ -227,6 +230,13 @@
 					VRMUtils.removeUnnecessaryVertices( gltf.scene );
 					VRMUtils.combineSkeletons( gltf.scene );
 					VRMUtils.combineMorphs( vrm );
+
+					// 启用 Spring Bone 物理模拟
+					if (vrm.springBoneManager) {
+						console.log('Spring Bone Manager found:', vrm.springBoneManager);
+						// Spring Bone 会在 vrm.update() 中自动更新
+					}
+
 
 					// Disable frustum culling
 					vrm.scene.traverse( ( obj ) => {

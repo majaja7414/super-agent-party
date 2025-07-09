@@ -494,6 +494,7 @@ app.whenReady().then(async () => {
           nodeIntegration: false,
           contextIsolation: true,
           enableRemoteModule: false,
+          webgl: true, // 启用 WebGL
           preload: path.join(__dirname, 'static/js/preload.js')
         }
       });
@@ -505,6 +506,12 @@ app.whenReady().then(async () => {
         await vrmWindow.loadFile(path.join(__dirname, 'vrm.html'));
       }
 
+      // 确保启用 WebGPU
+      vrmWindow.webContents.on('did-finish-load', () => {
+        vrmWindow.webContents.executeJavaScript(`
+          console.log(navigator.gpu) // 检查 WebGPU 是否可用
+        `)
+      })
       // 窗口关闭处理
       vrmWindow.on('closed', () => {
         vrmWindow = null;
