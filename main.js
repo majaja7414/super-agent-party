@@ -483,13 +483,14 @@ app.whenReady().then(async () => {
       vrmWindow = new BrowserWindow({
         width: 540,
         height: 960,
-        x: width - 560,  // 右边距 20px
-        y: height - 980, // 下边距 20px
+        x: width - 520,  // 右边距 20px
+        y: height - 900, // 下边距 20px
         transparent: true,
         frame: false,
         alwaysOnTop: true,
         hasShadow: false,
         resizable: false,
+        skipTaskbar: true,
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
