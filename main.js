@@ -481,12 +481,11 @@ app.whenReady().then(async () => {
       const { width, height } = screen.getPrimaryDisplay().workAreaSize;
       
       vrmWindow = new BrowserWindow({
-        width: 300,
-        height: 400,
-        x: width - 320,  // 右边距 20px
-        y: height - 420, // 下边距 20px
+        width: 540,
+        height: 960,
+        x: width - 560,  // 右边距 20px
+        y: height - 980, // 下边距 20px
         transparent: true,
-        backgroundColor: '#00000000', // 设置透明色
         frame: false,
         alwaysOnTop: true,
         hasShadow: false,
@@ -495,8 +494,7 @@ app.whenReady().then(async () => {
           nodeIntegration: false,
           contextIsolation: true,
           enableRemoteModule: false,
-          backgroundThrottling: false, // 禁止背景节流
-          preload: path.join(__dirname, 'preload.js')
+          preload: path.join(__dirname, 'static/js/preload.js')
         }
       });
 
@@ -507,26 +505,21 @@ app.whenReady().then(async () => {
         await vrmWindow.loadFile(path.join(__dirname, 'vrm.html'));
       }
 
-      // 窗口拖动处理
-      vrmWindow.webContents.executeJavaScript(`
-        document.body.style.webkitAppRegion = 'drag';
-      `);
-
       // 窗口关闭处理
       vrmWindow.on('closed', () => {
         vrmWindow = null;
       });
 
-      // 点击穿透处理（保留必要交互）
-      vrmWindow.setIgnoreMouseEvents(false, {
-        forward: true,
-        mouseEvents: {
-          mouseMove: true,
-          mouseDown: true,
-          mouseUp: true
-        }
-      });
     });
+
+    // 停止VRM窗口
+    ipcMain.handle('stop-vrm-window', () => {
+      if (vrmWindow && !vrmWindow.isDestroyed()) {
+        vrmWindow.close();
+        vrmWindow = null;
+      }
+    });
+
     // 其他IPC处理...
     ipcMain.on('open-external', (event, url) => {
       shell.openExternal(url)

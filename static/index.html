@@ -5121,7 +5121,6 @@
                               <el-button 
                                 type="primary" 
                                 @click="startVRM" 
-                                :disabled="isVRMRunning || isVRMStarting"
                                 circle
                               >
                                 <template v-if="isVRMStarting">
@@ -5129,39 +5128,6 @@
                                 </template>
                                 <template v-else>
                                   <i class="fa-solid fa-play"></i>
-                                </template>
-                              </el-button>
-                            </el-tooltip>
-                            
-                            <!-- 停止按钮 -->
-                            <el-tooltip :content="t('stop_table_pet')" placement="top">
-                              <el-button 
-                                type="danger" 
-                                @click="stopVRM" 
-                                :disabled="!isVRMRunning || isVRMStopping"
-                                circle
-                              >
-                                <template v-if="isVRMStopping">
-                                  <i class="fa-solid fa-spinner fa-spin"></i>
-                                </template>
-                                <template v-else>
-                                  <i class="fa-solid fa-stop"></i>
-                                </template>
-                              </el-button>
-                            </el-tooltip>
-                            
-                            <!-- 重载按钮 -->
-                            <el-tooltip :content="t('reload_table_pet')" placement="top">
-                              <el-button 
-                                @click="reloadVRMConfig" 
-                                :disabled="!isVRMRunning || isVRMReloading"
-                                circle
-                              >
-                                <template v-if="isVRMReloading">
-                                  <i class="fa-solid fa-rotate fa-spin"></i>
-                                </template>
-                                <template v-else>
-                                  <i class="fa-solid fa-rotate"></i>
                                 </template>
                               </el-button>
                             </el-tooltip>
