@@ -28,11 +28,7 @@ const app = Vue.createApp({
     window.addEventListener('keydown', this.handleKeyDown)
     window.addEventListener('keyup', this.handleKeyUp)
     window.addEventListener('resize', this.checkMobile);
-    // 初始化BroadcastChannel
-    this.vrmChannel = new BroadcastChannel('vrm-tts-sync');
-    
-    // 初始化音频上下文
-    this.initAudioContext();
+
     // 每30秒检查一次状态
     this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
 
@@ -81,12 +77,6 @@ const app = Vue.createApp({
   beforeUnmount() {
     if (isElectron) {
       delete window.stopQQBotHandler;
-    }
-    if (this.vrmChannel) {
-      this.vrmChannel.close();
-    }
-    if (this.audioContext) {
-      this.audioContext.close();
     }
   },
   watch: {

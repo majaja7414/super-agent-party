@@ -79,9 +79,6 @@ let vue_data = {
     isMaximized: false,
     hasUpdate: false,
     updateSuccess: false,
-    vrmChannel: null, // BroadcastChannel
-    audioContext: null,
-    audioAnalyser: null,
     settings: {
       model: '',
       base_url: '',

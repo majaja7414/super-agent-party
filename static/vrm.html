@@ -429,69 +429,73 @@
                 }
             }
 
-            // 修改animate函数，添加口型同步
-			function animate() {
-			requestAnimationFrame(animate);
-			
-			const time = clock.getElapsedTime();
-			const deltaTime = clock.getDelta();
-			
-			if (currentVrm) {
-				// 简单的呼吸动画
-				const breathScale = 1 + Math.sin(time * 1.5) * 0.003;
-				currentVrm.scene.scale.setScalar(breathScale);
-				
-				// 应用闲置动作
-				applyIdleAnimation(currentVrm, time);
-				
-				// 应用口型同步
-				applyLipSync(currentVrm, deltaTime);
-				
-				// 眨眼动画（与之前相同）
-				if (currentVrm.expressionManager) {
-				if (!isBlinking && time >= nextBlinkTime) {
-					isBlinking = true;
-					blinkStartTime = time;
-					const blinkData = getRandomBlinkData();
-					nextBlinkTime = time + blinkData.interval;
-					blinkPattern = blinkData.pattern;
-				}
-				
-				if (isBlinking) {
-					const blinkElapsed = time - blinkStartTime;
-					const duration = blinkPattern === 0 ? singleBlinkDuration : doubleBlinkDuration;
-					
-					if (blinkElapsed < duration) {
-					let blinkValue = 0;
-					
-					if (blinkPattern === 0) {
-						const progress = blinkElapsed / duration;
-						blinkValue = Math.sin(progress * Math.PI);
-					} else {
-						const progress = blinkElapsed / duration;
-						if (progress < 0.4) {
-						blinkValue = Math.sin((progress / 0.4) * Math.PI);
-						} else if (progress < 0.6) {
-						blinkValue = 0;
-						} else {
-						blinkValue = Math.sin(((progress - 0.6) / 0.4) * Math.PI);
-						}
-					}
-					
-					currentVrm.expressionManager.setValue('blink', blinkValue);
-					} else {
-					isBlinking = false;
-					currentVrm.expressionManager.setValue('blink', 0.0);
-					}
-				}
-				}
-				
-				// 更新VRM
-				currentVrm.update(deltaTime);
-			}
-			
-			renderer.renderAsync(scene, camera);
-			}
+            // 在animate函数中替换原来的眨眼动画代码
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                const time = clock.getElapsedTime();
+                const deltaTime = clock.getDelta();
+                
+                if (currentVrm) {
+                    // 简单的呼吸动画 - 更自然的呼吸节奏
+                    const breathScale = 1 + Math.sin(time * 1.5) * 0.003;
+                    currentVrm.scene.scale.setScalar(breathScale);
+                    
+                    // 应用闲置动作
+                    applyIdleAnimation(currentVrm, time);
+                    
+                    // 高级随机眨眼动画
+                    if (currentVrm.expressionManager) {
+                        if (!isBlinking && time >= nextBlinkTime) {
+                            // 开始眨眼
+                            isBlinking = true;
+                            blinkStartTime = time;
+                            const blinkData = getRandomBlinkData();
+                            nextBlinkTime = time + blinkData.interval;
+                            blinkPattern = blinkData.pattern;
+                        }
+                        
+                        if (isBlinking) {
+                            const blinkElapsed = time - blinkStartTime;
+                            const duration = blinkPattern === 0 ? singleBlinkDuration : doubleBlinkDuration;
+                            
+                            if (blinkElapsed < duration) {
+                                let blinkValue = 0;
+                                
+                                if (blinkPattern === 0) {
+                                    // 单次眨眼
+                                    const progress = blinkElapsed / duration;
+                                    blinkValue = Math.sin(progress * Math.PI);
+                                } else {
+                                    // 双次眨眼
+                                    const progress = blinkElapsed / duration;
+                                    if (progress < 0.4) {
+                                        // 第一次眨眼
+                                        blinkValue = Math.sin((progress / 0.4) * Math.PI);
+                                    } else if (progress < 0.6) {
+                                        // 间隔
+                                        blinkValue = 0;
+                                    } else {
+                                        // 第二次眨眼
+                                        blinkValue = Math.sin(((progress - 0.6) / 0.4) * Math.PI);
+                                    }
+                                }
+                                
+                                currentVrm.expressionManager.setValue('blink', blinkValue);
+                            } else {
+                                // 眨眼结束
+                                isBlinking = false;
+                                currentVrm.expressionManager.setValue('blink', 0.0);
+                            }
+                        }
+                    }
+                    
+                    // 更新VRM，包括lookAt动画
+                    currentVrm.update(deltaTime);
+                }
+                
+                renderer.renderAsync(scene, camera);
+            }
 
             // 初始化第一次眨眼时间
             const initialBlinkData = getRandomBlinkData();
@@ -756,110 +760,6 @@
 					console.log('控制面板已添加到页面');
 				}, 1000);
 			}
-
-			// 在全局变量区域添加
-			let vrmChannel = null;
-			let lipSyncData = { a: 0, i: 0, u: 0, e: 0, o: 0 };
-			let isLipSyncing = false;
-			let lipSyncSmoothFactor = 15.0; // 口型平滑因子
-			let currentLipSync = { a: 0, i: 0, u: 0, e: 0, o: 0 }; // 当前平滑后的口型值
-
-			// 初始化BroadcastChannel
-			function initVRMChannel() {
-			vrmChannel = new BroadcastChannel('vrm-tts-sync');
-			
-			vrmChannel.onmessage = (event) => {
-				console.log('VRM收到完整消息:', event.data);
-				const { type, data, timestamp } = event.data;
-				
-				switch (type) {
-					case 'startLipSync':
-					console.log('开始口型同步');
-					isLipSyncing = true;
-					break;
-					
-					case 'lipSync':
-					console.log('收到lipSync数据:', data);
-					console.log('当前isLipSyncing状态:', isLipSyncing);
-					if (isLipSyncing) {
-						// 更新口型数据
-						lipSyncData = { ...data };
-						console.log('更新后的lipSyncData:', lipSyncData);
-					}
-					break;
-					
-					case 'stopLipSync':
-					console.log('停止口型同步');
-					isLipSyncing = false;
-					lipSyncData = { a: 0, i: 0, u: 0, e: 0, o: 0 };
-					break;
-				}
-				};
-			
-			console.log('VRM Channel initialized');
-			}
-
-			// 应用口型同步到VRM
-			function applyLipSync(vrm, deltaTime) {
-			if (!vrm.expressionManager) return;
-			console.log('applyLipSync');
-			// 平滑插值到目标口型值
-			const k = 1.0 - Math.exp(-lipSyncSmoothFactor * deltaTime);
-			
-			currentLipSync.a += (lipSyncData.a - currentLipSync.a) * k;
-			currentLipSync.i += (lipSyncData.i - currentLipSync.i) * k;
-			currentLipSync.u += (lipSyncData.u - currentLipSync.u) * k;
-			currentLipSync.e += (lipSyncData.e - currentLipSync.e) * k;
-			currentLipSync.o += (lipSyncData.o - currentLipSync.o) * k;
-			console.log(currentLipSync);
-			// 应用到VRM表情
-			try {
-				vrm.expressionManager.setValue('aa', currentLipSync.a*100);
-				vrm.expressionManager.setValue('ih', currentLipSync.i*100);
-				vrm.expressionManager.setValue('ou', currentLipSync.u*100);
-				vrm.expressionManager.setValue('ee', currentLipSync.e*100);
-				vrm.expressionManager.setValue('oh', currentLipSync.o*100);
-				console.log('成功应用口型同步');
-			} catch (error) {
-				// 如果上述表情名称不存在，尝试其他常见的口型表情名称
-				try {
-				vrm.expressionManager.setValue('A', currentLipSync.a);
-				vrm.expressionManager.setValue('I', currentLipSync.i);
-				vrm.expressionManager.setValue('U', currentLipSync.u);
-				vrm.expressionManager.setValue('E', currentLipSync.e);
-				vrm.expressionManager.setValue('O', currentLipSync.o);
-				} catch (error2) {
-				// 如果仍然失败，尝试通用的口型表情
-				try {
-					vrm.expressionManager.setValue('mouth_a', currentLipSync.a);
-					vrm.expressionManager.setValue('mouth_i', currentLipSync.i);
-					vrm.expressionManager.setValue('mouth_u', currentLipSync.u);
-					vrm.expressionManager.setValue('mouth_e', currentLipSync.e);
-					vrm.expressionManager.setValue('mouth_o', currentLipSync.o);
-				} catch (error3) {
-					console.warn('无法找到合适的口型表情:', error3);
-				}
-				}
-			}
-			}
-
-			
-
-			// 在页面加载完成后初始化
-			window.addEventListener('DOMContentLoaded', () => {
-			// 延迟初始化以确保所有资源加载完成
-			setTimeout(() => {
-				initVRMChannel();
-			}, 1000);
-			});
-
-			// 页面卸载时清理资源
-			window.addEventListener('beforeunload', () => {
-			if (vrmChannel) {
-				vrmChannel.close();
-			}
-			});
-
 
 			animate();
 		</script>
