@@ -4026,53 +4026,87 @@ let vue_methods = {
       console.log('Audio playback monitor started');
     },
 
-    async checkAudioPlayback() {
-      const lastMessage = this.messages[this.messages.length - 1];
-      if (!lastMessage || lastMessage.isPlaying) return;
+// 修改checkAudioPlayback函数
+async checkAudioPlayback() {
+  const lastMessage = this.messages[this.messages.length - 1];
+  if (!lastMessage || lastMessage.isPlaying) return;
 
-      const currentIndex = lastMessage.currentChunk;
-      const audioChunk = lastMessage.audioChunks[currentIndex];
-      if (!this.ttsSettings.enabled){
-        lastMessage.isPlaying = false; // 如果没有音频块，停止播放
-        lastMessage.currentChunk = 0; // 重置索引
-        if (this.currentAudio) {
-          this.currentAudio.pause();
-          this.currentAudio= null;
+  const currentIndex = lastMessage.currentChunk;
+  const audioChunk = lastMessage.audioChunks[currentIndex];
+  
+  if (!this.ttsSettings.enabled) {
+    lastMessage.isPlaying = false;
+    lastMessage.currentChunk = 0;
+    if (this.currentAudio) {
+      this.currentAudio.pause();
+      this.currentAudio = null;
+    }
+    // 通知VRM停止口型同步
+    if (this.vrmChannel) {
+      this.vrmChannel.postMessage({
+        type: 'stopLipSync', // 使用stopLipSync而不是发送0值的lipSync
+        timestamp: Date.now()
+      });
+    }
+    return;
+  }
+  
+  if (audioChunk && !lastMessage.isPlaying) {
+    lastMessage.isPlaying = true;
+    console.log(`Playing audio chunk ${currentIndex}`);
+    
+    try { 
+      // 创建新音频实例
+      this.currentAudio = new Audio(audioChunk.url);
+      
+      // 通知VRM开始口型同步
+      if (this.vrmChannel) {
+        this.vrmChannel.postMessage({
+          type: 'startLipSync',
+          timestamp: Date.now()
+        });
+      }
+      
+      // 设置音频分析
+      this.currentAudio.addEventListener('loadeddata', () => {
+        if (this.audioContext && this.audioContext.state === 'suspended') {
+          this.audioContext.resume();
         }
-        return;
-      }
-      if (audioChunk && !lastMessage.isPlaying) {
-        lastMessage.isPlaying = true;
-        console.log(`Playing audio chunk ${currentIndex}`);
-        
-        try { 
-          // 创建新音频实例
-          this.currentAudio = new Audio(audioChunk.url);
-          
-          // 播放音频
-          await new Promise((resolve) => {
-            this.currentAudio.onended = resolve;
-            this.currentAudio.onerror = resolve;
-            this.currentAudio.play().catch(e => console.error('Play error:', e));
-          });
-          
-          console.log(`Audio chunk ${currentIndex} finished`);
-        } catch (error) {
-          console.error(`Playback error: ${error}`);
-        } finally {
-          // 更新状态
-          lastMessage.currentChunk++;
-          lastMessage.isPlaying = false;
-          
-          // 立即检查下一段
-          this.checkAudioPlayback();
-        }
-      }
-      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
-        console.log('All audio chunks played');
-        lastMessage.currentChunk = 0;
-      }
-    },
+        this.analyzeAudioAndSendLipSync(this.currentAudio);
+      });
+      
+      // 播放音频
+      await new Promise((resolve) => {
+        this.currentAudio.onended = resolve;
+        this.currentAudio.onerror = resolve;
+        this.currentAudio.play().catch(e => console.error('Play error:', e));
+      });
+      
+      console.log(`Audio chunk ${currentIndex} finished`);
+    } catch (error) {
+      console.error(`Playback error: ${error}`);
+    } finally {
+      // 更新状态
+      lastMessage.currentChunk++;
+      lastMessage.isPlaying = false;
+      
+      // 立即检查下一段
+      this.checkAudioPlayback();
+    }
+  }
+  
+  if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
+    console.log('All audio chunks played');
+    lastMessage.currentChunk = 0;
+    // 通知VRM停止口型同步
+    if (this.vrmChannel) {
+      this.vrmChannel.postMessage({
+        type: 'stopLipSync', // 使用stopLipSync
+        timestamp: Date.now()
+      });
+    }
+  }
+},
 
     // 停止音频播放（用于停止生成时）
     stopAudioPlayback() {
@@ -4345,5 +4379,127 @@ let vue_methods = {
       } catch (error) {
         console.error('获取服务器信息失败:', error)
       }
+    },
+      // 初始化音频上下文
+  initAudioContext() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.audioAnalyser = this.audioContext.createAnalyser();
+      this.audioAnalyser.fftSize = 256;
+      this.audioAnalyser.smoothingTimeConstant = 0.8;
+    } catch (error) {
+      console.error('Failed to initialize audio context:', error);
     }
+  },
+
+// 分析音频并发送口型数据
+analyzeAudioAndSendLipSync(audioElement) {
+  if (!this.audioContext || !this.audioAnalyser || !this.vrmChannel) {
+    console.error('音频分析组件未初始化');
+    return;
+  }
+
+  try {
+    // 检查音频元素状态
+    console.log('音频元素状态:', {
+      readyState: audioElement.readyState,
+      paused: audioElement.paused,
+      currentTime: audioElement.currentTime,
+      duration: audioElement.duration
+    });
+
+    // 创建音频源 - 注意：每个音频元素只能创建一次源
+    if (!audioElement.audioSource) {
+      audioElement.audioSource = this.audioContext.createMediaElementSource(audioElement);
+      audioElement.audioSource.connect(this.audioAnalyser);
+      this.audioAnalyser.connect(this.audioContext.destination);
+      console.log('音频源已连接到分析器');
+    }
+
+    // 开始分析
+    this.startLipSyncAnalysis();
+  } catch (error) {
+    console.error('音频分析设置失败:', error);
+    // 如果音频分析失败，至少发送一些基础的口型数据
+    this.sendBasicLipSync();
+  }
+},
+
+// 添加基础口型数据发送函数（备用方案）
+sendBasicLipSync() {
+  const basicLipSync = { a: 0.3, i: 0.2, u: 0.25, e: 0.2, o: 0.25 };
+  this.vrmChannel.postMessage({
+    type: 'lipSync',
+    data: basicLipSync,
+    timestamp: Date.now()
+  });
+},
+
+ // 开始口型同步分析
+startLipSyncAnalysis() {
+  const bufferLength = this.audioAnalyser.frequencyBinCount;
+  const dataArray = new Uint8Array(bufferLength);
+  
+  const analyze = () => {
+    if (this.currentAudio && !this.currentAudio.paused) {
+      this.audioAnalyser.getByteFrequencyData(dataArray);
+      
+      // 计算不同频段的能量
+      const lowFreq = this.getFrequencyRangeAverage(dataArray, 0, 10);
+      const midFreq = this.getFrequencyRangeAverage(dataArray, 10, 30);
+      const highFreq = this.getFrequencyRangeAverage(dataArray, 30, 60);
+      
+      // 计算总音量
+      const volume = dataArray.reduce((sum, value) => sum + value, 0) / bufferLength / 255;
+      
+      // 生成口型参数
+      const lipSyncData = this.calculateLipSyncValues(volume, lowFreq, midFreq, highFreq);
+      
+      console.log('计算出的lipSyncData:', lipSyncData); // 添加调试
+      
+      // 发送到VRM界面
+      this.vrmChannel.postMessage({
+        type: 'lipSync',
+        data: lipSyncData, // 确保这里传递的是正确的数据
+        timestamp: Date.now()
+      });
+      
+      requestAnimationFrame(analyze);
+    } else {
+      // 音频停止时重置口型 - 这里可能是问题所在
+      console.log('音频停止，发送重置数据');
+      this.vrmChannel.postMessage({
+        type: 'lipSync',
+        data: { a: 0, i: 0, u: 0, e: 0, o: 0 }, // 这里明确发送0值
+        timestamp: Date.now()
+      });
+    }
+  };
+  
+  analyze();
+},
+
+  // 计算频段平均值
+  getFrequencyRangeAverage(dataArray, startIndex, endIndex) {
+    let sum = 0;
+    for (let i = startIndex; i < Math.min(endIndex, dataArray.length); i++) {
+      sum += dataArray[i];
+    }
+    return sum / (endIndex - startIndex) / 255;
+  },
+
+  // 计算口型数值
+  calculateLipSyncValues(volume, lowFreq, midFreq, highFreq) {
+    // 基于音频特征计算日式口型参数
+    const intensity = Math.min(volume * 2, 1); // 整体强度
+    
+    return {
+      a: Math.min(lowFreq * intensity * 1.5, 1),      // 'あ' - 低频主导，大开口
+      i: Math.min(midFreq * intensity * 1.2, 1),      // 'い' - 中频主导，横向拉伸
+      u: Math.min((lowFreq + midFreq) * intensity * 0.8, 1), // 'う' - 嘟嘴
+      e: Math.min(midFreq * intensity * 1.1, 1),      // 'え' - 中频，中等开口
+      o: Math.min((lowFreq * 0.7 + midFreq * 0.3) * intensity, 1) // 'お' - 圆形开口
+    };
+  },
+
 }
