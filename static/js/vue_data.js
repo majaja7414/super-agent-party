@@ -820,6 +820,7 @@ let vue_data = {
     isStopping: false,      // 停止中状态
     isReloading: false,     // 重载中状态
     activeMemoryTab: 'add',
+    activeMemoryTabName: 'autoUpdateSetting',
     memories: [],
     newMemory: { 
       id: null,
