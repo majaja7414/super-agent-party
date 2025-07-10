@@ -4331,5 +4331,19 @@ let vue_methods = {
       // 浏览器环境
       window.open(`${backendURL}/vrm.html`, '_blank');
     }
-  }
+  },
+    async checkServerPort() {
+      try {
+        // 方式1：使用专门的方法
+        const serverInfo = await window.electronAPI.getServerInfo()
+        
+        
+        if (!serverInfo.isDefaultPort) {
+          const message = `默认端口 ${serverInfo.defaultPort} 被占用，已自动切换到端口 ${serverInfo.port}`
+          showNotification(message, 'warning')
+        }
+      } catch (error) {
+        console.error('获取服务器信息失败:', error)
+      }
+    }
 }

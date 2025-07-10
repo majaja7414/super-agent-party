@@ -214,6 +214,50 @@
 
 				// 右臂自然下垂
                 vrm.humanoid.getNormalizedBoneNode( 'rightUpperArm' ).rotation.z = 0.4 * Math.PI;
+				
+				const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
+				if (leftHand) {
+					leftHand.rotation.z = 0.1; // 手腕自然弯曲
+					leftHand.rotation.x = 0.05;
+				}
+				const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
+				if (rightHand) {
+					rightHand.rotation.z = -0.1; // 手腕自然弯曲
+					rightHand.rotation.x = 0.05;
+				}
+			    // 添加手指的自然弯曲（如果模型支持）
+				const fingerBones = [
+					'leftThumbProximal', 'leftThumbIntermediate', 'leftThumbDistal',
+					'leftIndexProximal', 'leftIndexIntermediate', 'leftIndexDistal',
+					'leftMiddleProximal', 'leftMiddleIntermediate', 'leftMiddleDistal',
+					'leftRingProximal', 'leftRingIntermediate', 'leftRingDistal',
+					'leftLittleProximal', 'leftLittleIntermediate', 'leftLittleDistal',
+					'rightThumbProximal', 'rightThumbIntermediate', 'rightThumbDistal',
+					'rightIndexProximal', 'rightIndexIntermediate', 'rightIndexDistal',
+					'rightMiddleProximal', 'rightMiddleIntermediate', 'rightMiddleDistal',
+					'rightRingProximal', 'rightRingIntermediate', 'rightRingDistal',
+					'rightLittleProximal', 'rightLittleIntermediate', 'rightLittleDistal'
+				];
+
+				fingerBones.forEach(boneName => {
+					const bone = vrm.humanoid.getNormalizedBoneNode(boneName);
+					if (bone) {
+						// 根据手指部位设置不同的弯曲度
+						if (boneName.includes('Thumb')) {
+							// 拇指稍微向内
+							bone.rotation.y = boneName.includes('left') ? 0.35 : -0.35;
+						} else if (boneName.includes('Proximal')) {
+							// 近端指骨轻微弯曲
+							bone.rotation.z = boneName.includes('left') ? -0.35 : 0.35;
+						} else if (boneName.includes('Intermediate')) {
+							// 中端指骨稍微弯曲
+							bone.rotation.z = boneName.includes('left') ? -0.45 : 0.45;
+						} else if (boneName.includes('Distal')) {
+							// 远端指骨轻微弯曲
+							bone.rotation.z = boneName.includes('left') ? -0.3 : 0.3;
+						}
+					}
+				});
 			}
 
 			loader.load(
@@ -347,6 +391,17 @@
                 if (rightLowerArm) {
                     rightLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.02;
                 }
+
+				const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
+				if (leftHand) {
+					leftHand.rotation.z = 0.1 + Math.sin(time * 0.6 + idleOffsets.leftArm) * 0.015; // 手腕自然弯曲
+					leftHand.rotation.x = 0.05;
+				}
+				const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
+				if (rightHand) {
+					rightHand.rotation.z = -0.1 - Math.sin(time * 0.6 + idleOffsets.rightArm) * 0.015; // 手腕自然弯曲
+					rightHand.rotation.x = 0.05;
+				}
 
                 // 头部轻微摆动 - 比原来更细腻
                 const headBone = vrm.humanoid.getNormalizedBoneNode('head');

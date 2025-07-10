@@ -5,7 +5,8 @@ const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { spawn } = require('child_process')
 const fs = require('fs')
-const os = require('os');
+const os = require('os')
+const net = require('net') // 添加 net 模块用于端口检测
 
 let pythonExec;
 let isQuitting = false;
@@ -16,7 +17,7 @@ if (os.platform() === 'win32') {
   pythonExec = path.join('.venv', 'Scripts', 'python.exe');
 } else {
   // macOS / Linux
-  pythonExec = path.join('.venv', 'bin', 'python3'); // 推荐优先使用 python3
+  pythonExec = path.join('.venv', 'bin', 'python3');
 }
 
 let mainWindow
@@ -25,7 +26,8 @@ let tray = null
 let updateAvailable = false
 let backendProcess = null
 const HOST = '127.0.0.1'
-const PORT = 3456
+let PORT = 3456 // 改为 let，允许修改
+const DEFAULT_PORT = 3456 // 保存默认端口
 const isDev = process.env.NODE_ENV === 'development'
 const locales = {
   'zh-CN': {
@@ -98,6 +100,29 @@ function loadEnvVariables() {
 
 loadEnvVariables();
 
+// 新增：检测端口是否可用
+function isPortAvailable(port) {
+  return new Promise((resolve) => {
+    const server = net.createServer()
+    server.listen(port, HOST, () => {
+      server.once('close', () => resolve(true))
+      server.close()
+    })
+    server.on('error', () => resolve(false))
+  })
+}
+
+// 新增：查找可用端口
+async function findAvailablePort(startPort = DEFAULT_PORT, maxAttempts = 10) {
+  for (let i = 0; i < maxAttempts; i++) {
+    const port = startPort + i
+    if (await isPortAvailable(port)) {
+      return port
+    }
+  }
+  throw new Error(`无法找到可用端口，已尝试 ${startPort} 到 ${startPort + maxAttempts - 1}`)
+}
+
 const networkVisible = process.env.networkVisible === 'global';
 const BACKEND_HOST = networkVisible ? '0.0.0.0' : HOST
 // 保存环境变量
@@ -166,78 +191,98 @@ function createSkeletonWindow() {
   })
 }
 
-function startBackend() {
-  const spawnOptions = {
-    stdio: ['ignore', 'ignore', 'ignore'],
-    shell: false,
-    env: {
-      ...process.env,
-      NODE_ENV: isDev ? 'development' : 'production',
-      PYTHONIOENCODING: 'utf-8'
+// 修改后的启动后端函数
+async function startBackend() {
+  try {
+    // 查找可用端口
+    const availablePort = await findAvailablePort(DEFAULT_PORT)
+    PORT = availablePort
+    
+    // 如果端口不是默认端口，记录变更
+    if (PORT !== DEFAULT_PORT) {
+      console.log(`默认端口 ${DEFAULT_PORT} 被占用，已切换到端口 ${PORT}`)
     }
-  }
-
-  // Windows 特殊处理
-  if (process.platform === 'win32') {
-    spawnOptions.windowsHide = true
-    spawnOptions.detached = false
-    spawnOptions.shell = false
-    // 关键：添加 Windows 创建标志
-    spawnOptions.windowsVerbatimArguments = false
-    // 使用 CREATE_NO_WINDOW 标志
-    spawnOptions.stdio = ['ignore', 'ignore', 'ignore']
-  }
-
-  if (isDev) {
-    // 开发模式
-    backendProcess = spawn(pythonExec, [
-      'server.py',
-      '--port', PORT.toString(),
-      '--host', BACKEND_HOST,
-    ], spawnOptions);
-  } else {
-    // 生产模式
-    let serverExecutable = process.platform === 'win32' ? 'server.exe' : 'server'
-    const resourcesPath = process.resourcesPath || path.join(process.execPath, '..', 'resources')
-    const exePath = path.join(resourcesPath, 'server', serverExecutable)
     
-    console.log(`Starting backend from: ${exePath}`)
-    
-    backendProcess = spawn(exePath, [
-      '--port', PORT.toString(),
-      '--host', BACKEND_HOST,
-    ], {
-      ...spawnOptions,
-      cwd: path.dirname(exePath)
+    const spawnOptions = {
+      stdio: ['ignore', 'ignore', 'ignore'],
+      shell: false,
+      env: {
+        ...process.env,
+        NODE_ENV: isDev ? 'development' : 'production',
+        PYTHONIOENCODING: 'utf-8'
+      }
+    }
+
+    // Windows 特殊处理
+    if (process.platform === 'win32') {
+      spawnOptions.windowsHide = true
+      spawnOptions.detached = false
+      spawnOptions.shell = false
+      spawnOptions.windowsVerbatimArguments = false
+      spawnOptions.stdio = ['ignore', 'ignore', 'ignore']
+    }
+
+    const networkVisible = process.env.networkVisible === 'global';
+    const BACKEND_HOST = networkVisible ? '0.0.0.0' : HOST
+
+    if (isDev) {
+      // 开发模式
+      backendProcess = spawn(pythonExec, [
+        'server.py',
+        '--port', PORT.toString(),
+        '--host', BACKEND_HOST,
+      ], spawnOptions);
+    } else {
+      // 生产模式
+      let serverExecutable = process.platform === 'win32' ? 'server.exe' : 'server'
+      const resourcesPath = process.resourcesPath || path.join(process.execPath, '..', 'resources')
+      const exePath = path.join(resourcesPath, 'server', serverExecutable)
+      
+      console.log(`Starting backend from: ${exePath}`)
+      
+      backendProcess = spawn(exePath, [
+        '--port', PORT.toString(),
+        '--host', BACKEND_HOST,
+      ], {
+        ...spawnOptions,
+        cwd: path.dirname(exePath)
+      })
+    }
+
+    // 简化日志处理
+    if (isDev) {
+      const logStream = fs.createWriteStream(
+        path.join(logDir, `backend-${Date.now()}.log`),
+        { flags: 'a' }
+      )
+      
+      backendProcess.stdout?.on('data', (data) => {
+        logStream.write(`[INFO] ${data}`)
+      })
+      
+      backendProcess.stderr?.on('data', (data) => {
+        logStream.write(`[ERROR] ${data}`)
+      })
+    }
+
+    backendProcess.on('error', (err) => {
+      console.error('Backend process error:', err)
     })
-  }
 
-  // 简化日志处理
-  if (isDev) {
-    const logStream = fs.createWriteStream(
-      path.join(logDir, `backend-${Date.now()}.log`),
-      { flags: 'a' }
-    )
-    
-    backendProcess.stdout?.on('data', (data) => {
-      logStream.write(`[INFO] ${data}`)
+    backendProcess.on('close', (code) => {
+      console.log(`Backend process exited with code ${code}`)
     })
-    
-    backendProcess.stderr?.on('data', (data) => {
-      logStream.write(`[ERROR] ${data}`)
-    })
+
+    return PORT // 返回实际使用的端口
+  } catch (error) {
+    console.error('启动后端服务失败:', error)
+    throw error
   }
-
-  backendProcess.on('error', (err) => {
-    console.error('Backend process error:', err)
-  })
-
-  backendProcess.on('close', (code) => {
-    console.log(`Backend process exited with code ${code}`)
-  })
 }
 
 
+
+// 修改等待后端函数
 async function waitForBackend() {
   const MAX_RETRIES = 30
   const RETRY_INTERVAL = 500
@@ -249,7 +294,7 @@ async function waitForBackend() {
       if (response.ok) {
         // 后端服务准备就绪，通知骨架屏页面
         if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('backend-ready')
+          mainWindow.webContents.send('backend-ready', { port: PORT })
         }
         return
       }
@@ -319,14 +364,23 @@ app.whenReady().then(async () => {
     // 创建骨架屏窗口
     createSkeletonWindow()
     
-    // 启动后端服务
-    startBackend()
+    // 启动后端服务（现在会自动查找可用端口）
+    const actualPort = await startBackend()
     
     // 等待后端服务准备就绪
     await waitForBackend()
     
     // 后端服务准备就绪后，加载完整内容
-    console.log(`Backend sever is running at http://${BACKEND_HOST}:${PORT}`)
+    console.log(`Backend server is running at http://${HOST}:${PORT}`)
+
+    // 添加获取端口信息的 IPC 处理
+    ipcMain.handle('get-server-info', () => {
+      return {
+        port: PORT,
+        defaultPort: DEFAULT_PORT,
+        isDefaultPort: PORT === DEFAULT_PORT
+      }
+    })
 
     ipcMain.handle('set-env', async (event, arg) => {
       saveEnvVariable(arg.key, arg.value);

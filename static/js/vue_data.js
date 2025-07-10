@@ -17,7 +17,7 @@ if (isElectron) {
     });
   
     HOST = "127.0.0.1"
-    PORT = 3456
+    PORT = window.location.port
     document.addEventListener('click', async (event) => {
       const link = event.target.closest('a[href]');
       if (!link) return;

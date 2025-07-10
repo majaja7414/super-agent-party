@@ -24,6 +24,7 @@ const app = Vue.createApp({
     // 初始检查
     this.checkQQBotStatus();
     this.checkMobile();
+    this.checkServerPort();
     window.addEventListener('keydown', this.handleKeyDown)
     window.addEventListener('keyup', this.handleKeyUp)
     window.addEventListener('resize', this.checkMobile);

@@ -63,4 +63,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   restartApp: () => ipcRenderer.invoke('restart-app'),
   startVRMWindow: () => ipcRenderer.invoke('start-vrm-window'),
   stopVRMWindow: () => ipcRenderer.invoke('stop-vrm-window'),
+  getServerInfo: () => ipcRenderer.invoke('get-server-info'),
 });
