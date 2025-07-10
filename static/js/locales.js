@@ -569,6 +569,7 @@ const translations = {
       'dragWindow': '拖拽以移动窗口',
       'refreshWindow': '刷新窗口',
       'closeWindow': '关闭窗口',
+      'enabledExpressions': '启用表情',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1137,5 +1138,6 @@ const translations = {
       'dragWindow': 'Drag to move the window',
       'refreshWindow': 'Refresh the window',
       'closeWindow': 'Close the window',
+      'enabledExpressions': 'Enable Expressions',
     }
   };

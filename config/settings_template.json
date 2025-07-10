@@ -170,6 +170,9 @@
       "gsvRefAudioPath": "",
       "gsvAudioOptions": []
     },
+    "VRMConfig": {
+      "enabledExpressions": false
+    },
     "comfyuiServers": ["http://127.0.0.1:8188"],
     "comfyuiAPIkey": "",
     "BotConfig": {

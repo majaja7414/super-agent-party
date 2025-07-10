@@ -372,6 +372,19 @@ let vue_data = {
       gsvRefAudioPath: '',
       gsvAudioOptions: [],
     },
+    VRMConfig: {
+      enabledExpressions: false,
+    },
+    expressionMap : [
+      '<happy>', 
+      '<angry>', 
+      '<sad>',
+      '<neutral>',
+      '<surprised>', 
+      '<relaxed>',
+      '<blink>', 
+      '<blinkLeft>', 
+      '<blinkRight>'],
     newGsvAudio: {
       name: '',
       path: '',

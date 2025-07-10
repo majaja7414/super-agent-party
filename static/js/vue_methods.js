@@ -1049,6 +1049,7 @@ let vue_methods = {
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
           this.asrSettings = data.data.asrSettings || this.asrSettings;
           this.ttsSettings = data.data.ttsSettings || this.ttsSettings;
+          this.VRMConfig = data.data.VRMConfig || this.VRMConfig;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
           this.comfyuiAPIkey = data.data.comfyuiAPIkey || this.comfyuiAPIkey;
           this.workflows = data.data.workflows || this.workflows;
@@ -1605,6 +1606,7 @@ let vue_methods = {
           text2imgSettings: this.text2imgSettings,
           asrSettings: this.asrSettings,
           ttsSettings: this.ttsSettings,
+          VRMConfig: this.VRMConfig,
           comfyuiServers: this.comfyuiServers,
           comfyuiAPIkey: this.comfyuiAPIkey,
           workflows: this.workflows,
@@ -3989,13 +3991,25 @@ let vue_methods = {
 
     async processTTSChunk(message, index) {
       const chunk = message.ttsChunks[index];
-      console.log(`Processing TTS chunk ${index}:`, chunk);
+      const exps = [];
+      let remainingText = chunk;
+
+      for (const exp of this.expressionMap) {
+        const regex = new RegExp(exp, 'g');
+        if (remainingText.includes(exp)) {
+          exps.push(exp);
+          remainingText = remainingText.replace(regex, '').trim(); // 移除表情标签
+        }
+      }
+      const chunk_text = remainingText;
+      const chunk_expressions = exps;
+      console.log(`Processing TTS chunk ${index}:`, chunk_text);
       
       try {
         const response = await fetch(`${backendURL}/tts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: chunk, index })
+          body: JSON.stringify({ text: chunk_text, index })
         });
 
         if (response.ok) {
@@ -4012,6 +4026,7 @@ let vue_methods = {
           message.audioChunks[index] = { 
             url: audioUrl, 
             dataUrl: audioDataUrl, // 添加 base64 数据
+            expressions: chunk_expressions, // 添加表情
             index 
           };
           
@@ -4071,9 +4086,10 @@ let vue_methods = {
             audioDataUrl: audioChunk.dataUrl, // 使用 Base64 数据
             chunkIndex: currentIndex,
             totalChunks: lastMessage.ttsChunks.length,
-            text: lastMessage.ttsChunks[currentIndex]
+            text: lastMessage.ttsChunks[currentIndex],
+            expressions: audioChunk.expressions
           });
-          
+          console.log(audioChunk.expressions);
           await new Promise((resolve) => {
             this.currentAudio.onended = () => {
               // 通知VRM当前chunk播放结束

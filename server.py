@@ -458,6 +458,12 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': sticker_message})
         request.messages[0]['content'] += "\n\n当你需要使用图片时，请将图片的URL放在markdown的图片标签中，例如：![图片名](图片URL)\n\n"
+    if settings['VRMConfig']['enabledExpressions']:
+        Expression_messages = "\n\n你可以使用以下表情：<happy> <angry> <sad> <neutral> <surprised> <relaxed> <blink> <blinkLeft> <blinkRight>\n\n你可以在句子开头插入表情符号以驱动人物的当前表情，注意！你需要将表情符号放到句子的开头，才能在说这句话的时候同步做表情，例如：<angry>我真的生气了。<surprised>哇！<happy>我好开心。\n\n"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += Expression_messages
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': Expression_messages})
     return request
 
 def get_drs_stage(DRS_STAGE):
@@ -3613,7 +3619,7 @@ async def tts_websocket_endpoint(websocket: WebSocket):
                 # 获取音频数据并转换为base64
                 audio_url = message['data']['audioUrl']
                 chunk_index = message['data']['chunkIndex']
-                
+                expressions = message['data']['expressions']
                 # 生成音频ID
                 audio_id = f"chunk_{chunk_index}_{message['data'].get('timestamp', '')}"
                 
@@ -3653,6 +3659,7 @@ async def vrm_websocket_endpoint(websocket: WebSocket):
             # 处理VRM请求音频数据
             if message['type'] == 'requestAudioData':
                 audio_id = message['data']['audioId']
+                expressions = message['data']['expressions']
                 cached_audio = tts_manager.get_cached_audio(audio_id)
                 
                 if cached_audio:
@@ -3660,7 +3667,8 @@ async def vrm_websocket_endpoint(websocket: WebSocket):
                         'type': 'audioData',
                         'data': {
                             'audioId': audio_id,
-                            'audioData': base64.b64encode(cached_audio).decode('utf-8')
+                            'audioData': base64.b64encode(cached_audio).decode('utf-8'),
+                            'expressions':expressions
                         }
                     }))
             

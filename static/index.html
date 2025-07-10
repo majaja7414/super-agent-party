@@ -5168,6 +5168,12 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            <el-form-item :label="t('enabledExpressions')" class="form-item-align" label-position="left">
+                              <el-switch 
+                                v-model="VRMConfig.enabledExpressions" 
+                                @change="autoSaveSettings"
+                              ></el-switch>
+                            </el-form-item>
                         </div>
                       </div>
                     </el-form>

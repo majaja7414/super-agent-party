@@ -898,7 +898,20 @@ async function startLipSyncForChunk(data) {
         audio.src = data.audioDataUrl; // 使用 Base64 数据 URL
         audio.volume = 0.01;
         chunkState.audio = audio;
-        
+        console.log(data.expressions);
+        // 使用面部表情
+        let exp = data.expressions || [];
+        if(exp.length > 0){
+            let cur_exp = exp[0];
+            // 移除cur_exp中的<>符号
+            cur_exp = cur_exp.replace(/<|>/g, '');
+            console.log(`Setting expression to ${cur_exp}`);
+            currentVrm.expressionManager.setValue(cur_exp, 1);
+        }
+        else{
+            console.log('No expression to set');
+            currentVrm.expressionManager.resetValues();
+        }
         console.log(`Loading audio for chunk ${chunkId}:`, data.audioUrl);
         
         // 等待音频加载
@@ -1071,11 +1084,7 @@ function stopChunkAnimation(chunkId) {
     if (chunkAnimations.size === 0 && currentVrm && currentVrm.expressionManager) {
         setTimeout(() => {
             if (chunkAnimations.size === 0) { // 再次确认没有新的chunk开始
-                currentVrm.expressionManager.setValue('aa', 0);
-                currentVrm.expressionManager.setValue('ih', 0);
-                currentVrm.expressionManager.setValue('ou', 0);
-                currentVrm.expressionManager.setValue('ee', 0);
-                currentVrm.expressionManager.setValue('oh', 0);
+                currentVrm.expressionManager.resetValues();
                 console.log('All mouth expressions reset');
             }
         }, 200);
@@ -1097,11 +1106,7 @@ function stopAllAnimations() {
     
     // 重置表情
     if (currentVrm && currentVrm.expressionManager) {
-        currentVrm.expressionManager.setValue('aa', 0);
-        currentVrm.expressionManager.setValue('ih', 0);
-        currentVrm.expressionManager.setValue('ou', 0);
-        currentVrm.expressionManager.setValue('ee', 0);
-        currentVrm.expressionManager.setValue('oh', 0);
+        currentVrm.expressionManager.resetValues();
     }
 }
 
@@ -1120,6 +1125,7 @@ function prepareSpeechAnimation(data) {
         currentVrm.expressionManager.setValue('ou', 0);
         currentVrm.expressionManager.setValue('ee', 0);
         currentVrm.expressionManager.setValue('oh', 0);
+        currentVrm.expressionManager.resetValue('neutral', 1);
     }
 }
 
