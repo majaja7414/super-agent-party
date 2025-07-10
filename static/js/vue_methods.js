@@ -3948,35 +3948,39 @@ let vue_methods = {
     },
 
     // TTS处理进程 - 使用流式响应
+    // 修改 TTS 处理开始时的通知
     async startTTSProcess() {
       if (!this.ttsSettings.enabled) return;
       
+      // 通知VRM准备开始TTS
+      this.sendTTSStatusToVRM('ttsStarted', {
+        totalChunks: this.messages[this.messages.length - 1].ttsChunks.length
+      });
+      
+      // 现有的 TTS 处理逻辑...
       const lastMessage = this.messages[this.messages.length - 1];
-      // 初始化队列管理
       lastMessage.audioChunks = lastMessage.audioChunks || [];
       lastMessage.ttsQueue = lastMessage.ttsQueue || new Set();
       
-      let max_concurrency =  1; // 最大并行请求数
+      let max_concurrency = 1;
       let nextIndex = 0;
 
       while (this.isTyping || nextIndex < lastMessage.ttsChunks.length) {
-        if(nextIndex > 0){
+        if (nextIndex > 0) {
           max_concurrency = this.ttsSettings.maxConcurrency || 1;
         }
-        // 填充处理队列
+        
         while (lastMessage.ttsQueue.size < max_concurrency && 
               nextIndex < lastMessage.ttsChunks.length) {
           
           const index = nextIndex++;
           lastMessage.ttsQueue.add(index);
           
-          // 并行处理chunk（不等待）
           this.processTTSChunk(lastMessage, index).finally(() => {
             lastMessage.ttsQueue.delete(index);
           });
         }
         
-        // 避免CPU忙等待
         await new Promise(resolve => setTimeout(resolve, 10));
       }
       
@@ -3996,13 +4000,22 @@ let vue_methods = {
 
         if (response.ok) {
           const audioBlob = await response.blob();
+          
+          // 转换为 Base64
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          const audioDataUrl = `data:${audioBlob.type};base64,${base64}`;
+          
+          // 本地播放仍使用 blob URL
           const audioUrl = URL.createObjectURL(audioBlob);
           
-          // 原子性更新音频块
-          message.audioChunks[index] = { url: audioUrl, index };
-          console.log(`TTS chunk ${index} processed`);
+          message.audioChunks[index] = { 
+            url: audioUrl, 
+            dataUrl: audioDataUrl, // 添加 base64 数据
+            index 
+          };
           
-          // 触发播放检查
+          console.log(`TTS chunk ${index} processed`);
           this.checkAudioPlayback();
         } else {
           console.error(`TTS failed for chunk ${index}`);
@@ -4026,33 +4039,49 @@ let vue_methods = {
       console.log('Audio playback monitor started');
     },
 
-// 修改checkAudioPlayback函数
-   async checkAudioPlayback() {
+    // 修改现有的音频播放方法
+    async checkAudioPlayback() {
       const lastMessage = this.messages[this.messages.length - 1];
       if (!lastMessage || lastMessage.isPlaying) return;
 
       const currentIndex = lastMessage.currentChunk;
       const audioChunk = lastMessage.audioChunks[currentIndex];
-      if (!this.ttsSettings.enabled){
-        lastMessage.isPlaying = false; // 如果没有音频块，停止播放
-        lastMessage.currentChunk = 0; // 重置索引
+      
+      if (!this.ttsSettings.enabled) {
+        lastMessage.isPlaying = false;
+        lastMessage.currentChunk = 0;
         if (this.currentAudio) {
           this.currentAudio.pause();
-          this.currentAudio= null;
+          this.currentAudio = null;
         }
+        // 通知VRM停止说话动画
+        this.sendTTSStatusToVRM('stopSpeaking', {});
         return;
       }
+      
       if (audioChunk && !lastMessage.isPlaying) {
         lastMessage.isPlaying = true;
         console.log(`Playing audio chunk ${currentIndex}`);
         
-        try { 
-          // 创建新音频实例
+        try {
           this.currentAudio = new Audio(audioChunk.url);
           
-          // 播放音频
+          // 发送 Base64 数据到 VRM
+          this.sendTTSStatusToVRM('startSpeaking', {
+            audioDataUrl: audioChunk.dataUrl, // 使用 Base64 数据
+            chunkIndex: currentIndex,
+            totalChunks: lastMessage.ttsChunks.length,
+            text: lastMessage.ttsChunks[currentIndex]
+          });
+          
           await new Promise((resolve) => {
-            this.currentAudio.onended = resolve;
+            this.currentAudio.onended = () => {
+              // 通知VRM当前chunk播放结束
+              this.sendTTSStatusToVRM('chunkEnded', { 
+                chunkIndex: currentIndex 
+              });
+              resolve();
+            };
             this.currentAudio.onerror = resolve;
             this.currentAudio.play().catch(e => console.error('Play error:', e));
           });
@@ -4061,17 +4090,17 @@ let vue_methods = {
         } catch (error) {
           console.error(`Playback error: ${error}`);
         } finally {
-          // 更新状态
           lastMessage.currentChunk++;
           lastMessage.isPlaying = false;
-          
-          // 立即检查下一段
           this.checkAudioPlayback();
         }
       }
+      
       if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
         console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
+        // 通知VRM所有音频播放完成
+        this.sendTTSStatusToVRM('allChunksCompleted', {});
       }
     },
 
@@ -4346,5 +4375,44 @@ let vue_methods = {
       } catch (error) {
         console.error('获取服务器信息失败:', error)
       }
-    }
+    },
+    // 初始化 WebSocket 连接
+    initTTSWebSocket() {
+      const http_protocol = window.location.protocol;
+      const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${ws_protocol}//${window.location.host}/ws/tts`;
+      this.ttsWebSocket = new WebSocket(wsUrl);
+      
+      this.ttsWebSocket.onopen = () => {
+        console.log('TTS WebSocket connected');
+        this.wsConnected = true;
+      };
+      
+      this.ttsWebSocket.onclose = () => {
+        console.log('TTS WebSocket disconnected');
+        this.wsConnected = false;
+        // 自动重连
+        setTimeout(() => {
+          if (!this.wsConnected) {
+            this.initTTSWebSocket();
+          }
+        }, 3000);
+      };
+      
+      this.ttsWebSocket.onerror = (error) => {
+        console.error('TTS WebSocket error:', error);
+      };
+    },
+    
+    // 发送 TTS 状态到 VRM
+    sendTTSStatusToVRM(type, data) {
+      if (this.ttsWebSocket && this.wsConnected) {
+        this.ttsWebSocket.send(JSON.stringify({
+          type,
+          data,
+          timestamp: Date.now()
+        }));
+      }
+    },
+    
 }

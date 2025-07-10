@@ -718,4 +718,543 @@ if (isElectron) {
     }, 1000);
 }
 
+// 在全局变量区域添加
+let ttsWebSocket = null;
+let wsConnected = false;
+let currentAudioContext = null;
+let currentAnalyser = null;
+let currentAudioSource = null;
+let isCurrentlySpeaking = false;
+let lipSyncAnimationId = null;
+
+// TTS 相关的表情值
+let targetMouthOpen = 0;
+let currentMouthOpen = 0;
+let mouthOpenSpeed = 8; // 嘴部动画速度
+
+// 初始化 WebSocket 连接
+function initTTSWebSocket() {
+    const http_protocol = window.location.protocol;
+    const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${ws_protocol}//${window.location.host}/ws/vrm`;
+    ttsWebSocket = new WebSocket(wsUrl);
+    
+    ttsWebSocket.onopen = () => {
+        console.log('VRM TTS WebSocket connected');
+        wsConnected = true;
+        
+        // 发送连接确认
+        sendToMain('vrmConnected', { status: 'ready' });
+    };
+    
+    ttsWebSocket.onmessage = (event) => {
+        try {
+            const message = JSON.parse(event.data);
+            handleTTSMessage(message);
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    };
+    
+    ttsWebSocket.onclose = () => {
+        console.log('VRM TTS WebSocket disconnected');
+        wsConnected = false;
+        
+        // 停止当前的说话动画
+        stopLipSync();
+        
+        // 自动重连
+        setTimeout(() => {
+            if (!wsConnected) {
+                initTTSWebSocket();
+            }
+        }, 3000);
+    };
+    
+    ttsWebSocket.onerror = (error) => {
+        console.error('VRM TTS WebSocket error:', error);
+    };
+}
+
+// 发送消息到主界面
+function sendToMain(type, data) {
+    if (ttsWebSocket && wsConnected) {
+        ttsWebSocket.send(JSON.stringify({
+            type,
+            data,
+            timestamp: Date.now()
+        }));
+    }
+}
+// 全局变量区域添加
+let chunkAnimations = new Map(); // 存储每个chunk的动画状态
+let currentChunkIndex = -1;
+
+// 修改 handleTTSMessage 函数
+function handleTTSMessage(message) {
+    const { type, data } = message;
+    
+    switch (type) {
+        case 'ttsStarted':
+            console.log('TTS started, preparing for speech animation');
+            // 重置所有状态
+            chunkAnimations.clear();
+            currentChunkIndex = -1;
+            stopLipSync();
+            prepareSpeechAnimation(data);
+            break;
+            
+        case 'startSpeaking':
+            console.log('Starting speech animation for chunk:', data.chunkIndex);
+            currentChunkIndex = data.chunkIndex;
+            startLipSyncForChunk(data);
+            break;
+            
+        case 'chunkEnded':
+            console.log('Chunk ended:', data.chunkIndex);
+            // 停止特定chunk的动画
+            stopChunkAnimation(data.chunkIndex);
+            break;
+            
+        case 'stopSpeaking':
+            console.log('Stopping speech animation');
+            stopAllAnimations();
+            break;
+            
+        case 'allChunksCompleted':
+            console.log('All TTS chunks completed');
+            stopAllAnimations();
+            sendToMain('animationComplete', { status: 'completed' });
+            break;
+    }
+}
+
+// 新的chunk动画管理函数
+async function startLipSyncForChunk(data) {
+    const chunkId = data.chunkIndex;
+    
+    // 如果这个chunk已经在播放，先停止它
+    if (chunkAnimations.has(chunkId)) {
+        stopChunkAnimation(chunkId);
+    }
+    
+    console.log(`Starting lip sync for chunk ${chunkId}`);
+    
+    if (!currentVrm || !currentVrm.expressionManager) {
+        console.error('VRM or expression manager not available');
+        return;
+    }
+    
+    try {
+        // 创建这个chunk的动画状态
+        const chunkState = {
+            isPlaying: true,
+            animationId: null,
+            audio: null,
+            audioSource: null,
+            analyser: null
+        };
+        
+        chunkAnimations.set(chunkId, chunkState);
+        
+        // 创建音频上下文（如果需要）
+        if (!currentAudioContext) {
+            currentAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        
+        if (currentAudioContext.state === 'suspended') {
+            await currentAudioContext.resume();
+        }
+        
+        // 使用 Base64 数据创建音频
+        const audio = new Audio();
+        audio.crossOrigin = 'anonymous';
+        audio.src = data.audioDataUrl; // 使用 Base64 数据 URL
+        audio.volume = 0.01;
+        chunkState.audio = audio;
+        
+        console.log(`Loading audio for chunk ${chunkId}:`, data.audioUrl);
+        
+        // 等待音频加载
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+                reject(new Error(`Audio loading timeout for chunk ${chunkId}`));
+            }, 5000);
+            
+            audio.addEventListener('canplaythrough', () => {
+                clearTimeout(timeout);
+                console.log(`Audio loaded for chunk ${chunkId}, duration:`, audio.duration);
+                resolve();
+            });
+            
+            audio.addEventListener('error', (e) => {
+                clearTimeout(timeout);
+                console.error(`Audio loading error for chunk ${chunkId}:`, e);
+                reject(e);
+            });
+            
+            audio.load();
+        });
+        
+        // 检查chunk是否还应该播放（可能在加载期间被取消了）
+        if (!chunkAnimations.has(chunkId) || !chunkAnimations.get(chunkId).isPlaying) {
+            console.log(`Chunk ${chunkId} was cancelled during loading`);
+            return;
+        }
+        
+        // 创建分析器
+        const analyser = currentAudioContext.createAnalyser();
+        analyser.fftSize = 512;
+        analyser.smoothingTimeConstant = 0.3;
+        analyser.minDecibels = -90;
+        analyser.maxDecibels = -10;
+        chunkState.analyser = analyser;
+        
+        // 连接音频源
+        const audioSource = currentAudioContext.createMediaElementSource(audio);
+        audioSource.connect(analyser);
+        chunkState.audioSource = audioSource;
+        
+        console.log(`Starting playback for chunk ${chunkId}`);
+        
+        // 开始播放
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            await playPromise;
+        }
+        
+        // 开始动画
+        startChunkAnimation(chunkId, chunkState);
+        
+        // 监听音频结束
+        audio.addEventListener('ended', () => {
+            console.log(`Audio ended for chunk ${chunkId}`);
+            setTimeout(() => {
+                stopChunkAnimation(chunkId);
+            }, 100);
+        });
+        
+    } catch (error) {
+        console.error(`Error starting lip sync for chunk ${chunkId}:`, error);
+        stopChunkAnimation(chunkId);
+    }
+}
+
+// 单个chunk的动画循环
+function startChunkAnimation(chunkId, chunkState) {
+    if (!chunkState || !chunkState.isPlaying || !chunkState.analyser) {
+        console.log(`Cannot start animation for chunk ${chunkId}`);
+        return;
+    }
+    
+    const dataArray = new Uint8Array(chunkState.analyser.frequencyBinCount);
+    let frameCount = 0;
+    
+    function animateChunk() {
+        // 检查chunk状态
+        const currentState = chunkAnimations.get(chunkId);
+        if (!currentState || !currentState.isPlaying) {
+            console.log(`Stopping animation for chunk ${chunkId} - state changed`);
+            return;
+        }
+        
+        frameCount++;
+        
+        // 获取音频数据
+        chunkState.analyser.getByteFrequencyData(dataArray);
+        
+        // 计算强度
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        const maxValue = Math.max(...dataArray);
+        
+        // 调试信息
+        if (frameCount % 30 === 0) {
+            console.log(`Chunk ${chunkId} audio analysis:`, {
+                average,
+                maxValue,
+                intensity: Math.min(average / 50, 1.0)
+            });
+        }
+        
+        // 应用口型动画
+        if (currentVrm && currentVrm.expressionManager) {
+            const intensity = Math.min(average / 2, 1.0); // 进一步降低阈值
+            
+            if (intensity > 0.02 || maxValue > 5) { // 更敏感的触发条件
+                const mouthOpen = Math.max(intensity*1.8, 0.1); // 确保最小张嘴程度
+                currentVrm.expressionManager.setValue('aa', mouthOpen);
+                
+                // 添加一些变化
+                const variation = Math.sin(frameCount * 0.1) * 0.1;
+                currentVrm.expressionManager.setValue('ih', Math.max(0, intensity * 0.3 + variation));
+                
+                if (frameCount % 30 === 0) {
+                    console.log(`Chunk ${chunkId} setting mouth:`, { intensity, mouthOpen });
+                }
+            } else {
+                // 渐进式关闭嘴巴，而不是立即重置
+                const currentAA = currentVrm.expressionManager.getValue('aa') || 0;
+                const currentIH = currentVrm.expressionManager.getValue('ih') || 0;
+                
+                currentVrm.expressionManager.setValue('aa', Math.max(0, currentAA - 0.05));
+                currentVrm.expressionManager.setValue('ih', Math.max(0, currentIH - 0.03));
+            }
+        }
+        
+        // 继续动画
+        currentState.animationId = requestAnimationFrame(animateChunk);
+    }
+    
+    console.log(`Starting animation loop for chunk ${chunkId}`);
+    chunkState.animationId = requestAnimationFrame(animateChunk);
+}
+
+// 停止特定chunk的动画
+function stopChunkAnimation(chunkId) {
+    const chunkState = chunkAnimations.get(chunkId);
+    if (!chunkState) return;
+    
+    console.log(`Stopping animation for chunk ${chunkId}`);
+    
+    // 停止动画循环
+    chunkState.isPlaying = false;
+    if (chunkState.animationId) {
+        cancelAnimationFrame(chunkState.animationId);
+    }
+    
+    // 停止音频
+    if (chunkState.audio) {
+        chunkState.audio.pause();
+        chunkState.audio = null;
+    }
+    
+    // 断开音频连接
+    if (chunkState.audioSource) {
+        chunkState.audioSource.disconnect();
+        chunkState.audioSource = null;
+    }
+    
+    // 从映射中移除
+    chunkAnimations.delete(chunkId);
+    
+    // 如果没有其他chunk在播放，重置表情
+    if (chunkAnimations.size === 0 && currentVrm && currentVrm.expressionManager) {
+        setTimeout(() => {
+            if (chunkAnimations.size === 0) { // 再次确认没有新的chunk开始
+                currentVrm.expressionManager.setValue('aa', 0);
+                currentVrm.expressionManager.setValue('ih', 0);
+                currentVrm.expressionManager.setValue('ou', 0);
+                currentVrm.expressionManager.setValue('ee', 0);
+                currentVrm.expressionManager.setValue('oh', 0);
+                console.log('All mouth expressions reset');
+            }
+        }, 200);
+    }
+}
+
+// 停止所有动画
+function stopAllAnimations() {
+    console.log('Stopping all animations');
+    
+    // 停止所有chunk动画
+    for (const chunkId of chunkAnimations.keys()) {
+        stopChunkAnimation(chunkId);
+    }
+    
+    // 重置全局状态
+    isCurrentlySpeaking = false;
+    currentChunkIndex = -1;
+    
+    // 重置表情
+    if (currentVrm && currentVrm.expressionManager) {
+        currentVrm.expressionManager.setValue('aa', 0);
+        currentVrm.expressionManager.setValue('ih', 0);
+        currentVrm.expressionManager.setValue('ou', 0);
+        currentVrm.expressionManager.setValue('ee', 0);
+        currentVrm.expressionManager.setValue('oh', 0);
+    }
+}
+
+// 更新旧的stopLipSync函数以兼容
+function stopLipSync() {
+    stopAllAnimations();
+}
+
+// 准备说话动画
+function prepareSpeechAnimation(data) {
+    // 可以在这里做一些准备工作，比如调整表情等
+    if (currentVrm && currentVrm.expressionManager) {
+        // 重置表情
+        currentVrm.expressionManager.setValue('aa', 0);
+        currentVrm.expressionManager.setValue('ih', 0);
+        currentVrm.expressionManager.setValue('ou', 0);
+        currentVrm.expressionManager.setValue('ee', 0);
+        currentVrm.expressionManager.setValue('oh', 0);
+    }
+}
+
+// 口型动画循环
+function startMouthAnimation() {
+    console.log('startMouthAnimation called');
+    
+    if (!isCurrentlySpeaking || !currentVrm || !currentAnalyser) {
+        console.log('Animation conditions not met:', {
+            isCurrentlySpeaking,
+            hasVrm: !!currentVrm,
+            hasAnalyser: !!currentAnalyser
+        });
+        return;
+    }
+    
+    const dataArray = new Uint8Array(currentAnalyser.frequencyBinCount);
+    let frameCount = 0;
+    
+    function animateMouth() {
+        if (!isCurrentlySpeaking) {
+            console.log('Stopping animation - not speaking');
+            return;
+        }
+        
+        frameCount++;
+        
+        // 获取音频频率数据
+        currentAnalyser.getByteFrequencyData(dataArray);
+        
+        // 计算音频强度
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+        }
+        const average = sum / dataArray.length;
+        
+        // 每30帧打印一次调试信息
+        if (frameCount % 30 === 0) {
+            console.log('Audio analysis:', {
+                average,
+                maxValue: Math.max(...dataArray),
+                dataArrayLength: dataArray.length,
+                hasExpressionManager: !!currentVrm.expressionManager
+            });
+        }
+        
+        // 简化的口型控制 - 先测试基本功能
+        const intensity = Math.min(average / 50, 1.0); // 降低阈值，更容易触发
+        
+        if (currentVrm.expressionManager) {
+            if (intensity > 0.05) { // 降低触发阈值
+                // 简单的 aa 口型测试
+                const mouthOpen = intensity * 0.8;
+                currentVrm.expressionManager.setValue('aa', mouthOpen);
+                
+                if (frameCount % 30 === 0) {
+                    console.log('Setting mouth animation:', { intensity, mouthOpen });
+                }
+            } else {
+                // 静音时重置口型
+                currentVrm.expressionManager.setValue('aa', 0);
+            }
+        } else {
+            console.error('No expression manager found');
+        }
+        
+        lipSyncAnimationId = requestAnimationFrame(animateMouth);
+    }
+    
+    console.log('Starting mouth animation loop');
+    animateMouth();
+}
+
+// 在 Electron 环境中添加 WebSocket 控制按钮
+if (isElectron) {
+    // 在现有的控制面板创建代码中添加 WebSocket 状态按钮
+    setTimeout(() => {
+        const controlPanel = document.getElementById('control-panel');
+        if (controlPanel) {
+            // WebSocket 状态按钮
+            const wsStatusButton = document.createElement('div');
+            wsStatusButton.id = 'ws-status-handle';
+            wsStatusButton.innerHTML = '<i class="fas fa-wifi"></i>';
+            wsStatusButton.style.cssText = `
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: ${wsConnected ? '#28a745' : '#dc3545'};
+                cursor: pointer;
+                -webkit-app-region: no-drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
+            `;
+            
+            // WebSocket 状态按钮事件
+            wsStatusButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (wsConnected) {
+                    // 断开连接
+                    if (ttsWebSocket) {
+                        ttsWebSocket.close();
+                    }
+                } else {
+                    // 重新连接
+                    initTTSWebSocket();
+                }
+            });
+            
+            // 更新 WebSocket 状态显示
+            function updateWSStatus() {
+                wsStatusButton.style.color = wsConnected ? '#28a745' : '#dc3545';
+                wsStatusButton.title = wsConnected ? 'WebSocket已连接 - 点击断开' : 'WebSocket未连接 - 点击重连';
+            }
+            
+            // 定期更新状态
+            setInterval(updateWSStatus, 1000);
+            
+            // 添加到控制面板（在拖拽按钮后面）
+            const dragButton = controlPanel.querySelector('#drag-handle');
+            if (dragButton) {
+                controlPanel.insertBefore(wsStatusButton, dragButton.nextSibling);
+            } else {
+                controlPanel.appendChild(wsStatusButton);
+            }
+        }
+    }, 1200);
+}
+
+// 在页面加载完成后初始化 WebSocket
+document.addEventListener('DOMContentLoaded', () => {
+    // 延迟初始化，确保其他组件已经准备好
+    setTimeout(() => {
+        initTTSWebSocket();
+    }, 2000);
+});
+if (isElectron) {
+  // 禁用 Chromium 的自动播放限制
+  const disableAutoplayPolicy = () => {
+    if (window.chrome && chrome.webview) {
+      chrome.webview.setAutoplayPolicy('no-user-gesture-required');
+    }
+  };
+  
+  // 在用户交互后执行
+  document.addEventListener('click', () => {
+    disableAutoplayPolicy();
+    if (currentAudioContext) {
+      currentAudioContext.resume();
+    }
+  });
+}
+
 animate();

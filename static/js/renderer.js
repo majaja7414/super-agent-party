@@ -73,10 +73,14 @@ const app = Vue.createApp({
         this.isMaximized = state === 'maximized'
       });
     }
+    this.initTTSWebSocket();
   },
   beforeUnmount() {
     if (isElectron) {
       delete window.stopQQBotHandler;
+    }
+    if (this.ttsWebSocket) {
+      this.ttsWebSocket.close();
     }
   },
   watch: {

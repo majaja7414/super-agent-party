@@ -3528,6 +3528,166 @@ async def handle_funasr_response(funasr_websocket,
     finally:
         await funasr_websocket.close()
 
+class TTSConnectionManager:
+    def __init__(self):
+        self.main_connections: List[WebSocket] = []
+        self.vrm_connections: List[WebSocket] = []
+        self.audio_cache: Dict[str, bytes] = {}  # 缓存音频数据
+        
+    async def connect_main(self, websocket: WebSocket):
+        await websocket.accept()
+        self.main_connections.append(websocket)
+        logging.info(f"Main interface connected. Total: {len(self.main_connections)}")
+        
+    async def connect_vrm(self, websocket: WebSocket):
+        await websocket.accept()
+        self.vrm_connections.append(websocket)
+        logging.info(f"VRM interface connected. Total: {len(self.vrm_connections)}")
+        
+    def disconnect_main(self, websocket: WebSocket):
+        if websocket in self.main_connections:
+            self.main_connections.remove(websocket)
+            logging.info(f"Main interface disconnected. Total: {len(self.main_connections)}")
+            
+    def disconnect_vrm(self, websocket: WebSocket):
+        if websocket in self.vrm_connections:
+            self.vrm_connections.remove(websocket)
+            logging.info(f"VRM interface disconnected. Total: {len(self.vrm_connections)}")
+    
+    async def broadcast_to_vrm(self, message: dict):
+        """广播消息到所有VRM连接"""
+        if self.vrm_connections:
+            message_str = json.dumps(message)
+            disconnected = []
+            
+            for connection in self.vrm_connections:
+                try:
+                    await connection.send_text(message_str)
+                except:
+                    disconnected.append(connection)
+            
+            # 清理断开的连接
+            for conn in disconnected:
+                self.disconnect_vrm(conn)
+    
+    async def send_to_main(self, message: dict):
+        """发送消息到主界面"""
+        if self.main_connections:
+            message_str = json.dumps(message)
+            disconnected = []
+            
+            for connection in self.main_connections:
+                try:
+                    await connection.send_text(message_str)
+                except:
+                    disconnected.append(connection)
+            
+            # 清理断开的连接
+            for conn in disconnected:
+                self.disconnect_main(conn)
+    
+    def cache_audio(self, audio_id: str, audio_data: bytes):
+        """缓存音频数据"""
+        self.audio_cache[audio_id] = audio_data
+        
+    def get_cached_audio(self, audio_id: str) -> bytes:
+        """获取缓存的音频数据"""
+        return self.audio_cache.get(audio_id)
+
+# 创建连接管理器实例
+tts_manager = TTSConnectionManager()
+
+@app.websocket("/ws/tts")
+async def tts_websocket_endpoint(websocket: WebSocket):
+    """主界面的WebSocket连接"""
+    await tts_manager.connect_main(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            logging.info(f"Received from main: {message['type']}")
+            
+            # 如果消息包含音频URL，需要特殊处理
+            if message['type'] == 'startSpeaking' and 'audioUrl' in message['data']:
+                # 获取音频数据并转换为base64
+                audio_url = message['data']['audioUrl']
+                chunk_index = message['data']['chunkIndex']
+                
+                # 生成音频ID
+                audio_id = f"chunk_{chunk_index}_{message['data'].get('timestamp', '')}"
+                
+                # 修改消息，使用音频ID而不是URL
+                message['data']['audioId'] = audio_id
+                message['data']['useBase64'] = True
+                
+                # 如果有缓存的音频数据，直接发送
+                cached_audio = tts_manager.get_cached_audio(audio_id)
+                if cached_audio:
+                    message['data']['audioData'] = base64.b64encode(cached_audio).decode('utf-8')
+            
+            # 转发到所有VRM连接
+            await tts_manager.broadcast_to_vrm({
+                'type': message['type'],
+                'data': message['data'],
+                'timestamp': message.get('timestamp', None)
+            })
+            
+    except WebSocketDisconnect:
+        tts_manager.disconnect_main(websocket)
+    except Exception as e:
+        logging.error(f"WebSocket error in main connection: {e}")
+        tts_manager.disconnect_main(websocket)
+
+@app.websocket("/ws/vrm")
+async def vrm_websocket_endpoint(websocket: WebSocket):
+    """VRM界面的WebSocket连接"""
+    await tts_manager.connect_vrm(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            logging.info(f"Received from VRM: {message['type']}")
+            
+            # 处理VRM请求音频数据
+            if message['type'] == 'requestAudioData':
+                audio_id = message['data']['audioId']
+                cached_audio = tts_manager.get_cached_audio(audio_id)
+                
+                if cached_audio:
+                    await websocket.send_text(json.dumps({
+                        'type': 'audioData',
+                        'data': {
+                            'audioId': audio_id,
+                            'audioData': base64.b64encode(cached_audio).decode('utf-8')
+                        }
+                    }))
+            
+            # 可以处理VRM发送的状态信息
+            elif message['type'] == 'animationComplete':
+                await tts_manager.send_to_main({
+                    'type': 'vrmAnimationComplete',
+                    'data': message['data']
+                })
+            
+    except WebSocketDisconnect:
+        tts_manager.disconnect_vrm(websocket)
+    except Exception as e:
+        logging.error(f"WebSocket error in VRM connection: {e}")
+        tts_manager.disconnect_vrm(websocket)
+
+
+@app.get("/tts/status")
+async def get_tts_status():
+    """获取当前TTS连接状态"""
+    return {
+        "main_connections": len(tts_manager.main_connections),
+        "vrm_connections": len(tts_manager.vrm_connections),
+        "total_connections": len(tts_manager.main_connections) + len(tts_manager.vrm_connections)
+    }
+
+
 @app.post("/tts")
 async def text_to_speech(request: Request):
     try:

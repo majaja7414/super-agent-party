@@ -781,6 +781,8 @@ let vue_data = {
     VRMConfig: {
       VRMAgent:'super-model',
     },
+    ttsWebSocket: null,
+    wsConnected: false,
     isVRMRunning: false,
     isVRMStarting: false,
     isVRMStopping: false,

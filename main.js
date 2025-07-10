@@ -554,6 +554,9 @@ app.whenReady().then(async () => {
           enableRemoteModule: true,
           sandbox: false,
           webgl: true, // 启用 WebGL
+          devTools: isDev,
+          webAudio: true,
+          autoplayPolicy: 'no-user-gesture-required', // 允许自动播放
           preload: path.join(__dirname, 'static/js/preload.js')
         }
       });
