@@ -564,6 +564,11 @@ const translations = {
       'stop_table_pet': '停止VRM桌宠',
       'reload_table_pet': '重载VRM桌宠',
       'start_table_pet_web': '启动VRM桌宠(网页)',
+      'WebSocketConnected':'WebSocket已连接 - 点击断开',
+      'WebSocketDisconnected':'WebSocket已断开 - 点击连接',
+      'dragWindow': '拖拽以移动窗口',
+      'refreshWindow': '刷新窗口',
+      'closeWindow': '关闭窗口',
     },
     'en-US': {
       'chat': 'Chat',
@@ -1127,5 +1132,10 @@ const translations = {
       'stop_table_pet': 'Stop VRM Table Pet',
       'reload_table_pet': 'Reload VRM Table Pet',
       'start_table_pet_web': 'Start VRM Table Pet (Web)',
+      'WebSocketConnected':'WebSocket Connected - Click Disconnect',
+      'WebSocketDisconnected':'WebSocket Disconnected - Click Connect',
+      'dragWindow': 'Drag to move the window',
+      'refreshWindow': 'Refresh the window',
+      'closeWindow': 'Close the window',
     }
   };

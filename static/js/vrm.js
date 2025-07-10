@@ -94,6 +94,31 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比例
 renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1);
 
+// 用fetch查询/cur_language的值
+async function fetchLanguage() {
+    try {
+        const http_protocol = window.location.protocol;
+        const HOST = window.location.host;
+        const PORT = window.location.port;
+        if (PORT) {
+            response = await fetch(`${http_protocol}//${HOST}:${PORT}/cur_language`);
+        }
+        else {
+            response = await fetch(`${http_protocol}//${HOST}/cur_language`);
+        }
+        const data = await response.json();
+        return data.language;
+    } catch (error) {
+        console.error('Error fetching language:', error);
+        return 'zh-CN';
+    }
+}
+async function t(key) {
+    const currentLanguage = await fetchLanguage();
+    return translations[currentLanguage][key] || key;
+}
+
+
 // 启用阴影（如果需要）
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -587,14 +612,12 @@ if (isElectron) {
             refreshButton.style.background = 'rgba(255,255,255,1)';
             refreshButton.style.transform = 'scale(1.1)';
             refreshButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-            refreshButton.style.color = '#dc3545';
         });
         
         refreshButton.addEventListener('mouseleave', () => {
             refreshButton.style.background = 'rgba(255,255,255,0.95)';
             refreshButton.style.transform = 'scale(1)';
             refreshButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            refreshButton.style.color = '#333';
         });
 
         // 刷新按钮点击事件
@@ -610,14 +633,12 @@ if (isElectron) {
             closeButton.style.background = 'rgba(255,255,255,1)';
             closeButton.style.transform = 'scale(1.1)';
             closeButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
-            closeButton.style.color = '#dc3545';
         });
         
         closeButton.addEventListener('mouseleave', () => {
             closeButton.style.background = 'rgba(255,255,255,0.95)';
             closeButton.style.transform = 'scale(1)';
             closeButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            closeButton.style.color = '#333';
         });
 
         // 关闭按钮点击事件
@@ -631,7 +652,12 @@ if (isElectron) {
                 window.close();
             }
         });
-        
+        async function initbutton() {
+            dragButton.title = await t('dragWindow');
+            refreshButton.title = await t('refreshWindow');
+            closeButton.title = await t('closeWindow');
+        }
+        initbutton();
         // 组装控制面板
         controlPanel.appendChild(dragButton);
         controlPanel.appendChild(refreshButton);
@@ -1197,7 +1223,6 @@ if (isElectron) {
                 pointer-events: auto;
                 backdrop-filter: blur(10px);
             `;
-            
             // WebSocket 状态按钮事件
             wsStatusButton.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -1212,13 +1237,24 @@ if (isElectron) {
                     initTTSWebSocket();
                 }
             });
+            // 添加悬停效果 - 刷新按钮
+            wsStatusButton.addEventListener('mouseenter', () => {
+                wsStatusButton.style.background = 'rgba(255,255,255,1)';
+                wsStatusButton.style.transform = 'scale(1.1)';
+                wsStatusButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+            });
             
+            wsStatusButton.addEventListener('mouseleave', () => {
+                wsStatusButton.style.background = 'rgba(255,255,255,0.95)';
+                wsStatusButton.style.transform = 'scale(1)';
+                wsStatusButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            });
             // 更新 WebSocket 状态显示
-            function updateWSStatus() {
+            async function updateWSStatus() {
                 wsStatusButton.style.color = wsConnected ? '#28a745' : '#dc3545';
-                wsStatusButton.title = wsConnected ? 'WebSocket已连接 - 点击断开' : 'WebSocket未连接 - 点击重连';
+                wsStatusButton.title = wsConnected ? await t('WebSocketConnected') :await t('WebSocketDisconnected');
             }
-            
+
             // 定期更新状态
             setInterval(updateWSStatus, 1000);
             

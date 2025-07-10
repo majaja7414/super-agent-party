@@ -4410,6 +4410,11 @@ async def delete_workflow(filename: str):
             detail=f"Failed to delete file: {str(e)}"
         )
 
+@app.get("/cur_language")
+async def cur_language():
+    settings = await load_settings()
+    return {"language": settings.get("language", "zh-CN")}
+
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
