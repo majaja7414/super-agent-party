@@ -3681,14 +3681,14 @@ let vue_methods = {
     async initVAD(){
         // 初始化VAD
         this.vad = await vad.MicVAD.new({
-          preSpeechPadFrames: 20,
+          preSpeechPadFrames: 10,
           onSpeechStart: () => {
             // 语音开始时的处理
             this.handleSpeechStart();
           },
           onFrameProcessed: (probabilities, frame) => {
             // 处理每一帧
-            if (probabilities["isSpeech"] > 0.5){
+            if (probabilities["isSpeech"] > 0.4){
               if (this.ttsSettings.enabledInterruption) {
                 // 关闭正在播放的音频
                 if (this.currentAudio){
