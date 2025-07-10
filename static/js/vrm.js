@@ -1,0 +1,721 @@
+import * as THREE from 'three/webgpu';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { VRMLoaderPlugin, MToonMaterialLoaderPlugin, VRMUtils, VRMLookAt } from '@pixiv/three-vrm';
+import { MToonNodeMaterial } from '@pixiv/three-vrm/nodes';
+
+const _v3A = new THREE.Vector3();
+
+// extended lookat
+class VRMSmoothLookAt extends VRMLookAt {
+
+    constructor( humanoid, applier ) {
+
+        super( humanoid, applier );
+
+        // a factor used for animation
+        this.smoothFactor = 10.0;
+
+        // maximum angles the lookAt tracks
+        this.yawLimit = 45.0;
+        this.pitchLimit = 45.0;
+
+        // Actual angles applied, animated
+        this._yawDamped = 0.0;
+        this._pitchDamped = 0.0;
+
+    }
+
+    update( delta ) {
+
+        if ( this.target && this.autoUpdate ) {
+
+            // this updates `_yaw` and `_pitch`
+            this.lookAt( this.target.getWorldPosition( _v3A ) );
+
+            // limit angles
+            if (
+
+                this.yawLimit < Math.abs( this._yaw ) ||
+                this.pitchLimit < Math.abs( this._pitch )
+
+            ) {
+
+                this._yaw = 0.0;
+                this._pitch = 0.0;
+
+            }
+
+            // animate angles
+            const k = 1.0 - Math.exp( - this.smoothFactor * delta );
+
+            this._yawDamped += ( this._yaw - this._yawDamped ) * k;
+            this._pitchDamped += ( this._pitch - this._pitchDamped ) * k;
+
+            // apply the animated angles
+            this.applier.applyYawPitch( this._yawDamped, this._pitchDamped );
+
+            // there is no need to update twice
+            this._needsUpdate = false;
+
+        }
+
+        // usual update procedure
+        if ( this._needsUpdate ) {
+
+            this._needsUpdate = false;
+
+            this.applier.applyYawPitch( this._yaw, this._pitch );
+
+        }
+
+    }
+
+}
+
+// renderer
+// 检测运行环境
+const isElectron = typeof require !== 'undefined' || navigator.userAgent.includes('Electron');
+
+// 根据环境添加 class
+document.body.classList.add(isElectron ? 'electron' : 'web');
+
+// 优化渲染器设置
+const renderer = new THREE.WebGPURenderer({
+    alpha: isElectron,
+    premultipliedAlpha: isElectron,
+    antialias: true,  // 添加抗锯齿
+    powerPreference: "high-performance",  // 使用高性能GPU
+    forceWebGL: false  // 确保使用WebGPU
+});
+
+// 添加性能优化设置
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比例
+renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1);
+
+// 启用阴影（如果需要）
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+document.body.appendChild( renderer.domElement );
+
+// camera
+const camera = new THREE.PerspectiveCamera( 30.0, window.innerWidth / window.innerHeight, 0.1, 20.0 );
+camera.position.set( 0.0, 1.0, 5.0 );
+
+// camera controls
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.screenSpacePanning = true;
+controls.target.set( 0.0, 1.0, 0.0 );
+controls.update();
+
+// scene
+const scene = new THREE.Scene();
+
+// 创建地板 - 自发光白色材质
+const floorGeometry = new THREE.PlaneGeometry( 20, 20 );
+const floorMaterial = new THREE.MeshStandardMaterial( { 
+    color: 0xffffff,        // 纯白色
+    metalness: 0.1,         
+    roughness: 0.1,         
+    side: THREE.DoubleSide,
+    emissive: 0xffffff,     // 添加自发光
+    emissiveIntensity: 0.3  // 自发光强度
+} );
+
+// 修改地板材质（仅在 Electron 中隐藏地板）
+if (isElectron) {
+    floorMaterial.visible = false;
+    floorMaterial.opacity = 0;
+    floorMaterial.transparent = true;
+}
+const floor = new THREE.Mesh( floorGeometry, floorMaterial );
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0;
+scene.add( floor );
+
+// light
+const light = new THREE.DirectionalLight( 0xffffff, Math.PI );
+light.position.set( 1.0, 1.0, 1.0 ).normalize();
+scene.add( light );
+
+// 添加环境光，让整体更柔和
+const ambientLight = new THREE.AmbientLight( 0xffffff, 0.3 );
+scene.add( ambientLight );
+
+// gltf and vrm
+let currentVrm = undefined;
+const loader = new GLTFLoader();
+loader.crossOrigin = 'anonymous';
+
+loader.register( ( parser ) => {
+    // 创建 WebGPU 兼容的 MToonMaterialLoaderPlugin
+    const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin( parser, {
+        materialType: MToonNodeMaterial,
+    } );
+
+    return new VRMLoaderPlugin( parser, {
+        mtoonMaterialPlugin,
+        // 确保启用所有功能
+        autoUpdateHumanBones: true,
+    } );
+} );
+
+// 设置自然姿势的函数
+function setNaturalPose(vrm) {
+    if (!vrm.humanoid) return;
+
+    // 左臂自然下垂
+    vrm.humanoid.getNormalizedBoneNode( 'leftUpperArm' ).rotation.z = -0.4 * Math.PI;
+
+    // 右臂自然下垂
+    vrm.humanoid.getNormalizedBoneNode( 'rightUpperArm' ).rotation.z = 0.4 * Math.PI;
+    
+    const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
+    if (leftHand) {
+        leftHand.rotation.z = 0.1; // 手腕自然弯曲
+        leftHand.rotation.x = 0.05;
+    }
+    const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
+    if (rightHand) {
+        rightHand.rotation.z = -0.1; // 手腕自然弯曲
+        rightHand.rotation.x = 0.05;
+    }
+    // 添加手指的自然弯曲（如果模型支持）
+    const fingerBones = [
+        'leftThumbProximal', 'leftThumbIntermediate', 'leftThumbDistal',
+        'leftIndexProximal', 'leftIndexIntermediate', 'leftIndexDistal',
+        'leftMiddleProximal', 'leftMiddleIntermediate', 'leftMiddleDistal',
+        'leftRingProximal', 'leftRingIntermediate', 'leftRingDistal',
+        'leftLittleProximal', 'leftLittleIntermediate', 'leftLittleDistal',
+        'rightThumbProximal', 'rightThumbIntermediate', 'rightThumbDistal',
+        'rightIndexProximal', 'rightIndexIntermediate', 'rightIndexDistal',
+        'rightMiddleProximal', 'rightMiddleIntermediate', 'rightMiddleDistal',
+        'rightRingProximal', 'rightRingIntermediate', 'rightRingDistal',
+        'rightLittleProximal', 'rightLittleIntermediate', 'rightLittleDistal'
+    ];
+
+    fingerBones.forEach(boneName => {
+        const bone = vrm.humanoid.getNormalizedBoneNode(boneName);
+        if (bone) {
+            // 根据手指部位设置不同的弯曲度
+            if (boneName.includes('Thumb')) {
+                // 拇指稍微向内
+                bone.rotation.y = boneName.includes('left') ? 0.35 : -0.35;
+            } else if (boneName.includes('Proximal')) {
+                // 近端指骨轻微弯曲
+                bone.rotation.z = boneName.includes('left') ? -0.35 : 0.35;
+            } else if (boneName.includes('Intermediate')) {
+                // 中端指骨稍微弯曲
+                bone.rotation.z = boneName.includes('left') ? -0.45 : 0.45;
+            } else if (boneName.includes('Distal')) {
+                // 远端指骨轻微弯曲
+                bone.rotation.z = boneName.includes('left') ? -0.3 : 0.3;
+            }
+        }
+    });
+}
+
+loader.load(
+
+    // URL of the VRM you want to load
+    './source/vrm/Alice.vrm',
+
+    // called when the resource is loaded
+    ( gltf ) => {
+
+        const vrm = gltf.userData.vrm;
+
+        // calling these functions greatly improves the performance
+        VRMUtils.removeUnnecessaryVertices( gltf.scene );
+        VRMUtils.combineSkeletons( gltf.scene );
+        VRMUtils.combineMorphs( vrm );
+
+        // 启用 Spring Bone 物理模拟
+        if (vrm.springBoneManager) {
+            console.log('Spring Bone Manager found:', vrm.springBoneManager);
+            // Spring Bone 会在 vrm.update() 中自动更新
+        }
+
+
+        // Disable frustum culling
+        vrm.scene.traverse( ( obj ) => {
+
+            obj.frustumCulled = false;
+
+        } );
+
+        // replace the lookAt to our extended one
+        if ( vrm.lookAt ) {
+            const smoothLookAt = new VRMSmoothLookAt( vrm.humanoid, vrm.lookAt.applier );
+            smoothLookAt.copy( vrm.lookAt );
+            vrm.lookAt = smoothLookAt;
+
+            // set the lookAt target to camera
+            vrm.lookAt.target = camera;
+        }
+
+        currentVrm = vrm;
+        console.log( vrm );
+        scene.add( vrm.scene );
+
+        // 设置自然姿势
+        setNaturalPose(vrm);
+
+    },
+
+    // called while loading is progressing
+    ( progress ) => console.log( 'Loading model...', 100.0 * ( progress.loaded / progress.total ), '%' ),
+
+    // called when loading has errors
+    ( error ) => console.error( error )
+
+);
+
+// animate
+const clock = new THREE.Clock();
+clock.start();
+
+// 在全局变量区域添加眨眼相关的变量
+let nextBlinkTime = 0;
+let isBlinking = false;
+let blinkStartTime = 0;
+let blinkPattern = 0; // 0: 单次眨眼, 1: 双次眨眼
+const singleBlinkDuration = 0.15;
+const doubleBlinkDuration = 0.4;
+
+// 闲置动作的时间偏移量，让各个动作不同步
+const idleOffsets = {
+    body: Math.random() * Math.PI * 2,
+    leftArm: Math.random() * Math.PI * 2,
+    rightArm: Math.random() * Math.PI * 2,
+    head: Math.random() * Math.PI * 2,
+    spine: Math.random() * Math.PI * 2
+};
+
+// 生成随机的下次眨眼时间和模式
+function getRandomBlinkData() {
+    const interval = Math.random() * 4 + 1.5; // 1.5-5.5秒之间的随机间隔
+    const pattern = Math.random() < 0.8 ? 0 : 1; // 80%单次眨眼，20%双次眨眼
+    return { interval, pattern };
+}
+
+// 闲置动作函数
+function applyIdleAnimation(vrm, time) {
+    if (!vrm.humanoid) return;
+
+    // 身体轻微摆动 - 慢速，小幅度
+    const bodySwayX = Math.sin(time * 0.3 + idleOffsets.body) * 0.02;
+    const bodySwayZ = Math.cos(time * 0.25 + idleOffsets.body) * 0.015;
+    
+    // 脊椎轻微摆动
+    const spine = vrm.humanoid.getNormalizedBoneNode('spine');
+    if (spine) {
+        spine.rotation.x = bodySwayX;
+        spine.rotation.z = bodySwayZ;
+    }
+
+    // 胸部轻微摆动
+    const chest = vrm.humanoid.getNormalizedBoneNode('chest');
+    if (chest) {
+        chest.rotation.x = bodySwayX * 0.5;
+        chest.rotation.z = bodySwayZ * 0.5;
+    }
+
+    // 左臂自然摆动
+    const leftUpperArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+    const leftLowerArm = vrm.humanoid.getNormalizedBoneNode('leftLowerArm');
+    if (leftUpperArm) {
+        // 保持基本姿势，添加轻微摆动
+        leftUpperArm.rotation.z = -0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.03 - 0.01;
+        leftUpperArm.rotation.x = Math.cos(time * 0.35 + idleOffsets.leftArm) * 0.03;
+        leftUpperArm.rotation.y = Math.sin(time * 0.3 + idleOffsets.leftArm) * 0.02;
+    }
+    if (leftLowerArm) {
+        leftLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.02;
+    }
+
+    // 右臂自然摆动
+    const rightUpperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+    const rightLowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
+    if (rightUpperArm) {
+        // 保持基本姿势，添加轻微摆动
+        rightUpperArm.rotation.z = 0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.03;
+        rightUpperArm.rotation.x = Math.cos(time * 0.4 + idleOffsets.rightArm) * 0.03;
+        rightUpperArm.rotation.y = Math.sin(time * 0.32 + idleOffsets.rightArm) * 0.02;
+    }
+    if (rightLowerArm) {
+        rightLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.02;
+    }
+
+    const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
+    if (leftHand) {
+        leftHand.rotation.z = 0.1 + Math.sin(time * 0.6 + idleOffsets.leftArm) * 0.015; // 手腕自然弯曲
+        leftHand.rotation.x = 0.05;
+    }
+    const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
+    if (rightHand) {
+        rightHand.rotation.z = -0.1 - Math.sin(time * 0.6 + idleOffsets.rightArm) * 0.015; // 手腕自然弯曲
+        rightHand.rotation.x = 0.05;
+    }
+
+    // 头部轻微摆动 - 比原来更细腻
+    const headBone = vrm.humanoid.getNormalizedBoneNode('head');
+    if (headBone) {
+        headBone.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.03;
+        headBone.rotation.x = Math.sin(time * 0.5 + idleOffsets.head) * 0.02;
+        headBone.rotation.z = Math.cos(time * 0.4 + idleOffsets.head) * 0.01;
+    }
+
+    // 肩膀轻微摆动
+    const leftShoulder = vrm.humanoid.getNormalizedBoneNode('leftShoulder');
+    const rightShoulder = vrm.humanoid.getNormalizedBoneNode('rightShoulder');
+    if (leftShoulder) {
+        leftShoulder.rotation.z = Math.sin(time * 0.35 + idleOffsets.leftArm) * 0.02;
+    }
+    if (rightShoulder) {
+        rightShoulder.rotation.z = Math.sin(time * 0.4 + idleOffsets.rightArm) * 0.02;
+    }
+
+    // 颈部轻微摆动
+    const neck = vrm.humanoid.getNormalizedBoneNode('neck');
+    if (neck) {
+        neck.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.02;
+        neck.rotation.x = Math.cos(time * 0.6 + idleOffsets.head) * 0.01;
+    }
+}
+
+// 在animate函数中替换原来的眨眼动画代码
+function animate() {
+    requestAnimationFrame(animate);
+    
+    const time = clock.getElapsedTime();
+    const deltaTime = clock.getDelta();
+    
+    if (currentVrm) {
+        // 简单的呼吸动画 - 更自然的呼吸节奏
+        const breathScale = 1 + Math.sin(time * 1.5) * 0.003;
+        currentVrm.scene.scale.setScalar(breathScale);
+        
+        // 应用闲置动作
+        applyIdleAnimation(currentVrm, time);
+        
+        // 高级随机眨眼动画
+        if (currentVrm.expressionManager) {
+            if (!isBlinking && time >= nextBlinkTime) {
+                // 开始眨眼
+                isBlinking = true;
+                blinkStartTime = time;
+                const blinkData = getRandomBlinkData();
+                nextBlinkTime = time + blinkData.interval;
+                blinkPattern = blinkData.pattern;
+            }
+            
+            if (isBlinking) {
+                const blinkElapsed = time - blinkStartTime;
+                const duration = blinkPattern === 0 ? singleBlinkDuration : doubleBlinkDuration;
+                
+                if (blinkElapsed < duration) {
+                    let blinkValue = 0;
+                    
+                    if (blinkPattern === 0) {
+                        // 单次眨眼
+                        const progress = blinkElapsed / duration;
+                        blinkValue = Math.sin(progress * Math.PI);
+                    } else {
+                        // 双次眨眼
+                        const progress = blinkElapsed / duration;
+                        if (progress < 0.4) {
+                            // 第一次眨眼
+                            blinkValue = Math.sin((progress / 0.4) * Math.PI);
+                        } else if (progress < 0.6) {
+                            // 间隔
+                            blinkValue = 0;
+                        } else {
+                            // 第二次眨眼
+                            blinkValue = Math.sin(((progress - 0.6) / 0.4) * Math.PI);
+                        }
+                    }
+                    
+                    currentVrm.expressionManager.setValue('blink', blinkValue);
+                } else {
+                    // 眨眼结束
+                    isBlinking = false;
+                    currentVrm.expressionManager.setValue('blink', 0.0);
+                }
+            }
+        }
+        
+        // 更新VRM，包括lookAt动画
+        currentVrm.update(deltaTime);
+    }
+    
+    renderer.renderAsync(scene, camera);
+}
+
+// 初始化第一次眨眼时间
+const initialBlinkData = getRandomBlinkData();
+nextBlinkTime = initialBlinkData.interval;
+
+if (isElectron) {
+    // 等待一小段时间确保页面完全加载
+    setTimeout(() => {
+        // 创建控制面板容器
+        const controlPanel = document.createElement('div');
+        controlPanel.id = 'control-panel';
+        controlPanel.style.cssText = `
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 9999;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateX(20px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+        `;
+        
+        // 拖拽按钮
+        const dragButton = document.createElement('div');
+        dragButton.id = 'drag-handle';
+        dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+        dragButton.style.cssText = `
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.95);
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            color: #333;
+            -webkit-app-region: drag;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            user-select: none;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+            position: relative;
+        `;
+
+        // 创建一个内部拖拽区域来确保拖拽功能正常
+        const dragArea = document.createElement('div');
+        dragArea.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            -webkit-app-region: drag;
+            z-index: 1;
+        `;
+
+        // 图标容器
+        const iconContainer = document.createElement('div');
+        iconContainer.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+        iconContainer.style.cssText = `
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+        `;
+
+        // 组装拖拽按钮
+        dragButton.innerHTML = '';
+        dragButton.appendChild(dragArea);
+        dragButton.appendChild(iconContainer);
+        
+        // 刷新按钮
+        const refreshButton = document.createElement('div');
+        refreshButton.id = 'refresh-handle';
+        refreshButton.innerHTML = '<i class="fas fa-redo-alt"></i>';
+        refreshButton.style.cssText = `
+        width: 36px;
+        height: 36px;
+        background: rgba(255,255,255,0.95);
+        border: 2px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        color: #333;
+        cursor: pointer;
+        -webkit-app-region: no-drag;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s ease;
+        user-select: none;
+        pointer-events: auto;
+        backdrop-filter: blur(10px);
+        `;
+        
+        // 关闭按钮
+        const closeButton = document.createElement('div');
+        closeButton.id = 'close-handle';
+        closeButton.innerHTML = '<i class="fas fa-times"></i>';
+        closeButton.style.cssText = `
+        width: 36px;
+        height: 36px;
+        background: rgba(255,255,255,0.95);
+        border: 2px solid rgba(0,0,0,0.1);
+        border-radius: 50%;
+        color: #333;
+        cursor: pointer;
+        -webkit-app-region: no-drag;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transition: all 0.2s ease;
+        user-select: none;
+        pointer-events: auto;
+        backdrop-filter: blur(10px);
+        `;
+        
+        // 添加悬停效果 - 刷新按钮
+        refreshButton.addEventListener('mouseenter', () => {
+            refreshButton.style.background = 'rgba(255,255,255,1)';
+            refreshButton.style.transform = 'scale(1.1)';
+            refreshButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+            refreshButton.style.color = '#dc3545';
+        });
+        
+        refreshButton.addEventListener('mouseleave', () => {
+            refreshButton.style.background = 'rgba(255,255,255,0.95)';
+            refreshButton.style.transform = 'scale(1)';
+            refreshButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            refreshButton.style.color = '#333';
+        });
+
+        // 刷新按钮点击事件
+        refreshButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // 刷新页面
+            window.location.reload();
+        });
+        
+        // 添加悬停效果 - 关闭按钮
+        closeButton.addEventListener('mouseenter', () => {
+            closeButton.style.background = 'rgba(255,255,255,1)';
+            closeButton.style.transform = 'scale(1.1)';
+            closeButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+            closeButton.style.color = '#dc3545';
+        });
+        
+        closeButton.addEventListener('mouseleave', () => {
+            closeButton.style.background = 'rgba(255,255,255,0.95)';
+            closeButton.style.transform = 'scale(1)';
+            closeButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            closeButton.style.color = '#333';
+        });
+
+        // 关闭按钮点击事件
+        closeButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (window.electronAPI && window.electronAPI.stopVRMWindow) {
+                window.electronAPI.stopVRMWindow();
+            } else {
+                // 备用方案：直接关闭窗口
+                window.close();
+            }
+        });
+        
+        // 组装控制面板
+        controlPanel.appendChild(dragButton);
+        controlPanel.appendChild(refreshButton);
+        controlPanel.appendChild(closeButton);
+        
+        // 添加到页面
+        document.body.appendChild(controlPanel);
+        
+        // 显示/隐藏控制逻辑
+        let hideTimeout;
+        let isControlPanelHovered = false;
+        
+        // 显示控制面板
+        function showControlPanel() {
+            clearTimeout(hideTimeout);
+            controlPanel.style.opacity = '1';
+            controlPanel.style.visibility = 'visible';
+            controlPanel.style.transform = 'translateX(0)';
+            controlPanel.style.pointerEvents = 'auto';
+        }
+        
+        // 隐藏控制面板
+        function hideControlPanel() {
+            if (!isControlPanelHovered) {
+                controlPanel.style.opacity = '0';
+                controlPanel.style.visibility = 'hidden';
+                controlPanel.style.transform = 'translateX(20px)';
+                controlPanel.style.pointerEvents = 'none';
+            }
+        }
+        
+        // 延迟隐藏控制面板
+        function scheduleHide() {
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(hideControlPanel, 2000); // 2秒后隐藏
+        }
+        
+        // 窗口鼠标进入事件
+        document.body.addEventListener('mouseenter', () => {
+            showControlPanel();
+        });
+        
+        // 窗口鼠标移动事件（重置隐藏计时器）
+        document.body.addEventListener('mousemove', () => {
+            showControlPanel();
+            scheduleHide();
+        });
+        
+        // 窗口鼠标离开事件
+        document.body.addEventListener('mouseleave', () => {
+            if (!isControlPanelHovered) {
+                scheduleHide();
+            }
+        });
+        
+        // 控制面板鼠标进入事件
+        controlPanel.addEventListener('mouseenter', () => {
+            isControlPanelHovered = true;
+            clearTimeout(hideTimeout);
+            showControlPanel();
+        });
+        
+        // 控制面板鼠标离开事件
+        controlPanel.addEventListener('mouseleave', () => {
+            isControlPanelHovered = false;
+            scheduleHide();
+        });
+        
+        // 鼠标静止检测
+        let mouseStopTimeout;
+        document.body.addEventListener('mousemove', () => {
+            clearTimeout(mouseStopTimeout);
+            mouseStopTimeout = setTimeout(() => {
+                if (!isControlPanelHovered) {
+                    hideControlPanel();
+                }
+            }, 3000); // 鼠标静止3秒后隐藏
+        });
+        
+        // 初始状态：隐藏控制面板
+        scheduleHide();
+        
+        console.log('控制面板已添加到页面');
+    }, 1000);
+}
+
+animate();
