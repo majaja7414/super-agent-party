@@ -2036,17 +2036,13 @@
                             :label="audio.name"
                             :value="audio.path"
                           >
-                            <div class="audio-option-item">
-                              <span class="audio-name">{{ audio.name }}</span>
-                              <el-button 
+                            <div class="model-option-item">
+                              <span>{{ audio.name }}</span>
+                              <i 
+                                class="fa-solid fa-trash-can"
+                                style="color: #ff0000"
                                 @click.stop="deleteAudioOption(audio.path)"
-                                type="danger" 
-                                circle 
-                                size="small"
-                                class="delete-audio-btn"
-                              >
-                                <i class="fa-solid fa-trash"></i>
-                              </el-button>
+                              ></i>
                             </div>
                           </el-option>
                         </el-select>
@@ -5176,51 +5172,49 @@
                               ></el-switch>
                             </el-form-item>
                             
-                            <!-- VRM模型选择框 -->
-                            <el-form-item :label="t('vrmModel')" class="form-item-align">
-                              <el-select
-                                v-model="VRMConfig.selectedModelId"
-                                @change="handleModelChange"
-                                class="full-width-input"
-                              >
-                                <!-- 默认模型选项（不可删除） -->
-                                <el-option
-                                  v-for="model in VRMConfig.defaultModels"
-                                  :key="model.id"
-                                  :label="model.name"
-                                  :value="model.id"
-                                >
-                                  <div class="audio-option-item">
-                                    <span class="audio-name">
-                                      <i class="fa-solid fa-star" style="color: #f39c12; margin-right: 5px;"></i>
-                                      {{ model.name }}
-                                    </span>
-                                    <!-- 默认模型不显示删除按钮 -->
-                                  </div>
-                                </el-option>
-                                
-                                <!-- 用户上传的模型选项（可删除） -->
-                                <el-option
-                                  v-for="model in VRMConfig.userModels"
-                                  :key="model.id"
-                                  :label="model.name"
-                                  :value="model.id"
-                                >
-                                  <div class="audio-option-item">
-                                    <span class="audio-name">{{ model.name }}</span>
-                                    <el-button 
-                                      @click.stop="deleteModelOption(model.id)"
-                                      type="danger" 
-                                      circle 
-                                      size="small"
-                                      class="delete-audio-btn"
-                                    >
-                                      <i class="fa-solid fa-trash"></i>
-                                    </el-button>
-                                  </div>
-                                </el-option>
-                              </el-select>
+                            <el-form-item :label="t('asyncTools')" class="form-item-align" label-position="left">
+                              <el-switch 
+                                v-model="toolsSettings.asyncTools.enabled" 
+                                @change="autoSaveSettings"
+                              ></el-switch>
                             </el-form-item>
+
+                            <!-- VRM模型选择框 -->
+                            <el-select
+                              v-model="VRMConfig.selectedModelId"
+                              @change="handleModelChange"
+                              class="full-width-input"
+                            >
+                              <!-- 默认模型选项（不可删除） -->
+                              <el-option
+                                v-for="model in VRMConfig.defaultModels"
+                                :key="model.id"
+                                :label="model.name"
+                                :value="model.id"
+                              >
+                                <div class="model-option-item">
+                                  <span>{{ model.name }}</span>
+                                  <i class="fa-solid fa-star" style="color: #f39c12"></i>
+                                </div>
+                              </el-option>
+                              
+                              <!-- 用户上传的模型选项（可删除） -->
+                              <el-option
+                                v-for="model in VRMConfig.userModels"
+                                :key="model.id"
+                                :label="model.name"
+                                :value="model.id"
+                              >
+                                <div class="model-option-item">
+                                  <span>{{ model.name }}</span>
+                                  <i 
+                                    class="fa-solid fa-trash-can"
+                                    style="color: #ff0000"
+                                    @click.stop="deleteModelOption(model.id)"
+                                  ></i>
+                                </div>
+                              </el-option>
+                            </el-select>
                             
                             <!-- 模型上传按钮 -->
                             <el-button 
@@ -5279,6 +5273,7 @@
                               v-model="newVrmModel.displayName"
                               :label="t('modelDisplayName')"
                               :placeholder="t('modelDisplayNamePlaceholder')"
+                              required
                             />
                           </div>
                           <template #footer>

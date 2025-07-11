@@ -3965,7 +3965,7 @@ let vue_methods = {
     // 修改 TTS 处理开始时的通知
     async startTTSProcess() {
       if (!this.ttsSettings.enabled) return;
-      
+      this.TTSrunning = true;
       // 通知VRM准备开始TTS
       this.sendTTSStatusToVRM('ttsStarted', {
         totalChunks: this.messages[this.messages.length - 1].ttsChunks.length
@@ -3979,7 +3979,7 @@ let vue_methods = {
       let max_concurrency = 1;
       let nextIndex = 0;
 
-      while (this.isTyping || nextIndex < lastMessage.ttsChunks.length) {
+      while (this.TTSrunning) {
         if (nextIndex > 0) {
           max_concurrency = this.ttsSettings.maxConcurrency || 1;
         }
@@ -3997,7 +3997,6 @@ let vue_methods = {
         
         await new Promise(resolve => setTimeout(resolve, 10));
       }
-      
       console.log('TTS queue processing completed');
     },
 
@@ -4127,6 +4126,7 @@ let vue_methods = {
       if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
         console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
+        this.TTSrunning = false;
         // 通知VRM所有音频播放完成
         this.sendTTSStatusToVRM('allChunksCompleted', {});
       }

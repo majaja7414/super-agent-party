@@ -136,6 +136,7 @@ let vue_data = {
     editType: 'system', // 或 'message'
     editIndex: null,
     asyncToolsID : [],
+    TTSrunning:false,
     toolsSettings: {
       asyncTools: {
         enabled: false,

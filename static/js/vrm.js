@@ -1323,4 +1323,368 @@ if (isElectron) {
   });
 }
 
+// 在全局变量区域添加模型切换相关变量
+let currentModelIndex = 0;
+let allModels = [];
+let modelsInitialized = false;
+
+// 获取所有可用模型的函数（只执行一次）
+async function getAllModels() {
+    if (modelsInitialized) {
+        return allModels;
+    }
+    
+    const vrmConfig = await fetchVRMConfig();
+    const defaultModels = vrmConfig.defaultModels || [];
+    const userModels = vrmConfig.userModels || [];
+    allModels = [...defaultModels, ...userModels];
+    
+    // 找到当前选中模型的索引
+    const selectedModelId = vrmConfig.selectedModelId;
+    currentModelIndex = Math.max(0, allModels.findIndex(model => model.id === selectedModelId));
+    
+    modelsInitialized = true;
+    console.log(`Models initialized: ${allModels.length} models available, current index: ${currentModelIndex}`);
+    
+    return allModels;
+}
+
+// 切换到指定索引的模型（纯前端切换）
+async function switchToModel(index) {
+    if (!modelsInitialized) {
+        await getAllModels();
+    }
+    
+    if (allModels.length === 0) {
+        console.error('No models available');
+        return;
+    }
+    
+    // 确保索引在有效范围内（循环切换）
+    const newIndex = ((index % allModels.length) + allModels.length) % allModels.length;
+    
+    // 如果是同一个模型，不需要切换
+    if (newIndex === currentModelIndex) {
+        console.log('Same model selected, no need to switch');
+        return;
+    }
+    
+    currentModelIndex = newIndex;
+    const selectedModel = allModels[currentModelIndex];
+    
+    console.log(`Switching to model: ${selectedModel.name} (${selectedModel.id}) - Index: ${currentModelIndex}`);
+    
+    try {
+        // 显示加载提示（可选）
+        showModelSwitchingIndicator(selectedModel.name);
+        
+        // 移除当前VRM模型
+        if (currentVrm) {
+            scene.remove(currentVrm.scene);
+            currentVrm = undefined;
+        }
+        
+        // 加载新模型
+        const modelPath = selectedModel.path;
+        
+        loader.load(
+            modelPath,
+            (gltf) => {
+                const vrm = gltf.userData.vrm;
+                
+                // 优化性能
+                VRMUtils.removeUnnecessaryVertices(gltf.scene);
+                VRMUtils.combineSkeletons(gltf.scene);
+                VRMUtils.combineMorphs(vrm);
+                
+                // 启用 Spring Bone 物理模拟
+                if (vrm.springBoneManager) {
+                    console.log('Spring Bone Manager found:', vrm.springBoneManager);
+                }
+                
+                // 禁用视锥体剔除
+                vrm.scene.traverse((obj) => {
+                    obj.frustumCulled = false;
+                });
+                
+                // 替换lookAt为扩展版本
+                if (vrm.lookAt) {
+                    const smoothLookAt = new VRMSmoothLookAt(vrm.humanoid, vrm.lookAt.applier);
+                    smoothLookAt.copy(vrm.lookAt);
+                    vrm.lookAt = smoothLookAt;
+                    vrm.lookAt.target = camera;
+                }
+                
+                currentVrm = vrm;
+                console.log('New VRM loaded:', vrm);
+                scene.add(vrm.scene);
+                
+                // 设置自然姿势
+                setNaturalPose(vrm);
+                
+                // 隐藏加载提示
+                hideModelSwitchingIndicator();
+                
+                console.log(`Successfully switched to model: ${selectedModel.name}`);
+            },
+            (progress) => {
+                console.log('Loading model...', 100.0 * (progress.loaded / progress.total), '%');
+                // 可以在这里更新加载进度
+                updateModelLoadingProgress(progress.loaded / progress.total);
+            },
+            (error) => {
+                console.error('Error loading model:', error);
+                hideModelSwitchingIndicator();
+                
+                // 如果加载失败，尝试回到之前的模型
+                if (allModels.length > 1) {
+                    console.log('Attempting to load fallback model...');
+                    // 尝试加载第一个模型作为备用
+                    if (currentModelIndex !== 0) {
+                        switchToModel(0);
+                    }
+                }
+            }
+        );
+        
+    } catch (error) {
+        console.error('Error switching model:', error);
+        hideModelSwitchingIndicator();
+    }
+}
+
+// 显示模型切换指示器（可选功能）
+function showModelSwitchingIndicator(modelName) {
+    // 创建或显示加载提示
+    let indicator = document.getElementById('model-switching-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'model-switching-indicator';
+        indicator.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 16px;
+            z-index: 10000;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            transition: opacity 0.3s ease;
+        `;
+        document.body.appendChild(indicator);
+    }
+    
+    indicator.innerHTML = `
+        <div style="margin-bottom: 10px;">
+            <i class="fas fa-sync-alt fa-spin"></i>
+        </div>
+        <div>Loading ${modelName}...</div>
+        <div id="loading-progress" style="margin-top: 10px; font-size: 14px; opacity: 0.8;"></div>
+    `;
+    indicator.style.display = 'block';
+    indicator.style.opacity = '1';
+}
+
+// 更新加载进度
+function updateModelLoadingProgress(progress) {
+    const progressElement = document.getElementById('loading-progress');
+    if (progressElement) {
+        progressElement.textContent = `${Math.round(progress * 100)}%`;
+    }
+}
+
+// 隐藏模型切换指示器
+function hideModelSwitchingIndicator() {
+    const indicator = document.getElementById('model-switching-indicator');
+    if (indicator) {
+        indicator.style.opacity = '0';
+        setTimeout(() => {
+            indicator.style.display = 'none';
+        }, 300);
+    }
+}
+
+// 获取当前模型信息
+function getCurrentModelInfo() {
+    if (allModels.length > 0 && currentModelIndex >= 0 && currentModelIndex < allModels.length) {
+        return allModels[currentModelIndex];
+    }
+    return null;
+}
+
+// 获取下一个模型信息（用于预览）
+function getNextModelInfo() {
+    if (allModels.length === 0) return null;
+    const nextIndex = ((currentModelIndex + 1) % allModels.length + allModels.length) % allModels.length;
+    return allModels[nextIndex];
+}
+
+// 获取上一个模型信息（用于预览）
+function getPrevModelInfo() {
+    if (allModels.length === 0) return null;
+    const prevIndex = ((currentModelIndex - 1) % allModels.length + allModels.length) % allModels.length;
+    return allModels[prevIndex];
+}
+
+// 在 Electron 环境中添加模型切换按钮
+if (isElectron) {
+    setTimeout(async () => {
+        const controlPanel = document.getElementById('control-panel');
+        if (controlPanel) {
+            // 获取所有模型（只执行一次）
+            await getAllModels();
+            
+            // 向上箭头按钮（切换到上一个模型）
+            const prevModelButton = document.createElement('div');
+            prevModelButton.id = 'prev-model-handle';
+            prevModelButton.innerHTML = '<i class="fas fa-chevron-up"></i>';
+            prevModelButton.style.cssText = `
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: #333;
+                cursor: pointer;
+                -webkit-app-region: no-drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
+            `;
+            
+            // 向下箭头按钮（切换到下一个模型）
+            const nextModelButton = document.createElement('div');
+            nextModelButton.id = 'next-model-handle';
+            nextModelButton.innerHTML = '<i class="fas fa-chevron-down"></i>';
+            nextModelButton.style.cssText = `
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: #333;
+                cursor: pointer;
+                -webkit-app-region: no-drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
+            `;
+            
+            // 添加悬停效果和工具提示 - 上一个模型按钮
+            prevModelButton.addEventListener('mouseenter', () => {
+                prevModelButton.style.background = 'rgba(255,255,255,1)';
+                prevModelButton.style.transform = 'scale(1.1)';
+                prevModelButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+                
+                // 显示下一个模型的名称
+                const prevModel = getPrevModelInfo();
+                if (prevModel) {
+                    prevModelButton.title = `${t('Previous')}: ${prevModel.name}`;
+                }
+            });
+            
+            prevModelButton.addEventListener('mouseleave', () => {
+                prevModelButton.style.background = 'rgba(255,255,255,0.95)';
+                prevModelButton.style.transform = 'scale(1)';
+                prevModelButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            });
+            
+            // 添加悬停效果和工具提示 - 下一个模型按钮
+            nextModelButton.addEventListener('mouseenter', () => {
+                nextModelButton.style.background = 'rgba(255,255,255,1)';
+                nextModelButton.style.transform = 'scale(1.1)';
+                nextModelButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
+                
+                // 显示下一个模型的名称
+                const nextModel = getNextModelInfo();
+                if (nextModel) {
+                    nextModelButton.title = `${t('Next')}: ${nextModel.name}`;
+                }
+            });
+            
+            nextModelButton.addEventListener('mouseleave', () => {
+                nextModelButton.style.background = 'rgba(255,255,255,0.95)';
+                nextModelButton.style.transform = 'scale(1)';
+                nextModelButton.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            });
+            
+            // 上一个模型按钮点击事件
+            prevModelButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (allModels.length > 1) {
+                    switchToModel(currentModelIndex - 1);
+                }
+            });
+            
+            // 下一个模型按钮点击事件
+            nextModelButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (allModels.length > 1) {
+                    switchToModel(currentModelIndex + 1);
+                }
+            });
+            
+            // 设置按钮初始状态
+            async function initModelButtons() {
+                if (allModels.length <= 1) {
+                    // 如果只有一个或没有模型，禁用按钮
+                    prevModelButton.style.opacity = '0.5';
+                    prevModelButton.style.cursor = 'not-allowed';
+                    prevModelButton.title = 'No other models available';
+                    
+                    nextModelButton.style.opacity = '0.5';
+                    nextModelButton.style.cursor = 'not-allowed';
+                    nextModelButton.title = 'No other models available';
+                } else {
+                    // 设置初始工具提示
+                    const prevModel = getPrevModelInfo();
+                    const nextModel = getNextModelInfo();
+                    
+                    prevModelButton.title = prevModel ? `Previous: ${prevModel.name}` : 'Previous Model';
+                    nextModelButton.title = nextModel ? `Next: ${nextModel.name}` : 'Next Model';
+                }
+                
+                console.log(`Model buttons initialized. Current: ${getCurrentModelInfo()?.name || 'Unknown'} (${currentModelIndex + 1}/${allModels.length})`);
+            }
+            
+            initModelButtons();
+            
+            // 添加到控制面板
+            const wsStatusButton = controlPanel.querySelector('#ws-status-handle');
+            const dragButton = controlPanel.querySelector('#drag-handle');
+            
+            if (wsStatusButton) {
+                controlPanel.insertBefore(nextModelButton, wsStatusButton.nextSibling);
+                controlPanel.insertBefore(prevModelButton, nextModelButton);
+            } else if (dragButton) {
+                controlPanel.insertBefore(nextModelButton, dragButton.nextSibling);
+                controlPanel.insertBefore(prevModelButton, nextModelButton);
+            } else {
+                controlPanel.appendChild(prevModelButton);
+                controlPanel.appendChild(nextModelButton);
+            }
+            
+            console.log(`Model switching buttons added. Available models: ${allModels.length}`);
+        }
+    }, 1300);
+}
+
 animate();

@@ -3054,23 +3054,9 @@ body {
   margin: 0; /* 移除默认边距 */
 }
 
-.audio-option-item {
+.model-option-item {
   display: flex;
-  justify-content: space-between; /* 保持这个属性 */
+  justify-content: space-between;
   align-items: center;
   width: 100%;
-}
-
-.audio-name {
-  flex-grow: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* 添加右边距确保按钮不会覆盖文本 */
-  margin-right: 10px;
-}
-
-.delete-audio-btn {
-  /* 移除margin-left，使用flex-shrink保持按钮大小 */
-  flex-shrink: 0;
 }
