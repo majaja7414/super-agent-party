@@ -758,4 +758,11 @@ function updatecontextMenu() {
   ]);
 }
 
+app.on('web-contents-created', (e, webContents) => {
+  webContents.on('new-window', (event, url) => {
+  event.preventDefault();
+  shell.openExternal(url);
+  });
+});
+
 app.commandLine.appendSwitch('disable-http-cache')

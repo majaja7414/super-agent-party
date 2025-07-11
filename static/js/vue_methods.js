@@ -108,6 +108,16 @@ let vue_methods = {
         return originalUrl;
       }
     }
+    else {
+        const url = new URL(originalUrl);
+        if (url.hostname === '127.0.0.1') {
+          url.hostname = "localhost";
+          // 如果需要强制使用HTTPS可以添加：
+          url.protocol = window.location.protocol;
+          url.port = window.location.port;
+        }
+        return url.toString();
+    }
     return originalUrl;
   },
   async resetMessage(index) {
@@ -561,6 +571,7 @@ let vue_methods = {
         if (originalHref) {
           link.setAttribute('href', this.formatFileUrl(originalHref));
         }
+        link.setAttribute('target', '_blank');
       }
       return tempDiv.innerHTML;
     },
