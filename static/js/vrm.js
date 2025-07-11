@@ -1587,7 +1587,7 @@ if (isElectron) {
             `;
             
             // 添加悬停效果和工具提示 - 上一个模型按钮
-            prevModelButton.addEventListener('mouseenter', () => {
+            prevModelButton.addEventListener('mouseenter', async () => {
                 prevModelButton.style.background = 'rgba(255,255,255,1)';
                 prevModelButton.style.transform = 'scale(1.1)';
                 prevModelButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
@@ -1595,7 +1595,7 @@ if (isElectron) {
                 // 显示下一个模型的名称
                 const prevModel = getPrevModelInfo();
                 if (prevModel) {
-                    prevModelButton.title = `${t('Previous')}: ${prevModel.name}`;
+                    prevModelButton.title = `${await t('Previous')}: ${prevModel.name}`;
                 }
             });
             
@@ -1606,7 +1606,7 @@ if (isElectron) {
             });
             
             // 添加悬停效果和工具提示 - 下一个模型按钮
-            nextModelButton.addEventListener('mouseenter', () => {
+            nextModelButton.addEventListener('mouseenter', async () => {
                 nextModelButton.style.background = 'rgba(255,255,255,1)';
                 nextModelButton.style.transform = 'scale(1.1)';
                 nextModelButton.style.boxShadow = '0 6px 16px rgba(0,0,0,0.2)';
@@ -1614,7 +1614,7 @@ if (isElectron) {
                 // 显示下一个模型的名称
                 const nextModel = getNextModelInfo();
                 if (nextModel) {
-                    nextModelButton.title = `${t('Next')}: ${nextModel.name}`;
+                    nextModelButton.title = `${await t('Next')}: ${nextModel.name}`;
                 }
             });
             
