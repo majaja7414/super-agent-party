@@ -906,11 +906,8 @@ async function startLipSyncForChunk(data) {
             // 移除cur_exp中的<>符号
             cur_exp = cur_exp.replace(/<|>/g, '');
             console.log(`Setting expression to ${cur_exp}`);
-            currentVrm.expressionManager.setValue(cur_exp, 1);
-        }
-        else{
-            console.log('No expression to set');
             currentVrm.expressionManager.resetValues();
+            currentVrm.expressionManager.setValue(cur_exp, 1);
         }
         console.log(`Loading audio for chunk ${chunkId}:`, data.audioUrl);
         
