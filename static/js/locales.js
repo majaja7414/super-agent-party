@@ -577,7 +577,6 @@ const translations = {
         "modelDisplayName": "模型显示名称",
         "modelDisplayNamePlaceholder": "请输入模型的显示名称",
         "vrmNotice1": "请上传.vrm格式的3D模型文件，必须是VRM1.0标准",
-        "vrmNotice2": "模型将用于虚拟形象显示"
     },
     'en-US': {
         'chat': 'Chat',
@@ -1154,6 +1153,5 @@ const translations = {
         "modelDisplayName": "Model Display Name",
         "modelDisplayNamePlaceholder": "Please enter the display name for the model",
         "vrmNotice1": "Please upload a 3D model file in .vrm format that complies with VRM 1.0 standard",
-        "vrmNotice2": "The model will be used for virtual avatar display"
     }
   };
