@@ -1,5 +1,6 @@
 # -- coding: utf-8 --
 import base64
+import glob
 from io import BytesIO
 import os
 import sys
@@ -4107,6 +4108,146 @@ async def delete_audio(filename: str):
             
     except Exception as e:
         logger.error(f"删除音频失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"删除失败: {str(e)}"}
+        )
+
+# 允许的VRM文件扩展名
+ALLOWED_VRM_EXTENSIONS = {'vrm'}
+
+@app.post("/upload_vrm_model")
+async def upload_vrm_model(
+    request: Request,
+    file: UploadFile = File(...),
+    display_name: str = Form(...)
+):
+    fastapi_base_url = str(request.base_url)
+    
+    # 检查文件扩展名
+    file_extension = file.filename.split('.')[-1].lower()
+    if file_extension not in ALLOWED_VRM_EXTENSIONS:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"不支持的文件类型: {file_extension}，只支持.vrm文件"}
+        )
+    
+    # 生成唯一文件名
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+    
+    try:
+        # 保存文件
+        with open(destination, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 构建响应
+        file_link = f"{fastapi_base_url}uploaded_files/{unique_filename}"
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "VRM模型上传成功",
+            "file": {
+                "path": file_link,
+                "display_name": display_name,
+                "original_name": file.filename,
+                "unique_filename": unique_filename
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"VRM模型上传失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"文件保存失败: {str(e)}"}
+        )
+
+# VRM默认模型目录
+DEFAULT_VRM_DIR = "./static/source/vrm"
+
+@app.get("/get_default_vrm_models")
+async def get_default_vrm_models(request: Request):
+    try:
+        fastapi_base_url = str(request.base_url)
+        models = []
+        
+        # 确保目录存在
+        if not os.path.exists(DEFAULT_VRM_DIR):
+            os.makedirs(DEFAULT_VRM_DIR, exist_ok=True)
+            return JSONResponse(content={
+                "success": True,
+                "models": []
+            })
+        
+        # 扫描默认VRM目录中的所有.vrm文件
+        vrm_files = glob.glob(os.path.join(DEFAULT_VRM_DIR, "*.vrm"))
+        
+        for vrm_file in vrm_files:
+            file_name = os.path.basename(vrm_file)
+            # 使用文件名（不含扩展名）作为显示名称
+            display_name = os.path.splitext(file_name)[0]
+            
+            # 构建文件访问URL
+            file_url = f"{fastapi_base_url}source/vrm/{file_name}"
+            
+            models.append({
+                "id": os.path.splitext(file_name)[0].lower(),  # 使用文件名作为ID
+                "name": display_name,
+                "path": file_url,
+                "type": "default"
+            })
+        
+        # 按名称排序
+        models.sort(key=lambda x: x['name'])
+        print("models:",models)
+        return JSONResponse(content={
+            "success": True,
+            "models": models
+        })
+        
+    except Exception as e:
+        logger.error(f"获取默认VRM模型失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"获取默认模型失败: {str(e)}"}
+        )
+
+# 修改删除VRM模型的接口，添加安全检查
+@app.delete("/delete_vrm_model/{filename}")
+async def delete_vrm_model(filename: str):
+    try:
+        # 确保只能删除上传目录中的文件，不能删除默认模型
+        file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+        
+        # 安全检查：确保文件名是UUID格式，防止路径遍历攻击
+        if not re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.vrm$", filename):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Invalid filename"}
+            )
+        
+        # 额外检查：确保文件路径在上传目录中，防止删除默认模型
+        if not file_path.startswith(os.path.abspath(UPLOAD_FILES_DIR)):
+            return JSONResponse(
+                status_code=403,
+                content={"success": False, "message": "Cannot delete default models"}
+            )
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={
+                "success": True,
+                "message": "VRM模型文件已删除"
+            })
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "文件不存在"}
+            )
+            
+    except Exception as e:
+        logger.error(f"删除VRM模型失败: {str(e)}")
         return JSONResponse(
             status_code=500,
             content={"success": False, "message": f"删除失败: {str(e)}"}

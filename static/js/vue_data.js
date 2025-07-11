@@ -372,8 +372,17 @@ let vue_data = {
       gsvRefAudioPath: '',
       gsvAudioOptions: [],
     },
+    showVrmModelDialog: false,
+    newVrmModel: {
+      name: '',
+      displayName: '',
+      file: null
+    },
     VRMConfig: {
       enabledExpressions: false,
+      selectedModelId: 'alice', // 默认选择Alice模型
+      defaultModels: [], // 存储默认模型
+      userModels: []     // 存储用户上传的模型
     },
     expressionMap : [
       '<happy>', 

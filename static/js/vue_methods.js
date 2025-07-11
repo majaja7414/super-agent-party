@@ -461,7 +461,7 @@ let vue_methods = {
       else if (key === 'storage') {
         this.activeMenu = 'storage';
         this.subMenu = 'text'; // 默认显示第一个子菜单
-        response = await fetch('/update_storage', {
+        response = await fetch(`${backendURL}/update_storage`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -3178,7 +3178,7 @@ let vue_methods = {
     // 删除工作流
     async deleteWorkflow(filename) {
       try {
-        const response = await fetch(`/delete_workflow/${filename}`, {
+        const response = await fetch(`${backendURL}/delete_workflow/${filename}`, {
           method: 'DELETE',
         });
         const data = await response.json();
@@ -3276,7 +3276,7 @@ let vue_methods = {
       formData.append('workflow_data', JSON.stringify(workflowData));
 
       try {
-        const response = await fetch('/add_workflow', {
+        const response = await fetch(`${backendURL}/add_workflow`, {
           method: 'POST',
           body: formData,
         });
@@ -3399,7 +3399,7 @@ let vue_methods = {
         });
 
         // 发送请求
-        const response = await fetch('/create_sticker_pack', {
+        const response = await fetch(`${backendURL}/create_sticker_pack`, {
           method: 'POST',
           body: formData
         });
@@ -4262,7 +4262,7 @@ let vue_methods = {
     formData.append('prompt_text', this.newGsvAudio.text);
     
     try {
-      const response = await fetch('/upload_gsv_ref_audio', {
+      const response = await fetch(`${backendURL}/upload_gsv_ref_audio`, {
         method: 'POST',
         body: formData
       });
@@ -4326,7 +4326,7 @@ let vue_methods = {
         .pop();
       
       // 调用后端API删除文件
-      const response = await fetch(`/delete_audio/${uniqueFilename}`, {
+      const response = await fetch(`${backendURL}/delete_audio/${uniqueFilename}`, {
         method: 'DELETE'
       });
       
@@ -4430,5 +4430,200 @@ let vue_methods = {
         }));
       }
     },
+  // 浏览VRM模型文件
+  browseVrmModelFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.vrm';
+    input.onchange = (event) => {
+      const files = event.target.files;
+      if (files.length > 0) {
+        const file = files[0];
+        // 检查文件扩展名
+        if (!file.name.toLowerCase().endsWith('.vrm')) {
+          this.showNotification('只支持.vrm格式的文件', 'error');
+          return;
+        }
+        this.newVrmModel.name = file.name;
+        this.newVrmModel.file = file;
+        // 自动设置显示名称（去掉扩展名）
+        this.newVrmModel.displayName = file.name.replace(/\.vrm$/i, '');
+      }
+    };
+    input.click();
+  },
+  
+  // 处理VRM模型拖拽
+  handleVrmModelDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      // 检查文件扩展名
+      if (!file.name.toLowerCase().endsWith('.vrm')) {
+        this.showNotification('只支持.vrm格式的文件', 'error');
+        return;
+      }
+      this.newVrmModel.name = file.name;
+      this.newVrmModel.file = file;
+      // 自动设置显示名称（去掉扩展名）
+      this.newVrmModel.displayName = file.name.replace(/\.vrm$/i, '');
+    }
+  },
+  
+  // 移除已选择的VRM模型
+  removeNewVrmModel() {
+    this.newVrmModel.name = '';
+    this.newVrmModel.displayName = '';
+    this.newVrmModel.file = null;
+  },
+  
+  // 取消上传
+  cancelVrmModelUpload() {
+    this.showVrmModelDialog = false;
+    this.newVrmModel.name = '';
+    this.newVrmModel.displayName = '';
+    this.newVrmModel.file = null;
+  },
+  
+  
+  // 处理模型选择改变
+  handleModelChange(value) {
+    // 自动保存设置
+    this.autoSaveSettings();
+  },
+  
+ 
+    // 加载默认模型列表
+  async loadDefaultModels() {
+    try {
+      const response = await fetch(`${backendURL}/get_default_vrm_models`);
+      const result = await response.json();
+      
+      if (result.success) {
+        this.VRMConfig.defaultModels = result.models;
+        console.log(this.VRMConfig.defaultModels);
+        // 如果没有选中任何模型，默认选择第一个默认模型
+        if (!this.VRMConfig.selectedModelId && result.models.length > 0) {
+          this.VRMConfig.selectedModelId = result.models[0].id;
+        }
+      }
+    } catch (error) {
+      console.error('加载默认模型失败:', error);
+    }
+  },
+
+  // 修改上传VRM模型方法
+  async uploadVrmModel() {
+    if (!this.newVrmModel.file) {
+      this.showNotification('请先选择VRM模型文件', 'error');
+      return;
+    }
     
+    if (!this.newVrmModel.displayName.trim()) {
+      this.showNotification('请输入模型显示名称', 'error');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', this.newVrmModel.file);
+    formData.append('display_name', this.newVrmModel.displayName.trim());
+    
+    try {
+      const response = await fetch(`${backendURL}/upload_vrm_model`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 添加新模型到用户模型列表
+        const newModelOption = {
+          id: result.file.unique_filename,
+          name: result.file.display_name,
+          path: result.file.path,
+          type: 'user' // 标记为用户上传的模型
+        };
+        
+        this.VRMConfig.userModels.push(newModelOption);
+        
+        // 关闭对话框并重置状态
+        this.cancelVrmModelUpload();
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        this.showNotification('VRM模型上传成功');
+      } else {
+        this.showNotification(`上传失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('上传VRM模型失败:', error);
+      this.showNotification('上传失败，请检查网络连接', 'error');
+    }
+  },
+  
+  // 修改删除模型选项方法（只能删除用户上传的模型）
+  async deleteModelOption(modelId) {
+    try {
+      // 查找要删除的模型选项（只在用户模型中查找）
+      const modelIndex = this.VRMConfig.userModels.findIndex(
+        model => model.id === modelId
+      );
+      
+      if (modelIndex === -1) {
+        this.showNotification('无法删除默认模型', 'error');
+        return;
+      }
+      
+      // 调用后端API删除文件
+      const response = await fetch(`${backendURL}/delete_vrm_model/${modelId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 从用户模型列表中移除
+        this.VRMConfig.userModels.splice(modelIndex, 1);
+        
+        // 如果当前选中的模型被删除，则重置为默认模型
+        if (this.VRMConfig.selectedModelId === modelId) {
+          if (this.VRMConfig.defaultModels.length > 0) {
+            this.VRMConfig.selectedModelId = this.VRMConfig.defaultModels[0].id;
+          } else {
+            this.VRMConfig.selectedModelId = '';
+          }
+        }
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        this.showNotification('VRM模型已删除');
+      } else {
+        this.showNotification(`删除失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('删除VRM模型失败:', error);
+      this.showNotification('删除失败，请稍后再试', 'error');
+    }
+  },
+  
+  // 获取当前选中的模型信息
+  getCurrentSelectedModel() {
+    // 先在默认模型中查找
+    let selectedModel = this.VRMConfig.defaultModels.find(
+      model => model.id === this.VRMConfig.selectedModelId
+    );
+    
+    // 如果没找到，再在用户模型中查找
+    if (!selectedModel) {
+      selectedModel = this.VRMConfig.userModels.find(
+        model => model.id === this.VRMConfig.selectedModelId
+      );
+    }
+    
+    return selectedModel;
+  }
 }

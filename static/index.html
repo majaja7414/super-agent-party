@@ -5168,13 +5168,127 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
+                            
                             <el-form-item :label="t('enabledExpressions')" class="form-item-align" label-position="left">
                               <el-switch 
                                 v-model="VRMConfig.enabledExpressions" 
                                 @change="autoSaveSettings"
                               ></el-switch>
                             </el-form-item>
+                            
+                            <!-- VRM模型选择框 -->
+                            <el-form-item :label="t('vrmModel')" class="form-item-align">
+                              <el-select
+                                v-model="VRMConfig.selectedModelId"
+                                @change="handleModelChange"
+                                class="full-width-input"
+                              >
+                                <!-- 默认模型选项（不可删除） -->
+                                <el-option
+                                  v-for="model in VRMConfig.defaultModels"
+                                  :key="model.id"
+                                  :label="model.name"
+                                  :value="model.id"
+                                >
+                                  <div class="audio-option-item">
+                                    <span class="audio-name">
+                                      <i class="fa-solid fa-star" style="color: #f39c12; margin-right: 5px;"></i>
+                                      {{ model.name }}
+                                    </span>
+                                    <!-- 默认模型不显示删除按钮 -->
+                                  </div>
+                                </el-option>
+                                
+                                <!-- 用户上传的模型选项（可删除） -->
+                                <el-option
+                                  v-for="model in VRMConfig.userModels"
+                                  :key="model.id"
+                                  :label="model.name"
+                                  :value="model.id"
+                                >
+                                  <div class="audio-option-item">
+                                    <span class="audio-name">{{ model.name }}</span>
+                                    <el-button 
+                                      @click.stop="deleteModelOption(model.id)"
+                                      type="danger" 
+                                      circle 
+                                      size="small"
+                                      class="delete-audio-btn"
+                                    >
+                                      <i class="fa-solid fa-trash"></i>
+                                    </el-button>
+                                  </div>
+                                </el-option>
+                              </el-select>
+                            </el-form-item>
+                            
+                            <!-- 模型上传按钮 -->
+                            <el-button 
+                              @click="showVrmModelDialog = true"
+                              type="primary" 
+                              plain 
+                              class="add-server-btn">
+                              <i class="fa-solid fa-plus"></i> {{ t('addVrmModel') }}
+                            </el-button>
+                            
+                            <el-alert
+                              type="info"
+                              :closable="false"
+                              class="mb-2"
+                            >
+                              <template #default>
+                                <div class="alert-content">
+                                  {{ t('vrmNotice1') }}<br>
+                                  {{ t('vrmNotice2') }}
+                                </div>
+                              </template>
+                            </el-alert>
                         </div>
+
+                        <!-- VRM模型上传对话框 -->
+                        <el-dialog
+                          v-model="showVrmModelDialog"
+                          :title="t('uploadVrmModel')"
+                          width="600px"
+                        >
+                          <div class="upload-container">
+                            <div
+                              class="drop-zone"
+                              @dragover.prevent
+                              @drop.prevent="handleVrmModelDrop"
+                              @click="browseVrmModelFile"
+                            >
+                              <el-icon :size="50"><i class="fa-solid fa-upload"></i></el-icon>
+                              <p>{{ t('clickOrDropVrm') }}</p>
+                            </div>
+                            
+                            <!-- 文件列表 -->
+                            <div class="compact-file-list" v-if="newVrmModel.name">
+                              <div class="compact-file-item">
+                                <span class="file-name">{{ newVrmModel.name }}</span>
+                                <el-button
+                                  @click.stop="removeNewVrmModel"
+                                  class="delete-icon"
+                                  circle
+                                >
+                                  <i class="fa-solid fa-trash"></i>
+                                </el-button>
+                              </div>
+                            </div>
+
+                            <el-input
+                              v-model="newVrmModel.displayName"
+                              :label="t('modelDisplayName')"
+                              :placeholder="t('modelDisplayNamePlaceholder')"
+                            />
+                          </div>
+                          <template #footer>
+                            <el-button @click="cancelVrmModelUpload">{{ t('cancel') }}</el-button>
+                            <el-button type="primary" @click="uploadVrmModel" :disabled="!newVrmModel.name">
+                              {{ t('createImmediately') }}
+                            </el-button>
+                          </template>
+                        </el-dialog>
                       </div>
                     </el-form>
                   </div>
