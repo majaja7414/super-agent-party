@@ -1045,7 +1045,7 @@ function startChunkAnimation(chunkId, chunkState) {
         
         // 应用口型动画
         if (currentVrm && currentVrm.expressionManager) {
-            const intensity = Math.min(average / 2, 1.0); // 进一步降低阈值
+            const intensity = Math.min(average / 4, 1.0); // 进一步降低阈值
             
             if (intensity > 0.02 || maxValue > 5) { // 更敏感的触发条件
                 const mouthOpen = Math.max(intensity*1.8, 0.1); // 确保最小张嘴程度
