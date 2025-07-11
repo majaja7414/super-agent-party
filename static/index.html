@@ -592,8 +592,7 @@
                   v-model="searchKeyword"
                   :placeholder="t('searchChatHistoryPlaceholder')"
                   clearable
-                  class="search-input"
-                  @input="handleSearch">
+                  class="search-input">
                   <template #prefix>
                       <el-icon><i class="fa-solid fa-magnifying-glass"></i></el-icon>
                   </template>
@@ -866,6 +865,17 @@
                 v-if="!isBtnCollapse"
                 circle>
                 <i class="fa-solid fa-palette"></i>
+              </el-button>
+            </el-tooltip>
+
+            <el-tooltip :content="t('tablePet')" placement="top">
+              <el-button
+                @click="startVRM"
+                class="icon-btn vrm-btn"
+                :type="'default'"
+                v-if="!isBtnCollapse"
+                circle>
+                <i :class='isVRMStarting? "fa-solid fa-spinner fa-spin" : "fa-solid fa-user-ninja"'></i>
               </el-button>
             </el-tooltip>
 
@@ -5098,7 +5108,7 @@
                         <!-- 桌宠机器人配置头部 -->
                         <div class="tool-header" style="display: flex; justify-content: space-between; align-items: center;">
                           <span>
-                            <el-icon><i class="fa-solid fa-dog"></i></el-icon>
+                            <el-icon><i class="fa-solid fa-user-ninja"></i></el-icon>
                             {{ t('table_pet_config') }}
                             <el-link
                               type="primary"
@@ -5109,6 +5119,17 @@
                               <el-icon class="mr-1">
                                 <i class="fa-solid fa-key"></i>
                               </el-icon>{{ t('gotoVroid') }}
+                            </el-link>
+                            <span>{{ '  ' }}</span>
+                            <el-link
+                              type="primary"
+                              :underline="false"
+                              href="https://hub.vroid.com/en" 
+                              target="_blank"
+                            >
+                              <el-icon class="mr-1">
+                                <i class="fa-solid fa-cube"></i>
+                              </el-icon>{{ t('gotoVroidHub') }}
                             </el-link>
                           </span>
                           <div>

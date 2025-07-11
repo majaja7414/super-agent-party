@@ -114,6 +114,7 @@ let vue_data = {
     ],
     ws: null,
     messages: [],
+    cur_audioDatas: [],
     userInput: '',
     isTyping: false,
     currentMessage: '',
@@ -801,9 +802,6 @@ let vue_data = {
       reasoningVisible: true,
       quickRestart: true,
     },
-    VRMConfig: {
-      VRMAgent:'super-model',
-    },
     ttsWebSocket: null,
     wsConnected: false,
     isVRMRunning: false,
@@ -827,7 +825,7 @@ let vue_data = {
     },
     deployTiles: [
       { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
-      { id: 'table_pet', title: 'tablePet', icon: 'fa-solid fa-dog'},
+      { id: 'table_pet', title: 'tablePet', icon: "fa-solid fa-user-ninja"},
       { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
     stickerPacks: [],

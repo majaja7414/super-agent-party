@@ -540,23 +540,23 @@ if (isElectron) {
         dragButton.id = 'drag-handle';
         dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
         dragButton.style.cssText = `
-            width: 36px;
-            height: 36px;
-            background: rgba(255,255,255,0.95);
-            border: 2px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            color: #333;
-            -webkit-app-region: drag;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.2s ease;
-            user-select: none;
-            pointer-events: auto;
-            backdrop-filter: blur(10px);
-            position: relative;
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: #333;
+                cursor: pointer;
+                -webkit-app-region: drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
         `;
 
         // 创建一个内部拖拽区域来确保拖拽功能正常
@@ -583,6 +583,7 @@ if (isElectron) {
             justify-content: center;
             width: 100%;
             height: 100%;
+            -webkit-app-region: drag;
         `;
 
         // 组装拖拽按钮
@@ -595,23 +596,23 @@ if (isElectron) {
         refreshButton.id = 'refresh-handle';
         refreshButton.innerHTML = '<i class="fas fa-redo-alt"></i>';
         refreshButton.style.cssText = `
-        width: 36px;
-        height: 36px;
-        background: rgba(255,255,255,0.95);
-        border: 2px solid rgba(0,0,0,0.1);
-        border-radius: 50%;
-        color: #333;
-        cursor: pointer;
-        -webkit-app-region: no-drag;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.2s ease;
-        user-select: none;
-        pointer-events: auto;
-        backdrop-filter: blur(10px);
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: #333;
+                cursor: pointer;
+                -webkit-app-region: no-drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
         `;
         
         // 关闭按钮
@@ -619,23 +620,23 @@ if (isElectron) {
         closeButton.id = 'close-handle';
         closeButton.innerHTML = '<i class="fas fa-times"></i>';
         closeButton.style.cssText = `
-        width: 36px;
-        height: 36px;
-        background: rgba(255,255,255,0.95);
-        border: 2px solid rgba(0,0,0,0.1);
-        border-radius: 50%;
-        color: #333;
-        cursor: pointer;
-        -webkit-app-region: no-drag;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transition: all 0.2s ease;
-        user-select: none;
-        pointer-events: auto;
-        backdrop-filter: blur(10px);
+                width: 36px;
+                height: 36px;
+                background: rgba(255,255,255,0.95);
+                border: 2px solid rgba(0,0,0,0.1);
+                border-radius: 50%;
+                color: #333;
+                cursor: pointer;
+                -webkit-app-region: no-drag;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 14px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transition: all 0.2s ease;
+                user-select: none;
+                pointer-events: auto;
+                backdrop-filter: blur(10px);
         `;
         
         // 添加悬停效果 - 刷新按钮
@@ -905,7 +906,8 @@ async function startLipSyncForChunk(data) {
             animationId: null,
             audio: null,
             audioSource: null,
-            analyser: null
+            analyser: null,
+            expression: null,
         };
         
         chunkAnimations.set(chunkId, chunkState);
@@ -918,24 +920,23 @@ async function startLipSyncForChunk(data) {
         if (currentAudioContext.state === 'suspended') {
             await currentAudioContext.resume();
         }
-        
+        // 使用面部表情
+        let exp = data.expressions || [];
+        if(exp.length > 0){ 
+            let cur_exp = exp[0];
+            // 移除cur_exp中的<>符号
+            cur_exp = cur_exp.replace(/<|>/g, '');
+            console.log(`Setting expression to ${cur_exp}`);
+            currentVrm.expressionManager.resetValues();
+            chunkState.expression = cur_exp;
+        }
+        console.log(data.expressions);
         // 使用 Base64 数据创建音频
         const audio = new Audio();
         audio.crossOrigin = 'anonymous';
         audio.src = data.audioDataUrl; // 使用 Base64 数据 URL
         audio.volume = 0.01;
         chunkState.audio = audio;
-        console.log(data.expressions);
-        // 使用面部表情
-        let exp = data.expressions || [];
-        if(exp.length > 0){
-            let cur_exp = exp[0];
-            // 移除cur_exp中的<>符号
-            cur_exp = cur_exp.replace(/<|>/g, '');
-            console.log(`Setting expression to ${cur_exp}`);
-            currentVrm.expressionManager.resetValues();
-            currentVrm.expressionManager.setValue(cur_exp, 1);
-        }
         console.log(`Loading audio for chunk ${chunkId}:`, data.audioUrl);
         
         // 等待音频加载
@@ -1045,10 +1046,40 @@ function startChunkAnimation(chunkId, chunkState) {
         
         // 应用口型动画
         if (currentVrm && currentVrm.expressionManager) {
+            if(chunkState.expression){
+                // 不同表情以不同的方式展现，happy angry sad neutral surprised relaxed blink blinkLeft blinkRight
+
+                if(chunkState.expression == 'happy' ||chunkState.expression == 'angry' ||chunkState.expression == 'sad' ||chunkState.expression == 'neutral' ||chunkState.expression == 'relaxed'){
+                    currentVrm.expressionManager.setValue(chunkState.expression,1.0);
+                }
+                if( chunkState.expression == 'surprised' ){
+                    if (frameCount < 30*2) {
+                        currentVrm.expressionManager.setValue(chunkState.expression,1.0);
+                    }
+                    else{
+                        currentVrm.expressionManager.setValue(chunkState.expression,0.0);
+                    }
+                }
+                if (chunkState.expression === 'blink' || chunkState.expression === 'blinkLeft' || chunkState.expression === 'blinkRight') {
+                    // 第一秒线性闭眼，第二秒线性睁眼
+                    const totalFrames = 60; // 假设每秒30帧，总共2秒
+                    const halfFrames = totalFrames / 2;
+                    let blink_value = 0;
+                    if (frameCount < halfFrames) {
+                        // 第一秒闭眼
+                        blink_value = frameCount / halfFrames;
+                    } else {
+                        // 第二秒睁眼
+                        blink_value = Math.max(1 - ((frameCount - halfFrames) / halfFrames), 0);
+                    }
+
+                    currentVrm.expressionManager.setValue(chunkState.expression, blink_value);
+                }
+            }
+
             const intensity = Math.min(average / 4, 1.0); // 进一步降低阈值
-            
             if (intensity > 0.02 || maxValue > 5) { // 更敏感的触发条件
-                const mouthOpen = Math.max(intensity*1.8, 0.1); // 确保最小张嘴程度
+                const mouthOpen = Math.min(Math.max(intensity*1.8, 0.1), 0.7); // 确保最小和最大张嘴程度
                 currentVrm.expressionManager.setValue('aa', mouthOpen);
                 
                 // 添加一些变化
@@ -1240,7 +1271,7 @@ if (isElectron) {
                 background: rgba(255,255,255,0.95);
                 border: 2px solid rgba(0,0,0,0.1);
                 border-radius: 50%;
-                color: ${wsConnected ? '#28a745' : '#dc3545'};
+                color: #333;
                 cursor: pointer;
                 -webkit-app-region: no-drag;
                 display: flex;
@@ -1252,6 +1283,7 @@ if (isElectron) {
                 user-select: none;
                 pointer-events: auto;
                 backdrop-filter: blur(10px);
+                color: ${wsConnected ? '#28a745' : '#dc3545'};
             `;
             // WebSocket 状态按钮事件
             wsStatusButton.addEventListener('click', (e) => {

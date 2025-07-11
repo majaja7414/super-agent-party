@@ -579,6 +579,7 @@ const translations = {
         "vrmNotice1": "请上传.vrm格式的3D模型文件，必须是VRM1.0标准",
         'Previous': '上一个',
         'Next': '下一个',
+        'gotoVroidHub': '前往Vroid Hub获取VRM模型',
     },
     'en-US': {
         'chat': 'Chat',
@@ -1157,5 +1158,6 @@ const translations = {
         "vrmNotice1": "Please upload a 3D model file in .vrm format that complies with VRM 1.0 standard",
         'Previous': 'Previous',
         'Next': 'Next',
+        'gotoVroidHub': 'Go to Vroid Hub to get the VRM model',
     }
   };

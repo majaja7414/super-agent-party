@@ -3966,6 +3966,7 @@ let vue_methods = {
     async startTTSProcess() {
       if (!this.ttsSettings.enabled) return;
       this.TTSrunning = true;
+      this.cur_audioDatas = [];
       // 通知VRM准备开始TTS
       this.sendTTSStatusToVRM('ttsStarted', {
         totalChunks: this.messages[this.messages.length - 1].ttsChunks.length
@@ -4036,15 +4037,21 @@ let vue_methods = {
           
           message.audioChunks[index] = { 
             url: audioUrl, 
-            dataUrl: audioDataUrl, // 添加 base64 数据
             expressions: chunk_expressions, // 添加表情
             index 
           };
-          
+          this.cur_audioDatas[index]= audioDataUrl;
           console.log(`TTS chunk ${index} processed`);
           this.checkAudioPlayback();
         } else {
           console.error(`TTS failed for chunk ${index}`);
+          message.audioChunks[index] = { 
+            url: null, 
+            expressions: chunk_expressions, // 添加表情
+            index
+          };
+          this.cur_audioDatas[index]= null;
+          this.checkAudioPlayback();
         }
       } catch (error) {
         console.error(`Error processing TTS chunk ${index}:`, error);
@@ -4069,7 +4076,6 @@ let vue_methods = {
     async checkAudioPlayback() {
       const lastMessage = this.messages[this.messages.length - 1];
       if (!lastMessage || lastMessage.isPlaying) return;
-
       const currentIndex = lastMessage.currentChunk;
       const audioChunk = lastMessage.audioChunks[currentIndex];
       
@@ -4094,7 +4100,7 @@ let vue_methods = {
           
           // 发送 Base64 数据到 VRM
           this.sendTTSStatusToVRM('startSpeaking', {
-            audioDataUrl: audioChunk.dataUrl, // 使用 Base64 数据
+            audioDataUrl: this.cur_audioDatas[currentIndex],
             chunkIndex: currentIndex,
             totalChunks: lastMessage.ttsChunks.length,
             text: lastMessage.ttsChunks[currentIndex],
@@ -4127,6 +4133,7 @@ let vue_methods = {
         console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
         this.TTSrunning = false;
+        this.cur_audioDatas = [];
         // 通知VRM所有音频播放完成
         this.sendTTSStatusToVRM('allChunksCompleted', {});
       }
