@@ -1069,6 +1069,7 @@ let vue_methods = {
           // 初始化时确保数据一致性
           this.edgettsLanguage = this.ttsSettings.edgettsLanguage;
           this.edgettsGender = this.ttsSettings.edgettsGender;
+          await this.loadDefaultModels();
           if (this.asrSettings.enabled) {
             if (this.vad == null) {
               await this.initVAD();
@@ -4264,7 +4265,7 @@ let vue_methods = {
   // 上传参考音频
   async uploadGsvAudio() {
     if (!this.newGsvAudio.file) {
-      this.showNotification('请先选择音频文件', 'error');
+      showNotification('请先选择音频文件', 'error');
       return;
     }
     
@@ -4296,13 +4297,13 @@ let vue_methods = {
         // 自动保存设置
         await this.autoSaveSettings();
         
-        this.showNotification('参考音频上传成功');
+        showNotification('参考音频上传成功');
       } else {
-        this.showNotification(`上传失败: ${result.message}`, 'error');
+        showNotification(`上传失败: ${result.message}`, 'error');
       }
     } catch (error) {
       console.error('上传参考音频失败:', error);
-      this.showNotification('上传失败，请检查网络连接', 'error');
+      showNotification('上传失败，请检查网络连接', 'error');
     }
   },
   
@@ -4356,13 +4357,13 @@ let vue_methods = {
         // 自动保存设置
         await this.autoSaveSettings();
         
-        this.showNotification('音频已删除');
+        showNotification('音频已删除');
       } else {
-        this.showNotification(`删除失败: ${result.message}`, 'error');
+        showNotification(`删除失败: ${result.message}`, 'error');
       }
     } catch (error) {
       console.error('删除音频失败:', error);
-      this.showNotification('删除失败，请稍后再试', 'error');
+      showNotification('删除失败，请稍后再试', 'error');
     }
   },
     async startVRM() {
@@ -4452,7 +4453,7 @@ let vue_methods = {
         const file = files[0];
         // 检查文件扩展名
         if (!file.name.toLowerCase().endsWith('.vrm')) {
-          this.showNotification('只支持.vrm格式的文件', 'error');
+          showNotification('只支持.vrm格式的文件', 'error');
           return;
         }
         this.newVrmModel.name = file.name;
@@ -4472,7 +4473,7 @@ let vue_methods = {
       const file = files[0];
       // 检查文件扩展名
       if (!file.name.toLowerCase().endsWith('.vrm')) {
-        this.showNotification('只支持.vrm格式的文件', 'error');
+        showNotification('只支持.vrm格式的文件', 'error');
         return;
       }
       this.newVrmModel.name = file.name;
@@ -4518,6 +4519,7 @@ let vue_methods = {
         if (!this.VRMConfig.selectedModelId && result.models.length > 0) {
           this.VRMConfig.selectedModelId = result.models[0].id;
         }
+        await this.autoSaveSettings();
       }
     } catch (error) {
       console.error('加载默认模型失败:', error);
@@ -4527,12 +4529,12 @@ let vue_methods = {
   // 修改上传VRM模型方法
   async uploadVrmModel() {
     if (!this.newVrmModel.file) {
-      this.showNotification('请先选择VRM模型文件', 'error');
+      showNotification('请先选择VRM模型文件', 'error');
       return;
     }
     
     if (!this.newVrmModel.displayName.trim()) {
-      this.showNotification('请输入模型显示名称', 'error');
+      showNotification('请输入模型显示名称', 'error');
       return;
     }
     
@@ -4565,13 +4567,13 @@ let vue_methods = {
         // 自动保存设置
         await this.autoSaveSettings();
         
-        this.showNotification('VRM模型上传成功');
+        showNotification('VRM模型上传成功');
       } else {
-        this.showNotification(`上传失败: ${result.message}`, 'error');
+        showNotification(`上传失败: ${result.message}`, 'error');
       }
     } catch (error) {
       console.error('上传VRM模型失败:', error);
-      this.showNotification('上传失败，请检查网络连接', 'error');
+      showNotification('上传失败，请检查网络连接', 'error');
     }
   },
   
@@ -4584,7 +4586,7 @@ let vue_methods = {
       );
       
       if (modelIndex === -1) {
-        this.showNotification('无法删除默认模型', 'error');
+        showNotification('无法删除默认模型', 'error');
         return;
       }
       
@@ -4611,13 +4613,13 @@ let vue_methods = {
         // 自动保存设置
         await this.autoSaveSettings();
         
-        this.showNotification('VRM模型已删除');
+        showNotification('VRM模型已删除');
       } else {
-        this.showNotification(`删除失败: ${result.message}`, 'error');
+        showNotification(`删除失败: ${result.message}`, 'error');
       }
     } catch (error) {
       console.error('删除VRM模型失败:', error);
-      this.showNotification('删除失败，请稍后再试', 'error');
+      showNotification('删除失败，请稍后再试', 'error');
     }
   },
   

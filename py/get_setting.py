@@ -84,6 +84,8 @@ SETTINGS_FILE = os.path.join(USER_DATA_DIR, 'settings.json')
 base_path = get_base_path()
 CONFIG_BASE_PATH = os.path.join(base_path, 'config')
 os.makedirs(CONFIG_BASE_PATH, exist_ok=True)
+DEFAULT_VRM_DIR = os.path.join(base_path, 'vrm')
+
 SETTINGS_TEMPLATE_FILE = os.path.join(CONFIG_BASE_PATH, 'settings_template.json')
 with open(SETTINGS_TEMPLATE_FILE, 'r', encoding='utf-8') as f:
     default_settings = json.load(f)

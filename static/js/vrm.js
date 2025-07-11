@@ -99,14 +99,8 @@ async function fetchLanguage() {
     try {
         const http_protocol = window.location.protocol;
         const HOST = window.location.host;
-        const PORT = window.location.port;
-        if (PORT) {
-            response = await fetch(`${http_protocol}//${HOST}:${PORT}/cur_language`);
-        }
-        else {
-            response = await fetch(`${http_protocol}//${HOST}/cur_language`);
-        }
-        const data = await response.json();
+        let res = await fetch(`${http_protocol}//${HOST}/cur_language`);
+        const data = await res.json();
         return data.language;
     } catch (error) {
         console.error('Error fetching language:', error);
@@ -117,7 +111,44 @@ async function t(key) {
     const currentLanguage = await fetchLanguage();
     return translations[currentLanguage][key] || key;
 }
+// 用fetch查询/cur_language的值
+async function fetchVRMConfig() {
+    try {
+        const http_protocol = window.location.protocol;
+        const HOST = window.location.host;
+        let res = await fetch(`${http_protocol}//${HOST}/vrm_config`);
+        const data = await res.json();
+        return data.VRMConfig;
+    } catch (error) {
+        console.error('Error fetching VRMConfig:', error);
+        return   {
+            enabledExpressions: false,
+            selectedModelId: 'alice', // 默认选择Alice模型
+            defaultModels: [], // 存储默认模型
+            userModels: []     // 存储用户上传的模型
+        };
+    }
+}
 
+async function getVRMpath() {
+    const vrmConfig = await fetchVRMConfig();
+    const modelId = vrmConfig.selectedModelId;
+    const defaultModel = vrmConfig.defaultModels.find(model => model.id === modelId) || vrmConfig.userModels.find(model => model.id === modelId);
+    if (defaultModel) {
+        return defaultModel.path;
+    } else {
+        const userModel = vrmConfig.userModels.find(model => model.id === modelId);
+        if (userModel) {
+            return userModel.path;
+        }
+        else {
+            return 'http://127.0.0.1:3456/vrm/Alice.vrm';
+        }
+    }
+}
+
+const vrmPath = await getVRMpath();
+console.log(vrmPath);
 
 // 启用阴影（如果需要）
 renderer.shadowMap.enabled = true;
@@ -245,7 +276,7 @@ function setNaturalPose(vrm) {
 loader.load(
 
     // URL of the VRM you want to load
-    './source/vrm/Alice.vrm',
+    vrmPath,
 
     // called when the resource is loaded
     ( gltf ) => {
@@ -753,10 +784,6 @@ let currentAudioSource = null;
 let isCurrentlySpeaking = false;
 let lipSyncAnimationId = null;
 
-// TTS 相关的表情值
-let targetMouthOpen = 0;
-let currentMouthOpen = 0;
-let mouthOpenSpeed = 8; // 嘴部动画速度
 
 // 初始化 WebSocket 连接
 function initTTSWebSocket() {
@@ -801,7 +828,7 @@ function initTTSWebSocket() {
         console.error('VRM TTS WebSocket error:', error);
     };
 }
-
+initTTSWebSocket();
 // 发送消息到主界面
 function sendToMain(type, data) {
     if (ttsWebSocket && wsConnected) {

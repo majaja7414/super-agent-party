@@ -84,7 +84,7 @@ ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
 ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v']
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR,DEFAULT_VRM_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -4163,9 +4163,6 @@ async def upload_vrm_model(
             content={"success": False, "message": f"文件保存失败: {str(e)}"}
         )
 
-# VRM默认模型目录
-DEFAULT_VRM_DIR = "./static/source/vrm"
-
 @app.get("/get_default_vrm_models")
 async def get_default_vrm_models(request: Request):
     try:
@@ -4189,7 +4186,7 @@ async def get_default_vrm_models(request: Request):
             display_name = os.path.splitext(file_name)[0]
             
             # 构建文件访问URL
-            file_url = f"{fastapi_base_url}source/vrm/{file_name}"
+            file_url = f"{fastapi_base_url}vrm/{file_name}"
             
             models.append({
                 "id": os.path.splitext(file_name)[0].lower(),  # 使用文件名作为ID
@@ -4564,6 +4561,11 @@ async def cur_language():
     settings = await load_settings()
     return {"language": settings.get("language", "zh-CN")}
 
+@app.get("/vrm_config")
+async def vrm_config():
+    settings = await load_settings()
+    return {"VRMConfig": settings.get("VRMConfig", {})}
+
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -4627,6 +4629,7 @@ mcp = FastApiMCP(
 
 mcp.mount()
 
+app.mount("/vrm", StaticFiles(directory=DEFAULT_VRM_DIR), name="vrm")
 app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")

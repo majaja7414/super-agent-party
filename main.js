@@ -568,11 +568,6 @@ app.whenReady().then(async () => {
         await vrmWindow.loadFile(path.join(__dirname, 'vrm.html'));
       }
 
-      if (isMac) mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
-
-      if (isMac) mainWindow.setIgnoreMouseEvents(true);
-      else mainWindow.setIgnoreMouseEvents(true, { forward: true });
-      mainWindow.setAlwaysOnTop(true, 'screen-saver');
       // 窗口关闭处理
       vrmWindow.on('closed', () => {
         vrmWindow = null;
