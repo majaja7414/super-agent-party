@@ -3599,11 +3599,10 @@ let vue_methods = {
       };
     },
 
-    // 新增：初始化Web Speech API
+    // 修改：初始化Web Speech API（不自动启动）
     initWebSpeechAPI() {
       if(isElectron){
         showNotification(this.t('webSpeechNotSupportedInElectron'), 'error');
-        // 打开浏览器模式
         const url = `${backendURL}`;
         window.electronAPI.openExternal(url);
         this.asrSettings.enabled = false;
@@ -3622,8 +3621,8 @@ let vue_methods = {
       this.recognition = new SpeechRecognition();
 
       // 配置语音识别参数
-      this.recognition.continuous = true; // 持续识别
-      this.recognition.interimResults = true; // 返回中间结果
+      this.recognition.continuous = false; // 改为非持续识别，由VAD控制
+      this.recognition.interimResults = true;
 
       // 识别结果处理
       this.recognition.onresult = (event) => {
@@ -3681,32 +3680,26 @@ let vue_methods = {
           showNotification(errorMessage, 'error');
         }
         
+        // 重置识别状态
+        this.isWebSpeechRecognizing = false;
       };
 
       // 识别结束处理
       this.recognition.onend = () => {
         console.log('Web Speech API recognition ended');
-        // 如果ASR仍然启用，重新开始识别
-        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech') {
-          setTimeout(() => {
-            if (this.recognition && this.asrSettings.enabled && this.ttsSettings.enabledInterruption) {
-              this.recognition.start();
-            }
-            else{
-              // 禁用
-              this.stopASR();
-            }
-          }, 100);
-        }
+        this.isWebSpeechRecognizing = false;
+        // 不再自动重启，由VAD控制
       };
 
       // 识别开始处理
       this.recognition.onstart = () => {
         console.log('Web Speech API recognition started');
+        this.isWebSpeechRecognizing = true;
       };
 
       return true;
     },
+
 
     // 修改：统一的ASR结果处理函数
     handleASRResult(data) {
@@ -3789,26 +3782,26 @@ let vue_methods = {
       }
     },
 
-    // 新增：启动ASR
+    // 修改：启动ASR
     async startASR() {
+      // 无论哪种模式都需要VAD
+      if (this.vad == null) {
+        await this.initVAD();
+      }
+
       if (this.asrSettings.engine === 'webSpeech') {
-        // 使用Web Speech API
+        // 使用Web Speech API + VAD控制
         if (this.initWebSpeechAPI()) {
-          try {
-            this.recognition.start();
-            showNotification(this.t('webSpeechStarted'), 'success');
-          } catch (error) {
-            console.error('Failed to start Web Speech API:', error);
-            showNotification(this.t('speechRecognitionError'), 'error');
-            this.asrSettings.enabled = false;
-          }
+          // 初始化识别状态标志
+          this.isWebSpeechRecognizing = false;
+          
+          // 开始录音和VAD检测
+          await this.startRecording();
+          
+          showNotification(this.t('webSpeechStarted'), 'success');
         }
       } else {
         // 使用WebSocket方式
-        if (this.vad == null) {
-          await this.initVAD();
-        }
-        
         // 初始化ASR WebSocket
         await this.initASRWebSocket();
         
@@ -3817,32 +3810,30 @@ let vue_methods = {
       }
     },
 
-    // 新增：停止ASR
+    // 修改：停止ASR
     stopASR() {
       if (this.asrSettings.engine === 'webSpeech') {
         // 停止Web Speech API
-        if (this.recognition) {
+        if (this.recognition && this.isWebSpeechRecognizing) {
           this.recognition.stop();
-          this.recognition = null;
         }
+        this.recognition = null;
+        this.isWebSpeechRecognizing = false;
       } else {
-        // 停止WebSocket方式
-        this.stopRecording();
-        
         // 关闭ASR WebSocket
         if (this.asrWs) {
           this.asrWs.close();
           this.asrWs = null;
         }
       }
+      
+      // 停止录音和VAD（两种模式都需要）
+      this.stopRecording();
     },
 
-    // 修改：初始化VAD（仅在非Web Speech模式下使用）
+
+    // 修改：初始化VAD（Web Speech模式也使用VAD）
     async initVAD() {
-      if (this.asrSettings.engine === 'webSpeech') {
-        return; // Web Speech API不需要VAD
-      }
-      
       // 初始化VAD
       this.vad = await vad.MicVAD.new({
         preSpeechPadFrames: 10,
@@ -3862,23 +3853,70 @@ let vue_methods = {
               }
             }
             if (!this.currentAudio || this.currentAudio.paused) {
-              this.handleFrameProcessed(frame);
+              if (this.asrSettings.engine === 'webSpeech') {
+                // Web Speech API模式：不处理音频帧，只是检测到语音
+                this.handleWebSpeechFrameProcessed();
+              } else {
+                // WebSocket模式：处理音频帧
+                this.handleFrameProcessed(frame);
+              }
             }
           }
         },
         onSpeechEnd: (audio) => {
           // 语音结束时的处理
-          this.handleSpeechEnd(audio);
+          if (this.asrSettings.engine === 'webSpeech') {
+            this.handleWebSpeechEnd();
+          } else {
+            this.handleSpeechEnd(audio);
+          }
         },
       });
     },
 
-    // 修改：开始录音（仅在非Web Speech模式下使用）
-    async startRecording() {
-      if (this.asrSettings.engine === 'webSpeech') {
-        return; // Web Speech API不需要手动录音
+    // 新增：Web Speech模式的语音开始处理
+    handleWebSpeechSpeechStart() {
+      console.log('VAD detected speech start for Web Speech API');
+      // 如果Web Speech API没有在识别，则启动它
+      if (!this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.start();
+        } catch (error) {
+          console.error('Failed to start Web Speech API:', error);
+        }
       }
-      
+    },
+
+    // 新增：Web Speech模式的帧处理
+    handleWebSpeechFrameProcessed() {
+      // 在Web Speech模式下，我们不需要处理具体的音频帧
+      // 只需要确保Web Speech API正在运行
+      if (!this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.start();
+        } catch (error) {
+          // 可能已经在运行中，忽略错误
+          console.log('Web Speech API already running or failed to start:', error.message);
+        }
+      }
+    },
+
+    // 新增：Web Speech模式的语音结束处理
+    handleWebSpeechEnd() {
+      console.log('VAD detected speech end for Web Speech API');
+      // 停止Web Speech API识别
+      if (this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.stop();
+        } catch (error) {
+          console.error('Failed to stop Web Speech API:', error);
+        }
+      }
+    },
+
+
+    // 修改：开始录音（两种模式都需要）
+    async startRecording() {
       try {
         // 请求麦克风权限
         this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -3898,12 +3936,8 @@ let vue_methods = {
       }
     },
 
-    // 修改：停止录音（仅在非Web Speech模式下使用）
+    // 修改：停止录音（两种模式都需要）
     stopRecording() {
-      if (this.asrSettings.engine === 'webSpeech') {
-        return; // Web Speech API不需要手动停止录音
-      }
-      
       if (this.vad) {
         this.vad.pause();
       }
@@ -3920,14 +3954,19 @@ let vue_methods = {
       
       this.isRecording = false;
     },
+    // 修改：统一的语音开始处理
     async handleSpeechStart() {
-      // 语音开始时的处理
-      this.currentTranscriptionId = uuid.v4();
-      this.frame_buffer = [];
-      this.asrWs.send(JSON.stringify({
-        type: 'audio_start',
-        id: this.currentTranscriptionId,
-      }));
+      if (this.asrSettings.engine === 'webSpeech') {
+        this.handleWebSpeechSpeechStart();
+      } else {
+        // WebSocket模式的处理
+        this.currentTranscriptionId = uuid.v4();
+        this.frame_buffer = [];
+        this.asrWs.send(JSON.stringify({
+          type: 'audio_start',
+          id: this.currentTranscriptionId,
+        }));
+      }
     },
 
     async handleFrameProcessed(frame) {
