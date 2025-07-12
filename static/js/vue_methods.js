@@ -3704,7 +3704,7 @@ let vue_methods = {
     // 修改：统一的ASR结果处理函数
     handleASRResult(data) {
       if (data.type === 'transcription') {
-        if (this.TTSrunning && !this.ttsSettings.enabledInterruption){
+        if (this.TTSrunning && !this.ttsSettings.enabledInterruption && this.ttsSettings.enabled) {
           // 如果TTS正在运行，并且不允许中断，则不处理ASR结果
           return;
         }
@@ -3724,7 +3724,7 @@ let vue_methods = {
           if (this.asrSettings.interactionMethod == "auto") {
             if (this.ttsSettings.enabledInterruption) {
               this.sendMessage();
-            } else if (this.currentAudio == null || this.currentAudio.paused) {
+            } else if (this.TTSrunning ||  !this.ttsSettings.enabled) {
               this.sendMessage();
             }
           }
@@ -3733,7 +3733,7 @@ let vue_methods = {
             if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())) {
               if (this.ttsSettings.enabledInterruption) {
                 this.sendMessage();
-              } else if (this.currentAudio == null || this.currentAudio.paused) {
+              } else if (this.TTSrunning ||  !this.ttsSettings.enabled) {
                 this.sendMessage();
               }
             } else {
@@ -4091,6 +4091,15 @@ let vue_methods = {
         console.error('Audio conversion error:', error);
         throw new Error('Failed to convert audio to WAV format');
       }
+    },
+
+    async changeTTSstatus() {
+      if (!this.ttsSettings.enabled) {
+        this.TTSrunning = false;
+      }else {
+        this.TTSrunning = true;
+      }
+      await this.autoSaveSettings();
     },
     splitTTSBuffer(buffer) {
       // 移除buffer中的emoji

@@ -737,7 +737,7 @@
 
             <el-tooltip :content="t('tts')" placement="top">
               <el-button
-                @click="ttsSettings.enabled = !ttsSettings.enabled; autoSaveSettings()"
+                @click="ttsSettings.enabled=!ttsSettings.enabled;changeTTSstatus();"
                 class="icon-btn asr-btn"
                 :type="ttsSettings.enabled ? 'primary' : 'default'"
                 v-if="!isBtnCollapse"
@@ -1857,7 +1857,7 @@
                           {{ t('ttsModel') }}
                         </span>
                       </div>
-                      <el-switch v-model="ttsSettings.enabled" @click.stop @change="autoSaveSettings" />
+                      <el-switch v-model="ttsSettings.enabled" @click.stop @change="changeTTSstatus" />
                     </div>
                     <div class="tool-content">
                       <el-form-item :label="t('ttsEngine')" class="form-item-align">

@@ -28,7 +28,7 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "electron": "^33.0.1",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^24.9.1"
   },
   "keywords": [
     "AI",
@@ -47,6 +47,12 @@
     "appId": "com.superagent.party",
     "productName": "Super-Agent-Party",
     "copyright": "Copyright © 2025 Heshengtao",
+    "publish": {
+      "provider": "github",
+      "owner": "heshengtao",
+      "repo": "super-agent-party",
+      "releaseType": "draft"
+    },
     "compression": "maximum",
     "directories": {
       "output": "release"
@@ -67,40 +73,32 @@
       {
         "from": "dist/server/",
         "to": "server",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
-    "publish": {
-      "provider": "github",
-      "owner": "heshengtao",
-      "repo": "super-agent-party",
-      "releaseType": "draft"
-    },
-    "win": {
+    "linux": {
       "icon": "static/source/icon.png",
-      "target": "nsis",
-      "verifyUpdateCodeSignature": false
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowElevation": true,
-      "artifactName": "${productName}-Setup-${version}.${ext}",
-      "uninstallDisplayName": "${productName}",
-      "createDesktopShortcut": true
+      "target": ["AppImage", "deb"],
+      "artifactName": "${productName}-${version}-Linux.${ext}"
     },
     "mac": {
       "icon": "static/source/icon.png",
-      "target": "dmg",
+      "target": ["dmg"],
+      "artifactName": "${productName}-${version}-Mac.${ext}",
       "category": "public.app-category.utilities",
-      "hardenedRuntime": true, 
-      "gatekeeperAssess": false, 
-      "entitlements": "entitlements.mac.plist",  
+      "identity": "super-agent-party",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist",
-      "type": "distribution",  
-      "asarUnpack": "**/*.node",  
+      "type": "distribution",
+      "asarUnpack": "**/*.node",
       "extendInfo": {
-        "NSRequiresAquaSystemAppearance": false  
-      }
+        "NSRequiresAquaSystemAppearance": false
+      },
+      "provisioningProfile": null
     },
     "dmg": {
       "icon": "static/source/icon.png",
@@ -123,11 +121,21 @@
         "height": 380
       }
     },
-    "linux": {
+    "win": {
       "icon": "static/source/icon.png",
-      "target": ["AppImage", "deb"],
-      "category": "Utility",  
-      "maintainer": "Heshengtao <hst97@qq.com>" 
+      "verifyUpdateCodeSignature": false,
+      "target": [
+        "nsis"
+      ],
+      "publisherName": "Heshengtao",
+      "rfc3161TimeStampServer": "http://timestamp.digicert.com"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "uninstallDisplayName": "${productName}",
+      "createDesktopShortcut": true
     }
   }
 }
