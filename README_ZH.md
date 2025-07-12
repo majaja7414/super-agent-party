@@ -16,38 +16,32 @@
 
 ### 🚀 **做AI时代最易用的胶水软件！**
 
-- 让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、深度思考控制、深度研究、视觉能力、绘图能力、听觉能力、说话能力、自定义工具等高阶功能，打造可插拔的LLM增强中台。
-- 与此同时，还可以将你的智能体配置，一键部署到任何前端上（已实现经典聊天界面、QQ官方机器人、VRM桌宠）。
-- 也可以将其他智能体、智能工具、智能工作流作为agent-party智能体的工具使用（已实现comfyui、MCP、A2A）。
-- 多平台支持：Windows、MacOS、Linux、Docker、Web。
+- ✅让LLM API获得企业级能力无需修改一行代码，为您的LLM接口无缝附加知识库、实时联网、永久记忆、代码执行工具、深度思考控制、深度研究、视觉能力、绘图能力、听觉能力、说话能力、自定义工具等高阶功能，打造可插拔的LLM增强中台。
+- ✅与此同时，还可以将你的智能体配置，一键部署到任何前端上（已实现经典聊天界面、QQ官方机器人、VRM桌宠）。
+- ✅也可以将其他智能体、智能工具、智能工作流作为agent-party智能体的工具使用（已实现comfyui、MCP、A2A）。
+- ✅多平台支持：Windows、MacOS、Linux、Docker、Web。
 
 ![image](doc/image/demo.png)
 
 ## 软件截图
 
-### 多服务商支持
+### 多服务商支持：本地部署引擎以及云服务商接口均支持
 ![image](doc/image/model.jpeg)
-**本地部署引擎以及云服务商接口均支持**
 
-### VRM桌宠
+### VRM桌宠：支持上传自定义VRM模型，打造专属桌宠
 ![image](doc/image/vrm.jpeg)
-**支持上传自定义VRM模型，打造专属桌宠**
 
-### 记忆模块
+### 记忆模块：支持永久记忆，支持lorebook世界观构建
 ![image](doc/image/memory.jpeg)
-**支持永久记忆，支持lorebook世界观构建**
 
-### QQ机器人
+### QQ机器人：支持一键部署到QQ官方机器人，方便用户随时随地使用智能体
 ![image](doc/image/qqbot.jpeg)
-**支持一键部署到QQ官方机器人，方便用户随时随地使用智能体**
 
-### 开发者友好
+### 开发者友好：开放openai API接口、MCP接口，可以将智能体对外转接
 ![image](doc/image/API.jpeg)
-**开发者友好，开发openai API接口、MCP接口，可以将智能体对外转接**
 
-### 接入comfyui
+### 接入comfyui：将comfyui工作流转换为智能体工具，多comfyui服务器负载均衡
 ![image](doc/image/comfyui.jpeg)
-**支持接入comfyui作为智能体工具，多comfyui服务器负载均衡**
 
 ## 快速开始
 

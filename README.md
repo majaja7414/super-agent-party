@@ -16,38 +16,32 @@
 
 ### 🚀 **Becoming the Most User-Friendly Glue Software in the AI Era!**  
 
-- Empower LLM APIs with enterprise-level capabilities without modifying a single line of code. Seamlessly enhance your LLM interfaces with advanced features such as knowledge bases, real-time internet connectivity, permanent memory, code execution tools, deep thought control, in-depth research, visual capabilities, drawing abilities, auditory functions, speech capabilities, and custom tools—creating a plug-and-play LLM enhancement platform.  
-- At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop pets).  
-- You can also use other agents, smart tools, and intelligent workflows as tools for agent-party agents (already implemented for ComfyUI, MCP, and A2A).  
-- Multi-platform support: Windows, macOS, Linux, Docker, Web.
+- ✅Empower LLM APIs with enterprise-level capabilities without modifying a single line of code. Seamlessly enhance your LLM interfaces with advanced features such as knowledge bases, real-time internet connectivity, permanent memory, code execution tools, deep thought control, in-depth research, visual capabilities, drawing abilities, auditory functions, speech capabilities, and custom tools—creating a plug-and-play LLM enhancement platform.  
+- ✅At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop pets).  
+- ✅You can also use other agents, smart tools, and intelligent workflows as tools for agent-party agents (already implemented for ComfyUI, MCP, and A2A).  
+- ✅Multi-platform support: Windows, macOS, Linux, Docker, Web.
 
 ![image](doc/image/demo.png)
 
 ## Software Screenshots
 
-### Multi-Vendor Support
-![image](doc/image/model.jpeg)
-**Supports both local deployment engines and cloud vendor interfaces**
+### Multi-Vendor Support: Supports both locally deployed engines and cloud vendor interfaces  
+![image](doc/image/model.jpeg)  
 
-### VRM Desktop Pet
-![image](doc/image/vrm.jpeg)
-**Supports uploading custom VRM models to create personalized desktop pets**
+### VRM Desktop Pet: Supports uploading custom VRM models to create a personalized desktop pet  
+![image](doc/image/vrm.jpeg)  
 
-### Memory Module
-![image](doc/image/memory.jpeg)
-**Supports permanent memory and lorebook world-building**
+### Memory Module: Supports permanent memory and lorebook world-building  
+![image](doc/image/memory.jpeg)  
 
-### QQ Bot
-![image](doc/image/qqbot.jpeg)
-**Supports one-click deployment to the official QQ bot, enabling users to access the agent anytime, anywhere**
+### QQ Bot: Supports one-click deployment to the official QQ bot, enabling users to access the agent anytime, anywhere  
+![image](doc/image/qqbot.jpeg)  
 
-### Developer-Friendly
-![image](doc/image/API.jpeg)
-**Developer-friendly, with OpenAI API and MCP interfaces for external agent integration**
+### Developer-Friendly: Open OpenAI API and MCP interfaces, allowing external agent integration  
+![image](doc/image/API.jpeg)  
 
-### ComfyUI Integration
+### ComfyUI Integration: Converts ComfyUI workflows into agent tools with multi-ComfyUI server load balancing  
 ![image](doc/image/comfyui.jpeg)
-**Supports integrating ComfyUI as an agent tool, with load balancing across multiple ComfyUI servers**
 
 ## Quick Start
 
