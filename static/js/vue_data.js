@@ -362,7 +362,7 @@ let vue_data = {
       engine: 'edgetts',
       separators:["。", "\n", "？", "！", "，","!","?",","],
       maxConcurrency: 2,
-      enabledInterruption: true,
+      enabledInterruption: false,
       edgettsLanguage: 'zh-CN',
       edgettsGender: 'Female',
       edgettsVoice: 'XiaoyiNeural',
