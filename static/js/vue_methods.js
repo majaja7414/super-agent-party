@@ -4218,6 +4218,7 @@ let vue_methods = {
         }
       } catch (error) {
         console.error(`Error processing TTS chunk ${index}:`, error);
+        this.TTSrunning = false;
       }
     },
 

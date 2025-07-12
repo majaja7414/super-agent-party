@@ -1062,7 +1062,7 @@ function startChunkAnimation(chunkId, chunkState) {
                 }
                 if (chunkState.expression === 'blink' || chunkState.expression === 'blinkLeft' || chunkState.expression === 'blinkRight') {
                     // 第一秒线性闭眼，第二秒线性睁眼
-                    const totalFrames = 60; // 假设每秒30帧，总共2秒
+                    const totalFrames = 30; // 假设每秒30帧，总共2秒
                     const halfFrames = totalFrames / 2;
                     let blink_value = 0;
                     if (frameCount < halfFrames) {
