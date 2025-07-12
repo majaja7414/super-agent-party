@@ -4117,8 +4117,14 @@ let vue_methods = {
       return { chunks, remaining };
     },
 
-    // 辅助函数：检查字符串是否只包含标点符号和空白符
+    // 辅助函数：检查字符串是否只包含标点符号和空白符以及表情
     isOnlyPunctuationAndWhitespace(text) {
+      for (const exp of this.expressionMap) {
+        const regex = new RegExp(exp, 'g');
+        if (text.includes(exp)) {
+          text = text.replace(regex, '').trim(); // 移除表情标签
+        }
+      }
       // 匹配只包含标点符号、空白符（空格、制表符、换行符等）的字符串
       const punctuationAndWhitespaceRegex = /^[\s\p{P}]*$/u;
       return punctuationAndWhitespaceRegex.test(text);
