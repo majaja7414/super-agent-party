@@ -583,6 +583,8 @@ def get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content):
 async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id):
     global mcp_client_list
     DRS_STAGE = 1 # 1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+    if len(request.messages) > 2:
+        DRS_STAGE = 2
     images = await images_in_messages(request.messages,fastapi_base_url)
     request.messages = await message_without_images(request.messages)
     from py.load_files import get_files_content,file_tool,image_tool
