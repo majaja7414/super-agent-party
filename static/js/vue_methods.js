@@ -3621,7 +3621,7 @@ let vue_methods = {
       this.recognition = new SpeechRecognition();
 
       // 配置语音识别参数
-      this.recognition.continuous = false; // 改为非持续识别，由VAD控制
+      this.recognition.continuous = true; // 改为非持续识别，由VAD控制
       this.recognition.interimResults = true;
 
       // 识别结果处理
