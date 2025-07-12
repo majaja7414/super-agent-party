@@ -3601,6 +3601,15 @@ let vue_methods = {
 
     // 新增：初始化Web Speech API
     initWebSpeechAPI() {
+      if(isElectron){
+        showNotification(this.t('webSpeechNotSupportedInElectron'), 'error');
+        // 打开浏览器模式
+        const url = `${backendURL}`;
+        window.electronAPI.openExternal(url);
+        this.asrSettings.enabled = false;
+        return false;
+      }
+
       // 检查浏览器是否支持Web Speech API
       if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
         showNotification(this.t('webSpeechNotSupported'), 'error');
@@ -3678,12 +3687,14 @@ let vue_methods = {
       this.recognition.onend = () => {
         console.log('Web Speech API recognition ended');
         // 如果ASR仍然启用，重新开始识别
-        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech') {
+        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech' && this.ttsSettings.enabledInterruption) {
           setTimeout(() => {
             if (this.recognition && this.asrSettings.enabled) {
               this.recognition.start();
             }
           }, 100);
+        }else{
+          this.stopASR();
         }
       };
 
@@ -4280,6 +4291,9 @@ let vue_methods = {
         lastMessage.currentChunk = 0;
         this.TTSrunning = false;
         this.cur_audioDatas = [];
+        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech' && !this.ttsSettings.enabledInterruption){
+          this.startASR();
+        }
         // 通知VRM所有音频播放完成
         this.sendTTSStatusToVRM('allChunksCompleted', {});
       }

@@ -139,7 +139,7 @@
     },
     "asrSettings": {
       "enabled": false,
-      "engine": "openai",
+      "engine": "webSpeech",
       "selectedProvider": null,
       "vendor": "OpenAI",
       "model": "",

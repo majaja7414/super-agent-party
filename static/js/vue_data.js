@@ -343,7 +343,7 @@ let vue_data = {
     recognition: null,
     asrSettings: {
       enabled: false,
-      engine: 'openai',
+      engine: 'webSpeech',
       selectedProvider: null,
       vendor: "OpenAI",
       model: "",

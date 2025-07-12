@@ -581,6 +581,8 @@ const translations = {
         'Next': '下一个',
         'gotoVroidHub': '前往Vroid Hub获取VRM模型',
         'webSpeech': 'Web Speech API(免费，但仅浏览器模式下可用)',
+        'webSpeechStarted': 'Web Speech API已启动',
+        'webSpeechNotSupportedInElectron': '在Electron中 Web Speech API 不支持，自动开启浏览器模式中...',
     },
     'en-US': {
         'chat': 'Chat',
@@ -1161,5 +1163,7 @@ const translations = {
         'Next': 'Next',
         'gotoVroidHub': 'Go to Vroid Hub to get the VRM model',
         'webSpeech': 'Web Speech API (free, but only available in browser mode)',
+        'webSpeechStarted': 'Web Speech API started',
+        'webSpeechNotSupportedInElectron': 'In Electron, the Web Speech API is not supported, and the browser mode is automatically turned on...',
     }
   };
