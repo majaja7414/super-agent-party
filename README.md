@@ -29,7 +29,7 @@
 ![image](doc/image/model.jpeg)  
 
 ### VRM Desktop Pet: Supports uploading custom VRM models to create a personalized desktop pet  
-![image](doc/image/vrm.jpeg)  
+![image](doc/image/vrmbot.jpeg)  
 
 ### Memory Module: Supports permanent memory and lorebook world-building  
 ![image](doc/image/memory.jpeg)  

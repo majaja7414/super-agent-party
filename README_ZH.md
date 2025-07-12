@@ -29,7 +29,7 @@
 ![image](doc/image/model.jpeg)
 
 ### VRM桌宠：支持上传自定义VRM模型，打造专属桌宠
-![image](doc/image/vrm.jpeg)
+![image](doc/image/vrmbot.jpeg)
 
 ### 记忆模块：支持永久记忆，支持lorebook世界观构建
 ![image](doc/image/memory.jpeg)
