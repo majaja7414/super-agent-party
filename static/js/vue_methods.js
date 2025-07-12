@@ -3687,14 +3687,16 @@ let vue_methods = {
       this.recognition.onend = () => {
         console.log('Web Speech API recognition ended');
         // 如果ASR仍然启用，重新开始识别
-        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech' && this.ttsSettings.enabledInterruption) {
+        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech') {
           setTimeout(() => {
-            if (this.recognition && this.asrSettings.enabled) {
+            if (this.recognition && this.asrSettings.enabled && this.ttsSettings.enabledInterruption) {
               this.recognition.start();
             }
+            else{
+              // 禁用
+              this.stopASR();
+            }
           }, 100);
-        }else{
-          this.stopASR();
         }
       };
 
@@ -3709,6 +3711,10 @@ let vue_methods = {
     // 修改：统一的ASR结果处理函数
     handleASRResult(data) {
       if (data.type === 'transcription') {
+        if (this.TTSrunning && !this.ttsSettings.enabledInterruption){
+          // 如果TTS正在运行，并且不允许中断，则不处理ASR结果
+          return;
+        }
         if (data.is_final) {
           // 最终结果
           if (this.userInputBuffer.length > 0) {
@@ -4291,9 +4297,6 @@ let vue_methods = {
         lastMessage.currentChunk = 0;
         this.TTSrunning = false;
         this.cur_audioDatas = [];
-        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech' && !this.ttsSettings.enabledInterruption){
-          this.startASR();
-        }
         // 通知VRM所有音频播放完成
         this.sendTTSStatusToVRM('allChunksCompleted', {});
       }

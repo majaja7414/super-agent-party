@@ -583,6 +583,7 @@ const translations = {
         'webSpeech': 'Web Speech API(免费，但仅浏览器模式下可用)',
         'webSpeechStarted': 'Web Speech API已启动',
         'webSpeechNotSupportedInElectron': '在Electron中 Web Speech API 不支持，自动开启浏览器模式中...',
+        'webSpeechNotice1': '以Web Speech API引擎启动语音识别，将自动跳转到浏览器模式',
     },
     'en-US': {
         'chat': 'Chat',
@@ -1165,5 +1166,6 @@ const translations = {
         'webSpeech': 'Web Speech API (free, but only available in browser mode)',
         'webSpeechStarted': 'Web Speech API started',
         'webSpeechNotSupportedInElectron': 'In Electron, the Web Speech API is not supported, and the browser mode is automatically turned on...',
+        'webSpeechNotice1': 'Start automatic speech recognition with Web Speech API engine, will automatically jump to browser mode',
     }
   };

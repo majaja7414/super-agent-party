@@ -1703,6 +1703,18 @@
                           class="full-width-input"
                         />
                       </el-form-item>
+                    <el-alert
+                      type="info"
+                      :closable="false"
+                      class="mb-2"
+                      v-if="asrSettings.engine === 'webSpeech'"
+                    >
+                      <template #default>
+                        <div class="alert-content">
+                          {{ t('webSpeechNotice1') }}
+                        </div>
+                      </template>
+                    </el-alert>
                     </div>
                   </div>
                   <div class="tool-item" v-show="asrSettings.engine === 'openai'">
