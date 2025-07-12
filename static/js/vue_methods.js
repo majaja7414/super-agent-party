@@ -1071,15 +1071,7 @@ let vue_methods = {
           this.edgettsGender = this.ttsSettings.edgettsGender;
           await this.loadDefaultModels();
           if (this.asrSettings.enabled) {
-            if (this.vad == null) {
-              await this.initVAD();
-            }
-            
-            // 初始化ASR WebSocket
-            await this.initASRWebSocket();
-            
-            // 开始录音
-            await this.startRecording();
+            await this.startASR();
           }
         } 
         else if (data.type === 'settings_saved') {
@@ -3557,8 +3549,13 @@ let vue_methods = {
     removeJsonFile() {
       this.jsonFile = null; // 清空文件
     },
-    // 初始化ASR WebSocket连接
+    // 初始化ASR WebSocket连接（修改版本，支持Web Speech API）
     async initASRWebSocket() {
+      // 如果选择了Web Speech API，不需要WebSocket连接
+      if (this.asrSettings.engine === 'webSpeech') {
+        return;
+      }
+      
       const http_protocol = window.location.protocol;
       const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
       const ws_url = `${ws_protocol}//${window.location.host}/asr_ws`;
@@ -3583,51 +3580,8 @@ let vue_methods = {
           console.error('Invalid JSON from ASR server:', event.data);
           return;
         }
-        if (data.type === 'transcription') {
-          if (data.is_final) {
-            // 最终结果
-            if (this.userInputBuffer.length > 0) {
-              // 用data.text替换this.userInput中最后一个this.userInputBuffer
-              this.userInput = this.userInput.slice(0, -this.userInputBuffer.length) + data.text;
-              this.userInputBuffer = '';
-            } else {
-              // 如果没有临时结果，直接添加到userInput
-              this.userInput += data.text;
-              this.userInputBuffer = '';
-            }
-            if (this.asrSettings.interactionMethod == "auto"){
-              if (this.ttsSettings.enabledInterruption){
-                this.sendMessage();
-              }else if (this.currentAudio == null || this.currentAudio.paused){
-                this.sendMessage();
-              }
-            }
-            if (this.asrSettings.interactionMethod == "wakeWord"){
-              if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())){
-                if (this.ttsSettings.enabledInterruption){
-                  this.sendMessage();
-                }else if (this.currentAudio == null || this.currentAudio.paused){
-                  this.sendMessage();
-                }
-              }
-              else {
-                this.userInput = '';
-              }
-            }
-          }
-          else {
-            // 临时结果
-            this.userInput += data.text;
-            this.userInputBuffer += data.text;
-          }
-        } else if (data.type === 'error') {
-          console.error('ASR error:', data.message);
-          showNotification(this.t('transcriptionFailed'), 'error');
-        } else if (data.type === 'init_response') {
-          if (data.status === 'ready') {
-            showNotification(this.t('asrReady'), 'success');
-          }
-        }
+        
+        this.handleASRResult(data);
       };
 
       // WebSocket 关闭事件
@@ -3645,33 +3599,187 @@ let vue_methods = {
       };
     },
 
+    // 新增：初始化Web Speech API
+    initWebSpeechAPI() {
+      // 检查浏览器是否支持Web Speech API
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showNotification(this.t('webSpeechNotSupported'), 'error');
+        this.asrSettings.enabled = false;
+        return false;
+      }
+
+      // 创建语音识别对象
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+
+      // 配置语音识别参数
+      this.recognition.continuous = true; // 持续识别
+      this.recognition.interimResults = true; // 返回中间结果
+
+      // 识别结果处理
+      this.recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // 处理中间结果
+        if (interimTranscript) {
+          this.handleASRResult({
+            type: 'transcription',
+            text: interimTranscript,
+            is_final: false
+          });
+        }
+
+        // 处理最终结果
+        if (finalTranscript) {
+          this.handleASRResult({
+            type: 'transcription',
+            text: finalTranscript,
+            is_final: true
+          });
+        }
+      };
+
+      // 错误处理
+      this.recognition.onerror = (event) => {
+        console.error('Web Speech API error:', event.error);
+        let errorMessage = this.t('speechRecognitionError');
+        
+        switch (event.error) {
+          case 'no-speech':
+            errorMessage = this.t('noSpeechDetected');
+            break;
+          case 'audio-capture':
+            errorMessage = this.t('microphoneError');
+            break;
+          case 'not-allowed':
+            errorMessage = this.t('micPermissionDenied');
+            break;
+          case 'network':
+            errorMessage = this.t('networkError');
+            break;
+        }
+        
+        showNotification(errorMessage, 'error');
+      };
+
+      // 识别结束处理
+      this.recognition.onend = () => {
+        console.log('Web Speech API recognition ended');
+        // 如果ASR仍然启用，重新开始识别
+        if (this.asrSettings.enabled && this.asrSettings.engine === 'webSpeech') {
+          setTimeout(() => {
+            if (this.recognition && this.asrSettings.enabled) {
+              this.recognition.start();
+            }
+          }, 100);
+        }
+      };
+
+      // 识别开始处理
+      this.recognition.onstart = () => {
+        console.log('Web Speech API recognition started');
+      };
+
+      return true;
+    },
+
+    // 修改：统一的ASR结果处理函数
+    handleASRResult(data) {
+      if (data.type === 'transcription') {
+        if (data.is_final) {
+          // 最终结果
+          if (this.userInputBuffer.length > 0) {
+            // 用data.text替换this.userInput中最后一个this.userInputBuffer
+            this.userInput = this.userInput.slice(0, -this.userInputBuffer.length) + data.text;
+            this.userInputBuffer = '';
+          } else {
+            // 如果没有临时结果，直接添加到userInput
+            this.userInput += data.text;
+            this.userInputBuffer = '';
+          }
+          
+          // 根据交互方式处理
+          if (this.asrSettings.interactionMethod == "auto") {
+            if (this.ttsSettings.enabledInterruption) {
+              this.sendMessage();
+            } else if (this.currentAudio == null || this.currentAudio.paused) {
+              this.sendMessage();
+            }
+          }
+          
+          if (this.asrSettings.interactionMethod == "wakeWord") {
+            if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())) {
+              if (this.ttsSettings.enabledInterruption) {
+                this.sendMessage();
+              } else if (this.currentAudio == null || this.currentAudio.paused) {
+                this.sendMessage();
+              }
+            } else {
+              this.userInput = '';
+            }
+          }
+        } else {
+          // 临时结果
+          this.userInput += data.text;
+          this.userInputBuffer += data.text;
+        }
+      } else if (data.type === 'error') {
+        console.error('ASR error:', data.message);
+        showNotification(this.t('transcriptionFailed'), 'error');
+      } else if (data.type === 'init_response') {
+        if (data.status === 'ready') {
+          showNotification(this.t('asrReady'), 'success');
+        }
+      }
+    },
+
+    // 修改：开关ASR功能
     async toggleASR() {
       this.asrSettings.enabled = !this.asrSettings.enabled;
       this.autoSaveSettings();
       
       if (this.asrSettings.enabled) {
-        if (this.vad == null) {
-          await this.initVAD();
-        }
-        
-        // 初始化ASR WebSocket
-        await this.initASRWebSocket();
-        
-        // 开始录音
-        await this.startRecording();
+        await this.startASR();
       } else {
-        this.stopRecording();
-        
-        // 关闭ASR WebSocket
-        if (this.asrWs) {
-          this.asrWs.close();
-          this.asrWs = null;
-        }
+        this.stopASR();
       }
     },
 
+    // 修改：处理ASR设置变化
     async handleASRchange() {
       if (this.asrSettings.enabled) {
+        await this.startASR();
+      } else {
+        this.stopASR();
+      }
+    },
+
+    // 新增：启动ASR
+    async startASR() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        // 使用Web Speech API
+        if (this.initWebSpeechAPI()) {
+          try {
+            this.recognition.start();
+            showNotification(this.t('webSpeechStarted'), 'success');
+          } catch (error) {
+            console.error('Failed to start Web Speech API:', error);
+            showNotification(this.t('speechRecognitionError'), 'error');
+            this.asrSettings.enabled = false;
+          }
+        }
+      } else {
+        // 使用WebSocket方式
         if (this.vad == null) {
           await this.initVAD();
         }
@@ -3681,7 +3789,19 @@ let vue_methods = {
         
         // 开始录音
         await this.startRecording();
+      }
+    },
+
+    // 新增：停止ASR
+    stopASR() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        // 停止Web Speech API
+        if (this.recognition) {
+          this.recognition.stop();
+          this.recognition = null;
+        }
       } else {
+        // 停止WebSocket方式
         this.stopRecording();
         
         // 关闭ASR WebSocket
@@ -3692,37 +3812,48 @@ let vue_methods = {
       }
     },
 
-    async initVAD(){
-        // 初始化VAD
-        this.vad = await vad.MicVAD.new({
-          preSpeechPadFrames: 10,
-          onSpeechStart: () => {
-            // 语音开始时的处理
-            this.handleSpeechStart();
-          },
-          onFrameProcessed: (probabilities, frame) => {
-            // 处理每一帧
-            if (probabilities["isSpeech"] > 0.4){
-              if (this.ttsSettings.enabledInterruption) {
-                // 关闭正在播放的音频
-                if (this.currentAudio){
-                  this.currentAudio.pause();
-                  this.currentAudio = null;
-                  this.stopGenerate();
-                }
-              }
-              if (!this.currentAudio || this.currentAudio.paused) {
-                this.handleFrameProcessed(frame);
+    // 修改：初始化VAD（仅在非Web Speech模式下使用）
+    async initVAD() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        return; // Web Speech API不需要VAD
+      }
+      
+      // 初始化VAD
+      this.vad = await vad.MicVAD.new({
+        preSpeechPadFrames: 10,
+        onSpeechStart: () => {
+          // 语音开始时的处理
+          this.handleSpeechStart();
+        },
+        onFrameProcessed: (probabilities, frame) => {
+          // 处理每一帧
+          if (probabilities["isSpeech"] > 0.4) {
+            if (this.ttsSettings.enabledInterruption) {
+              // 关闭正在播放的音频
+              if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+                this.stopGenerate();
               }
             }
-          },
-          onSpeechEnd: (audio) => {
-            // 语音结束时的处理
-            this.handleSpeechEnd(audio);
-          },
-        });
+            if (!this.currentAudio || this.currentAudio.paused) {
+              this.handleFrameProcessed(frame);
+            }
+          }
+        },
+        onSpeechEnd: (audio) => {
+          // 语音结束时的处理
+          this.handleSpeechEnd(audio);
+        },
+      });
     },
+
+    // 修改：开始录音（仅在非Web Speech模式下使用）
     async startRecording() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        return; // Web Speech API不需要手动录音
+      }
+      
       try {
         // 请求麦克风权限
         this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -3742,8 +3873,15 @@ let vue_methods = {
       }
     },
 
+    // 修改：停止录音（仅在非Web Speech模式下使用）
     stopRecording() {
-      this.vad.pause();
+      if (this.asrSettings.engine === 'webSpeech') {
+        return; // Web Speech API不需要手动停止录音
+      }
+      
+      if (this.vad) {
+        this.vad.pause();
+      }
       
       if (this.mediaStream) {
         this.mediaStream.getTracks().forEach(track => track.stop());

@@ -340,6 +340,7 @@ let vue_data = {
     currentAudioChunks: [],
     currentTranscriptionId: null,
     speechStartTime: null,
+    recognition: null,
     asrSettings: {
       enabled: false,
       engine: 'openai',

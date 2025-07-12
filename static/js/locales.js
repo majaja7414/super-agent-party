@@ -580,6 +580,7 @@ const translations = {
         'Previous': '上一个',
         'Next': '下一个',
         'gotoVroidHub': '前往Vroid Hub获取VRM模型',
+        'webSpeech': 'Web Speech API(免费，但仅浏览器模式下可用)',
     },
     'en-US': {
         'chat': 'Chat',
@@ -1159,5 +1160,6 @@ const translations = {
         'Previous': 'Previous',
         'Next': 'Next',
         'gotoVroidHub': 'Go to Vroid Hub to get the VRM model',
+        'webSpeech': 'Web Speech API (free, but only available in browser mode)',
     }
   };
