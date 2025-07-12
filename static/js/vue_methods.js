@@ -3656,7 +3656,7 @@ let vue_methods = {
         
         switch (event.error) {
           case 'no-speech':
-            errorMessage = this.t('noSpeechDetected');
+            errorMessage = null;
             break;
           case 'audio-capture':
             errorMessage = this.t('microphoneError');
@@ -3668,8 +3668,10 @@ let vue_methods = {
             errorMessage = this.t('networkError');
             break;
         }
+        if (errorMessage) {
+          showNotification(errorMessage, 'error');
+        }
         
-        showNotification(errorMessage, 'error');
       };
 
       // 识别结束处理
@@ -3729,9 +3731,15 @@ let vue_methods = {
             }
           }
         } else {
-          // 临时结果
-          this.userInput += data.text;
-          this.userInputBuffer += data.text;
+          if (this.asrSettings.engine === 'webSpeech'){
+            this.userInput = data.text;
+            this.userInputBuffer = data.text;
+          }else {
+            // 临时结果
+            this.userInput += data.text;
+            this.userInputBuffer += data.text;
+          }
+
         }
       } else if (data.type === 'error') {
         console.error('ASR error:', data.message);
