@@ -18,6 +18,7 @@ a = Analysis(
         ('config/settings_template.json', 'config'),
         ('config/locales.json', 'config'),
         ('static', 'static'),
+        ('vrm', 'vrm'),
         ('tiktoken_cache', 'tiktoken_cache')
     ],
     hiddenimports=[

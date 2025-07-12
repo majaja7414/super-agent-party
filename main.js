@@ -562,11 +562,7 @@ app.whenReady().then(async () => {
       });
 
       // 加载页面
-      if (isDev) {
-        await vrmWindow.loadURL(`http://${HOST}:${PORT}/vrm.html`);
-      } else {
-        await vrmWindow.loadFile(path.join(__dirname, 'vrm.html'));
-      }
+      await vrmWindow.loadURL(`http://${HOST}:${PORT}/vrm.html`);
 
       // 窗口关闭处理
       vrmWindow.on('closed', () => {

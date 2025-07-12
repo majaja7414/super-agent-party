@@ -26,6 +26,32 @@
 - ✅团队协作：支持团队协作，多人共享知识库、模型服务、工具、MCP、A2A等资源，提高团队协作效率。聊天记录或知识库中的所有文件、图片都被存放到本地，可以作为内网文件床、图床使用。
 - ✅一键部署：支持一键部署到社交软件上，如QQ等，方便用户随时随地使用智能体。
 
+## 软件截图
+
+### 多服务商支持
+![image](doc/image/model.jpeg)
+**本地部署引擎以及云服务商接口均支持**
+
+### VRM桌宠
+![image](doc/image/vrm.jpeg)
+**支持上传自定义VRM模型，打造专属桌宠**
+
+### 记忆模块
+![image](doc/image/memory.jpeg)
+**支持永久记忆，支持lorebook世界观构建**
+
+### QQ机器人
+![image](doc/image/qqbot.jpeg)
+**支持一键部署到QQ官方机器人，方便用户随时随地使用智能体**
+
+### 开发者友好
+![image](doc/image/API.jpeg)
+**开发者友好，开发openai API接口、MCP接口，可以将智能体对外转接**
+
+### 接入comfyui
+![image](doc/image/comfyui.jpeg)
+**支持接入comfyui作为智能体工具，多comfyui服务器负载均衡**
+
 ## 快速开始
 
 ### windows桌面版安装

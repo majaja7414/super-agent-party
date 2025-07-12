@@ -27,6 +27,32 @@ Customized agents can be saved as snapshots for easy reuse in the future. The sn
 - ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
 - ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the agent anytime and anywhere.
 
+## Software Screenshots
+
+### Multi-Vendor Support
+![image](doc/image/model.jpeg)
+**Supports both local deployment engines and cloud vendor interfaces**
+
+### VRM Desktop Pet
+![image](doc/image/vrm.jpeg)
+**Supports uploading custom VRM models to create personalized desktop pets**
+
+### Memory Module
+![image](doc/image/memory.jpeg)
+**Supports permanent memory and lorebook world-building**
+
+### QQ Bot
+![image](doc/image/qqbot.jpeg)
+**Supports one-click deployment to the official QQ bot, enabling users to access the agent anytime, anywhere**
+
+### Developer-Friendly
+![image](doc/image/API.jpeg)
+**Developer-friendly, with OpenAI API and MCP interfaces for external agent integration**
+
+### ComfyUI Integration
+![image](doc/image/comfyui.jpeg)
+**Supports integrating ComfyUI as an agent tool, with load balancing across multiple ComfyUI servers**
+
 ## Quick Start
 
 ### Windows Desktop Installation
