@@ -28,6 +28,9 @@
 ### 多服务商支持：本地部署引擎以及云服务商接口均支持
 ![image](doc/image/model.jpeg)
 
+### 海量工具：支持异步调用，不阻塞智能体回复
+![image](doc/image/tool.jpeg)
+
 ### VRM桌宠：支持上传自定义VRM模型，打造专属桌宠
 ![image](doc/image/vrmbot.jpeg)
 

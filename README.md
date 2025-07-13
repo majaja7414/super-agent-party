@@ -28,6 +28,9 @@
 ### Multi-Vendor Support: Supports both locally deployed engines and cloud vendor interfaces  
 ![image](doc/image/model.jpeg)  
 
+### Massive tools: support asynchronous calls without blocking agent replies
+![image](doc/image/tool.jpeg)
+
 ### VRM Desktop Pet: Supports uploading custom VRM models to create a personalized desktop pet  
 ![image](doc/image/vrmbot.jpeg)  
 

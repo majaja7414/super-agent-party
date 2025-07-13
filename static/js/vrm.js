@@ -538,7 +538,6 @@ if (isElectron) {
         // 拖拽按钮
         const dragButton = document.createElement('div');
         dragButton.id = 'drag-handle';
-        dragButton.innerHTML = '<i class="fas fa-grip-vertical"></i>';
         dragButton.style.cssText = `
                 width: 36px;
                 height: 36px;
@@ -573,7 +572,7 @@ if (isElectron) {
 
         // 图标容器
         const iconContainer = document.createElement('div');
-        iconContainer.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+        iconContainer.innerHTML = '<el-icon class="logo-icon"><img src="./source/icon.png" /></el-icon>';
         iconContainer.style.cssText = `
             position: relative;
             z-index: 2;
@@ -585,6 +584,18 @@ if (isElectron) {
             height: 100%;
             -webkit-app-region: drag;
         `;
+
+        // 直接设置img样式
+        const img = iconContainer.querySelector('img');
+        if (img) {
+            img.style.cssText = `
+                width: 24px;
+                height: 24px;
+                border: none;
+                vertical-align: middle;
+                object-fit: contain;
+            `;
+        }
 
         // 组装拖拽按钮
         dragButton.innerHTML = '';
