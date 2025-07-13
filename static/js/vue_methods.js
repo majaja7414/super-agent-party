@@ -3724,7 +3724,7 @@ let vue_methods = {
           if (this.asrSettings.interactionMethod == "auto") {
             if (this.ttsSettings.enabledInterruption) {
               this.sendMessage();
-            } else if (this.TTSrunning ||  !this.ttsSettings.enabled) {
+            } else if (!this.TTSrunning ||  !this.ttsSettings.enabled) {
               this.sendMessage();
             }
           }
@@ -3733,7 +3733,7 @@ let vue_methods = {
             if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())) {
               if (this.ttsSettings.enabledInterruption) {
                 this.sendMessage();
-              } else if (this.TTSrunning ||  !this.ttsSettings.enabled) {
+              } else if (!this.TTSrunning ||  !this.ttsSettings.enabled) {
                 this.sendMessage();
               }
             } else {
@@ -4272,6 +4272,7 @@ let vue_methods = {
         }
       } catch (error) {
         console.error(`Error processing TTS chunk ${index}:`, error);
+        this.TTSrunning= false;
       }
     },
 
@@ -4293,6 +4294,15 @@ let vue_methods = {
     async checkAudioPlayback() {
       const lastMessage = this.messages[this.messages.length - 1];
       if (!lastMessage || lastMessage.isPlaying) return;
+      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
+        console.log('All audio chunks played');
+        lastMessage.currentChunk = 0;
+        this.TTSrunning = false;
+        this.cur_audioDatas = [];
+        // 通知VRM所有音频播放完成
+        this.sendTTSStatusToVRM('allChunksCompleted', {});
+        return;
+      }
       const currentIndex = lastMessage.currentChunk;
       const audioChunk = lastMessage.audioChunks[currentIndex];
       
@@ -4342,17 +4352,10 @@ let vue_methods = {
         } finally {
           lastMessage.currentChunk++;
           lastMessage.isPlaying = false;
-          this.checkAudioPlayback();
+          setTimeout(() => {
+            this.checkAudioPlayback();
+          }, 0);
         }
-      }
-      
-      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
-        console.log('All audio chunks played');
-        lastMessage.currentChunk = 0;
-        this.TTSrunning = false;
-        this.cur_audioDatas = [];
-        // 通知VRM所有音频播放完成
-        this.sendTTSStatusToVRM('allChunksCompleted', {});
       }
     },
 

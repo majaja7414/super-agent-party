@@ -303,7 +303,7 @@ let vue_data = {
     editingAgent: false,
     currentLanguage: 'zh-CN',
     translations: translations,
-    themeValues: ['light', 'dark','midnight','desert','neon','marshmallow'],
+    themeValues: ['light', 'dark','midnight','desert','neon','marshmallow','ink'],
     isBrowserOpening: false,
     expandedSections: {
       settingsBase: true,
@@ -360,7 +360,7 @@ let vue_data = {
     ttsSettings: {
       enabled: false,
       engine: 'edgetts',
-      separators:["。", "\n", "？", "！", "，","!","?",","],
+      separators:["。", "\n", "？", "！", "，","～","!","?",",","~"],
       maxConcurrency: 2,
       enabledInterruption: false,
       edgettsLanguage: 'zh-CN',

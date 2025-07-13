@@ -14,7 +14,7 @@
 
 ## Introduction
 
-### 🚀 **Becoming the Most User-Friendly Glue Software in the AI Era!**  
+### 🚀 **A 3D AI desktop pet with endless possibilities!**  
 
 - ✅Empower LLM APIs with enterprise-level capabilities without modifying a single line of code. Seamlessly enhance your LLM interfaces with advanced features such as knowledge bases, real-time internet connectivity, permanent memory, code execution tools, deep thought control, in-depth research, visual capabilities, drawing abilities, auditory functions, speech capabilities, and custom tools—creating a plug-and-play LLM enhancement platform.  
 - ✅At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop pets).  
