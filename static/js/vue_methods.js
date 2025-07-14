@@ -3708,7 +3708,7 @@ let vue_methods = {
         if (!this.ttsSettings.enabledInterruption && this.ttsSettings.enabled) {
           // 如果TTS正在运行，并且不允许中断，则不处理ASR结果
           if(this.TTSrunning){
-            if ((!lastMessage||lastMessage.currentChunk >= lastMessage.ttsChunks.length) && !this.isTyping) {
+            if ((!lastMessage || (lastMessage?.currentChunk ?? 0) >= (lastMessage?.ttsChunks?.length ?? 0)) && !this.isTyping) {
               console.log('All audio chunks played');
               lastMessage.currentChunk = 0;
               this.TTSrunning = false;
@@ -4308,7 +4308,7 @@ let vue_methods = {
     async checkAudioPlayback() {
       const lastMessage = this.messages[this.messages.length - 1];
       if (!lastMessage || lastMessage.isPlaying) return;
-      if ((!lastMessage||lastMessage.currentChunk >= lastMessage.ttsChunks.length) && !this.isTyping) {
+      if ((!lastMessage || (lastMessage?.currentChunk ?? 0) >= (lastMessage?.ttsChunks?.length ?? 0)) && !this.isTyping) {
         console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
         this.TTSrunning = false;
