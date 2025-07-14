@@ -825,8 +825,8 @@ let vue_data = {
       github_branch: "main"
     },
     deployTiles: [
-      { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
       { id: 'table_pet', title: 'tablePet', icon: "fa-solid fa-user-ninja"},
+      { id: 'qq_bot', title: 'qqBot', icon: 'fa-brands fa-qq' },
       { id: 'bot_config', title: 'bot_config', icon: 'fa-solid fa-robot' }
     ],
     stickerPacks: [],

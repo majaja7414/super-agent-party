@@ -491,7 +491,7 @@ let vue_methods = {
       }
       else if (key === 'deploy-bot') {
         this.activeMenu = 'deploy-bot';
-        this.subMenu = 'qq_bot'; // 默认显示第一个子菜单
+        this.subMenu = 'table_pet'; // 默认显示第一个子菜单
       }
       else {
         this.activeMenu = key;
@@ -3704,9 +3704,23 @@ let vue_methods = {
     // 修改：统一的ASR结果处理函数
     handleASRResult(data) {
       if (data.type === 'transcription') {
-        if (this.TTSrunning && !this.ttsSettings.enabledInterruption && this.ttsSettings.enabled) {
+        const lastMessage = this.messages[this.messages.length - 1];
+        if (!this.ttsSettings.enabledInterruption && this.ttsSettings.enabled) {
           // 如果TTS正在运行，并且不允许中断，则不处理ASR结果
-          return;
+          if(this.TTSrunning){
+            if ((!lastMessage || (lastMessage?.currentChunk ?? 0) >= (lastMessage?.ttsChunks?.length ?? 0)) && !this.isTyping) {
+              console.log('All audio chunks played');
+              lastMessage.currentChunk = 0;
+              this.TTSrunning = false;
+              this.cur_audioDatas = [];
+              // 通知VRM所有音频播放完成
+              this.sendTTSStatusToVRM('allChunksCompleted', {});
+            }
+            else{
+              console.log('Audio chunks still playing');
+              return;
+            }
+          }
         }
         if (data.is_final) {
           // 最终结果
@@ -4294,7 +4308,7 @@ let vue_methods = {
     async checkAudioPlayback() {
       const lastMessage = this.messages[this.messages.length - 1];
       if (!lastMessage || lastMessage.isPlaying) return;
-      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
+      if ((!lastMessage || (lastMessage?.currentChunk ?? 0) >= (lastMessage?.ttsChunks?.length ?? 0)) && !this.isTyping) {
         console.log('All audio chunks played');
         lastMessage.currentChunk = 0;
         this.TTSrunning = false;

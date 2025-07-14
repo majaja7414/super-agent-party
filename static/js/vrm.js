@@ -1057,15 +1057,20 @@ function startChunkAnimation(chunkId, chunkState) {
         
         // 应用口型动画
         if (currentVrm && currentVrm.expressionManager) {
+            let max_mouthOpen = 0.5; // 设置最大张嘴程度
             if(chunkState.expression){
                 // 不同表情以不同的方式展现，happy angry sad neutral surprised relaxed blink blinkLeft blinkRight
 
                 if(chunkState.expression == 'happy' ||chunkState.expression == 'angry' ||chunkState.expression == 'sad' ||chunkState.expression == 'neutral' ||chunkState.expression == 'relaxed'){
                     currentVrm.expressionManager.setValue(chunkState.expression,1.0);
+                    if (chunkState.expression == 'happy') {
+                        max_mouthOpen = 0.1;
+                    }
                 }
                 if( chunkState.expression == 'surprised' ){
                     if (frameCount < 30*2) {
                         currentVrm.expressionManager.setValue(chunkState.expression,1.0);
+                        max_mouthOpen = 0.1;
                     }
                     else{
                         currentVrm.expressionManager.setValue(chunkState.expression,0.0);
@@ -1090,12 +1095,12 @@ function startChunkAnimation(chunkId, chunkState) {
 
             const intensity = Math.min(average / 4, 1.0); // 进一步降低阈值
             if (intensity > 0.02 || maxValue > 5) { // 更敏感的触发条件
-                const mouthOpen = Math.min(Math.max(intensity*1.8, 0.1), 0.7); // 确保最小和最大张嘴程度
+                const mouthOpen = Math.min(Math.max(intensity*1.8, 0.1), max_mouthOpen); // 确保最小和最大张嘴程度
                 currentVrm.expressionManager.setValue('aa', mouthOpen);
                 
                 // 添加一些变化
                 const variation = Math.sin(frameCount * 0.1) * 0.1;
-                currentVrm.expressionManager.setValue('ih', Math.max(0, intensity * 0.3 + variation));
+                currentVrm.expressionManager.setValue('ih',  Math.min(Math.max(0, intensity * 0.3 + variation), max_mouthOpen));
                 
                 if (frameCount % 30 === 0) {
                     console.log(`Chunk ${chunkId} setting mouth:`, { intensity, mouthOpen });
