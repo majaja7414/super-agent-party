@@ -1,8 +1,10 @@
 import base64
 import logging
 import os
+import random
 import re
 import tempfile
+import time
 
 import requests
 from py.get_setting import UPLOAD_FILES_DIR, load_settings
@@ -152,7 +154,13 @@ async def _upload_file(settings, file_path):
                 }.items() if not v]
                 logging.error(f"Gitee配置不完整，缺少: {', '.join(missing)}")
                 return f"Gitee配置不完整，缺少: {', '.join(missing)}"
-            
+            # 新增：生成唯一文件名
+            base, ext = os.path.splitext(file_name)
+            # 替换特殊字符为下划线
+            base = re.sub(r'[^\w\-]', '_', base)
+            # 添加时间戳和随机数确保唯一
+            unique_name = f"{base}_{int(time.time()*1000)}_{random.randint(1000,9999)}{ext}"
+            file_name = unique_name
             # 检查文件大小（Gitee限制1MB）
             file_size = os.path.getsize(file_path)
             if file_size > 1024 * 1024:  # 1MB
@@ -222,7 +230,13 @@ async def _upload_file(settings, file_path):
                 }.items() if not v]
                 logging.error(f"GitHub配置不完整，缺少: {', '.join(missing)}")
                 return f"GitHub配置不完整，缺少: {', '.join(missing)}"
-            
+            # 新增：生成唯一文件名
+            base, ext = os.path.splitext(file_name)
+            # 替换特殊字符为下划线
+            base = re.sub(r'[^\w\-]', '_', base)
+            # 添加时间戳和随机数确保唯一
+            unique_name = f"{base}_{int(time.time()*1000)}_{random.randint(1000,9999)}{ext}"
+            file_name = unique_name
             # 检查文件大小（GitHub限制100MB，但图床建议小于10MB）
             file_size = os.path.getsize(file_path)
             if file_size > 10 * 1024 * 1024:  # 10MB

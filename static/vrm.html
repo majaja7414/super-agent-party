@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<title>three-vrm example</title>
+		<link rel="stylesheet" href="fontawesome/css/all.min.css">
+		<script src="js/locales.js"></script>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<style>
+			body.electron {
+			background: transparent !important;
+			overflow: hidden;
+			}
+
+			body.web {
+			background: #ffffff;
+			}
+			body {
+				margin: 0;
+			}
+			canvas {
+				display: block;
+			}
+		</style>
+	</head>
+
+	<body>
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "./node_modules/three/build/three.webgpu.js",
+					"three/webgpu": "./node_modules/three/build/three.webgpu.js",
+					"three/tsl": "./node_modules/three/build/three.tsl.js",
+					"three/addons/": "./node_modules/three/examples/jsm/",
+					"@pixiv/three-vrm": "./node_modules/@pixiv/three-vrm/lib/three-vrm.module.js",
+					"@pixiv/three-vrm/nodes": "./node_modules/@pixiv/three-vrm/lib/nodes/index.module.js"
+				}
+			}
+		</script>
+		<script type="module" src="js/vrm.js"></script>
+	</body>
+</html>

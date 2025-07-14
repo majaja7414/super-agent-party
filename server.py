@@ -1,12 +1,21 @@
 # -- coding: utf-8 --
+import base64
+import glob
+from io import BytesIO
 import os
 import sys
+import tempfile
+import wave
+import httpx
+from scipy.io import wavfile
+import numpy as np
+import websockets
 # 在程序最开始设置
 if hasattr(sys, '_MEIPASS'):
     # 打包后的程序
     os.environ['PYTHONPATH'] = sys._MEIPASS
     os.environ['PATH'] = sys._MEIPASS + os.pathsep + os.environ.get('PATH', '')
-
+import edge_tts
 import asyncio
 import copy
 from functools import partial
@@ -16,7 +25,7 @@ import re
 import shutil
 import signal
 from urllib.parse import urlparse
-from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request
+from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile, WebSocket, Request, WebSocketDisconnect
 from fastapi_mcp import FastApiMCP
 import logging
 from fastapi.staticfiles import StaticFiles
@@ -27,7 +36,7 @@ from fastapi import status
 from fastapi.responses import JSONResponse, StreamingResponse
 import uuid
 import time
-from typing import List, Dict,Optional
+from typing import Any, List, Dict,Optional
 import shortuuid
 from py.mcp_clients import McpClient
 from contextlib import asynccontextmanager,suppress
@@ -75,7 +84,7 @@ ALLOWED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp']
 
 ALLOWED_VIDEO_EXTENSIONS = ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv', 'webm', '3gp', 'm4v']
 
-from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR
+from py.get_setting import load_settings,save_settings,base_path,configure_host_port,UPLOAD_FILES_DIR,AGENT_DIR,MEMORY_CACHE_DIR,KB_DIR,DEFAULT_VRM_DIR
 from py.llm_tool import get_image_base64,get_image_media_type
 
 
@@ -167,6 +176,35 @@ async def t(text: str) -> str:
     target_language = settings["systemSettings"]["language"]
     return locales[target_language].get(text, text)
 
+
+# 全局存储异步工具状态
+async_tools = {}
+async_tools_lock = asyncio.Lock()
+
+async def execute_async_tool(tool_id: str, tool_name: str, args: dict, settings: dict,user_prompt: str):
+    try:
+        results = await dispatch_tool(tool_name, args, settings)
+        if tool_name in ["query_knowledge_base"] and type(results) == list:
+            from py.know_base import rerank_knowledge_base
+            if settings["KBSettings"]["is_rerank"]:
+                results = await rerank_knowledge_base(user_prompt,results)
+            results = json.dumps(results, ensure_ascii=False, indent=4)
+        async with async_tools_lock:
+            async_tools[tool_id] = {
+                "status": "completed",
+                "result": results,
+                "name": tool_name,
+                "parameters": args,
+            }
+    except Exception as e:
+        async with async_tools_lock:
+            async_tools[tool_id] = {
+                "status": "error",
+                "result": str(e),
+                "name": tool_name,
+                "parameters": args,
+            }
+
 async def get_image_content(image_url: str) -> str:
     import hashlib
     settings = await load_settings()
@@ -209,7 +247,7 @@ async def get_image_content(image_url: str) -> str:
                 f.write(str(response.choices[0].message.content))
     return content
 
-async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str:
+async def dispatch_tool(tool_name: str, tool_params: dict,settings: dict) -> str | List | None:
     global mcp_client_list,_TOOL_HOOKS
     from py.web_search import (
         DDGsearch_async, 
@@ -311,6 +349,7 @@ class ChatRequest(BaseModel):
     enable_thinking: bool = False
     enable_deep_research: bool = False
     enable_web_search: bool = False
+    asyncToolsID: List[str] = None
 
 async def message_without_images(messages: List[Dict]) -> List[Dict]:
     if messages:
@@ -365,7 +404,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
                         if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
-                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                                messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             images_content = [{"type": "text", "text": "请仔细描述图片中的内容，包含图片中可能存在的文字、数字、颜色、形状、大小、位置、人物、物体、场景等信息。"},{"type": "image_url", "image_url": {"url": item['image_url']['url']}}]
                             client = AsyncOpenAI(api_key=settings['vision']['api_key'],base_url=settings['vision']['base_url'])
@@ -374,7 +413,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                                 messages = [{"role": "user", "content": images_content}],
                                 temperature=settings['vision']['temperature'],
                             )
-                            messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
+                            messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(response.choices[0].message.content)+"\n\n"
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "w", encoding='utf-8') as f:
                                 f.write(str(response.choices[0].message.content))
     else:           
@@ -386,7 +425,7 @@ async def images_add_in_messages(request_messages: List[Dict], images: List[Dict
                         # 如果uploaded_files/{item['image_url']['hash']}.txt存在，则读取文件内容，否则调用vision api
                         if os.path.exists(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt")):
                             with open(os.path.join(UPLOAD_FILES_DIR, f"{item['image_url']['hash']}.txt"), "r", encoding='utf-8') as f:
-                                messages[index]['content'] += f"\n\n用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
+                                messages[index]['content'] += f"\n\nsystem: 用户发送的图片(哈希值：{item['image_url']['hash']})信息如下：\n\n"+str(f.read())+"\n\n"
                         else:
                             messages[index]['content'] = [{"type": "text", "text": messages[index]['content']}]
                             messages[index]['content'].append({"type": "image_url", "image_url": {"url": item['image_url']['url']}})
@@ -420,6 +459,12 @@ async def tools_change_messages(request: ChatRequest, settings: dict):
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': sticker_message})
         request.messages[0]['content'] += "\n\n当你需要使用图片时，请将图片的URL放在markdown的图片标签中，例如：![图片名](图片URL)\n\n"
+    if settings['VRMConfig']['enabledExpressions']:
+        Expression_messages = "\n\n你可以使用以下表情：<happy> <angry> <sad> <neutral> <surprised> <relaxed> <blink> <blinkLeft> <blinkRight>\n\n你可以在句子开头插入表情符号以驱动人物的当前表情，注意！你需要将表情符号放到句子的开头，才能在说这句话的时候同步做表情，例如：<angry>我真的生气了。<surprised>哇！<happy>我好开心。\n\n一定要把表情符号跟要做表情的句子放在同一行，如果表情符号和要做表情的句子中间有换行符，表情也将不会生效，例如：\n\n<happy>\n我好开心。\n\n此时，表情符号将不会生效。"
+        if request.messages and request.messages[0]['role'] == 'system':
+            request.messages[0]['content'] += Expression_messages
+        else:
+            request.messages.insert(0, {'role': 'system', 'content': Expression_messages})
     return request
 
 def get_drs_stage(DRS_STAGE):
@@ -535,9 +580,11 @@ def get_drs_stage_system_message(DRS_STAGE,user_prompt,full_content):
 """    
     return search_prompt
 
-async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search):
+async def generate_stream_response(client,reasoner_client, request: ChatRequest, settings: dict,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id):
     global mcp_client_list
     DRS_STAGE = 1 # 1: 明确用户需求阶段 2: 查询搜索阶段 3: 生成结果阶段
+    if len(request.messages) > 2:
+        DRS_STAGE = 2
     images = await images_in_messages(request.messages,fastapi_base_url)
     request.messages = await message_without_images(request.messages)
     from py.load_files import get_files_content,file_tool,image_tool
@@ -578,8 +625,8 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             if memory["id"] == memoryId:
                 cur_memory = memory
                 break
-        if cur_memory:
-            
+        if cur_memory and cur_memory["providerId"]:
+            print("长期记忆启用")
             config={
                 "embedder": {
                     "provider": 'openai',
@@ -719,7 +766,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 request.messages.insert(0, {'role': 'system', 'content': fileLinks_message})
             source_prompt += fileLinks_message
         user_prompt = request.messages[-1]['content']
-        if m0:
+        if settings["memorySettings"]["is_memory"]:
             lore_content = ""
             assistant_reply = ""
             # 找出request.messages中上次的assistant回复
@@ -748,17 +795,6 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         lore_content = lore_content + "\n\n" + f"{item['value']}"
                         print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
                         break 
-            memoryLimit = settings["memorySettings"]["memoryLimit"]
-            try:
-                relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
-                relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
-            except Exception as e:
-                print("m0.search error:",e)
-                relevant_memories = ""
-            if request.messages and request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
-            else:
-                request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
             if cur_memory["basic_character"]:
                 print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':
@@ -771,6 +807,19 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
+            if m0:
+                memoryLimit = settings["memorySettings"]["memoryLimit"]
+                try:
+                    relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
+                    relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
+                except Exception as e:
+                    print("m0.search error:",e)
+                    relevant_memories = ""
+                if request.messages and request.messages[0]['role'] == 'system':
+                    print("添加相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n")
+                    request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})                    
         request = await tools_change_messages(request, settings)
         model = settings['model']
         extra_params = settings['extra_params']
@@ -785,6 +834,116 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
             extra_params = {}
         async def stream_generator(user_prompt,DRS_STAGE):
             try:
+                # 处理传入的异步工具ID查询
+                if async_tools_id:
+                    responses_to_send = []
+                    responses_to_wait = []
+                    async with async_tools_lock:
+                        # 收集已完成的结果并删除条目
+                        for tid in list(async_tools.keys()):  # 转成list避免字典修改异常
+                            if tid in async_tools_id:
+                                if async_tools[tid]["status"] in ("completed", "error"):
+                                    responses_to_send.append({
+                                        "tool_id": tid,
+                                        **async_tools.pop(tid)  # 移除已处理的条目
+                                    })
+                                elif async_tools[tid]["status"] == "pending":
+                                    responses_to_wait.append({
+                                        "tool_id": tid,
+                                        "name":async_tools[tid]["name"],
+                                        "parameters": async_tools[tid]["parameters"]
+                                    })
+                    for response in responses_to_send:
+                        tid = response["tool_id"]
+                        if response["status"] == "completed":
+                            # 构造文件名
+                            filename = f"{tid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(response["result"]))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{tid}{await t("tool_result")}]({fileLink})\n\n",
+                                        "async_tool_id": tid
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            request.messages.insert(-1, 
+                                {
+                                    "tool_calls": [
+                                        {
+                                            "id": "agentParty",
+                                            "function": {
+                                                "arguments": json.dumps(response["parameters"]),
+                                                "name": response["name"],
+                                            },
+                                            "type": "function",
+                                        }
+                                    ],
+                                    "role": "assistant",
+                                    "content": "",
+                                }
+                            )
+                            request.messages.insert(-1, 
+                                {
+                                    "role": "tool",
+                                    "tool_call_id": "agentParty",
+                                    "name": response["name"],
+                                    "content": f"之前调用的异步工具（{tid}）的结果：\n\n{response['result']}\n\n====结果结束====\n\n你必须根据工具结果回复未回复的问题或需求。请不要重复调用该工具！"
+                                }
+                            )
+                        if response["status"] == "error":
+                            # 构造文件名
+                            filename = f"{tid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(response["result"]))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{tid}{await t("tool_result")}]({fileLink})\n\n",
+                                        "async_tool_id": tid
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            request.messages.append({
+                                "role": "system",
+                                "content": f"之前调用的异步工具（{tid}）发生错误：\n\n{response['result']}\n\n====错误结束====\n\n"
+                            }) 
+                    for response in responses_to_wait:
+                        # 在request.messages倒数第一个元素之前的位置插入一个新元素
+                        request.messages.insert(-1, 
+                            {
+                                "tool_calls": [
+                                    {
+                                        "id": "agentParty",
+                                        "function": {
+                                            "arguments": json.dumps(response["parameters"]),
+                                            "name": response["name"],
+                                        },
+                                        "type": "function",
+                                    }
+                                ],
+                                "role": "assistant",
+                                "content": "",
+                            }
+                        )
+                        results = f"{response["name"]}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
+                        request.messages.insert(-1, 
+                            {
+                                "role": "tool",
+                                "tool_call_id": "agentParty",
+                                "name": response["name"],
+                                "content": str(results),
+                            }
+                        )
                 kb_list = []
                 if settings["knowledgeBases"]:
                     for kb in settings["knowledgeBases"]:
@@ -801,7 +960,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"{await t("KB_search")}\n\n"
+                                        "tool_content": f"{await t("KB_search")}\n\n"
                                     }
                                 }
                             ]
@@ -831,7 +990,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             tool_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                        "tool_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                     }
                                 }]
                             }
@@ -856,7 +1015,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                     "delta": {
                                         "role":"assistant",
                                         "content": "",
-                                        "reasoning_content": f"{await t("web_search")}\n\n"
+                                        "tool_content": f"{await t("web_search")}\n\n"
                                     }
                                 }
                             ]
@@ -895,7 +1054,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             tool_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
+                                        "tool_content": f"\n\n[{await t("search_result")}]({fileLink})\n\n",
                                     }
                                 }]
                             }
@@ -939,7 +1098,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                     deepsearch_chunk = {
                         "choices": [{
                             "delta": {
-                                "reasoning_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
+                                "tool_content": f"\n\n💖{await t("start_task")}{user_prompt}\n\n",
                             }
                         }]
                     }
@@ -1202,7 +1361,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                    "tool_content": f"\n\n❌{await t("task_error")}\n\n",
                                 }
                             }]
                         }
@@ -1211,7 +1370,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
+                                    "tool_content": f"\n\n✅{await t("task_done")}\n\n",
                                 }
                             }]
                         }
@@ -1221,7 +1380,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
+                                    "tool_content": f"\n\n❎{await t("task_not_done")}\n\n",
                                 }
                             }]
                         }
@@ -1246,7 +1405,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
+                                    "tool_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                                 }
                             }]
                         }
@@ -1257,7 +1416,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                    "tool_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
                                 }
                             }]
                         }
@@ -1281,7 +1440,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                    "tool_content": f"\n\n🔍{await t("need_more_search")}\n\n"
                                 }
                             }]
                         }
@@ -1306,7 +1465,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         search_chunk = {
                             "choices": [{
                                 "delta": {
-                                    "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                    "tool_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
                                 }
                             }]
                         }
@@ -1332,7 +1491,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         response_content = tool_calls[0].function
                         if response_content.name in  ["DDGsearch_async","searxng_async", "Bing_search_async", "Google_search_async", "Brave_search_async", "Exa_search_async", "Serper_search_async","bochaai_search_async"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1340,7 +1499,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("web_search")}\n\n"
+                                            "tool_content": f"\n\n{await t("web_search")}\n\n"
                                         }
                                     }
                                 ]
@@ -1348,7 +1507,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         elif response_content.name in  ["jina_crawler_async","Crawl4Ai_search_async"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1356,7 +1515,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("web_search_more")}\n\n"
+                                            "tool_content": f"\n\n{await t("web_search_more")}\n\n"
                                         }
                                     }
                                 ]
@@ -1364,7 +1523,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         elif response_content.name in ["query_knowledge_base"]:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1372,7 +1531,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("knowledge_base")}\n\n"
+                                            "tool_content": f"\n\n{await t("knowledge_base")}\n\n"
                                         }
                                     }
                                 ]
@@ -1380,7 +1539,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             yield f"data: {json.dumps(chunk_dict)}\n\n"
                         else:
                             chunk_dict = {
-                                "id": "webSearch",
+                                "id": "agentParty",
                                 "choices": [
                                     {
                                         "finish_reason": None,
@@ -1388,7 +1547,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                         "delta": {
                                             "role":"assistant",
                                             "content": "",
-                                            "reasoning_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
+                                            "tool_content": f"\n\n{await t("call")}{response_content.name}{await t("tool")}\n\n"
                                         }
                                     }
                                 ]
@@ -1397,7 +1556,45 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                         modified_data = '[' + response_content.arguments.replace('}{', '},{') + ']'
                         # 使用json.loads来解析修改后的字符串为列表
                         data_list = json.loads(modified_data)
-                        results = await dispatch_tool(response_content.name, data_list[0],settings)
+                        if settings['tools']['asyncTools']['enabled']:
+                            tool_id = uuid.uuid4()
+                            async_tool_id = f"{response_content.name}_{tool_id}"
+                            chunk_dict = {
+                                "id": "agentParty",
+                                "choices": [
+                                    {
+                                        "finish_reason": None,
+                                        "index": 0,
+                                        "delta": {
+                                            "role":"assistant",
+                                            "content": "",
+                                            "async_tool_id": async_tool_id
+                                        }
+                                    }
+                                ]
+                            }
+                            yield f"data: {json.dumps(chunk_dict)}\n\n"
+                            # 启动异步任务并记录状态
+                            asyncio.create_task(
+                                execute_async_tool(
+                                    async_tool_id,
+                                    response_content.name,
+                                    data_list[0],
+                                    settings,
+                                    user_prompt
+                                )
+                            )
+                            
+                            async with async_tools_lock:
+                                async_tools[async_tool_id] = {
+                                    "status": "pending",
+                                    "result": None,
+                                    "name":response_content.name,
+                                    "parameters":data_list[0]
+                                }
+                            results = f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。"
+                        else:
+                            results = await dispatch_tool(response_content.name, data_list[0],settings)
                         if results is None:
                             chunk = {
                                 "id": "extra_tools",
@@ -1414,7 +1611,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             }
                             yield f"data: {json.dumps(chunk)}\n\n"
                             break
-                        if response_content.name in ["query_knowledge_base"]:
+                        if response_content.name in ["query_knowledge_base"] and type(results) == list:
                             if settings["KBSettings"]["is_rerank"]:
                                 results = await rerank_knowledge_base(user_prompt,results)
                             results = json.dumps(results, ensure_ascii=False, indent=4)
@@ -1442,38 +1639,52 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                                 "content": str(results),
                             }
                         )
-                        if settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both':
+                        if (settings['webSearch']['when'] == 'after_thinking' or settings['webSearch']['when'] == 'both') and settings['tools']['asyncTools']['enabled'] is False:
                             request.messages[-1]['content'] += f"\n对于联网搜索的结果，如果联网搜索的信息不足以回答问题时，你可以进一步使用联网搜索查询还未给出的必要信息。如果已经足够回答问题，请直接回答问题。"
-                        reasoner_messages.append(
-                            {
-                                "role": "assistant",
-                                "content": str(response_content),
-                            }
-                        )
-                        reasoner_messages.append(
-                            {
-                                "role": "user",
-                                "content": f"{response_content.name}工具结果："+str(results),
-                            }
-                        )
-                        # 获取时间戳和uuid
-                        timestamp = time.time()
-                        uid = str(uuid.uuid4())
-                        # 构造文件名
-                        filename = f"{timestamp}_{uid}.txt"
-                        # 将搜索结果写入uploaded_file文件夹下的filename文件
-                        with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
-                            f.write(str(results))            
-                        # 将文件链接更新为新的链接
-                        fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
-                        tool_chunk = {
-                            "choices": [{
-                                "delta": {
-                                    "reasoning_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                        if settings['tools']['asyncTools']['enabled']:
+                            reasoner_messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": str(response_content),
                                 }
-                            }]
-                        }
-                        yield f"data: {json.dumps(tool_chunk)}\n\n"
+                            )
+                            reasoner_messages.append(
+                                {
+                                    "role": "system",
+                                    "content": f"{response_content.name}工具已成功启动，获取结果需要花费很久的时间。请不要再次调用该工具，因为工具结果将生成后自动发送，再次调用也不能更快的获取到结果。请直接告诉用户，你会在获得结果后回答他的问题。",
+                                }
+                            )
+                        else:
+                            reasoner_messages.append(
+                                {
+                                    "role": "assistant",
+                                    "content": str(response_content),
+                                }
+                            )
+                            reasoner_messages.append(
+                                {
+                                    "role": "system",
+                                    "content": f"{response_content.name}工具结果："+str(results),
+                                }
+                            )
+                            # 获取时间戳和uuid
+                            timestamp = time.time()
+                            uid = str(uuid.uuid4())
+                            # 构造文件名
+                            filename = f"{timestamp}_{uid}.txt"
+                            # 将搜索结果写入uploaded_file文件夹下的filename文件
+                            with open(os.path.join(UPLOAD_FILES_DIR, filename), "w", encoding='utf-8') as f:
+                                f.write(str(results))            
+                            # 将文件链接更新为新的链接
+                            fileLink=f"{fastapi_base_url}uploaded_files/{filename}"
+                            tool_chunk = {
+                                "choices": [{
+                                    "delta": {
+                                        "tool_content": f"\n\n[{response_content.name}{await t("tool_result")}]({fileLink})\n\n",
+                                    }
+                                }]
+                            }
+                            yield f"data: {json.dumps(tool_chunk)}\n\n"
                     # 如果启用推理模型
                     if settings['reasoner']['enabled'] or enable_thinking:
                         if tools:
@@ -1714,7 +1925,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❌{await t("task_error")}\n\n",
+                                        "tool_content": f"\n\n❌{await t("task_error")}\n\n",
                                     }
                                 }]
                             }
@@ -1723,7 +1934,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n✅{await t("task_done")}\n\n",
+                                        "tool_content": f"\n\n✅{await t("task_done")}\n\n",
                                     }
                                 }]
                             }
@@ -1733,7 +1944,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❎{await t("task_not_done")}\n\n",
+                                        "tool_content": f"\n\n❎{await t("task_not_done")}\n\n",
                                     }
                                 }]
                             }
@@ -1758,7 +1969,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
+                                        "tool_content": f"\n\n❓{await t("task_need_more_info")}\n\n"
                                     }
                                 }]
                             }
@@ -1769,7 +1980,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
+                                        "tool_content": f"\n\n🔍{await t("enter_search_stage")}\n\n"
                                     }
                                 }]
                             }
@@ -1793,7 +2004,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n🔍{await t("need_more_search")}\n\n"
+                                        "tool_content": f"\n\n🔍{await t("need_more_search")}\n\n"
                                     }
                                 }]
                             }
@@ -1818,7 +2029,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                             search_chunk = {
                                 "choices": [{
                                     "delta": {
-                                        "reasoning_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
+                                        "tool_content": f"\n\n⭐{await t("enter_answer_stage")}\n\n"
                                     }
                                 }]
                             }
@@ -1866,7 +2077,7 @@ async def generate_stream_response(client,reasoner_client, request: ChatRequest,
                 error_chunk = {
                     "choices": [{
                         "delta": {
-                            "reasoning_content": f"❌ {str(e)}\n\n",
+                            "tool_content": f"❌ {str(e)}\n\n",
                         }
                     }]
                 }
@@ -1930,8 +2141,8 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
             if memory["id"] == memoryId:
                 cur_memory = memory
                 break
-        if cur_memory:
-
+        if cur_memory and cur_memory["providerId"]:
+            print("长期记忆启用")
             config={
                 "embedder": {
                     "provider": 'openai',
@@ -2084,7 +2295,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                 request.messages.insert(0, {'role': 'system', 'content': system_message})
         kb_list = []
         user_prompt = request.messages[-1]['content']
-        if m0:
+        if settings["memorySettings"]["is_memory"]:
             lore_content = ""
             assistant_reply = ""
             # 找出request.messages中上次的assistant回复
@@ -2112,20 +2323,7 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     if item["id"] == memoryId:
                         lore_content = lore_content + "\n\n" + f"{item['value']}"
                         print("沿用随机设定：",{"id":memoryId,"value":item['value']})  
-                        break  
-            memoryLimit = settings["memorySettings"]["memoryLimit"]
-            try:
-                print("查询记忆")
-                relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
-                relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
-                print("查询记忆结束")
-            except Exception as e:
-                print("m0.search error:",e)
-                relevant_memories = ""
-            if request.messages and request.messages[0]['role'] == 'system':
-                request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
-            else:
-                request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})
+                        break 
             if cur_memory["basic_character"]:
                 print("添加角色设定：\n\n" + cur_memory["basic_character"] + "\n\n角色设定结束\n\n")
                 if request.messages and request.messages[0]['role'] == 'system':
@@ -2138,6 +2336,19 @@ async def generate_complete_response(client,reasoner_client, request: ChatReques
                     request.messages[0]['content'] += "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"
                 else:
                     request.messages.insert(0, {'role': 'system', 'content': "世界观设定：\n\n" + lore_content + "\n\n世界观设定结束\n\n"})
+            if m0:
+                memoryLimit = settings["memorySettings"]["memoryLimit"]
+                try:
+                    relevant_memories = m0.search(query=user_prompt, user_id=memoryId, limit=memoryLimit)
+                    relevant_memories = json.dumps(relevant_memories, ensure_ascii=False)
+                except Exception as e:
+                    print("m0.search error:",e)
+                    relevant_memories = ""
+                if request.messages and request.messages[0]['role'] == 'system':
+                    print("添加相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n")
+                    request.messages[0]['content'] += "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"
+                else:
+                    request.messages.insert(0, {'role': 'system', 'content': "之前的相关记忆：\n\n" + relevant_memories + "\n\n相关结束\n\n"})     
         if settings["knowledgeBases"]:
             for kb in settings["knowledgeBases"]:
                 if kb["enabled"] and kb["processingStatus"] == "completed":
@@ -2800,6 +3011,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
     enable_thinking = request.enable_thinking or False
     enable_deep_research = request.enable_deep_research or False
     enable_web_search = request.enable_web_search or False
+    async_tools_id = request.asyncToolsID or None
     if model == 'super-model':
         current_settings = await load_settings()
         # 动态更新客户端配置
@@ -2825,7 +3037,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
             settings = current_settings
         try:
             if request.stream:
-                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+                return await generate_stream_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id)
             return await generate_complete_response(client,reasoner_client, request, settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
@@ -2868,7 +3080,7 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
         )
         try:
             if request.stream:
-                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
+                return await generate_stream_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search,async_tools_id)
             return await generate_complete_response(agent_client,agent_reasoner_client, request, agent_settings,fastapi_base_url,enable_thinking,enable_deep_research,enable_web_search)
         except asyncio.CancelledError:
             # 处理客户端中断连接的情况
@@ -2879,6 +3091,728 @@ async def chat_endpoint(request: ChatRequest,fastapi_request: Request):
                 status_code=500,
                 content={"error": {"message": str(e), "type": "server_error", "code": 500}}
             )
+
+
+# 存储活跃的ASR WebSocket连接
+asr_connections = []
+
+# 存储每个连接的音频帧数据
+audio_buffer: Dict[str, Dict[str, Any]] = {}
+
+def convert_audio_to_pcm16(audio_bytes: bytes, target_sample_rate: int = 16000) -> bytes:
+    """
+    将音频数据转换为PCM16格式，采样率16kHz
+    """
+    try:
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+            temp_file.write(audio_bytes)
+            temp_file_path = temp_file.name
+        
+        try:
+            # 读取音频文件
+            sample_rate, audio_data = wavfile.read(temp_file_path)
+            
+            # 转换为单声道
+            if len(audio_data.shape) > 1:
+                audio_data = np.mean(audio_data, axis=1)
+            
+            # 转换为float32进行重采样
+            if audio_data.dtype != np.float32:
+                if audio_data.dtype == np.int16:
+                    audio_data = audio_data.astype(np.float32) / 32768.0
+                elif audio_data.dtype == np.int32:
+                    audio_data = audio_data.astype(np.float32) / 2147483648.0
+                else:
+                    audio_data = audio_data.astype(np.float32)
+            
+            # 重采样到目标采样率
+            if sample_rate != target_sample_rate:
+                from scipy.signal import resample
+                num_samples = int(len(audio_data) * target_sample_rate / sample_rate)
+                audio_data = resample(audio_data, num_samples)
+            
+            # 转换为int16 PCM格式
+            audio_data = (audio_data * 32767).astype(np.int16)
+            
+            return audio_data.tobytes()
+            
+        finally:
+            # 删除临时文件
+            os.unlink(temp_file_path)
+            
+    except Exception as e:
+        print(f"Audio conversion error: {e}")
+        # 如果转换失败，尝试直接返回原始数据
+        return audio_bytes
+
+async def funasr_recognize(audio_data: bytes, funasr_settings: dict,ws: WebSocket,frame_id) -> str:
+    """
+    使用FunASR进行语音识别
+    """
+    try:
+        # 获取FunASR服务器地址
+        funasr_url = funasr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+        hotwords = funasr_settings.get('hotwords', '')
+        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+            funasr_url = f"ws://{funasr_url}"
+        
+        # 连接到FunASR服务器
+        async with websockets.connect(funasr_url) as websocket:
+            print(f"Connected to FunASR server: {funasr_url}")
+            
+            # 1. 发送初始化配置
+            init_config = {
+                "chunk_size": [5, 10, 5],
+                "wav_name": "python_client",
+                "is_speaking": True,
+                "chunk_interval": 10,
+                "mode": "offline",  # 使用离线模式
+                "hotwords": hotwords_to_json(hotwords),
+                "use_itn": True
+            }
+            
+            await websocket.send(json.dumps(init_config))
+            print("Sent init config")
+            
+            # 2. 转换音频数据为PCM16格式
+            pcm_data = convert_audio_to_pcm16(audio_data)
+            print(f"PCM data length: {len(pcm_data)} bytes")
+            
+            # 3. 分块发送音频数据
+            chunk_size = 960  # 30ms的音频数据 (16000 * 0.03 * 2 = 960字节)
+            total_sent = 0
+            
+            while total_sent < len(pcm_data):
+                chunk_end = min(total_sent + chunk_size, len(pcm_data))
+                chunk = pcm_data[total_sent:chunk_end]
+                
+                # 发送二进制PCM数据
+                await websocket.send(chunk)
+                total_sent = chunk_end
+            
+            print(f"Sent all audio data: {total_sent} bytes")
+            
+            # 4. 发送结束信号
+            end_config = {
+                "is_speaking": False,
+            }
+            
+            await websocket.send(json.dumps(end_config))
+            print("Sent end signal")
+            
+            # 5. 等待识别结果
+            result_text = ""
+            timeout_count = 0
+            max_timeout = 200  # 最大等待20秒
+            
+            while timeout_count < max_timeout:
+                try:
+                    # 等待响应消息
+                    response = await asyncio.wait_for(websocket.recv(), timeout=0.1)
+                    
+                    try:
+                        # 尝试解析JSON响应
+                        json_response = json.loads(response)
+                        print(f"Received response: {json_response}")
+                        
+                        if 'text' in json_response:
+                            text = json_response['text']
+                            if text and text.strip():
+                                result_text += text
+                                print(f"Got text: {text}")
+                                # 发送结果
+                                await ws.send_json({
+                                    "type": "transcription",
+                                    "id": frame_id,
+                                    "text": result_text,
+                                    "is_final": True
+                                })
+                            # 检查是否为最终结果
+                            if json_response.get('is_final', False):
+                                print("Got final result")
+                                break
+                                
+                    except json.JSONDecodeError:
+                        # 如果不是JSON格式，可能是二进制数据，忽略
+                        print(f"Non-JSON response: {response}")
+                        pass
+                        
+                except asyncio.TimeoutError:
+                    timeout_count += 1
+                    continue
+                except websockets.exceptions.ConnectionClosed:
+                    print("WebSocket connection closed")
+                    break
+            
+            if not result_text:
+                print("No recognition result received")
+                return ""
+            
+            return result_text.strip()
+            
+    except Exception as e:
+        print(f"FunASR recognition error: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"FunASR识别错误: {str(e)}"
+
+def hotwords_to_json(input_str):
+    # 初始化结果字典
+    result = {}
+    
+    # 按行分割输入字符串
+    lines = input_str.split('\n')
+    
+    for line in lines:
+        # 清理行首尾的空白字符
+        cleaned_line = line.strip()
+        
+        # 跳过空行
+        if not cleaned_line:
+            continue
+            
+        # 分割词语和权重
+        parts = cleaned_line.rsplit(' ', 1)  # 从右边分割一次
+        
+        if len(parts) != 2:
+            continue  # 跳过格式不正确的行
+            
+        word = parts[0].strip()
+        try:
+            weight = int(parts[1])
+        except ValueError:
+            continue  # 跳过权重不是数字的行
+            
+        # 添加到结果字典
+        result[word] = weight
+    
+    # 转换为JSON字符串
+    return json.dumps(result, ensure_ascii=False)
+
+# ASR WebSocket处理
+@app.websocket("/asr_ws")
+async def asr_websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    
+    # 生成唯一的连接ID
+    connection_id = str(uuid.uuid4())
+    asr_connections.append(websocket)
+    funasr_websocket = None
+    # 新增：连接状态跟踪变量
+    asr_engine = None
+    funasr_mode = None
+    
+    try:
+        # 处理消息
+        async for message in websocket.iter_json():
+            msg_type = message.get("type")
+            
+            if msg_type == "init":
+                # 加载设置
+                settings = await load_settings()
+                asr_settings = settings.get('asrSettings', {})
+                asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                if asr_engine == "funasr":
+                    funasr_mode = asr_settings.get('funasr_mode', 'openai')  # 存储模式
+                    if funasr_mode == "2pass" or funasr_mode == "online":
+                        # 获取FunASR服务器地址
+                        funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                            funasr_url = f"ws://{funasr_url}"
+                        try:
+                            funasr_websocket = await websockets.connect(funasr_url)
+                        except Exception as e:
+                            funasr_websocket = None
+                            print(f"连接FunASR失败: {e}")
+                await websocket.send_json({
+                    "type": "init_response",
+                    "status": "ready"
+                })
+            elif msg_type == "audio_start":
+                frame_id = message.get("id")
+                # 加载设置
+                settings = await load_settings()
+                asr_settings = settings.get('asrSettings', {})
+                asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                if asr_engine == "funasr":
+                    funasr_mode = asr_settings.get('funasr_mode', '2pass')  # 存储模式
+                    hotwords = asr_settings.get('hotwords', '')
+                    if funasr_mode == "2pass":
+                        # 获取FunASR服务器地址
+                        funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                        if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                            funasr_url = f"ws://{funasr_url}"
+                        try:
+                            if not funasr_websocket:
+                                # 连接到FunASR服务器 
+                                funasr_websocket = await websockets.connect(funasr_url)
+                            # 1. 发送初始化配置
+                            init_config = {
+                                "chunk_size": [5, 10, 5],
+                                "wav_name": "python_client",
+                                "is_speaking": True,
+                                "chunk_interval": 10,
+                                "mode": funasr_mode,  
+                                "hotwords": hotwords_to_json(hotwords),
+                                "use_itn": True
+                            }
+                            await funasr_websocket.send(json.dumps(init_config))
+                            print("Sent init config")
+                            # 2. 开启一个异步任务处理FunASR的响应
+                            asyncio.create_task(handle_funasr_response(funasr_websocket, websocket))
+                        except Exception as e:
+                            print(f"连接FunASR失败: {e}")
+                            await websocket.send_json({
+                                "type": "error",
+                                "message": f"无法连接FunASR服务器: {str(e)}"
+                            })
+                            # 标记连接失败，避免后续操作
+                            funasr_websocket = None
+                    else:
+                        # 关闭异步任务处理FunASR的响应
+                        funasr_websocket = None
+                else:
+                    # 关闭异步任务处理FunASR的响应
+                    funasr_websocket = None
+            # 修改点：增加流式音频处理前的检查
+            elif msg_type == "audio_stream":
+                frame_id = message.get("id")
+                audio_base64 = message.get("audio")
+
+                # 关键检查：确保funasr_websocket已初始化
+                if not funasr_websocket:
+                    continue  # 跳过当前消息处理
+
+                if audio_base64:
+                    # 1. Base64 解码 → 得到二进制 PCM (Int16)
+                    pcm_data = base64.b64decode(audio_base64)
+
+                    # 2. 直接转发二进制给 FunASR
+                    try:
+                        await funasr_websocket.send(pcm_data)
+                    except websockets.exceptions.ConnectionClosed:
+                        funasr_websocket = None
+                        # 加载设置
+                        settings = await load_settings()
+                        asr_settings = settings.get('asrSettings', {})
+                        asr_engine = asr_settings.get('engine', 'openai')  # 存储引擎类型
+                        if asr_engine == "funasr":
+                            funasr_mode = asr_settings.get('funasr_mode', '2pass')  # 存储模式
+                            if funasr_mode == "2pass":
+                                # 获取FunASR服务器地址
+                                funasr_url = asr_settings.get('funasr_ws_url', 'ws://localhost:10095')
+                                if not funasr_url.startswith('ws://') and not funasr_url.startswith('wss://'):
+                                    funasr_url = f"ws://{funasr_url}"
+                                try:
+                                    funasr_websocket = await websockets.connect(funasr_url)
+                                except Exception as e:
+                                    funasr_websocket = None
+                                    print(f"连接FunASR失败: {e}")
+            elif msg_type == "audio_complete":
+                # 处理完整的音频数据（非流式模式）
+                frame_id = message.get("id")
+                audio_b64 = message.get("audio")
+                audio_format = message.get("format", "wav")
+                
+                if audio_b64:
+                    # 解码base64数据
+                    audio_bytes = base64.b64decode(audio_b64)
+                    print(f"Received audio data: {len(audio_bytes)} bytes, format: {audio_format}")
+                    
+                    try:
+                        # 加载设置
+                        settings = await load_settings()
+                        asr_settings = settings.get('asrSettings', {})
+                        asr_engine = asr_settings.get('engine', 'openai')
+                        
+                        result = ""
+                        
+                        if asr_engine == "openai":
+                            # OpenAI ASR
+                            audio_file = BytesIO(audio_bytes)
+                            audio_file.name = f"audio.{audio_format}"
+                            
+                            client = AsyncOpenAI(
+                                api_key=asr_settings.get('api_key', ''),
+                                base_url=asr_settings.get('base_url', '') or "https://api.openai.com/v1"
+                            )
+                            response = await client.audio.transcriptions.create(
+                                file=audio_file,
+                                model=asr_settings.get('model', 'whisper-1'),
+                            )
+                            result = response.text
+                            # 发送结果
+                            await websocket.send_json({
+                                "type": "transcription",
+                                "id": frame_id,
+                                "text": result,
+                                "is_final": True
+                            })
+                        elif asr_engine == "funasr":
+                            # FunASR
+                            print("Using FunASR engine")
+                            funasr_mode = asr_settings.get('funasr_mode', 'offline')
+                            if funasr_mode == "offline":
+                                result = await funasr_recognize(audio_bytes, asr_settings,websocket,frame_id)
+                            else:
+                                # 关键检查：确保连接有效
+                                if not funasr_websocket:
+                                    continue
+                                
+                                # 4. 发送结束信号
+                                end_config = {
+                                    "is_speaking": False  # 只需发送必要的结束标记
+                                }
+                                try:
+                                    await funasr_websocket.send(json.dumps(end_config))
+                                    print("Sent end signal")
+                                except websockets.exceptions.ConnectionClosed:
+                                    print("FunASR连接已关闭，无法发送结束信号")
+                            funasr_websocket = None
+                    except WebSocketDisconnect:
+                        print(f"ASR WebSocket disconnected: {connection_id}")
+                    except Exception as e:
+                        print(f"ASR WebSocket error: {e}")
+                        import traceback
+                        traceback.print_exc()
+    finally:
+        # 清理资源
+        if connection_id in audio_buffer:
+            del audio_buffer[connection_id]
+        if websocket in asr_connections:
+            asr_connections.remove(websocket)
+        # 新增：确保关闭FunASR连接
+        if funasr_websocket:
+            await funasr_websocket.close()
+
+
+async def handle_funasr_response(funasr_websocket, 
+                               client_websocket: WebSocket):
+    """
+    处理 FunASR 服务器的响应，并将结果转发给客户端
+    """
+    try:
+        async for message in funasr_websocket:
+            try:
+                if funasr_websocket:
+                    # FunASR 返回的数据可能是 JSON 或二进制
+                    if isinstance(message, bytes):
+                        message = message.decode('utf-8')
+                    
+                    data = json.loads(message)
+                    print(f"FunASR response: {data}")
+                    # 解析 FunASR 响应
+                    if "text" in data:  # 普通识别结果
+                        if data.get('mode', '') == "2pass-online":
+                            await client_websocket.send_json({
+                                "type": "transcription",
+                                "text": data["text"],
+                                "is_final": False
+                            })
+                        else:
+                            await client_websocket.send_json({
+                                "type": "transcription",
+                                "text": data["text"],
+                                "is_final": True
+                            })
+                    elif "mode" in data:  # 初始化响应
+                        print(f"FunASR initialized: {data}")
+                    else:
+                        print(f"Unknown FunASR response: {data}")
+                else:
+                    # 如果 FunASR 连接关闭，发送错误消息，退出循环，结束任务
+            
+                    break
+            except json.JSONDecodeError:
+                print(f"FunASR sent non-JSON data: {message[:100]}...")
+            except Exception as e:
+                print(f"Error processing FunASR response: {e}")
+                break
+
+    except websockets.exceptions.ConnectionClosed:
+        print("FunASR connection closed")
+    except Exception as e:
+        print(f"FunASR handler error: {e}")
+    finally:
+        await funasr_websocket.close()
+
+class TTSConnectionManager:
+    def __init__(self):
+        self.main_connections: List[WebSocket] = []
+        self.vrm_connections: List[WebSocket] = []
+        self.audio_cache: Dict[str, bytes] = {}  # 缓存音频数据
+        
+    async def connect_main(self, websocket: WebSocket):
+        await websocket.accept()
+        self.main_connections.append(websocket)
+        logging.info(f"Main interface connected. Total: {len(self.main_connections)}")
+        
+    async def connect_vrm(self, websocket: WebSocket):
+        await websocket.accept()
+        self.vrm_connections.append(websocket)
+        logging.info(f"VRM interface connected. Total: {len(self.vrm_connections)}")
+        
+    def disconnect_main(self, websocket: WebSocket):
+        if websocket in self.main_connections:
+            self.main_connections.remove(websocket)
+            logging.info(f"Main interface disconnected. Total: {len(self.main_connections)}")
+            
+    def disconnect_vrm(self, websocket: WebSocket):
+        if websocket in self.vrm_connections:
+            self.vrm_connections.remove(websocket)
+            logging.info(f"VRM interface disconnected. Total: {len(self.vrm_connections)}")
+    
+    async def broadcast_to_vrm(self, message: dict):
+        """广播消息到所有VRM连接"""
+        if self.vrm_connections:
+            message_str = json.dumps(message)
+            disconnected = []
+            
+            for connection in self.vrm_connections:
+                try:
+                    await connection.send_text(message_str)
+                except:
+                    disconnected.append(connection)
+            
+            # 清理断开的连接
+            for conn in disconnected:
+                self.disconnect_vrm(conn)
+    
+    async def send_to_main(self, message: dict):
+        """发送消息到主界面"""
+        if self.main_connections:
+            message_str = json.dumps(message)
+            disconnected = []
+            
+            for connection in self.main_connections:
+                try:
+                    await connection.send_text(message_str)
+                except:
+                    disconnected.append(connection)
+            
+            # 清理断开的连接
+            for conn in disconnected:
+                self.disconnect_main(conn)
+    
+    def cache_audio(self, audio_id: str, audio_data: bytes):
+        """缓存音频数据"""
+        self.audio_cache[audio_id] = audio_data
+        
+    def get_cached_audio(self, audio_id: str) -> bytes:
+        """获取缓存的音频数据"""
+        return self.audio_cache.get(audio_id)
+
+# 创建连接管理器实例
+tts_manager = TTSConnectionManager()
+
+@app.websocket("/ws/tts")
+async def tts_websocket_endpoint(websocket: WebSocket):
+    """主界面的WebSocket连接"""
+    await tts_manager.connect_main(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            logging.info(f"Received from main: {message['type']}")
+            
+            # 如果消息包含音频URL，需要特殊处理
+            if message['type'] == 'startSpeaking' and 'audioUrl' in message['data']:
+                # 获取音频数据并转换为base64
+                audio_url = message['data']['audioUrl']
+                chunk_index = message['data']['chunkIndex']
+                expressions = message['data']['expressions']
+                # 生成音频ID
+                audio_id = f"chunk_{chunk_index}_{message['data'].get('timestamp', '')}"
+                
+                # 修改消息，使用音频ID而不是URL
+                message['data']['audioId'] = audio_id
+                message['data']['useBase64'] = True
+                
+                # 如果有缓存的音频数据，直接发送
+                cached_audio = tts_manager.get_cached_audio(audio_id)
+                if cached_audio:
+                    message['data']['audioData'] = base64.b64encode(cached_audio).decode('utf-8')
+            
+            # 转发到所有VRM连接
+            await tts_manager.broadcast_to_vrm({
+                'type': message['type'],
+                'data': message['data'],
+                'timestamp': message.get('timestamp', None)
+            })
+            
+    except WebSocketDisconnect:
+        tts_manager.disconnect_main(websocket)
+    except Exception as e:
+        logging.error(f"WebSocket error in main connection: {e}")
+        tts_manager.disconnect_main(websocket)
+
+@app.websocket("/ws/vrm")
+async def vrm_websocket_endpoint(websocket: WebSocket):
+    """VRM界面的WebSocket连接"""
+    await tts_manager.connect_vrm(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message = json.loads(data)
+            
+            logging.info(f"Received from VRM: {message['type']}")
+            
+            # 处理VRM请求音频数据
+            if message['type'] == 'requestAudioData':
+                audio_id = message['data']['audioId']
+                expressions = message['data']['expressions']
+                cached_audio = tts_manager.get_cached_audio(audio_id)
+                
+                if cached_audio:
+                    await websocket.send_text(json.dumps({
+                        'type': 'audioData',
+                        'data': {
+                            'audioId': audio_id,
+                            'audioData': base64.b64encode(cached_audio).decode('utf-8'),
+                            'expressions':expressions
+                        }
+                    }))
+            
+            # 可以处理VRM发送的状态信息
+            elif message['type'] == 'animationComplete':
+                await tts_manager.send_to_main({
+                    'type': 'vrmAnimationComplete',
+                    'data': message['data']
+                })
+            
+    except WebSocketDisconnect:
+        tts_manager.disconnect_vrm(websocket)
+    except Exception as e:
+        logging.error(f"WebSocket error in VRM connection: {e}")
+        tts_manager.disconnect_vrm(websocket)
+
+
+@app.get("/tts/status")
+async def get_tts_status():
+    """获取当前TTS连接状态"""
+    return {
+        "main_connections": len(tts_manager.main_connections),
+        "vrm_connections": len(tts_manager.vrm_connections),
+        "total_connections": len(tts_manager.main_connections) + len(tts_manager.vrm_connections)
+    }
+
+
+@app.post("/tts")
+async def text_to_speech(request: Request):
+    try:
+        settings = await load_settings()
+        data = await request.json()
+        text = data['text']
+        if text == "":
+            return JSONResponse(status_code=400, content={"error": "Text is empty"})
+        index = data['index']
+        tts_settings = settings.get('ttsSettings', {})
+        tts_engine = tts_settings.get('engine', 'edgetts')
+        
+        if tts_engine == 'edgetts':
+            edgettsLanguage = tts_settings.get('edgettsLanguage', 'zh-CN')
+            edgettsVoice = tts_settings.get('edgettsVoice', 'XiaoyiNeural')
+            rate = tts_settings.get('edgettsRate', 1.0)
+            full_voice_name = f"{edgettsLanguage}-{edgettsVoice}"
+            
+            rate_text = "+0%"
+            if rate >= 1.0:
+                rate_pent = (rate - 1.0) * 100
+                rate_text = f"+{int(rate_pent)}%"
+            elif rate < 1.0:
+                rate_pent = (1.0 - rate) * 100
+                rate_text = f"-{int(rate_pent)}%"
+            
+            print(f"Using Edge TTS with voice: {full_voice_name}")
+            
+            # 创建生成器函数用于流式传输
+            async def generate_audio():
+                communicate = edge_tts.Communicate(text, full_voice_name, rate=rate_text)
+                async for chunk in communicate.stream():
+                    if chunk["type"] == "audio":
+                        yield chunk["data"]
+            
+            # 返回流式响应
+            return StreamingResponse(
+                generate_audio(),
+                media_type="audio/mpeg",
+                headers={
+                    "Content-Disposition": f"inline; filename=tts_{index}.mp3",
+                    "X-Audio-Index": str(index)
+                }
+            )
+        # GSV处理逻辑
+        elif tts_engine == 'GSV':
+            # 从设置获取所有参数并提供默认值
+            gsv_config = {
+                'server': tts_settings.get('gsvServer', 'http://127.0.0.1:9880'),
+                'text_lang': tts_settings.get('gsvTextLang', 'zh'),
+                'speed': tts_settings.get('gsvRate', 1.0),
+                'prompt_lang': tts_settings.get('gsvPromptLang', 'zh'),
+                'prompt_text': tts_settings.get('gsvPromptText', ''),
+                'ref_audio': tts_settings.get('gsvRefAudioPath', '')
+            }
+            audio_path = os.path.join(UPLOAD_FILES_DIR, gsv_config['ref_audio'])
+            print(f"GSV参数: {gsv_config},音频地址:{audio_path}")
+            # 动态样本步数设置
+            sample_steps = 4
+            if index == 1:
+                sample_steps = 1
+            elif index <= 4:
+                sample_steps = 2
+
+            # 构建核心请求参数
+            gsv_params = {
+                "text": text,
+                "text_lang": gsv_config['text_lang'],
+                "ref_audio_path": audio_path,
+                "prompt_lang": gsv_config['prompt_lang'],
+                "prompt_text": gsv_config['prompt_text'],
+                "speed_factor": gsv_config['speed'],
+                "sample_steps": sample_steps,
+                "streaming_mode": True,
+                "text_split_method": "cut5",
+                "media_type": "ogg",
+                "batch_size": 1
+            }
+            
+            # 添加可选参数
+            optional_params = ["top_k", "top_p", "temperature", "batch_threshold", 
+                              "split_bucket", "seed", "parallel_infer", "repetition_penalty"]
+            for param in optional_params:
+                if param in data:
+                    gsv_params[param] = data[param]
+
+            async def generate_audio():
+                async with httpx.AsyncClient(timeout=60.0) as client:
+                    try:
+                        async with client.stream(
+                            "POST",
+                            f"{gsv_config['server']}/tts",
+                            json=gsv_params
+                        ) as response:
+                            response.raise_for_status()
+                            async for chunk in response.aiter_bytes():
+                                yield chunk
+                    except httpx.HTTPStatusError as e:
+                        error_detail = f"GSV服务错误: {e.response.status_code} - {await e.response.text()}"
+                        raise HTTPException(status_code=502, detail=error_detail)
+            
+            return StreamingResponse(
+                generate_audio(),
+                media_type="audio/ogg",
+                headers={
+                    "Content-Disposition": f"inline; filename=tts_{index}.ogg",
+                    "X-Audio-Index": str(index)
+                }
+            )
+        
+        raise HTTPException(status_code=400, detail="不支持的TTS引擎")
+    
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"服务器内部错误: {str(e)}"})
 
 # 添加状态存储
 mcp_status = {}
@@ -2916,7 +3850,7 @@ async def process_mcp(mcp_id: str):
         mcp_client_list[mcp_id].disabled = True
         mcp_status[mcp_id] = f"failed: {str(e)}"
 
-@app.post("/api/remove_mcp")
+@app.delete("/remove_mcp")
 async def remove_mcp_server(request: Request):
     global settings, mcp_client_list
     try:
@@ -2949,7 +3883,7 @@ async def remove_mcp_server(request: Request):
         logger.error(f"移除MCP服务器失败: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/remove_memory")
+@app.delete("/remove_memory")
 async def remove_memory_endpoint(request: Request):
     data = await request.json()
     memory_id = data.get("memoryId")
@@ -2964,7 +3898,7 @@ async def remove_memory_endpoint(request: Request):
     else:
         return JSONResponse({"success": False, "message": "No memoryId provided"})
 
-@app.post("/remove_agent")
+@app.delete("/remove_agent")
 async def remove_agent_endpoint(request: Request):
     data = await request.json()
     agent_id = data.get("agentId")
@@ -2979,7 +3913,7 @@ async def remove_agent_endpoint(request: Request):
     else:
         return JSONResponse({"success": False, "message": "No agentId provided"})
 
-@app.post("/a2a/initialize")
+@app.post("/a2a")
 async def initialize_a2a(request: Request):
     from python_a2a import A2AClient
     data = await request.json()
@@ -3088,7 +4022,8 @@ async def load_file_endpoint(request: Request, files: List[UploadFile] = File(No
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/delete_file")
+
+@app.delete("/delete_file")
 async def delete_file_endpoint(request: Request):
     data = await request.json()
     file_name = data.get("fileName")
@@ -3101,6 +4036,221 @@ async def delete_file_endpoint(request: Request):
             return JSONResponse(content={"success": False, "message": "File not found"})
     except Exception as e:
         return JSONResponse(content={"success": False, "message": str(e)})
+
+ALLOWED_AUDIO_EXTENSIONS = ['wav', 'mp3', 'ogg', 'flac', 'aac']
+
+@app.post("/upload_gsv_ref_audio")
+async def upload_gsv_ref_audio(
+    request: Request,
+    file: UploadFile = File(...),
+):
+    fastapi_base_url = str(request.base_url)
+    
+    # 检查文件扩展名
+    file_extension = file.filename.split('.')[-1].lower()
+    if file_extension not in ALLOWED_AUDIO_EXTENSIONS:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"不支持的文件类型: {file_extension}"}
+        )
+    
+    # 生成唯一文件名
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+    
+    try:
+        # 保存文件
+        with open(destination, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 构建响应
+        file_link = f"{fastapi_base_url}uploaded_files/{unique_filename}"
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "参考音频上传成功",
+            "file": {
+                "path": file_link,
+                "name": file.filename,
+                "unique_filename": unique_filename
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"参考音频上传失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"文件保存失败: {str(e)}"}
+        )
+
+@app.delete("/delete_audio/{filename}")
+async def delete_audio(filename: str):
+    try:
+        file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+        
+        # 安全检查：确保文件名是UUID格式，防止路径遍历攻击
+        if not re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.\w+$", filename):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Invalid filename"}
+            )
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={
+                "success": True,
+                "message": "音频文件已删除"
+            })
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "文件不存在"}
+            )
+            
+    except Exception as e:
+        logger.error(f"删除音频失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"删除失败: {str(e)}"}
+        )
+
+# 允许的VRM文件扩展名
+ALLOWED_VRM_EXTENSIONS = {'vrm'}
+
+@app.post("/upload_vrm_model")
+async def upload_vrm_model(
+    request: Request,
+    file: UploadFile = File(...),
+    display_name: str = Form(...)
+):
+    fastapi_base_url = str(request.base_url)
+    
+    # 检查文件扩展名
+    file_extension = file.filename.split('.')[-1].lower()
+    if file_extension not in ALLOWED_VRM_EXTENSIONS:
+        return JSONResponse(
+            status_code=400,
+            content={"success": False, "message": f"不支持的文件类型: {file_extension}，只支持.vrm文件"}
+        )
+    
+    # 生成唯一文件名
+    unique_filename = f"{uuid.uuid4()}.{file_extension}"
+    destination = os.path.join(UPLOAD_FILES_DIR, unique_filename)
+    
+    try:
+        # 保存文件
+        with open(destination, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # 构建响应
+        file_link = f"{fastapi_base_url}uploaded_files/{unique_filename}"
+        
+        return JSONResponse(content={
+            "success": True,
+            "message": "VRM模型上传成功",
+            "file": {
+                "path": file_link,
+                "display_name": display_name,
+                "original_name": file.filename,
+                "unique_filename": unique_filename
+            }
+        })
+    
+    except Exception as e:
+        logger.error(f"VRM模型上传失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"文件保存失败: {str(e)}"}
+        )
+
+@app.get("/get_default_vrm_models")
+async def get_default_vrm_models(request: Request):
+    try:
+        fastapi_base_url = str(request.base_url)
+        models = []
+        
+        # 确保目录存在
+        if not os.path.exists(DEFAULT_VRM_DIR):
+            os.makedirs(DEFAULT_VRM_DIR, exist_ok=True)
+            return JSONResponse(content={
+                "success": True,
+                "models": []
+            })
+        
+        # 扫描默认VRM目录中的所有.vrm文件
+        vrm_files = glob.glob(os.path.join(DEFAULT_VRM_DIR, "*.vrm"))
+        
+        for vrm_file in vrm_files:
+            file_name = os.path.basename(vrm_file)
+            # 使用文件名（不含扩展名）作为显示名称
+            display_name = os.path.splitext(file_name)[0]
+            
+            # 构建文件访问URL
+            file_url = f"{fastapi_base_url}vrm/{file_name}"
+            
+            models.append({
+                "id": os.path.splitext(file_name)[0].lower(),  # 使用文件名作为ID
+                "name": display_name,
+                "path": file_url,
+                "type": "default"
+            })
+        
+        # 按名称排序
+        models.sort(key=lambda x: x['name'])
+        print("models:",models)
+        return JSONResponse(content={
+            "success": True,
+            "models": models
+        })
+        
+    except Exception as e:
+        logger.error(f"获取默认VRM模型失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"获取默认模型失败: {str(e)}"}
+        )
+
+# 修改删除VRM模型的接口，添加安全检查
+@app.delete("/delete_vrm_model/{filename}")
+async def delete_vrm_model(filename: str):
+    try:
+        # 确保只能删除上传目录中的文件，不能删除默认模型
+        file_path = os.path.join(UPLOAD_FILES_DIR, filename)
+        
+        # 安全检查：确保文件名是UUID格式，防止路径遍历攻击
+        if not re.match(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.vrm$", filename):
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "message": "Invalid filename"}
+            )
+        
+        # 额外检查：确保文件路径在上传目录中，防止删除默认模型
+        if not file_path.startswith(os.path.abspath(UPLOAD_FILES_DIR)):
+            return JSONResponse(
+                status_code=403,
+                content={"success": False, "message": "Cannot delete default models"}
+            )
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            return JSONResponse(content={
+                "success": True,
+                "message": "VRM模型文件已删除"
+            })
+        else:
+            return JSONResponse(
+                status_code=404,
+                content={"success": False, "message": "文件不存在"}
+            )
+            
+    except Exception as e:
+        logger.error(f"删除VRM模型失败: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "message": f"删除失败: {str(e)}"}
+        )
 
 @app.get("/update_storage")
 async def update_storage_endpoint(request: Request):
@@ -3142,7 +4292,7 @@ async def create_kb_endpoint(request: Request, background_tasks: BackgroundTasks
     
     return {"success": True, "message": "知识库处理已开始，请稍后查询状态"}
 
-@app.post("/remove_kb")
+@app.delete("/remove_kb")
 async def remove_kb_endpoint(request: Request, background_tasks: BackgroundTasks):
     data = await request.json()
     kb_id = data.get("kbId")
@@ -3408,6 +4558,16 @@ async def delete_workflow(filename: str):
             detail=f"Failed to delete file: {str(e)}"
         )
 
+@app.get("/cur_language")
+async def cur_language():
+    settings = await load_settings()
+    return {"language": settings.get("language", "zh-CN")}
+
+@app.get("/vrm_config")
+async def vrm_config():
+    settings = await load_settings()
+    return {"VRMConfig": settings.get("VRMConfig", {})}
+
 settings_lock = asyncio.Lock()
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -3471,6 +4631,7 @@ mcp = FastApiMCP(
 
 mcp.mount()
 
+app.mount("/vrm", StaticFiles(directory=DEFAULT_VRM_DIR), name="vrm")
 app.mount("/uploaded_files", StaticFiles(directory=UPLOAD_FILES_DIR), name="uploaded_files")
 app.mount("/node_modules", StaticFiles(directory=os.path.join(base_path, "node_modules")), name="node_modules")
 app.mount("/", StaticFiles(directory=os.path.join(base_path, "static"), html=True), name="static")

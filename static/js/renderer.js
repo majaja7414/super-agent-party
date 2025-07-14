@@ -16,13 +16,19 @@ const app = Vue.createApp({
     if (this.statusInterval) {
       clearInterval(this.statusInterval);
     }
+    window.removeEventListener('keydown', this.handleKeyDown)
+    window.removeEventListener('keyup', this.handleKeyUp)
     window.removeEventListener('resize', this.checkMobile);
   },
-  mounted() {
+  async mounted() {
     // 初始检查
     this.checkQQBotStatus();
     this.checkMobile();
+    this.checkServerPort();
+    window.addEventListener('keydown', this.handleKeyDown)
+    window.addEventListener('keyup', this.handleKeyUp)
     window.addEventListener('resize', this.checkMobile);
+
     // 每30秒检查一次状态
     this.statusInterval = setInterval(this.checkQQBotStatus, 30000); // 30000毫秒 = 30秒
 
@@ -67,10 +73,14 @@ const app = Vue.createApp({
         this.isMaximized = state === 'maximized'
       });
     }
+    this.initTTSWebSocket();
   },
   beforeUnmount() {
     if (isElectron) {
       delete window.stopQQBotHandler;
+    }
+    if (this.ttsWebSocket) {
+      this.ttsWebSocket.close();
     }
   },
   watch: {
@@ -117,7 +127,8 @@ const app = Vue.createApp({
           midnight: '#0ea5e9',   // 午夜蓝
           desert: '#d98236',     // 沙漠黄
           neon: '#ff2d95' ,       // 霓虹粉
-          marshmallow: '#f5a5c3'  // Marshmallow 粉色
+          marshmallow: '#f5a5c3',  // Marshmallow 粉色
+          ink: '#2c3e50',        // 墨水蓝
         };
 
         // 获取当前主题色
@@ -191,6 +202,19 @@ const app = Vue.createApp({
     },
     sortedConversations() {
       return [...this.conversations].sort((a, b) => b.timestamp - a.timestamp);
+    },
+    filteredConversations() {
+        const keyword = this.searchKeyword.toLowerCase()
+        return [...this.conversations]
+            .filter(conv => {
+                // 匹配标题或消息内容
+                const titleMatch = (conv.title || this.t('untitled')).toLowerCase().includes(keyword)
+                const contentMatch = conv.messages?.some(msg => 
+                    msg.content.toLowerCase().includes(keyword)
+                )
+                return titleMatch || contentMatch
+            })
+            .sort((a, b) => b.timestamp - a.timestamp)
     },
     iconClass() {
       return this.isExpanded ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
@@ -269,7 +293,28 @@ const app = Vue.createApp({
       return this.mainAgent !== 'super-model' || 
         Object.values(this.agents).some(a => a.enabled)
     },
+    // 获取所有唯一的语言
+    uniqueLanguages() {
+      const languages = [...new Set(this.edgettsvoices.map(voice => voice.language))];
+      return languages.sort();
+    },
     
+    // 根据选择的语言获取可用的性别
+    uniqueGenders() {
+      const voicesForLanguage = this.edgettsvoices.filter(voice => 
+        voice.language === this.edgettsLanguage
+      );
+      const genders = [...new Set(voicesForLanguage.map(voice => voice.gender))];
+      return genders.sort();
+    },
+    
+    // 根据选择的语言和性别过滤语音
+    filteredVoices() {
+      return this.edgettsvoices.filter(voice => 
+        voice.language === this.edgettsLanguage && 
+        voice.gender === this.edgettsGender
+      );
+    }
   },
   methods: vue_methods
 });

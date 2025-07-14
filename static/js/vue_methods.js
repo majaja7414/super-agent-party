@@ -108,6 +108,16 @@ let vue_methods = {
         return originalUrl;
       }
     }
+    else {
+        const url = new URL(originalUrl);
+        if (url.hostname === '127.0.0.1') {
+          url.hostname = "localhost";
+          // 如果需要强制使用HTTPS可以添加：
+          url.protocol = window.location.protocol;
+          url.port = window.location.port;
+        }
+        return url.toString();
+    }
     return originalUrl;
   },
   async resetMessage(index) {
@@ -231,7 +241,7 @@ let vue_methods = {
     // 获取模型列表
     async fetchModelsForType(type) {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/llm_models`, {
+        const response = await fetch(`${backendURL}/llm_models`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -461,7 +471,7 @@ let vue_methods = {
       else if (key === 'storage') {
         this.activeMenu = 'storage';
         this.subMenu = 'text'; // 默认显示第一个子菜单
-        response = await fetch('/update_storage', {
+        response = await fetch(`${backendURL}/update_storage`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json'
@@ -561,6 +571,7 @@ let vue_methods = {
         if (originalHref) {
           link.setAttribute('href', this.formatFileUrl(originalHref));
         }
+        link.setAttribute('target', '_blank');
       }
       return tempDiv.innerHTML;
     },
@@ -715,7 +726,7 @@ let vue_methods = {
       sandbox.srcdoc = `<!DOCTYPE html>
         <html>
           <head>
-            <base href="http://${HOST}:${PORT}/">
+            <base href="${backendURL}/">
             <link rel="stylesheet" href="/css/styles.css">
             <style>body { margin: 0; padding: 15px; }</style>
           </head>
@@ -994,7 +1005,7 @@ let vue_methods = {
       };
 
       // 接收消息
-      this.ws.onmessage = (event) => {
+      this.ws.onmessage = async (event) => {
         let data;
         try {
           data = JSON.parse(event.data);
@@ -1047,11 +1058,21 @@ let vue_methods = {
           this.memories = data.data.memories || this.memories;
           this.memorySettings = data.data.memorySettings || this.memorySettings;
           this.text2imgSettings = data.data.text2imgSettings || this.text2imgSettings;
+          this.asrSettings = data.data.asrSettings || this.asrSettings;
+          this.ttsSettings = data.data.ttsSettings || this.ttsSettings;
+          this.VRMConfig = data.data.VRMConfig || this.VRMConfig;
           this.comfyuiServers = data.data.comfyuiServers || this.comfyuiServers;
           this.comfyuiAPIkey = data.data.comfyuiAPIkey || this.comfyuiAPIkey;
           this.workflows = data.data.workflows || this.workflows;
           this.customHttpTools = data.data.custom_http || this.customHttpTools;
           this.loadConversation(this.conversationId);
+          // 初始化时确保数据一致性
+          this.edgettsLanguage = this.ttsSettings.edgettsLanguage;
+          this.edgettsGender = this.ttsSettings.edgettsGender;
+          await this.loadDefaultModels();
+          if (this.asrSettings.enabled) {
+            await this.startASR();
+          }
         } 
         else if (data.type === 'settings_saved') {
           if (!data.success) {
@@ -1074,17 +1095,32 @@ let vue_methods = {
       };
     },
 
-    handleKeydown(event) {
-      if (event.key === 'Enter') {
+    async handleKeyDown(event) {
+      if (event.repeat) return;
+      if (event.key === 'Enter' && this.activeMenu === 'home') {
         if (event.shiftKey) {
           // 如果同时按下了Shift键，则不阻止默认行为，允许换行
           return;
         } else {
           // 阻止默认行为，防止表单提交或新行插入
           event.preventDefault();
-          this.sendMessage();
+          await this.sendMessage();
         }
       }
+      if (event.key === this.asrSettings.hotkey) {
+        event.preventDefault();
+        this.asrSettings.enabled = false;
+        await this.toggleASR();
+      }
+    },
+    async handleKeyUp(event) {
+      if (event.repeat) return;
+      if (event.key === this.asrSettings.hotkey) {
+        event.preventDefault();
+        this.asrSettings.enabled = true;
+        await this.toggleASR();
+        await this.sendMessage();
+      }  
     },
     escapeHtml(unsafe) {
       return unsafe
@@ -1122,6 +1158,19 @@ let vue_methods = {
     // 发送消息
     async sendMessage() { 
       if (!this.userInput.trim() || this.isTyping) return;
+      this.isTyping = true;
+      if (this.ttsSettings.enabledInterruption) {
+        // 关闭正在播放的音频
+        if (this.currentAudio){
+          this.currentAudio.pause();
+          this.currentAudio = null;
+          this.stopGenerate();
+        }
+      }
+
+      // 声明变量并初始化为 null
+      let ttsProcess = null;
+      let audioProcess = null;
       const userInput = this.userInput.trim();
       let fileLinks = this.files || [];
       if (fileLinks.length > 0){
@@ -1140,7 +1189,7 @@ let vue_methods = {
     
         try {
             console.log('Uploading files...');
-            const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+            const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 body: formData
             });
@@ -1181,7 +1230,7 @@ let vue_methods = {
       
           try {
               console.log('Uploading images...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                   method: 'POST',
                   body: formData
               });
@@ -1261,36 +1310,33 @@ let vue_methods = {
         messages = this.messages
           .slice(-max_rounds)
           .map(msg => {
-            // 提取HTTP/HTTPS图片链接
-            const httpImageLinks = msg.imageLinks?.filter(imageLink => 
-              imageLink.path.startsWith('http://') || imageLink.path.startsWith('https://')
-            ) || [];
-            
-            // 构建图片URL文本信息
-            const imageUrlsText = httpImageLinks.length > 0 
-              ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
-              : '';
-            
-            return {
-              role: msg.role,
-              content: msg.imageLinks.length > 0
-                ? [
-                    {
-                      type: "text",
-                      text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
-                    },
-                    ...msg.imageLinks.map(imageLink => ({
-                      type: "image_url",
-                      image_url: { url: imageLink.path }
-                    }))
-                  ]
-                : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
-            };
-          });
+          // 提取HTTP/HTTPS图片链接
+          const httpImageLinks = msg.imageLinks?.filter(imageLink => 
+            imageLink.path.startsWith('http')
+          ) || [];
+          
+          // 构建图片URL文本信息
+          const imageUrlsText = httpImageLinks.length > 0 
+            ? '\n\n图片链接:\n' + httpImageLinks.map(link => link.path).join('\n')
+            : '';
+          
+          return {
+            role: msg.role,
+            content: (msg.imageLinks && msg.imageLinks.length > 0)
+              ? [
+                  {
+                    type: "text",
+                    text: msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+                  },
+                  ...msg.imageLinks.map(imageLink => ({
+                    type: "image_url",
+                    image_url: { url: imageLink.path }
+                  }))
+                ]
+              : msg.content + (msg.fileLinks_content ?? '') + imageUrlsText
+          };
+        });
       }
-
-      
-
       
       this.userInput = '';
       this.isSending = true;
@@ -1327,7 +1373,7 @@ let vue_methods = {
       try {
         console.log('Sending message...');
         // 请求参数需要与后端接口一致
-        const response = await fetch(`http://${HOST}:${PORT}/v1/chat/completions`, {  // 修改端点路径
+        const response = await fetch(`${backendURL}/v1/chat/completions`, {  // 修改端点路径
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1339,6 +1385,7 @@ let vue_methods = {
             messages: messages,
             stream: true,
             fileLinks: this.fileLinks,
+            asyncToolsID: this.asyncToolsID,
           }),
           signal: this.abortController.signal
         });
@@ -1349,17 +1396,24 @@ let vue_methods = {
           showNotification(errorData.error?.message || this.t('error_unknown'), 'error');
           throw new Error(errorData.error?.message || this.t('error_unknown')); // 抛出错误以停止执行
         }
-        
-        this.isTyping = true;
+
         this.messages.push({
           role: 'assistant',
-          content: ''
+          content: '',
+          currentChunk: 0,
+          ttsChunks: [],
+          audioChunks: [],
+          isPlaying:false,
         });
-        
+        if (this.ttsSettings.enabled) {
+          // 启动TTS和音频播放进程
+          const ttsProcess = this.startTTSProcess();
+          const audioProcess = this.startAudioPlayProcess();
+        }
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        
+        let tts_buffer = '';
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -1383,10 +1437,16 @@ let vue_methods = {
                 const parsed = JSON.parse(jsonStr);
                 
                 // 处理 reasoning_content 逻辑
-                if (parsed.choices?.[0]?.delta?.reasoning_content) {
+                if (parsed.choices?.[0]?.delta?.reasoning_content || parsed.choices?.[0]?.delta?.tool_content) {
                   const lastMessage = this.messages[this.messages.length - 1];
-                  let newContent = parsed.choices[0].delta.reasoning_content;
-                
+                  let newContent = '';
+                  if (parsed.choices?.[0]?.delta?.reasoning_content) {
+                    newContent = parsed.choices[0].delta.reasoning_content;
+                  }
+                  if (parsed.choices?.[0]?.delta?.tool_content) {
+                    newContent = parsed.choices[0].delta.tool_content;
+                  }
+                  
                   // 将新内容中的换行符转换为换行+引用符号
                   newContent = newContent.replace(/\n/g, '\n> ');
                 
@@ -1409,7 +1469,28 @@ let vue_methods = {
                     this.isThinkOpen = false; // 重置状态
                   }
                   lastMessage.content += parsed.choices[0].delta.content;
+                  tts_buffer += parsed.choices[0].delta.content;
+                  // 处理 TTS 分割
+                  if (this.ttsSettings.enabled) {
+                    const { chunks, remaining } = this.splitTTSBuffer(tts_buffer);
+                    // 将完整的句子添加到 ttsChunks
+                    if (chunks.length > 0) {
+                      lastMessage.ttsChunks.push(...chunks);
+                    }
+                    // 更新 tts_buffer 为剩余部分
+                    tts_buffer = remaining;
+                  }
                   this.scrollToBottom();
+                }
+                if (parsed.choices?.[0]?.delta?.async_tool_id) {
+                    // 判断parsed.choices[0].delta.async_tool_id是否在this.asyncToolsID中
+                    if (this.asyncToolsID.includes(parsed.choices[0].delta.async_tool_id)) {
+                      // 如果在，则删除
+                      this.asyncToolsID = this.asyncToolsID.filter(id => id !== parsed.choices[0].delta.async_tool_id);
+                    } else {
+                      // 如果不在，则添加
+                      this.asyncToolsID.push(parsed.choices[0].delta.async_tool_id);
+                    }
                 }
               } catch (e) {
                 console.error(e);
@@ -1417,6 +1498,18 @@ let vue_methods = {
               }
             }
           }
+        }
+        // 循环结束后，处理 tts_buffer 中的剩余内容
+        if (tts_buffer.trim() && this.ttsSettings.enabled) {
+          const lastMessage = this.messages[this.messages.length - 1];
+          const { chunks, remaining } = this.splitTTSBuffer(tts_buffer);
+          if (chunks.length > 0) {
+            lastMessage.ttsChunks.push(...chunks);
+          }
+          if (remaining) {
+            lastMessage.ttsChunks.push(remaining);
+          }
+          console.log(lastMessage.ttsChunks)
         }
       } catch (error) {
         if (error.name === 'AbortError') {
@@ -1452,6 +1545,10 @@ let vue_methods = {
             conv.fileLinks = this.fileLinks;
             conv.system_prompt = this.system_prompt;
           }
+        }
+        if (this.ttsSettings.enabled) {
+          // 等待TTS和音频播放进程完成
+          await Promise.all([ttsProcess, audioProcess]);
         }
         this.isThinkOpen = false;
         this.isSending = false;
@@ -1511,6 +1608,9 @@ let vue_methods = {
           memories: this.memories,
           memorySettings: this.memorySettings,
           text2imgSettings: this.text2imgSettings,
+          asrSettings: this.asrSettings,
+          ttsSettings: this.ttsSettings,
+          VRMConfig: this.VRMConfig,
           comfyuiServers: this.comfyuiServers,
           comfyuiAPIkey: this.comfyuiAPIkey,
           workflows: this.workflows,
@@ -1552,7 +1652,7 @@ let vue_methods = {
     async fetchModels() {
       this.modelsLoading = true;
       try {
-        const response = await fetch(`http://${HOST}:${PORT}//v1/models`);
+        const response = await fetch(`${backendURL}/v1/models`);
         const result = await response.json();
         
         // 双重解构获取数据
@@ -1574,7 +1674,7 @@ let vue_methods = {
 
     // 修改copyEndpoint方法
     copyEndpoint() {
-      navigator.clipboard.writeText(`http://${HOST}:${PORT}/v1`)
+      navigator.clipboard.writeText(`${backendURL}/v1`)
         .then(() => {
           showNotification(this.t('copy_success'), 'success');
         })
@@ -1584,7 +1684,7 @@ let vue_methods = {
     },
 
     copyMCPEndpoint(){
-      navigator.clipboard.writeText(`http://${HOST}:${PORT}/mcp`)
+      navigator.clipboard.writeText(`${backendURL}/mcp`)
         .then(() => {
           showNotification(this.t('copy_success'), 'success');
         })
@@ -1618,6 +1718,7 @@ let vue_methods = {
       this.conversationId = null;
       this.fileLinks = [];
       this.isThinkOpen = false; // 重置思考模式状态
+      this.asyncToolsID = [];
       this.scrollToBottom();    // 触发界面更新
       await this.autoSaveSettings();
     },
@@ -1806,7 +1907,7 @@ let vue_methods = {
     },
     async fetchModelsForProvider(provider) {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/v1/providers/models`, {
+        const response = await fetch(`${backendURL}/v1/providers/models`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1991,7 +2092,21 @@ let vue_methods = {
         await this.autoSaveSettings();
       }
     },
-
+    async selectAsrProvider(providerId) {
+      const provider = this.modelProviders.find(p => p.id === providerId);
+      if (provider) {
+        this.asrSettings.model = provider.modelId;
+        this.asrSettings.base_url = provider.url;
+        this.asrSettings.api_key = provider.apiKey;
+        this.asrSettings.vendor = provider.vendor;
+        await this.autoSaveSettings();
+      }
+    },
+    handleAsrProviderVisibleChange(visible) {
+      if (!visible) {
+        this.selectAsrProvider(this.asrSettings.selectedProvider);
+      }
+    },
     handleText2imgProviderVisibleChange(visible) {
       if (!visible) {
         this.selectText2imgProvider(this.text2imgSettings.selectedProvider);
@@ -2041,7 +2156,7 @@ let vue_methods = {
   
             try {
               console.log('Uploading files...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 body: formData
               });
@@ -2072,7 +2187,7 @@ let vue_methods = {
             // Electron 环境：通过 JSON 上传
             try {
               console.log('Uploading Electron files...');
-              const response = await fetch(`http://${HOST}:${PORT}/load_file`, {
+              const response = await fetch(`${backendURL}/load_file`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
@@ -2143,7 +2258,7 @@ let vue_methods = {
         // post kbId to 后端的create_kb端口
         try {
           // 1. 触发任务
-          const startResponse = await fetch(`http://${HOST}:${PORT}/create_kb`, {
+          const startResponse = await fetch(`${backendURL}/create_kb`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ kbId }),
@@ -2153,7 +2268,7 @@ let vue_methods = {
           // 2. 轮询状态
           const checkStatus = async () => {
             try {
-              const statusResponse = await fetch(`http://${HOST}:${PORT}/kb_status/${kbId}`);
+              const statusResponse = await fetch(`${backendURL}/kb_status/${kbId}`);
               
               // 处理 HTTP 错误状态
               if (!statusResponse.ok) {
@@ -2228,8 +2343,8 @@ let vue_methods = {
         let kbId = kb.id
         //手动触发modelProviders更新，从而能够实时与后端同步
         this.modelProviders = this.modelProviders
-        const Response = await fetch(`http://${HOST}:${PORT}/remove_kb`, {
-          method: 'POST',
+        const Response = await fetch(`${backendURL}/remove_kb`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ kbId }),
         });
@@ -2377,7 +2492,7 @@ let vue_methods = {
       this.isBrowserOpening = true;
       
       setTimeout(() => {
-        const url = `http://${HOST}:${PORT}`;
+        const url = `${backendURL}`;
         if (isElectron) {
           window.electronAPI.openExternal(url);
         } else {
@@ -2417,7 +2532,7 @@ let vue_methods = {
         this.newMCPJson = '';
         await this.autoSaveSettings();
         // 触发后台任务
-        const response = await fetch(`http://${HOST}:${PORT}/create_mcp`, {
+        const response = await fetch(`${backendURL}/create_mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ mcpId })
@@ -2425,7 +2540,7 @@ let vue_methods = {
         
         // 启动状态轮询
         const checkStatus = async () => {
-          const statusRes = await fetch(`http://${HOST}:${PORT}/mcp_status/${mcpId}`);
+          const statusRes = await fetch(`${backendURL}/mcp_status/${mcpId}`);
           return statusRes.json();
         };
         
@@ -2468,8 +2583,8 @@ let vue_methods = {
     // 新增确认方法
     async confirmDeleteMCP() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/api/remove_mcp`, {
-          method: 'POST',
+        const response = await fetch(`${backendURL}/remove_mcp`, {
+          method: 'DELETE',
           headers: {
               'Content-Type': 'application/json',
           },
@@ -2532,8 +2647,8 @@ let vue_methods = {
         this.agents = { ...this.agents }
         try {
           // 向/delete_file发送请求
-          const response = await fetch(`http://${HOST}:${PORT}/remove_agent`, {
-            method: 'POST',
+          const response = await fetch(`${backendURL}/remove_agent`, {
+            method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ agentId: id })
           });
@@ -2569,7 +2684,7 @@ let vue_methods = {
           }
         };
         await this.autoSaveSettings();
-        const response = await fetch(`http://${HOST}:${PORT}/a2a/initialize`, {
+        const response = await fetch(`${backendURL}/a2a`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: newurl })
@@ -2604,8 +2719,8 @@ let vue_methods = {
       fileName = file.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+        const response = await fetch(`${backendURL}/delete_file`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
@@ -2625,8 +2740,8 @@ let vue_methods = {
       fileName = img.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+        const response = await fetch(`${backendURL}/delete_file`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
@@ -2641,7 +2756,7 @@ let vue_methods = {
       }
     },
     getVendorLogo(vendor) {
-      return this.vendorLogoList[vendor] || "";
+      return this.vendorLogoList[vendor] || "source/providers/custom.png";
     },
     handleSelectVendor(vendor) {
       this.newProviderTemp.vendor = vendor;
@@ -2665,7 +2780,7 @@ let vue_methods = {
           model:this.newMemory.model,
           api_key: this.newMemory.api_key,
           base_url: this.newMemory.base_url,
-          vendor:this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor,
+          vendor:this.newMemory.providerId ? this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor: "",
           lorebook: this.newMemory.lorebook,
           random: this.newMemory.random,
           basic_character: this.newMemory.basic_character,
@@ -2683,7 +2798,7 @@ let vue_methods = {
           memory.model = this.newMemory.model;
           memory.api_key = this.newMemory.api_key;
           memory.base_url = this.newMemory.base_url;
-          memory.vendor = this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor;
+          memory.vendor = this.newMemory.providerId ? this.modelProviders.find(p => p.id === this.newMemory.providerId).vendor: "";
           memory.lorebook = this.newMemory.lorebook;
           memory.random = this.newMemory.random;
           memory.basic_character = this.newMemory.basic_character;
@@ -2713,8 +2828,8 @@ let vue_methods = {
       }
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/remove_memory`, {
-          method: 'POST',
+        const response = await fetch(`${backendURL}/remove_memory`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ memoryId: id })
         });
@@ -2740,7 +2855,7 @@ let vue_methods = {
     
     getVendorName(providerId) {
       const provider = this.modelProviders.find(p => p.id === providerId);
-      return provider ? `${this.t("model")}:${provider.modelId}` : '';
+      return provider ? `${this.t("model")}:${provider.modelId}` : this.t("NoLongTermMemory");
     },
     async saveCustomHttpTool() {
       const toolData = { ...this.newCustomHttpTool };
@@ -2793,7 +2908,7 @@ let vue_methods = {
       // 显示连接中的提示
       showNotification('正在连接QQ机器人...', 'info');
       
-      const response = await fetch(`http://${HOST}:${PORT}/start_qq_bot`, {
+      const response = await fetch(`${backendURL}/start_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.qqBotConfig)
@@ -2827,7 +2942,7 @@ let vue_methods = {
     this.isStopping = true;
     
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/stop_qq_bot`, {
+      const response = await fetch(`${backendURL}/stop_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -2854,7 +2969,7 @@ let vue_methods = {
     this.isReloading = true;
     
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/reload_qq_bot`, {
+      const response = await fetch(`${backendURL}/reload_qq_bot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(this.qqBotConfig)
@@ -2883,7 +2998,7 @@ let vue_methods = {
   // 添加状态检查方法
   async checkQQBotStatus() {
     try {
-      const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`);
+      const response = await fetch(`${backendURL}/qq_bot_status`);
       const status = await response.json();
       
       // 更新机器人运行状态
@@ -2901,7 +3016,7 @@ let vue_methods = {
     // 新增的方法：供主进程请求关闭机器人
     async requestStopQQBotIfRunning() {
       try {
-        const response = await fetch(`http://${HOST}:${PORT}/qq_bot_status`)
+        const response = await fetch(`${backendURL}/qq_bot_status`)
         const status = await response.json()
 
         if (status.is_running) {
@@ -3067,7 +3182,7 @@ let vue_methods = {
     // 删除工作流
     async deleteWorkflow(filename) {
       try {
-        const response = await fetch(`/delete_workflow/${filename}`, {
+        const response = await fetch(`${backendURL}/delete_workflow/${filename}`, {
           method: 'DELETE',
         });
         const data = await response.json();
@@ -3165,7 +3280,7 @@ let vue_methods = {
       formData.append('workflow_data', JSON.stringify(workflowData));
 
       try {
-        const response = await fetch('/add_workflow', {
+        const response = await fetch(`${backendURL}/add_workflow`, {
           method: 'POST',
           body: formData,
         });
@@ -3211,8 +3326,8 @@ let vue_methods = {
       fileName = video.unique_filename
       try {
         // 向/delete_file发送请求
-        const response = await fetch(`http://${HOST}:${PORT}/delete_file`, {
-          method: 'POST',
+        const response = await fetch(`${backendURL}/delete_file`, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: fileName })
         });
@@ -3288,7 +3403,7 @@ let vue_methods = {
         });
 
         // 发送请求
-        const response = await fetch('/create_sticker_pack', {
+        const response = await fetch(`${backendURL}/create_sticker_pack`, {
           method: 'POST',
           body: formData
         });
@@ -3433,5 +3548,1322 @@ let vue_methods = {
 
     removeJsonFile() {
       this.jsonFile = null; // 清空文件
+    },
+    // 初始化ASR WebSocket连接（修改版本，支持Web Speech API）
+    async initASRWebSocket() {
+      // 如果选择了Web Speech API，不需要WebSocket连接
+      if (this.asrSettings.engine === 'webSpeech') {
+        return;
+      }
+      
+      const http_protocol = window.location.protocol;
+      const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+      const ws_url = `${ws_protocol}//${window.location.host}/asr_ws`;
+
+      this.asrWs = new WebSocket(ws_url);
+      
+      // WebSocket 打开事件
+      this.asrWs.onopen = () => {
+        console.log('ASR WebSocket connection established');
+        // 发送初始化消息，包含当前使用的模型信息
+        this.asrWs.send(JSON.stringify({
+          type: 'init',
+        }));
+      };
+
+      // 接收消息
+      this.asrWs.onmessage = (event) => {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (e) {
+          console.error('Invalid JSON from ASR server:', event.data);
+          return;
+        }
+        
+        this.handleASRResult(data);
+      };
+
+      // WebSocket 关闭事件
+      this.asrWs.onclose = (event) => {
+        console.log('ASR WebSocket connection closed:', event.reason);
+        if (this.asrSettings.enabled) {
+          // 如果ASR仍处于启用状态，尝试重新连接
+          setTimeout(() => this.initASRWebSocket(), 3000);
+        }
+      };
+
+      // WebSocket 错误事件
+      this.asrWs.onerror = (error) => {
+        console.error('ASR WebSocket error:', error);
+      };
+    },
+
+    // 修改：初始化Web Speech API（不自动启动）
+    initWebSpeechAPI() {
+      if(isElectron){
+        showNotification(this.t('webSpeechNotSupportedInElectron'), 'error');
+        const url = `${backendURL}`;
+        window.electronAPI.openExternal(url);
+        this.asrSettings.enabled = false;
+        return false;
+      }
+
+      // 检查浏览器是否支持Web Speech API
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        showNotification(this.t('webSpeechNotSupported'), 'error');
+        this.asrSettings.enabled = false;
+        return false;
+      }
+
+      // 创建语音识别对象
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this.recognition = new SpeechRecognition();
+
+      // 配置语音识别参数
+      this.recognition.continuous = true; // 改为非持续识别，由VAD控制
+      this.recognition.interimResults = true;
+
+      // 识别结果处理
+      this.recognition.onresult = (event) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        // 处理中间结果
+        if (interimTranscript) {
+          this.handleASRResult({
+            type: 'transcription',
+            text: interimTranscript,
+            is_final: false
+          });
+        }
+
+        // 处理最终结果
+        if (finalTranscript) {
+          this.handleASRResult({
+            type: 'transcription',
+            text: finalTranscript,
+            is_final: true
+          });
+        }
+      };
+
+      // 错误处理
+      this.recognition.onerror = (event) => {
+        console.error('Web Speech API error:', event.error);
+        let errorMessage = this.t('speechRecognitionError');
+        
+        switch (event.error) {
+          case 'no-speech':
+            errorMessage = null;
+            break;
+          case 'audio-capture':
+            errorMessage = this.t('microphoneError');
+            break;
+          case 'not-allowed':
+            errorMessage = this.t('micPermissionDenied');
+            break;
+          case 'network':
+            errorMessage = this.t('networkError');
+            break;
+        }
+        if (errorMessage) {
+          showNotification(errorMessage, 'error');
+        }
+        
+        // 重置识别状态
+        this.isWebSpeechRecognizing = false;
+      };
+
+      // 识别结束处理
+      this.recognition.onend = () => {
+        console.log('Web Speech API recognition ended');
+        this.isWebSpeechRecognizing = false;
+        // 不再自动重启，由VAD控制
+      };
+
+      // 识别开始处理
+      this.recognition.onstart = () => {
+        console.log('Web Speech API recognition started');
+        this.isWebSpeechRecognizing = true;
+      };
+
+      return true;
+    },
+
+
+    // 修改：统一的ASR结果处理函数
+    handleASRResult(data) {
+      if (data.type === 'transcription') {
+        if (this.TTSrunning && !this.ttsSettings.enabledInterruption && this.ttsSettings.enabled) {
+          // 如果TTS正在运行，并且不允许中断，则不处理ASR结果
+          return;
+        }
+        if (data.is_final) {
+          // 最终结果
+          if (this.userInputBuffer.length > 0) {
+            // 用data.text替换this.userInput中最后一个this.userInputBuffer
+            this.userInput = this.userInput.slice(0, -this.userInputBuffer.length) + data.text;
+            this.userInputBuffer = '';
+          } else {
+            // 如果没有临时结果，直接添加到userInput
+            this.userInput += data.text;
+            this.userInputBuffer = '';
+          }
+          
+          // 根据交互方式处理
+          if (this.asrSettings.interactionMethod == "auto") {
+            if (this.ttsSettings.enabledInterruption) {
+              this.sendMessage();
+            } else if (!this.TTSrunning ||  !this.ttsSettings.enabled) {
+              this.sendMessage();
+            }
+          }
+          
+          if (this.asrSettings.interactionMethod == "wakeWord") {
+            if (this.userInput.toLowerCase().includes(this.asrSettings.wakeWord.toLowerCase())) {
+              if (this.ttsSettings.enabledInterruption) {
+                this.sendMessage();
+              } else if (!this.TTSrunning ||  !this.ttsSettings.enabled) {
+                this.sendMessage();
+              }
+            } else {
+              this.userInput = '';
+            }
+          }
+        } else {
+          if (this.asrSettings.engine === 'webSpeech'){
+            this.userInput = data.text;
+            this.userInputBuffer = data.text;
+          }else {
+            // 临时结果
+            this.userInput += data.text;
+            this.userInputBuffer += data.text;
+          }
+
+        }
+      } else if (data.type === 'error') {
+        console.error('ASR error:', data.message);
+        showNotification(this.t('transcriptionFailed'), 'error');
+      } else if (data.type === 'init_response') {
+        if (data.status === 'ready') {
+          showNotification(this.t('asrReady'), 'success');
+        }
+      }
+    },
+
+    // 修改：开关ASR功能
+    async toggleASR() {
+      this.asrSettings.enabled = !this.asrSettings.enabled;
+      this.autoSaveSettings();
+      
+      if (this.asrSettings.enabled) {
+        await this.startASR();
+      } else {
+        this.stopASR();
+      }
+    },
+
+    // 修改：处理ASR设置变化
+    async handleASRchange() {
+      if (this.asrSettings.enabled) {
+        await this.startASR();
+      } else {
+        this.stopASR();
+      }
+    },
+
+    // 修改：启动ASR
+    async startASR() {
+      // 无论哪种模式都需要VAD
+      if (this.vad == null) {
+        await this.initVAD();
+      }
+
+      if (this.asrSettings.engine === 'webSpeech') {
+        // 使用Web Speech API + VAD控制
+        if (this.initWebSpeechAPI()) {
+          // 初始化识别状态标志
+          this.isWebSpeechRecognizing = false;
+          
+          // 开始录音和VAD检测
+          await this.startRecording();
+          
+          showNotification(this.t('webSpeechStarted'), 'success');
+        }
+      } else {
+        // 使用WebSocket方式
+        // 初始化ASR WebSocket
+        await this.initASRWebSocket();
+        
+        // 开始录音
+        await this.startRecording();
+      }
+    },
+
+    // 修改：停止ASR
+    stopASR() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        // 停止Web Speech API
+        if (this.recognition && this.isWebSpeechRecognizing) {
+          this.recognition.stop();
+        }
+        this.recognition = null;
+        this.isWebSpeechRecognizing = false;
+      } else {
+        // 关闭ASR WebSocket
+        if (this.asrWs) {
+          this.asrWs.close();
+          this.asrWs = null;
+        }
+      }
+      
+      // 停止录音和VAD（两种模式都需要）
+      this.stopRecording();
+    },
+
+
+    // 修改：初始化VAD（Web Speech模式也使用VAD）
+    async initVAD() {
+      // 初始化VAD
+      this.vad = await vad.MicVAD.new({
+        preSpeechPadFrames: 10,
+        onSpeechStart: () => {
+          // 语音开始时的处理
+          this.handleSpeechStart();
+        },
+        onFrameProcessed: (probabilities, frame) => {
+          // 处理每一帧
+          if (probabilities["isSpeech"] > 0.4) {
+            if (this.ttsSettings.enabledInterruption) {
+              // 关闭正在播放的音频
+              if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+                this.stopGenerate();
+              }
+            }
+            if (!this.currentAudio || this.currentAudio.paused) {
+              if (this.asrSettings.engine === 'webSpeech') {
+                // Web Speech API模式：不处理音频帧，只是检测到语音
+                this.handleWebSpeechFrameProcessed();
+              } else {
+                // WebSocket模式：处理音频帧
+                this.handleFrameProcessed(frame);
+              }
+            }
+          }
+        },
+        onSpeechEnd: (audio) => {
+          // 语音结束时的处理
+          if (this.asrSettings.engine === 'webSpeech') {
+            this.handleWebSpeechEnd();
+          } else {
+            this.handleSpeechEnd(audio);
+          }
+        },
+      });
+    },
+
+    // 新增：Web Speech模式的语音开始处理
+    handleWebSpeechSpeechStart() {
+      console.log('VAD detected speech start for Web Speech API');
+      // 如果Web Speech API没有在识别，则启动它
+      if (!this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.start();
+        } catch (error) {
+          console.error('Failed to start Web Speech API:', error);
+        }
+      }
+    },
+
+    // 新增：Web Speech模式的帧处理
+    handleWebSpeechFrameProcessed() {
+      // 在Web Speech模式下，我们不需要处理具体的音频帧
+      // 只需要确保Web Speech API正在运行
+      if (!this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.start();
+        } catch (error) {
+          // 可能已经在运行中，忽略错误
+          console.log('Web Speech API already running or failed to start:', error.message);
+        }
+      }
+    },
+
+    // 新增：Web Speech模式的语音结束处理
+    handleWebSpeechEnd() {
+      console.log('VAD detected speech end for Web Speech API');
+      // 停止Web Speech API识别
+      if (this.isWebSpeechRecognizing && this.recognition) {
+        try {
+          this.recognition.stop();
+        } catch (error) {
+          console.error('Failed to stop Web Speech API:', error);
+        }
+      }
+    },
+
+
+    // 修改：开始录音（两种模式都需要）
+    async startRecording() {
+      try {
+        // 请求麦克风权限
+        this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        
+        // 初始化音频上下文
+        this.audioContext = new AudioContext();
+        const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+        
+        // 设置VAD参数
+        this.vad.start();
+        
+        this.isRecording = true;
+      } catch (error) {
+        console.error('Error starting recording:', error);
+        this.asrSettings.enabled = false;
+        showNotification(this.t('micPermissionDenied'), 'error');
+      }
+    },
+
+    // 修改：停止录音（两种模式都需要）
+    stopRecording() {
+      if (this.vad) {
+        this.vad.pause();
+      }
+      
+      if (this.mediaStream) {
+        this.mediaStream.getTracks().forEach(track => track.stop());
+        this.mediaStream = null;
+      }
+      
+      if (this.audioContext) {
+        this.audioContext.close();
+        this.audioContext = null;
+      }
+      
+      this.isRecording = false;
+    },
+    // 修改：统一的语音开始处理
+    async handleSpeechStart() {
+      if (this.asrSettings.engine === 'webSpeech') {
+        this.handleWebSpeechSpeechStart();
+      } else {
+        // WebSocket模式的处理
+        this.currentTranscriptionId = uuid.v4();
+        this.frame_buffer = [];
+        this.asrWs.send(JSON.stringify({
+          type: 'audio_start',
+          id: this.currentTranscriptionId,
+        }));
+      }
+    },
+
+    async handleFrameProcessed(frame) {
+      // 新增检查：确保 frame 存在且是 Float32Array
+      if (!frame || !(frame instanceof Float32Array)) {
+        console.error('Invalid audio frame:', frame);
+        return;
+      }
+
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) {
+        console.warn('WebSocket not ready');
+        return;
+      }
+
+      try {
+        // 转换和处理逻辑...
+        const int16Pcm = new Int16Array(frame.length);
+        for (let i = 0; i < frame.length; i++) {
+          int16Pcm[i] = Math.max(-32768, Math.min(32767, frame[i] * 32767));
+        }
+
+        const base64Audio = btoa(
+          String.fromCharCode(...new Uint8Array(int16Pcm.buffer))
+        );
+
+        this.asrWs.send(JSON.stringify({
+          type: 'audio_stream',
+          id: this.currentTranscriptionId,
+          audio: base64Audio,
+          format: 'pcm',
+          sample_rate: 16000 // 明确采样率
+        }));
+
+      } catch (e) {
+        console.error('Frame processing error:', e);
+      }
+    },
+    async handleSpeechEnd(audio) {
+      // 语音结束时的处理
+      if (!this.asrWs || this.asrWs.readyState !== WebSocket.OPEN) return;
+      
+        // 非流式模式，发送完整音频数据
+        // 将音频数据转换为WAV格式
+        const wavFile = await this.audioToWav(audio);
+        
+        // 将WAV文件转换为base64编码
+        const reader = new FileReader();
+        reader.readAsDataURL(wavFile);
+        reader.onloadend = () => {
+          const base64data = reader.result.split(',')[1]; // 移除前缀
+          
+          // 发送完整音频数据
+          this.asrWs.send(JSON.stringify({
+            type: 'audio_complete',
+            id: this.currentTranscriptionId,
+            audio: base64data,
+            format: 'wav'
+          }));
+        };
+    },
+
+    // WAV转换函数保持不变
+    async audioToWav(audioData) {
+      try {
+        // 音频参数配置
+        const sampleRate = 16000; // 采样率 16kHz，适合语音识别
+        const numChannels = 1;    // 单声道
+        const bitsPerSample = 16; // 16位采样深度
+        
+        // 将Float32Array转换为Int16Array (16位PCM)
+        const int16Array = new Int16Array(audioData.length);
+        for (let i = 0; i < audioData.length; i++) {
+          // 将[-1.0, 1.0]范围的浮点数转换为[-32768, 32767]范围的整数
+          const sample = Math.max(-1, Math.min(1, audioData[i])); // 限制范围
+          int16Array[i] = sample < 0 ? sample * 32768 : sample * 32767;
+        }
+        
+        // 计算文件大小
+        const byteLength = int16Array.length * 2; // 每个样本2字节
+        const buffer = new ArrayBuffer(44 + byteLength); // WAV头部44字节 + 音频数据
+        const view = new DataView(buffer);
+        
+        // 写入WAV文件头
+        const writeString = (offset, string) => {
+          for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+          }
+        };
+        
+        // RIFF chunk descriptor
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + byteLength, true); // 文件大小-8
+        writeString(8, 'WAVE');
+        
+        // fmt sub-chunk
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true); // fmt chunk大小
+        view.setUint16(20, 1, true);  // 音频格式 (PCM)
+        view.setUint16(22, numChannels, true); // 声道数
+        view.setUint32(24, sampleRate, true);  // 采样率
+        view.setUint32(28, sampleRate * numChannels * bitsPerSample / 8, true); // 字节率
+        view.setUint16(32, numChannels * bitsPerSample / 8, true); // 块对齐
+        view.setUint16(34, bitsPerSample, true); // 位深度
+        
+        // data sub-chunk
+        writeString(36, 'data');
+        view.setUint32(40, byteLength, true); // 数据大小
+        
+        // 写入音频数据
+        const offset = 44;
+        for (let i = 0; i < int16Array.length; i++) {
+          view.setInt16(offset + i * 2, int16Array[i], true);
+        }
+        
+        // 创建Blob并返回File对象
+        const blob = new Blob([buffer], { type: 'audio/wav' });
+        const file = new File([blob], 'audio.wav', { type: 'audio/wav' });
+        
+        return file;
+        
+      } catch (error) {
+        console.error('Audio conversion error:', error);
+        throw new Error('Failed to convert audio to WAV format');
+      }
+    },
+
+    async changeTTSstatus() {
+      if (!this.ttsSettings.enabled) {
+        this.TTSrunning = false;
+      }else {
+        this.TTSrunning = true;
+      }
+      await this.autoSaveSettings();
+    },
+    splitTTSBuffer(buffer) {
+      // 移除buffer中的emoji
+      buffer = buffer.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, '');
+      // 移除常见的markdown符号，例如：**  --- 
+      buffer = buffer.replace(/[*_~`]/g, '');
+      // 匹配markdown中的链接,[]()，并替换为空字符串
+      buffer = buffer.replace(/\[.*?\]\(.*?\)/g, '');
+
+      if (!buffer || buffer.trim() === '') {
+        return { chunks: [], remaining: buffer };
+      }
+
+      const chunks = [];
+      let remaining = buffer;
+      
+      // 处理转义字符，将字符串形式的转义字符转换为实际字符
+      const processedSeparators = this.ttsSettings.separators.map(sep => {
+        // 处理常见的转义字符
+        return sep.replace(/\\n/g, '\n')
+                .replace(/\\t/g, '\t')
+                .replace(/\\r/g, '\r');
+      });
+
+      // 找到所有分隔符的位置
+      const separatorPositions = [];
+      
+      for (let i = 0; i < remaining.length; i++) {
+        for (const separator of processedSeparators) {
+          if (remaining.substring(i, i + separator.length) === separator) {
+            separatorPositions.push({
+              index: i,
+              separator: separator,
+              endIndex: i + separator.length
+            });
+          }
+        }
+      }
+      
+      // 按位置排序
+      separatorPositions.sort((a, b) => a.index - b.index);
+      
+      let lastIndex = 0;
+      
+      // 处理每个分隔符位置
+      for (const pos of separatorPositions) {
+        if (pos.index >= lastIndex) {
+          // 提取从上一个位置到当前分隔符（包含分隔符）的文本
+          const chunk = remaining.substring(lastIndex, pos.endIndex);
+          
+          // 检查chunk是否只包含标点符号和空白符
+          if (!this.isOnlyPunctuationAndWhitespace(chunk)) {
+            chunks.push(chunk);
+          }
+          
+          lastIndex = pos.endIndex;
+        }
+      }
+      
+      // 剩余的文本
+      remaining = remaining.substring(lastIndex);
+      
+      return { chunks, remaining };
+    },
+
+    // 辅助函数：检查字符串是否只包含标点符号和空白符以及表情
+    isOnlyPunctuationAndWhitespace(text) {
+      for (const exp of this.expressionMap) {
+        const regex = new RegExp(exp, 'g');
+        if (text.includes(exp)) {
+          text = text.replace(regex, '').trim(); // 移除表情标签
+        }
+      }
+      // 匹配只包含标点符号、空白符（空格、制表符、换行符等）的字符串
+      const punctuationAndWhitespaceRegex = /^[\s\p{P}]*$/u;
+      return punctuationAndWhitespaceRegex.test(text);
+    },
+
+    // TTS处理进程 - 使用流式响应
+    // 修改 TTS 处理开始时的通知
+    async startTTSProcess() {
+      if (!this.ttsSettings.enabled) return;
+      this.TTSrunning = true;
+      this.cur_audioDatas = [];
+      // 通知VRM准备开始TTS
+      this.sendTTSStatusToVRM('ttsStarted', {
+        totalChunks: this.messages[this.messages.length - 1].ttsChunks.length
+      });
+      
+      // 现有的 TTS 处理逻辑...
+      const lastMessage = this.messages[this.messages.length - 1];
+      lastMessage.audioChunks = lastMessage.audioChunks || [];
+      lastMessage.ttsQueue = lastMessage.ttsQueue || new Set();
+      
+      let max_concurrency = 1;
+      let nextIndex = 0;
+
+      while (this.TTSrunning) {
+        if (nextIndex > 0) {
+          max_concurrency = this.ttsSettings.maxConcurrency || 1;
+        }
+        
+        while (lastMessage.ttsQueue.size < max_concurrency && 
+              nextIndex < lastMessage.ttsChunks.length) {
+          
+          const index = nextIndex++;
+          lastMessage.ttsQueue.add(index);
+          
+          this.processTTSChunk(lastMessage, index).finally(() => {
+            lastMessage.ttsQueue.delete(index);
+          });
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      console.log('TTS queue processing completed');
+    },
+
+    async processTTSChunk(message, index) {
+      const chunk = message.ttsChunks[index];
+      const exps = [];
+      let remainingText = chunk;
+
+      for (const exp of this.expressionMap) {
+        const regex = new RegExp(exp, 'g');
+        if (remainingText.includes(exp)) {
+          exps.push(exp);
+          remainingText = remainingText.replace(regex, '').trim(); // 移除表情标签
+        }
+      }
+      const chunk_text = remainingText;
+      const chunk_expressions = exps;
+      console.log(`Processing TTS chunk ${index}:`, chunk_text);
+      
+      try {
+        const response = await fetch(`${backendURL}/tts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: chunk_text, index })
+        });
+
+        if (response.ok) {
+          const audioBlob = await response.blob();
+          
+          // 转换为 Base64
+          const arrayBuffer = await audioBlob.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          const audioDataUrl = `data:${audioBlob.type};base64,${base64}`;
+          
+          // 本地播放仍使用 blob URL
+          const audioUrl = URL.createObjectURL(audioBlob);
+          
+          message.audioChunks[index] = { 
+            url: audioUrl, 
+            expressions: chunk_expressions, // 添加表情
+            index 
+          };
+          this.cur_audioDatas[index]= audioDataUrl;
+          console.log(`TTS chunk ${index} processed`);
+          this.checkAudioPlayback();
+        } else {
+          console.error(`TTS failed for chunk ${index}`);
+          message.audioChunks[index] = { 
+            url: null, 
+            expressions: chunk_expressions, // 添加表情
+            index
+          };
+          this.cur_audioDatas[index]= null;
+          this.checkAudioPlayback();
+        }
+      } catch (error) {
+        console.error(`Error processing TTS chunk ${index}:`, error);
+        this.TTSrunning= false;
+      }
+    },
+
+    // 音频播放进程
+    async startAudioPlayProcess() {
+      if (!this.ttsSettings.enabled) return;
+      
+      const lastMessage = this.messages[this.messages.length - 1];
+      lastMessage.currentChunk = lastMessage.currentChunk || 0;
+      lastMessage.isPlaying = false;
+      
+      // 只需初始化一次
+      this.audioPlayQueue = [];
+      
+      console.log('Audio playback monitor started');
+    },
+
+    // 修改现有的音频播放方法
+    async checkAudioPlayback() {
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (!lastMessage || lastMessage.isPlaying) return;
+      if (lastMessage.currentChunk >= lastMessage.ttsChunks.length && !this.isTyping) {
+        console.log('All audio chunks played');
+        lastMessage.currentChunk = 0;
+        this.TTSrunning = false;
+        this.cur_audioDatas = [];
+        // 通知VRM所有音频播放完成
+        this.sendTTSStatusToVRM('allChunksCompleted', {});
+        return;
+      }
+      const currentIndex = lastMessage.currentChunk;
+      const audioChunk = lastMessage.audioChunks[currentIndex];
+      
+      if (!this.ttsSettings.enabled) {
+        lastMessage.isPlaying = false;
+        lastMessage.currentChunk = 0;
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio = null;
+        }
+        // 通知VRM停止说话动画
+        this.sendTTSStatusToVRM('stopSpeaking', {});
+        return;
+      }
+      
+      if (audioChunk && !lastMessage.isPlaying) {
+        lastMessage.isPlaying = true;
+        console.log(`Playing audio chunk ${currentIndex}`);
+        
+        try {
+          this.currentAudio = new Audio(audioChunk.url);
+          
+          // 发送 Base64 数据到 VRM
+          this.sendTTSStatusToVRM('startSpeaking', {
+            audioDataUrl: this.cur_audioDatas[currentIndex],
+            chunkIndex: currentIndex,
+            totalChunks: lastMessage.ttsChunks.length,
+            text: lastMessage.ttsChunks[currentIndex],
+            expressions: audioChunk.expressions
+          });
+          console.log(audioChunk.expressions);
+          await new Promise((resolve) => {
+            this.currentAudio.onended = () => {
+              // 通知VRM当前chunk播放结束
+              this.sendTTSStatusToVRM('chunkEnded', { 
+                chunkIndex: currentIndex 
+              });
+              resolve();
+            };
+            this.currentAudio.onerror = resolve;
+            this.currentAudio.play().catch(e => console.error('Play error:', e));
+          });
+          
+          console.log(`Audio chunk ${currentIndex} finished`);
+        } catch (error) {
+          console.error(`Playback error: ${error}`);
+        } finally {
+          lastMessage.currentChunk++;
+          lastMessage.isPlaying = false;
+          setTimeout(() => {
+            this.checkAudioPlayback();
+          }, 0);
+        }
+      }
+    },
+
+    // 停止音频播放（用于停止生成时）
+    stopAudioPlayback() {
+      // 这里可以添加停止当前播放音频的逻辑
+      const lastMessage = this.messages[this.messages.length - 1];
+      if (lastMessage) {
+        lastMessage.isPlaying = false;
+      }
+    },
+    toggleTTS(message) {
+      if (message.isPlaying) {
+        // 如果正在播放，则暂停
+        message.isPlaying = false;
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+        }
+      } else {
+        // 如果没有播放，则开始播放
+        message.isPlaying = true;
+        this.playAudioChunk(message);
+      }
+    },
+    async playAudioChunk(message) {
+      if (!this.ttsSettings.enabled){
+        message.isPlaying = false; // 如果没有音频块，停止播放
+        message.currentChunk = 0; // 重置索引
+        if (this.currentAudio) {
+          this.currentAudio.pause();
+          this.currentAudio= null;
+        }
+        return;
+      }
+      const audioChunk = message.audioChunks[message.currentChunk];
+      if (audioChunk) {
+        const audio = new Audio(audioChunk.url);
+        this.currentAudio = audio; // 保存当前音频对象
+        
+        try {
+          await audio.play();
+          audio.onended = () => {
+            message.currentChunk++; // 播放结束后，索引加一
+            this.playAudioChunk(message); // 递归调用播放下一个音频块
+          };
+          audio.onerror = (error) => {
+            console.error(`Error playing audio chunk ${message.currentChunk}:`, error);
+            message.isPlaying = false; // 出错时停止播放
+          };
+        } catch (error) {
+          console.error(`Error playing audio chunk ${message.currentChunk}:`, error);
+          message.isPlaying = false; // 出错时停止播放
+        }
+      } else {
+        message.isPlaying = false; // 如果没有音频块，停止播放
+        message.currentChunk = 0; // 重置索引
+      }
+    },
+    backwardTTS(message) {
+      if (message.currentChunk > 0) {
+        message.currentChunk--; // 当前索引减一
+      }
+    },
+
+    forwardTTS(message) {
+      if (message.currentChunk < message.audioChunks.length - 1) {
+        message.currentChunk++; // 当前索引加一
+      }
+    },
+
+    updateLanguages() {
+      // 更新 ttsSettings 中的语言
+      this.ttsSettings.edgettsLanguage = this.edgettsLanguage;
+      
+      // 更新性别和语音
+      this.updateGenders(); 
+      this.autoSaveSettings();
+    },
+    // 当语言改变时更新性别和语音
+    updateGenders() {
+      // 更新 ttsSettings 中的性别
+      this.ttsSettings.edgettsGender = this.edgettsGender;
+      // 更新到第一个语音
+      this.ttsSettings.edgettsVoice = this.filteredVoices[0].name;
+
+      // 更新语音
+      this.updateVoices();
+      this.autoSaveSettings();
+    },
+    
+    // 当性别改变时更新语音
+    updateVoices() {
+      this.autoSaveSettings();
+    },
+      // 浏览参考音频文件
+  browseGsvRefAudioFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.onchange = (event) => {
+      const files = event.target.files;
+      if (files.length > 0) {
+        this.newGsvAudio.name = files[0].name;
+        this.newGsvAudio.file = files[0]; // 存储文件对象
+      }
+    };
+    input.click();
+  },
+  
+  // 处理参考音频拖拽
+  handleGsvRefAudioDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      this.newGsvAudio.name = files[0].name;
+      this.newGsvAudio.file = files[0]; // 存储文件对象
     }
+  },
+  
+  // 移除已选择的参考音频
+  removeNewGsvAudio() {
+    this.newGsvAudio.name = '';
+    this.newGsvAudio.file = null;
+  },
+  
+  // 取消上传
+  cancelGsvAudioUpload() {
+    this.showGsvRefAudioPathDialog = false;
+    this.newGsvAudio.name = '';
+    this.newGsvAudio.text = '';
+    this.newGsvAudio.file = null;
+  },
+  
+  // 上传参考音频
+  async uploadGsvAudio() {
+    if (!this.newGsvAudio.file) {
+      showNotification('请先选择音频文件', 'error');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', this.newGsvAudio.file);
+    formData.append('prompt_text', this.newGsvAudio.text);
+    
+    try {
+      const response = await fetch(`${backendURL}/upload_gsv_ref_audio`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 添加新音频到选项列表
+        const newAudioOption = {
+          path: result.file.unique_filename,
+          name: result.file.name,
+          text: this.newGsvAudio.text
+        };
+        
+        this.ttsSettings.gsvAudioOptions.push(newAudioOption);
+        
+        // 关闭对话框并重置状态
+        this.cancelGsvAudioUpload();
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        showNotification('参考音频上传成功');
+      } else {
+        showNotification(`上传失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('上传参考音频失败:', error);
+      showNotification('上传失败，请检查网络连接', 'error');
+    }
+  },
+  
+  // 处理参考音频路径改变
+  handleRefAudioPathChange(value) {
+    // 当选择新的参考音频时，更新对应的提示文本
+    const selectedAudio = this.ttsSettings.gsvAudioOptions.find(
+      audio => audio.path === value
+    );
+    
+    if (selectedAudio && selectedAudio.text) {
+      this.ttsSettings.gsvPromptText = selectedAudio.text;
+    }
+    
+    // 自动保存设置
+    this.autoSaveSettings();
+  },
+
+    // 删除音频选项
+  async deleteAudioOption(path) {
+    try {
+      // 查找要删除的音频选项
+      const audioIndex = this.ttsSettings.gsvAudioOptions.findIndex(
+        audio => audio.path === path
+      );
+      
+      if (audioIndex === -1) return;
+      
+      // 获取文件名用于后端删除
+      const uniqueFilename = this.ttsSettings.gsvAudioOptions[audioIndex].path
+        .split('/')
+        .pop();
+      
+      // 调用后端API删除文件
+      const response = await fetch(`${backendURL}/delete_audio/${uniqueFilename}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 从选项中移除
+        this.ttsSettings.gsvAudioOptions.splice(audioIndex, 1);
+        
+        // 如果当前选中的音频被删除，则重置选择
+        if (this.ttsSettings.gsvRefAudioPath === path) {
+          this.ttsSettings.gsvRefAudioPath = '';
+          this.ttsSettings.gsvPromptText = '';
+        }
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        showNotification('音频已删除');
+      } else {
+        showNotification(`删除失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('删除音频失败:', error);
+      showNotification('删除失败，请稍后再试', 'error');
+    }
+  },
+    async startVRM() {
+    if (this.isElectron) {
+      // Electron 环境
+      try {
+        this.isVRMStarting = true;
+        await window.electronAPI.startVRMWindow();
+      } catch (error) {
+        console.error('启动失败:', error);
+      } finally {
+        this.isVRMStarting = false;
+      }
+    } else {
+      // 浏览器环境
+      window.open(`${backendURL}/vrm.html`, '_blank');
+    }
+  },
+  async startVRMweb() {
+    if (this.isElectron) {
+      window.electronAPI.openExternal(`${backendURL}/vrm.html`);
+    }else {
+      // 浏览器环境
+      window.open(`${backendURL}/vrm.html`, '_blank');
+    }
+  },
+    async checkServerPort() {
+      try {
+        // 方式1：使用专门的方法
+        const serverInfo = await window.electronAPI.getServerInfo()
+        
+        
+        if (!serverInfo.isDefaultPort) {
+          const message = `默认端口 ${serverInfo.defaultPort} 被占用，已自动切换到端口 ${serverInfo.port}`
+          showNotification(message, 'warning')
+        }
+      } catch (error) {
+        console.error('获取服务器信息失败:', error)
+      }
+    },
+    // 初始化 WebSocket 连接
+    initTTSWebSocket() {
+      const http_protocol = window.location.protocol;
+      const ws_protocol = http_protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${ws_protocol}//${window.location.host}/ws/tts`;
+      this.ttsWebSocket = new WebSocket(wsUrl);
+      
+      this.ttsWebSocket.onopen = () => {
+        console.log('TTS WebSocket connected');
+        this.wsConnected = true;
+      };
+      
+      this.ttsWebSocket.onclose = () => {
+        console.log('TTS WebSocket disconnected');
+        this.wsConnected = false;
+        // 自动重连
+        setTimeout(() => {
+          if (!this.wsConnected) {
+            this.initTTSWebSocket();
+          }
+        }, 3000);
+      };
+      
+      this.ttsWebSocket.onerror = (error) => {
+        console.error('TTS WebSocket error:', error);
+      };
+    },
+    
+    // 发送 TTS 状态到 VRM
+    sendTTSStatusToVRM(type, data) {
+      if (this.ttsWebSocket && this.wsConnected) {
+        this.ttsWebSocket.send(JSON.stringify({
+          type,
+          data,
+          timestamp: Date.now()
+        }));
+      }
+    },
+  // 浏览VRM模型文件
+  browseVrmModelFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.vrm';
+    input.onchange = (event) => {
+      const files = event.target.files;
+      if (files.length > 0) {
+        const file = files[0];
+        // 检查文件扩展名
+        if (!file.name.toLowerCase().endsWith('.vrm')) {
+          showNotification('只支持.vrm格式的文件', 'error');
+          return;
+        }
+        this.newVrmModel.name = file.name;
+        this.newVrmModel.file = file;
+        // 自动设置显示名称（去掉扩展名）
+        this.newVrmModel.displayName = file.name.replace(/\.vrm$/i, '');
+      }
+    };
+    input.click();
+  },
+  
+  // 处理VRM模型拖拽
+  handleVrmModelDrop(event) {
+    event.preventDefault();
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      // 检查文件扩展名
+      if (!file.name.toLowerCase().endsWith('.vrm')) {
+        showNotification('只支持.vrm格式的文件', 'error');
+        return;
+      }
+      this.newVrmModel.name = file.name;
+      this.newVrmModel.file = file;
+      // 自动设置显示名称（去掉扩展名）
+      this.newVrmModel.displayName = file.name.replace(/\.vrm$/i, '');
+    }
+  },
+  
+  // 移除已选择的VRM模型
+  removeNewVrmModel() {
+    this.newVrmModel.name = '';
+    this.newVrmModel.displayName = '';
+    this.newVrmModel.file = null;
+  },
+  
+  // 取消上传
+  cancelVrmModelUpload() {
+    this.showVrmModelDialog = false;
+    this.newVrmModel.name = '';
+    this.newVrmModel.displayName = '';
+    this.newVrmModel.file = null;
+  },
+  
+  
+  // 处理模型选择改变
+  handleModelChange(value) {
+    // 自动保存设置
+    this.autoSaveSettings();
+  },
+  
+ 
+    // 加载默认模型列表
+  async loadDefaultModels() {
+    try {
+      const response = await fetch(`${backendURL}/get_default_vrm_models`);
+      const result = await response.json();
+      
+      if (result.success) {
+        this.VRMConfig.defaultModels = result.models;
+        console.log(this.VRMConfig.defaultModels);
+        // 如果没有选中任何模型，默认选择第一个默认模型
+        if (!this.VRMConfig.selectedModelId && result.models.length > 0) {
+          this.VRMConfig.selectedModelId = result.models[0].id;
+        }
+        await this.autoSaveSettings();
+      }
+    } catch (error) {
+      console.error('加载默认模型失败:', error);
+    }
+  },
+
+  // 修改上传VRM模型方法
+  async uploadVrmModel() {
+    if (!this.newVrmModel.file) {
+      showNotification('请先选择VRM模型文件', 'error');
+      return;
+    }
+    
+    if (!this.newVrmModel.displayName.trim()) {
+      showNotification('请输入模型显示名称', 'error');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', this.newVrmModel.file);
+    formData.append('display_name', this.newVrmModel.displayName.trim());
+    
+    try {
+      const response = await fetch(`${backendURL}/upload_vrm_model`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 添加新模型到用户模型列表
+        const newModelOption = {
+          id: result.file.unique_filename,
+          name: result.file.display_name,
+          path: result.file.path,
+          type: 'user' // 标记为用户上传的模型
+        };
+        
+        this.VRMConfig.userModels.push(newModelOption);
+        
+        // 关闭对话框并重置状态
+        this.cancelVrmModelUpload();
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        showNotification('VRM模型上传成功');
+      } else {
+        showNotification(`上传失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('上传VRM模型失败:', error);
+      showNotification('上传失败，请检查网络连接', 'error');
+    }
+  },
+  
+  // 修改删除模型选项方法（只能删除用户上传的模型）
+  async deleteModelOption(modelId) {
+    try {
+      // 查找要删除的模型选项（只在用户模型中查找）
+      const modelIndex = this.VRMConfig.userModels.findIndex(
+        model => model.id === modelId
+      );
+      
+      if (modelIndex === -1) {
+        showNotification('无法删除默认模型', 'error');
+        return;
+      }
+      
+      // 调用后端API删除文件
+      const response = await fetch(`${backendURL}/delete_vrm_model/${modelId}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // 从用户模型列表中移除
+        this.VRMConfig.userModels.splice(modelIndex, 1);
+        
+        // 如果当前选中的模型被删除，则重置为默认模型
+        if (this.VRMConfig.selectedModelId === modelId) {
+          if (this.VRMConfig.defaultModels.length > 0) {
+            this.VRMConfig.selectedModelId = this.VRMConfig.defaultModels[0].id;
+          } else {
+            this.VRMConfig.selectedModelId = '';
+          }
+        }
+        
+        // 自动保存设置
+        await this.autoSaveSettings();
+        
+        showNotification('VRM模型已删除');
+      } else {
+        showNotification(`删除失败: ${result.message}`, 'error');
+      }
+    } catch (error) {
+      console.error('删除VRM模型失败:', error);
+      showNotification('删除失败，请稍后再试', 'error');
+    }
+  },
+  
+  // 获取当前选中的模型信息
+  getCurrentSelectedModel() {
+    // 先在默认模型中查找
+    let selectedModel = this.VRMConfig.defaultModels.find(
+      model => model.id === this.VRMConfig.selectedModelId
+    );
+    
+    // 如果没找到，再在用户模型中查找
+    if (!selectedModel) {
+      selectedModel = this.VRMConfig.userModels.find(
+        model => model.id === this.VRMConfig.selectedModelId
+      );
+    }
+    
+    return selectedModel;
+  }
 }

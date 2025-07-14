@@ -20,6 +20,9 @@
     "mcpServers": {},
     "llmTools": [],
     "tools": {
+      "asyncTools": {
+        "enabled": false
+      },
       "time": {
         "enabled": false
       },
@@ -134,7 +137,46 @@
       "api_key": "",
       "size": "1024x1024"
     },
-    "comfyuiServers": ["http://localhost:8188"],
+    "asrSettings": {
+      "enabled": false,
+      "engine": "webSpeech",
+      "selectedProvider": null,
+      "vendor": "OpenAI",
+      "model": "",
+      "base_url": "",
+      "api_key": "",
+      "funasr_ws_url": "ws://127.0.0.1:10095",
+      "funasr_mode": "2pass",
+      "interactionMethod": "auto",
+      "hotkey" : "Alt",
+      "wakeWord": "小派",
+      "hotwords": "小派 80\nagent party 60"
+    },
+    "ttsSettings": {
+      "enabled": false,
+      "engine": "edgetts",
+      "separators":["。", "\n", "？", "！", "，","～","!","?",",","~"],
+      "maxConcurrency": 2,
+      "enabledInterruption": false,
+      "edgettsLanguage": "zh-CN",
+      "edgettsGender": "Female",
+      "edgettsVoice": "XiaoyiNeural",
+      "edgettsRate": 1.0,
+      "gsvServer": "http://127.0.0.1:9880",
+      "gsvTextLang": "zh",
+      "gsvRate": 1.0,
+      "gsvPromptLang": "zh",
+      "gsvPromptText": "",
+      "gsvRefAudioPath": "",
+      "gsvAudioOptions": []
+    },
+    "VRMConfig": {
+      "enabledExpressions": false,
+      "selectedModelId": "alice", 
+      "defaultModels": [], 
+      "userModels": []   
+    },
+    "comfyuiServers": ["http://127.0.0.1:8188"],
     "comfyuiAPIkey": "",
     "BotConfig": {
       "imgHost_enabled":false,

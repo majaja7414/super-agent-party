@@ -425,6 +425,108 @@
     --hljs-attr: #8a9b52;           /* 沙漠绿 */
 }
 
+:root {
+    /* 水墨风基础变量 */
+    --ink-primary: #2c3e50;        /* 墨黑 */
+    --ink-secondary: #5d6d7e;      /* 灰墨 */
+    --ink-accent: #7f8c8d;          /* 淡墨 */
+    --ink-light: #ecf0f1;           /* 宣纸白 */
+    --ink-highlight: #3498db;       /* 青花点缀 */
+    --ink-danger: #e74c3c;         /* 朱砂红 */
+    --ink-success: #27ae60;        /* 竹青 */
+    --ink-warning: #f39c12;        /* 琥珀黄 */
+    
+    /* 背景纹理 */
+    --ink-bg-texture: linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+}
+
+[data-theme="ink"] {
+    /* 基础三色 */
+    --bg-color: #f5f7fa;             /* 宣纸白背景 */
+    --text-color: #2c3e50;           /* 墨黑色文字 */
+    --border-color: #d5dbdb;         /* 淡墨灰边框 */
+    
+    /* 主色调 - 墨黑渐变 */
+    --el-color-primary: var(--ink-primary);
+    --el-color-primary-light-3: #3d566e;
+    --el-color-primary-light-5: #4f6a85;
+    --el-color-primary-light-7: #6b839d;
+    --el-color-primary-rgb: 44, 62, 80 !important;
+    
+    /* 背景系统 */
+    --el-bg-color: var(--bg-color) !important;
+    --el-bg-color-page: #eef2f6 !important;       /* 宣纸纹理背景 */
+    --el-bg-color-overlay: #ffffff !important;    /* 浮层背景 */
+    background-image: var(--ink-bg-texture);
+    background-size: 20px 20px;
+    
+    /* 文字系统 */
+    --el-text-color-primary: var(--text-color) !important;
+    --el-text-color-regular: #5d6d7e !important;   /* 灰墨色 */
+    --el-text-color-secondary: #7f8c8d !important; /* 淡墨色 */
+    
+    /* 边框系统 */
+    --el-border-color: var(--border-color) !important;
+    --el-border-color-light: #c5cdd3 !important;   /* 更淡墨色 */
+    --el-border-color-lighter: #e1e4e8 !important;
+    
+    /* 组件特定 */
+    --el-button-bg-color: #ffffff !important;      /* 宣纸白按钮 */
+    --el-input-bg-color: #ffffff !important;       /* 输入框背景 */
+    --el-menu-bg-color: #f5f7fa !important;       /* 菜单背景 */
+    --el-table-bg-color: #ffffff !important;       /* 表格背景 */
+    --el-tag-bg-color: rgba(44, 62, 80, 0.1) !important; /* 半透明标签 */
+    
+    /* 状态颜色 */
+    --el-color-success: var(--ink-success) !important;     /* 竹青色 */
+    --el-color-warning: var(--ink-warning) !important;     /* 琥珀色 */
+    --el-color-danger: var(--ink-danger) !important;       /* 朱砂红 */
+    --el-color-info: var(--ink-highlight) !important;      /* 青花色 */
+    
+    /* 阴影效果 */
+    --el-box-shadow-light: 0 2px 8px rgba(44, 62, 80, 0.1) !important; 
+    --card-shadow: 0 4px 12px rgba(44, 62, 80, 0.08); 
+    
+    /* 输入框系统 */
+    --el-input-text-color: var(--text-color);
+    --el-input-placeholder-color: #a6b1be;
+    --el-input-hover-border-color: var(--el-color-primary-light-5);
+    --el-input-focus-border-color: var(--el-color-primary);
+    --el-input-disabled-bg-color: #f0f3f7;
+    
+    /* 代码块 */
+    --code-bg: #ffffff;
+    --code-border: #e1e4e8;
+    
+    /* 水墨特色元素 */
+    --ink-brush-stroke: linear-gradient(to right, 
+        transparent 0%, 
+        rgba(44, 62, 80, 0.2) 30%, 
+        rgba(44, 62, 80, 0.5) 50%, 
+        rgba(44, 62, 80, 0.2) 70%, 
+        transparent 100%);
+}
+
+/* 配套代码高亮主题 */
+[data-theme="ink-wash"] {
+    --hljs-text: var(--text-color);
+    --hljs-bg: #ffffff;
+    --hljs-border: rgba(52, 152, 219, 0.1);
+    --hljs-keyword: #8e44ad;        /* 紫藤色 */
+    --hljs-string: var(--ink-danger); /* 朱砂红 */
+    --hljs-number: var(--ink-success); /* 竹青色 */
+    --hljs-comment: #95a5a6;        /* 烟灰色 */
+    --hljs-title: var(--ink-highlight); /* 青花色 */
+    --hljs-built_in: var(--ink-primary); /* 墨黑色 */
+    --hljs-literal: var(--ink-warning); /* 琥珀色 */
+    --hljs-class: #16a085;          /* 碧玉色 */
+    --hljs-function: #2980b9;       /* 靛青色 */
+    --hljs-params: #d35400;         /* 赭石色 */
+    --hljs-attr: #27ae60;           /* 竹青色 */
+}
+
+
 /* 修改默认按钮基础样式 */
 .el-button--default {
   /* 通用样式 */
@@ -947,11 +1049,8 @@ body {
   background-color: var(--el-bg-color);
   border-radius: 8px;
   box-shadow: 0 2px 12px var(--el-box-shadow-light);
-  scrollbar-width: none;
-}
-
-.messages-container::-webkit-scrollbar {
-  display: none;
+  scrollbar-width: 2px;
+  overflow-y: auto;
 }
 
 /* 修复消息容器布局 */
@@ -3016,4 +3115,50 @@ body {
   .el-upload {
     background-color: var(--el-bg-color-page);
   }
+}
+
+.search-input {
+  margin-bottom: 10px;
+}
+.fastapi-iframe {
+  min-height: 85vh!important;
+}
+
+.tts-controls {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center; /* 确保垂直居中 */
+  margin-bottom: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.message:hover .tts-controls {
+  opacity: 1;
+}
+
+.tts-status {
+  color: var(--el-color-info);
+  font-size: 11px;
+  margin-left: 8px; /* 文字左侧也保持相同间距 */
+}
+
+.message.assistant .tts-controls {
+  background: var(--el-bg-color);
+}
+
+.message.assistant .tts-controls .tts-status {
+  color: var(--el-primary-color)
+}
+
+/* 保持按钮之间的间距不变 */
+.tts-controls .el-button {
+  margin: 0; /* 移除默认边距 */
+}
+
+.model-option-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }

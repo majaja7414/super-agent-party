@@ -14,18 +14,37 @@
 
 ## Introduction
 
-🚀 Zero Intrusion · Minimalist Expansion · Empower LLM APIs with Enterprise-Grade Capabilities without modifying a single line of code, seamlessly add advanced features to your LLM interfaces, including knowledge base integration, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual understanding, image generation, custom tools, and more. Build a plug-and-play LLM enhancement middleware platform. At the same time, you can deploy your agent configuration to social platforms with just one click (official QQ bot is already supported).You can also use the workflows built on other intelligent platform as tools for intelligent agents (comfyui is already supported).
+### 🚀 **A 3D AI desktop pet with endless possibilities!**  
+
+- ✅Empower LLM APIs with enterprise-level capabilities without modifying a single line of code. Seamlessly enhance your LLM interfaces with advanced features such as knowledge bases, real-time internet connectivity, permanent memory, code execution tools, deep thought control, in-depth research, visual capabilities, drawing abilities, auditory functions, speech capabilities, and custom tools—creating a plug-and-play LLM enhancement platform.  
+- ✅At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop pets).  
+- ✅You can also use other agents, smart tools, and intelligent workflows as tools for agent-party agents (already implemented for ComfyUI, MCP, and A2A).  
+- ✅Multi-platform support: Windows, macOS, Linux, Docker, Web.
 
 ![image](doc/image/demo.png)
 
-## Why Choose Us?
-- ✅ Efficient development: Supports streaming output, does not affect the original API's response speed, and no code changes are required
-- ✅ Quick access: Avoids repeated access to multiple service providers for a single function, pre-configured with mainstream LLM manufacturer/intelligent body protocol adapters, compatible with OpenAI/Ollama/MCP/A2A, and experience the next-generation LLM middleware instantly
-- ✅ High customization: Supports advanced agent features such as custom knowledge base, real-time internet access, permanent memory, code execution tools, MCP, A2A, deep thinking control, in-depth research, visual capabilities, image generation, and custom tools, allowing you to build a plug-and-play LLM enhancement middleware platform.  
-Customized agents can be saved as snapshots for easy reuse in the future. The snapshot agents can be directly called using the OpenAI API.
-- ✅ Data security: Supports local knowledge base and local model access, ensuring data is not leaked and enterprise data security is maintained. All files will be cached locally and will not be uploaded anywhere.
-- ✅ Team collaboration: Supports team collaboration, multi-person sharing of knowledge base, model services, tools, MCP, A2A, and other resources, improving team collaboration efficiency. Chat records or files and images in the knowledge base are stored locally and can be used as a local file bed or image bed.
-- ✅One-click deployment: Supports one-click deployment to social software, such as QQ, making it convenient for users to use the agent anytime and anywhere.
+## Software Screenshots
+
+### Multi-Vendor Support: Supports both locally deployed engines and cloud vendor interfaces  
+![image](doc/image/model.jpeg)  
+
+### Massive tools: support asynchronous calls without blocking agent replies
+![image](doc/image/tool.jpeg)
+
+### VRM Desktop Pet: Supports uploading custom VRM models to create a personalized desktop pet  
+![image](doc/image/vrmbot.jpeg)  
+
+### Memory Module: Supports permanent memory and lorebook world-building  
+![image](doc/image/memory.jpeg)  
+
+### QQ Bot: Supports one-click deployment to the official QQ bot, enabling users to access the agent anytime, anywhere  
+![image](doc/image/qqbot.jpeg)  
+
+### Developer-Friendly: Open OpenAI API and MCP interfaces, allowing external agent integration  
+![image](doc/image/API.jpeg)  
+
+### ComfyUI Integration: Converts ComfyUI workflows into agent tools with multi-ComfyUI server load balancing  
+![image](doc/image/comfyui.jpeg)
 
 ## Quick Start
 

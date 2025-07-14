@@ -445,15 +445,19 @@ class MyClient(botpy.Client):
             full_response = []
             async for chunk in stream:
                 reasoning_content = ""
+                tool_content = ""
                 if chunk.choices:
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "") 
+                        tool_content = delta.get("tool_content", "")
                 content = chunk.choices[0].delta.content or ""
                 full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
+                if tool_content and self.reasoningVisible:
+                    content = tool_content
                 
                 # 更新缓冲区
                 state = self.processing_states[c_id]
@@ -587,7 +591,6 @@ class MyClient(botpy.Client):
     async def on_group_at_message_create(self, message: GroupMessage):
         if not self.is_running:
             return
-        
         client = AsyncOpenAI(
             api_key="super-secret-key",
             base_url=f"http://127.0.0.1:{self.port}/v1"
@@ -639,6 +642,16 @@ class MyClient(botpy.Client):
         g_id = message.group_openid
         if g_id not in self.memoryList:
             self.memoryList[g_id] = []
+        # 初始化群组状态
+        if not hasattr(self, 'group_states'):
+            self.group_states = {}
+        self.group_states[g_id] = {
+            "msg_seq": 1,
+            "text_buffer": "",
+            "image_buffer": "",
+            "image_cache": []
+        }
+        state = self.group_states[g_id]
         if self.quickRestart:
             if "/重启" in message.content:
                 self.memoryList[g_id] = []
@@ -649,16 +662,6 @@ class MyClient(botpy.Client):
                 await self._send_group_text(message, "The conversation record has been reset.", state)
                 return
         self.memoryList[g_id].append({"role": "user", "content": user_content})
-
-        # 初始化群组状态
-        if not hasattr(self, 'group_states'):
-            self.group_states = {}
-        self.group_states[g_id] = {
-            "msg_seq": 1,
-            "text_buffer": "",
-            "image_buffer": "",
-            "image_cache": []
-        }
 
         try:
             # 流式API调用
@@ -671,16 +674,19 @@ class MyClient(botpy.Client):
             full_response = []
             async for chunk in stream:
                 reasoning_content = ""
+                tool_content = ""
                 if chunk.choices:
                     chunk_dict = chunk.model_dump()
                     delta = chunk_dict["choices"][0].get("delta", {})
                     if delta:
                         reasoning_content = delta.get("reasoning_content", "")
+                        tool_content = delta.get("tool_content", "")
                 content = chunk.choices[0].delta.content or ""
                 full_response.append(content)
                 if reasoning_content and self.reasoningVisible:
                     content = reasoning_content
-                state = self.group_states[g_id]
+                if tool_content and self.reasoningVisible:
+                    content = tool_content
                 
                 # 更新文本缓冲区
                 state["text_buffer"] += content
@@ -792,7 +798,7 @@ class MyClient(botpy.Client):
                 print(f"群图片发送失败: {e}")
                 clean_text = self._clean_group_text(str(e))
                 if clean_text:
-                    self._send_group_text(message, clean_text, state)
+                    await self._send_group_text(message, clean_text, state)
 
     def _clean_group_text(self, text):
         """群聊文本三级清洗"""
