@@ -491,7 +491,7 @@ let vue_methods = {
       }
       else if (key === 'deploy-bot') {
         this.activeMenu = 'deploy-bot';
-        this.subMenu = 'qq_bot'; // 默认显示第一个子菜单
+        this.subMenu = 'table_pet'; // 默认显示第一个子菜单
       }
       else {
         this.activeMenu = key;
