@@ -4612,7 +4612,11 @@ let vue_methods = {
       // Electron 环境
       try {
         this.isVRMStarting = true;
-        await window.electronAPI.startVRMWindow();
+        const windowConfig = {
+          width: this.VRMConfig.windowWidth,
+          height: this.VRMConfig.windowHeight
+        };
+        await window.electronAPI.startVRMWindow(windowConfig);
       } catch (error) {
         console.error('启动失败:', error);
       } finally {
