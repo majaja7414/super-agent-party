@@ -3660,7 +3660,7 @@ let vue_methods = {
       // 错误处理
       this.recognition.onerror = (event) => {
         console.error('Web Speech API error:', event.error);
-        let errorMessage = this.t('speechRecognitionError');
+        let errorMessage = null;
         
         switch (event.error) {
           case 'no-speech':
