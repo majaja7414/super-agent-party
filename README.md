@@ -14,10 +14,10 @@
 
 ## Introduction
 
-### 🚀 **A 3D AI desktop pet with endless possibilities!**  
+### 🚀 **A 3D AI desktop companion with endless possibilities!**  
 
 - ✅Empower LLM APIs with enterprise-level capabilities without modifying a single line of code. Seamlessly enhance your LLM interfaces with advanced features such as knowledge bases, real-time internet connectivity, permanent memory, code execution tools, deep thought control, in-depth research, visual capabilities, drawing abilities, auditory functions, speech capabilities, and custom tools—creating a plug-and-play LLM enhancement platform.  
-- ✅At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop pets).  
+- ✅At the same time, deploy your agent configurations to any frontend with just one click (already implemented for classic chat interfaces, QQ official bots, and VRM desktop companion).  
 - ✅You can also use other agents, smart tools, and intelligent workflows as tools for agent-party agents (already implemented for ComfyUI, MCP, and A2A).  
 - ✅Multi-platform support: Windows, macOS, Linux, Docker, Web.
 
@@ -31,7 +31,7 @@
 ### Massive tools: support asynchronous calls without blocking agent replies
 ![image](doc/image/tool.jpeg)
 
-### VRM Desktop Pet: Supports uploading custom VRM models to create a personalized desktop pet  
+### VRM desktop companion: Supports uploading custom VRM models to create a personalized desktop companion  
 ![image](doc/image/vrmbot.jpeg)  
 
 ### Memory Module: Supports permanent memory and lorebook world-building  
