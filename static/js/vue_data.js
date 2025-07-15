@@ -384,6 +384,8 @@ let vue_data = {
     VRMConfig: {
       enabledExpressions: false,
       selectedModelId: 'alice', // 默认选择Alice模型
+      windowWidth: 540,
+      windowHeight: 960,
       defaultModels: [], // 存储默认模型
       userModels: []     // 存储用户上传的模型
     },

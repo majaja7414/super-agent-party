@@ -526,7 +526,7 @@ app.whenReady().then(async () => {
     });
     let vrmWindow = null;
 
-    ipcMain.handle('start-vrm-window', async () => {
+    ipcMain.handle('start-vrm-window', async (_,windowConfig = {}) => {
       if (vrmWindow) {
         vrmWindow.focus();
         return;
@@ -534,11 +534,15 @@ app.whenReady().then(async () => {
 
       const { width, height } = screen.getPrimaryDisplay().workAreaSize;
       
+      // 使用传入的配置或默认值
+      const windowWidth = windowConfig.width || 540;
+      const windowHeight = windowConfig.height || 960;
+      
       vrmWindow = new BrowserWindow({
-        width: 540,
-        height: 960,
-        x: width - 560,  // 右边距 20px
-        y: height - 900, // 下边距 20px
+        width: windowWidth,
+        height: windowHeight,
+        x: width - windowWidth - 20,  // 右边距 20px
+        y: height - windowHeight - 40, // 下边距 40px（考虑任务栏）
         transparent: true,
         frame: false,
         resizable: false,
@@ -553,14 +557,13 @@ app.whenReady().then(async () => {
           nodeIntegration: true,
           enableRemoteModule: true,
           sandbox: false,
-          webgl: true, // 启用 WebGL
+          webgl: true,
           devTools: isDev,
           webAudio: true,
-          autoplayPolicy: 'no-user-gesture-required', // 允许自动播放
+          autoplayPolicy: 'no-user-gesture-required',
           preload: path.join(__dirname, 'static/js/preload.js')
         }
       });
-
       // 加载页面
       await vrmWindow.loadURL(`http://${HOST}:${PORT}/vrm.html`);
 

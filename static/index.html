@@ -5198,7 +5198,26 @@
                                 </el-option>
                               </el-select>
                             </el-form-item>
-                            
+
+                            <el-form-item :label="t('windowWidth')" class="form-item-align">
+                              <el-slider
+                                v-model="VRMConfig.windowWidth"
+                                :min="100"
+                                :max="2560"
+                                :step="10"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+                            <el-form-item :label="t('windowHeight')" class="form-item-align">
+                              <el-slider
+                                v-model="VRMConfig.windowHeight"
+                                :min="100"
+                                :max="2560"
+                                :step="10"
+                                @change="autoSaveSettings"
+                              />
+                            </el-form-item>
+
                             <el-form-item :label="t('enabledExpressions')" class="form-item-align" label-position="left">
                               <el-switch 
                                 v-model="VRMConfig.enabledExpressions" 

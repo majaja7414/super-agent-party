@@ -61,7 +61,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setNetworkVisibility: (visible) => ipcRenderer.invoke('set-env', { key: 'networkVisible', value: visible }), 
   //重启app
   restartApp: () => ipcRenderer.invoke('restart-app'),
-  startVRMWindow: () => ipcRenderer.invoke('start-vrm-window'),
+  startVRMWindow: (windowConfig) => ipcRenderer.invoke('start-vrm-window', windowConfig),
   stopVRMWindow: () => ipcRenderer.invoke('stop-vrm-window'),
   getServerInfo: () => ipcRenderer.invoke('get-server-info'),
 });
