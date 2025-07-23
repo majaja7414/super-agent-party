@@ -4,6 +4,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { VRMLoaderPlugin, MToonMaterialLoaderPlugin, VRMUtils, VRMLookAt } from '@pixiv/three-vrm';
 import { MToonNodeMaterial } from '@pixiv/three-vrm/nodes';
 
+import {
+    fetchLanguage,
+    t,
+    fetchVRMConfig,
+    getVRMpath,
+    setNaturalPose,
+    getRandomBlinkData,
+    applyIdleAnimation
+} from './vrmUtil.js';
+
 const _v3A = new THREE.Vector3();
 
 // extended lookat
@@ -94,58 +104,6 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 限制像素比例
 renderer.setClearColor(isElectron ? 0x00000000 : 0xffffff, isElectron ? 0 : 1);
 
-// 用fetch查询/cur_language的值
-async function fetchLanguage() {
-    try {
-        const http_protocol = window.location.protocol;
-        const HOST = window.location.host;
-        let res = await fetch(`${http_protocol}//${HOST}/cur_language`);
-        const data = await res.json();
-        return data.language;
-    } catch (error) {
-        console.error('Error fetching language:', error);
-        return 'zh-CN';
-    }
-}
-async function t(key) {
-    const currentLanguage = await fetchLanguage();
-    return translations[currentLanguage][key] || key;
-}
-// 用fetch查询/cur_language的值
-async function fetchVRMConfig() {
-    try {
-        const http_protocol = window.location.protocol;
-        const HOST = window.location.host;
-        let res = await fetch(`${http_protocol}//${HOST}/vrm_config`);
-        const data = await res.json();
-        return data.VRMConfig;
-    } catch (error) {
-        console.error('Error fetching VRMConfig:', error);
-        return   {
-            enabledExpressions: false,
-            selectedModelId: 'alice', // 默认选择Alice模型
-            defaultModels: [], // 存储默认模型
-            userModels: []     // 存储用户上传的模型
-        };
-    }
-}
-
-async function getVRMpath() {
-    const vrmConfig = await fetchVRMConfig();
-    const modelId = vrmConfig.selectedModelId;
-    const defaultModel = vrmConfig.defaultModels.find(model => model.id === modelId) || vrmConfig.userModels.find(model => model.id === modelId);
-    if (defaultModel) {
-        return defaultModel.path;
-    } else {
-        const userModel = vrmConfig.userModels.find(model => model.id === modelId);
-        if (userModel) {
-            return userModel.path;
-        }
-        else {
-            return 'http://127.0.0.1:3456/vrm/Alice.vrm';
-        }
-    }
-}
 
 const vrmPath = await getVRMpath();
 console.log(vrmPath);
@@ -217,61 +175,6 @@ loader.register( ( parser ) => {
         autoUpdateHumanBones: true,
     } );
 } );
-
-// 设置自然姿势的函数
-function setNaturalPose(vrm) {
-    if (!vrm.humanoid) return;
-
-    // 左臂自然下垂
-    vrm.humanoid.getNormalizedBoneNode( 'leftUpperArm' ).rotation.z = -0.4 * Math.PI;
-
-    // 右臂自然下垂
-    vrm.humanoid.getNormalizedBoneNode( 'rightUpperArm' ).rotation.z = 0.4 * Math.PI;
-    
-    const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
-    if (leftHand) {
-        leftHand.rotation.z = 0.1; // 手腕自然弯曲
-        leftHand.rotation.x = 0.05;
-    }
-    const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
-    if (rightHand) {
-        rightHand.rotation.z = -0.1; // 手腕自然弯曲
-        rightHand.rotation.x = 0.05;
-    }
-    // 添加手指的自然弯曲（如果模型支持）
-    const fingerBones = [
-        'leftThumbProximal', 'leftThumbIntermediate', 'leftThumbDistal',
-        'leftIndexProximal', 'leftIndexIntermediate', 'leftIndexDistal',
-        'leftMiddleProximal', 'leftMiddleIntermediate', 'leftMiddleDistal',
-        'leftRingProximal', 'leftRingIntermediate', 'leftRingDistal',
-        'leftLittleProximal', 'leftLittleIntermediate', 'leftLittleDistal',
-        'rightThumbProximal', 'rightThumbIntermediate', 'rightThumbDistal',
-        'rightIndexProximal', 'rightIndexIntermediate', 'rightIndexDistal',
-        'rightMiddleProximal', 'rightMiddleIntermediate', 'rightMiddleDistal',
-        'rightRingProximal', 'rightRingIntermediate', 'rightRingDistal',
-        'rightLittleProximal', 'rightLittleIntermediate', 'rightLittleDistal'
-    ];
-
-    fingerBones.forEach(boneName => {
-        const bone = vrm.humanoid.getNormalizedBoneNode(boneName);
-        if (bone) {
-            // 根据手指部位设置不同的弯曲度
-            if (boneName.includes('Thumb')) {
-                // 拇指稍微向内
-                bone.rotation.y = boneName.includes('left') ? 0.35 : -0.35;
-            } else if (boneName.includes('Proximal')) {
-                // 近端指骨轻微弯曲
-                bone.rotation.z = boneName.includes('left') ? -0.35 : 0.35;
-            } else if (boneName.includes('Intermediate')) {
-                // 中端指骨稍微弯曲
-                bone.rotation.z = boneName.includes('left') ? -0.45 : 0.45;
-            } else if (boneName.includes('Distal')) {
-                // 远端指骨轻微弯曲
-                bone.rotation.z = boneName.includes('left') ? -0.3 : 0.3;
-            }
-        }
-    });
-}
 
 loader.load(
 
@@ -350,98 +253,6 @@ const idleOffsets = {
     spine: Math.random() * Math.PI * 2
 };
 
-// 生成随机的下次眨眼时间和模式
-function getRandomBlinkData() {
-    const interval = Math.random() * 4 + 1.5; // 1.5-5.5秒之间的随机间隔
-    const pattern = Math.random() < 0.8 ? 0 : 1; // 80%单次眨眼，20%双次眨眼
-    return { interval, pattern };
-}
-
-// 闲置动作函数
-function applyIdleAnimation(vrm, time) {
-    if (!vrm.humanoid) return;
-
-    // 身体轻微摆动 - 慢速，小幅度
-    const bodySwayX = Math.sin(time * 0.3 + idleOffsets.body) * 0.02;
-    const bodySwayZ = Math.cos(time * 0.25 + idleOffsets.body) * 0.015;
-    
-    // 脊椎轻微摆动
-    const spine = vrm.humanoid.getNormalizedBoneNode('spine');
-    if (spine) {
-        spine.rotation.x = bodySwayX;
-        spine.rotation.z = bodySwayZ;
-    }
-
-    // 胸部轻微摆动
-    const chest = vrm.humanoid.getNormalizedBoneNode('chest');
-    if (chest) {
-        chest.rotation.x = bodySwayX * 0.5;
-        chest.rotation.z = bodySwayZ * 0.5;
-    }
-
-    // 左臂自然摆动
-    const leftUpperArm = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
-    const leftLowerArm = vrm.humanoid.getNormalizedBoneNode('leftLowerArm');
-    if (leftUpperArm) {
-        // 保持基本姿势，添加轻微摆动
-        leftUpperArm.rotation.z = -0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.03 - 0.01;
-        leftUpperArm.rotation.x = Math.cos(time * 0.35 + idleOffsets.leftArm) * 0.03;
-        leftUpperArm.rotation.y = Math.sin(time * 0.3 + idleOffsets.leftArm) * 0.02;
-    }
-    if (leftLowerArm) {
-        leftLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.leftArm) * 0.02;
-    }
-
-    // 右臂自然摆动
-    const rightUpperArm = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
-    const rightLowerArm = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
-    if (rightUpperArm) {
-        // 保持基本姿势，添加轻微摆动
-        rightUpperArm.rotation.z = 0.43 * Math.PI + Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.03;
-        rightUpperArm.rotation.x = Math.cos(time * 0.4 + idleOffsets.rightArm) * 0.03;
-        rightUpperArm.rotation.y = Math.sin(time * 0.32 + idleOffsets.rightArm) * 0.02;
-    }
-    if (rightLowerArm) {
-        rightLowerArm.rotation.z = - Math.sin(time * 0.75 + idleOffsets.rightArm) * 0.02;
-    }
-
-    const leftHand = vrm.humanoid.getNormalizedBoneNode('leftHand');
-    if (leftHand) {
-        leftHand.rotation.z = 0.1 + Math.sin(time * 0.6 + idleOffsets.leftArm) * 0.015; // 手腕自然弯曲
-        leftHand.rotation.x = 0.05;
-    }
-    const rightHand = vrm.humanoid.getNormalizedBoneNode('rightHand');
-    if (rightHand) {
-        rightHand.rotation.z = -0.1 - Math.sin(time * 0.6 + idleOffsets.rightArm) * 0.015; // 手腕自然弯曲
-        rightHand.rotation.x = 0.05;
-    }
-
-    // 头部轻微摆动 - 比原来更细腻
-    const headBone = vrm.humanoid.getNormalizedBoneNode('head');
-    if (headBone) {
-        headBone.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.03;
-        headBone.rotation.x = Math.sin(time * 0.5 + idleOffsets.head) * 0.02;
-        headBone.rotation.z = Math.cos(time * 0.4 + idleOffsets.head) * 0.01;
-    }
-
-    // 肩膀轻微摆动
-    const leftShoulder = vrm.humanoid.getNormalizedBoneNode('leftShoulder');
-    const rightShoulder = vrm.humanoid.getNormalizedBoneNode('rightShoulder');
-    if (leftShoulder) {
-        leftShoulder.rotation.z = Math.sin(time * 0.35 + idleOffsets.leftArm) * 0.02;
-    }
-    if (rightShoulder) {
-        rightShoulder.rotation.z = Math.sin(time * 0.4 + idleOffsets.rightArm) * 0.02;
-    }
-
-    // 颈部轻微摆动
-    const neck = vrm.humanoid.getNormalizedBoneNode('neck');
-    if (neck) {
-        neck.rotation.y = Math.sin(time * 0.7 + idleOffsets.head) * 0.02;
-        neck.rotation.x = Math.cos(time * 0.6 + idleOffsets.head) * 0.01;
-    }
-}
-
 // 在animate函数中替换原来的眨眼动画代码
 function animate() {
     requestAnimationFrame(animate);
@@ -455,7 +266,7 @@ function animate() {
         currentVrm.scene.scale.setScalar(breathScale);
         
         // 应用闲置动作
-        applyIdleAnimation(currentVrm, time);
+        applyIdleAnimation(currentVrm, time, idleOffsets);
         
         // 高级随机眨眼动画
         if (currentVrm.expressionManager) {
